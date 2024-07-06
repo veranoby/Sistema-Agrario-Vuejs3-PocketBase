@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia'
-import axios from 'axios'
-
 import PocketBase from 'pocketbase'
-import { useRouter } from 'vue-router' // Add this import
+import { useSnackbarStore } from './snackbarStore'
+import router from '@/router'
+
+const pb = new PocketBase('http://127.0.0.1:8090')
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -11,78 +12,70 @@ export const useAuthStore = defineStore('auth', {
     isLoggedIn: false
   }),
   actions: {
-    async login(usernameOrEmail, password) {
-      const pb = new PocketBase('http://127.0.0.1:8090') // Replace with your PocketBase URL
-      const router = useRouter() // Get the router instance
+    async login(usernameOrEmail, password, rememberMe = false) {
+      const snackbarStore = useSnackbarStore()
 
       try {
-        const response = await pb.collection('users').authWithPassword(usernameOrEmail, password)
+        const authData = await pb.collection('users').authWithPassword(usernameOrEmail, password)
 
         if (pb.authStore.isValid) {
-          this.user = pb.authStore.model.id
-          this.token = response.token
+          this.user = authData.record
+          this.token = authData.token
           this.isLoggedIn = true
 
-          // Navigation
-          router.push('/dashboard') // Assuming you have a dashboard route
-          console.log('router:' + this.$router)
-
-          // Success Message (using injected $toast)
-          this.$toast.success('Login successful!')
+          if (rememberMe) {
+            localStorage.setItem('rememberMe', JSON.stringify({ usernameOrEmail, password }))
+            localStorage.setItem('token', this.token)
+          } else {
+            localStorage.removeItem('rememberMe')
+            localStorage.removeItem('token')
+          }
+          snackbarStore.showSnackbar('Login successful!', 'success')
+          router.push('/dashboard')
         } else {
-          console.log('Login failed:' + pb.authStore.message)
-          // Display error message (refer to Login Failures section)
+          throw new Error('Login failed')
         }
       } catch (error) {
-        console.log('Login error:', error)
-        // Handle API call errors (refer to Error Handling Mechanisms section)
+        console.error(error)
+        snackbarStore.showSnackbar('Login failed: ' + error.message, 'error')
+        throw error
       }
     },
-    async register(name, email, password) {
-      const router = useRouter() // Get the router instance
-
-      const url = 'http://localhost:8090/auth/register' // Replace with your PocketBase registration URL
-      const data = {
-        name,
-        email,
-        password
-      }
+    async register(username, email, password) {
+      const snackbarStore = useSnackbarStore()
 
       try {
-        const response = await axios.post(url, data)
-
-        if (response.data.status === 200) {
-          // Assuming the API returns user data and token upon successful registration
-          this.user = response.data.user
-          this.token = response.data.token
-          this.isLoggedIn = true
-          console.log('Registration successful!')
-
-          // Navigation
-          router.push('/dashboard')
-
-          // Success Message (using injected $toast)
-          this.$toast.success('Registration successful!')
-        } else {
-          console.error('Registration failed:', response.data.message)
-          // Display error message
-          // Display error message using injected $toast
-          this.$toast.error('An error occurred during registration. Please try again later.')
+        const data = {
+          username,
+          email,
+          password,
+          passwordConfirm: password
         }
+
+        const record = await pb.collection('users').create(data)
+        console.log('Registration successful:', record)
+
+        await this.login(email, password)
+        snackbarStore.showSnackbar('Registration successful!', 'success')
+        router.push('/dashboard')
       } catch (error) {
+        snackbarStore.showSnackbar('Registration failed: ' + error.message, 'error')
         console.error('Registration error:', error)
-        // Handle API call errors using injected $toast
-        this.$toast.error('An error occurred during registration. Please try again later.')
+        throw error
       }
     },
     logout() {
+      pb.authStore.clear()
       this.user = null
       this.token = null
       this.isLoggedIn = false
 
-      // Redirect to login page or handle logout logic
-      this.$router.push('/login')
+      localStorage.removeItem('rememberMe')
+      localStorage.removeItem('token')
+
+      const snackbarStore = useSnackbarStore()
+      snackbarStore.showSnackbar('Logged out successfully', 'success')
+      router.push('/')
     }
-  },
-  setup() {}
+  }
 })

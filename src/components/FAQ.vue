@@ -1,12 +1,12 @@
 <template>
   <v-container>
-    <h1>Dashboard</h1>
-    <p>Welcome to your dashboard!</p>
+    <h1>FAQ</h1>
+    <p>Frequently Asked Questions</p>
   </v-container>
 </template>
 
 <script>
 export default {
-  name: 'DashboardComponent'
+  name: 'FAQ'
 }
 </script>

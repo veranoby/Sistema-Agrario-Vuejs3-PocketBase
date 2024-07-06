@@ -1,13 +1,11 @@
 import './assets/main.css'
-
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 
 // Vuetify
 import 'vuetify/styles'
-import '@fortawesome/fontawesome-free/css/all.css' // Ensure your project is capable of handling css files
-import '@mdi/font/css/materialdesignicons.css' // Ensure you are using css-loader
-
+import '@fortawesome/fontawesome-free/css/all.css'
+import '@mdi/font/css/materialdesignicons.css'
 import { createVuetify } from 'vuetify'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
@@ -16,6 +14,7 @@ import { aliases, mdi } from 'vuetify/iconsets/mdi'
 
 import App from './App.vue'
 import router from './router'
+import { useThemeStore } from './stores/themeStore'
 
 const lightTheme = {
   dark: false,
@@ -49,8 +48,6 @@ const darkTheme = {
   }
 }
 
-const app = createApp(App)
-const pinia = createPinia() // Create Pinia instance
 const vuetify = createVuetify({
   components,
   icons: {
@@ -71,10 +68,21 @@ const vuetify = createVuetify({
   directives
 })
 
+const app = createApp(App)
+const pinia = createPinia()
+
 app.use(pinia)
 app.use(router)
-app.use(vuetify) // **Use the Vuetify instance**
+app.use(vuetify)
+
+const themeStore = useThemeStore()
+
+// Set the initial theme
+vuetify.theme.global.name.value = themeStore.currentTheme
+
+// Watch for theme changes
+themeStore.$subscribe((mutation, state) => {
+  vuetify.theme.global.name.value = state.currentTheme
+})
 
 app.mount('#app')
-
-//createApp(App).use(vuetify).mount('#app')
