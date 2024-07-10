@@ -28,8 +28,28 @@ a,
   }
 
   #app {
-    display: grid;
+    /* display: grid; */
     grid-template-columns: 1fr 1fr;
     padding: 0 2rem;
   }
+}
+
+:root {
+  --color-background: #ffffff; /* Default light theme background */
+  --color-background-dark: #121212; /* Default dark theme background */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background: var(--color-background-dark);
+  }
+}
+
+body {
+  background-color: var(--color-background);
+}
+
+.compact-form {
+  transform: scale(0.8);
+  transform-origin: left;
 }

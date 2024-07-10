@@ -16,8 +16,13 @@ import App from './App.vue'
 import router from './router'
 import { useThemeStore } from './stores/themeStore'
 
+import './index.css'
+
 const lightTheme = {
   dark: false,
+  variables: {
+    'color-background': '#ffffff'
+  },
   colors: {
     background: '#FFFFFF',
     surface: '#FFFFFF',
@@ -34,6 +39,10 @@ const lightTheme = {
 
 const darkTheme = {
   dark: true,
+  variables: {
+    'color-background': '#121212'
+  },
+
   colors: {
     background: '#121212',
     surface: '#121212',
@@ -83,6 +92,10 @@ vuetify.theme.global.name.value = themeStore.currentTheme
 // Watch for theme changes
 themeStore.$subscribe((mutation, state) => {
   vuetify.theme.global.name.value = state.currentTheme
+  // Update body background color on theme change
+  document.body.style.backgroundColor = vuetify.theme.global.current.value.colors.background
 })
+// Set initial body background color
+document.body.style.backgroundColor = vuetify.theme.global.current.value.colors.background
 
 app.mount('#app')

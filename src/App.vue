@@ -13,11 +13,7 @@
       <sidebar-comp :navigation-links="navigationLinks"></sidebar-comp>
     </v-navigation-drawer>
 
-    <v-main>
-      <v-container>
-        <router-view></router-view>
-      </v-container>
-    </v-main>
+    <v-main> <router-view></router-view> </v-main>
 
     <Snackbar />
   </v-app>

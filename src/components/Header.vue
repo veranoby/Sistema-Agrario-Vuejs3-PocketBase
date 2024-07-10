@@ -3,19 +3,24 @@
     <template v-slot:prepend>
       <v-app-bar-nav-icon @click="$router.push('/'), $emit('HandleDrawer')"></v-app-bar-nav-icon>
     </template>
-    <v-app-bar-title>Sistema Agrario - {{ PaginaActual }}</v-app-bar-title>
+    <v-app-bar-title
+      >Agro Assist <v-icon size="24" color="green">mdi-leaf</v-icon>
+      {{ PaginaActual }}</v-app-bar-title
+    >
 
     <v-spacer></v-spacer>
 
     <template v-slot:append>
-      <v-btn text size="x-small" @click="$router.push('/about')">About Us</v-btn>
-      <v-btn text size="x-small" @click="$router.push('/documentation')">Documentation</v-btn>
-      <v-btn text size="x-small" @click="$router.push('/contact')">Contact Us</v-btn>
+      <v-btn text size="x-small" @click="$router.push('/about')">Quienes Somos</v-btn>
+      <v-btn text size="x-small" @click="$router.push('/documentation')">Documentacion</v-btn>
+      <v-btn text size="x-small" @click="$router.push('/contact')">Contactenos</v-btn>
       <v-btn text size="x-small" @click="$router.push('/faq')">FAQ</v-btn>
 
       <v-spacer></v-spacer>
 
-      <v-btn v-if="!isLoggedIn" @click="$emit('openAuthModal')">Account</v-btn>
+      <v-btn size="small" variant="tonal" v-if="!isLoggedIn" @click="$emit('openAuthModal')"
+        >INGRESAR</v-btn
+      >
 
       <v-btn v-if="isLoggedIn" size="small" @click="$router.push('/profile')">
         Mi Info / Hacienda
