@@ -52,4 +52,6 @@ body {
 .compact-form {
   transform: scale(0.8);
   transform-origin: left;
+
+  width: 120%;
 }

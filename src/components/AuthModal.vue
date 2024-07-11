@@ -11,45 +11,50 @@
       <v-card-text>
         <v-window v-model="tab">
           <v-window-item value="login">
-            <v-row justify="center" align="center" style="height: 150px" no-gutters>
+            <v-row justify="center" align="center" style="height: 100px">
               <v-col cols="3" justify="center">
                 <v-img
                   lazy-src="https://picsum.photos/id/11/100/60"
-                  width="125"
-                  height="125"
+                  width="80"
+                  height="80"
                   :src="loginLogo"
                   alt="Login Logo"
                 />
               </v-col>
-              <v-col cols="1" justify="center"></v-col>
-              <v-col cols="5" justify="center">
-                <h3 class="text-xl font-bold text-green-700">Bienvenido.. &nbsp;</h3>
+              <v-col cols="6" justify="center">
+                <h3 class="text-xl font-bold">Ingrese a su cuenta</h3>
               </v-col>
             </v-row>
 
             <v-form @submit.prevent="login">
-              <v-text-field
-                v-model="loginForm.usernameOrEmail"
-                class="compact-form"
-                label="Username/Email"
-                required
-                color="success"
-                density="compact"
-                prepend-inner-icon="mdi-account-outline"
-              ></v-text-field>
+              <v-row justify="center">
+                <v-col cols="12">
+                  <v-text-field
+                    v-model="loginForm.usernameOrEmail"
+                    class="compact-form"
+                    label="Nomnbre de usuario/Email"
+                    variant="outlined"
+                    required
+                    color="success"
+                    density="compact"
+                    prepend-inner-icon="mdi-account-outline"
+                  ></v-text-field>
 
-              <v-text-field
-                v-model="loginForm.password"
-                class="compact-form"
-                label="Password"
-                required
-                color="success"
-                :append-inner-icon="visible ? 'mdi-eye-off' : 'mdi-eye'"
-                :type="visible ? 'text' : 'password'"
-                density="compact"
-                prepend-inner-icon="mdi-lock-outline"
-                @click:append-inner="visible = !visible"
-              ></v-text-field>
+                  <v-text-field
+                    v-model="loginForm.password"
+                    class="compact-form"
+                    label="Password"
+                    variant="outlined"
+                    required
+                    color="success"
+                    :append-inner-icon="visible ? 'mdi-eye-off' : 'mdi-eye'"
+                    :type="visible ? 'text' : 'password'"
+                    density="compact"
+                    prepend-inner-icon="mdi-lock-outline"
+                    @click:append-inner="visible = !visible"
+                  ></v-text-field>
+                </v-col>
+              </v-row>
               <v-row>
                 <v-col></v-col>
                 <v-col
@@ -73,62 +78,111 @@
           </v-window-item>
 
           <v-window-item value="register">
-            <v-row justify="center" align="center" style="height: 150px" no-gutters>
+            <v-row justify="center" align="center" style="height: 100px" no-gutters>
               <v-col justify="center" cols="3">
                 <v-img
                   lazy-src="https://picsum.photos/id/11/100/60"
-                  width="125"
-                  height="125"
+                  width="80"
+                  height="80"
                   :src="registerLogo"
                   alt="Register Logo"
                 />
               </v-col>
-              <v-col cols="1" justify="center"></v-col>
-              <v-col cols="5">
-                <h3 class="text-xl font-bold text-blue-700">Registrese para Ingresar.. &nbsp;</h3>
+              <v-col cols="6">
+                <h3 class="text-xl font-bold">Crea tu cuenta para empezar.</h3>
               </v-col>
             </v-row>
             <v-form @submit.prevent="register">
-              <v-text-field
-                class="compact-form"
-                v-model="registerForm.username"
-                label="Username"
-                required
-                color="primary"
-                density="compact"
-                clearable
-              ></v-text-field>
-              <v-text-field
-                v-model="registerForm.email"
-                class="compact-form"
-                label="Email"
-                type="email"
-                required
-                color="primary"
-                density="compact"
-                clearable
-              ></v-text-field>
-              <v-text-field
-                v-model="registerForm.password"
-                class="compact-form"
-                label="Password"
-                type="password"
-                required
-                color="primary"
-                density="compact"
-                clearable
-              ></v-text-field>
-              <v-text-field
-                v-model="registerForm.passwordConfirm"
-                class="compact-form"
-                label="Confirm Password"
-                type="password"
-                required
-                color="primary"
-                density="compact"
-                clearable
-              ></v-text-field>
-              <v-btn type="submit" color="primary" block>Register</v-btn>
+              <v-row justify="center" no-gutters>
+                <v-col cols="6">
+                  <v-text-field
+                    class="compact-form"
+                    v-model="registerForm.username"
+                    label="Nombre de usuario"
+                    variant="outlined"
+                    required
+                    color="primary"
+                    density="compact"
+                    clearable
+                  ></v-text-field>
+                </v-col>
+                <v-col cols="6">
+                  <v-text-field
+                    v-model="registerForm.email"
+                    class="compact-form"
+                    label="Email"
+                    variant="outlined"
+                    type="email"
+                    required
+                    color="primary"
+                    density="compact"
+                    clearable
+                  ></v-text-field>
+                </v-col>
+                <v-col cols="6">
+                  <v-text-field
+                    class="compact-form"
+                    v-model="registerForm.firstname"
+                    label="Nombre"
+                    variant="outlined"
+                    required
+                    color="primary"
+                    density="compact"
+                    clearable
+                  ></v-text-field>
+                </v-col>
+                <v-col cols="6">
+                  <v-text-field
+                    class="compact-form"
+                    v-model="registerForm.lastname"
+                    label="Apellido"
+                    variant="outlined"
+                    required
+                    color="primary"
+                    density="compact"
+                    clearable
+                  ></v-text-field>
+                </v-col>
+                <v-col cols="12">
+                  <v-text-field
+                    v-model="registerForm.hacienda"
+                    class="compact-form"
+                    label="Hacienda"
+                    variant="outlined"
+                    required
+                    color="primary"
+                    density="compact"
+                    clearable
+                  ></v-text-field>
+                </v-col>
+                <v-col cols="6">
+                  <v-text-field
+                    v-model="registerForm.password"
+                    class="compact-form"
+                    label="Password"
+                    variant="outlined"
+                    type="password"
+                    required
+                    color="primary"
+                    density="compact"
+                    clearable
+                  ></v-text-field>
+                </v-col>
+                <v-col cols="6">
+                  <v-text-field
+                    v-model="registerForm.passwordConfirm"
+                    class="compact-form"
+                    label="Confirm Password"
+                    variant="outlined"
+                    type="password"
+                    required
+                    color="primary"
+                    density="compact"
+                    clearable
+                  ></v-text-field>
+                </v-col>
+                <v-btn type="submit" color="primary" block>Register</v-btn>
+              </v-row>
             </v-form>
           </v-window-item>
         </v-window>
