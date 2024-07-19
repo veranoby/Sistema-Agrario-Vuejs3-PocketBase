@@ -6,6 +6,7 @@ import DocumentationComponent from '@/components/Documentation.vue'
 import ContactUs from '@/components/ContactUs.vue'
 import FAQ from '@/components/FAQ.vue'
 import Dashboard from '@/components/Dashboard.vue'
+import EmailConfirmation from '@/components/Confirmation.vue' // Import the new page
 
 const routes = [
   { path: '/', component: HomeComp },
@@ -14,6 +15,7 @@ const routes = [
   { path: '/documentation', component: DocumentationComponent },
   { path: '/contact', component: ContactUs },
   { path: '/faq', component: FAQ },
+  { path: '/confirm', name: 'Confirmation', component: EmailConfirmation },
   {
     path: '/dashboard',
     component: Dashboard,

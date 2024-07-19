@@ -1,7 +1,5 @@
 <template>
   <v-dialog v-model="dialogModel" max-width="500px">
-    <!-- <v-dialog :model-value="isOpen" @update:model-value="$emit('update:isOpen', $event)">
--->
     <v-card>
       <v-tabs v-model="tab" fixed-tabs>
         <v-tab value="login"><v-icon icon="mdi-login"></v-icon> &nbsp; Login</v-tab>
@@ -39,7 +37,6 @@
                     density="compact"
                     prepend-inner-icon="mdi-account-outline"
                   ></v-text-field>
-
                   <v-text-field
                     v-model="loginForm.password"
                     class="compact-form"
@@ -57,16 +54,16 @@
               </v-row>
               <v-row>
                 <v-col></v-col>
-                <v-col
-                  ><a
+                <v-col>
+                  <a
                     class="text-caption text-decoration-none text-green"
                     href="#"
                     rel="noopener noreferrer"
                     target="_blank"
-                    ><strong class="compact-form"> Olvido su contraseña?</strong></a
-                  ></v-col
-                ></v-row
-              >
+                    ><strong class="compact-form">Olvido su contraseña?</strong></a
+                  >
+                </v-col>
+              </v-row>
 
               <v-checkbox
                 class="compact-form"
@@ -195,7 +192,6 @@
 import { ref, computed } from 'vue'
 import { useAuthStore } from '../stores/authStore'
 import { useSnackbarStore } from '../stores/snackbarStore'
-
 import loginLogo from '../assets/login-logo.png'
 import registerLogo from '../assets/register-logo.png'
 
@@ -203,7 +199,6 @@ export default {
   data: () => ({
     visible: false
   }),
-
   props: {
     isOpen: Boolean,
     initialTab: {
@@ -231,8 +226,11 @@ export default {
     const registerForm = ref({
       username: '',
       email: '',
+      firstname: '',
+      lastname: '',
       password: '',
-      passwordConfirm: ''
+      passwordConfirm: '',
+      hacienda: ''
     })
 
     const login = async () => {
@@ -245,7 +243,7 @@ export default {
         snackbarStore.showSnackbar('Login successful!', 'success')
         dialogModel.value = false
       } catch (error) {
-        snackbarStore.showSnackbar('Login failed: ' + error.message, 'error')
+        snackbarStore.showSnackbar('Error de Ingreso: ' + error.message, 'error')
       }
     }
 
@@ -258,12 +256,18 @@ export default {
         await authStore.register(
           registerForm.value.username,
           registerForm.value.email,
-          registerForm.value.password
+          registerForm.value.firstname,
+          registerForm.value.lastname,
+          registerForm.value.password,
+          registerForm.value.hacienda
         )
-        snackbarStore.showSnackbar('Registration successful!', 'success')
+        snackbarStore.showSnackbar(
+          'Registro Exitoso! Por favor, consulte su correo electronico para  confirmacion e ingreso.',
+          'success'
+        )
         dialogModel.value = false
       } catch (error) {
-        snackbarStore.showSnackbar('Registration failed: ' + error.message, 'error')
+        snackbarStore.showSnackbar('Fallo de Registro: ' + error.message, 'error')
       }
     }
 

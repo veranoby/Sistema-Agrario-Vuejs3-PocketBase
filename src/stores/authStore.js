@@ -41,27 +41,48 @@ export const useAuthStore = defineStore('auth', {
         throw error
       }
     },
-    async register(username, email, password) {
-      const snackbarStore = useSnackbarStore()
+    async register(username, email, firstname, lastname, password, hacienda) {
+      const data = {
+        username,
+        email,
+        firstname,
+        lastname,
+        hacienda,
+        password,
+        passwordConfirm: password,
+        roles: 'administrador'
+      }
 
       try {
-        const data = {
-          username,
-          email,
-          password,
-          passwordConfirm: password
-        }
-
-        const record = await pb.collection('users').create(data)
-        console.log('Registration successful:', record)
-
-        await this.login(email, password)
-        snackbarStore.showSnackbar('Registration successful!', 'success')
-        router.push('/dashboard')
+        await pb.collection('users').create(data)
+        useSnackbarStore().showSnackbar(
+          'Registrado con exito. Por favor, consulte su correo electronico para confirmacion.',
+          'success'
+        )
       } catch (error) {
-        snackbarStore.showSnackbar('Registration failed: ' + error.message, 'error')
-        console.error('Registration error:', error)
-        throw error
+        useSnackbarStore().showSnackbar('Error de registro: ' + error.message, 'error')
+      }
+    },
+    async confirmEmail(token) {
+      try {
+        await pb.collection('users').authConfirm(token)
+        useSnackbarStore().showSnackbar('Email confirmed successfully!', 'success')
+        router.push('/login')
+      } catch (error) {
+        useSnackbarStore().showSnackbar('Error confirming email: ' + error.message, 'error')
+      }
+    },
+
+    async checkAuth() {
+      const token = localStorage.getItem('token')
+      if (token) {
+        try {
+          const authData = await pb.collection('users').authRefresh(token)
+          this.user = authData.user
+          this.token = authData.token
+        } catch (error) {
+          localStorage.removeItem('token')
+        }
       }
     },
     logout() {
