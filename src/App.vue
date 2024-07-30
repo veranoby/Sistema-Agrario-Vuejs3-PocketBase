@@ -1,11 +1,6 @@
 <template>
   <v-app>
-    <AuthModal
-      v-if="showAuthModal"
-      :isOpen="showAuthModal"
-      :initialTab="authModalTab"
-      @update:isOpen="showAuthModal = $event"
-    />
+    <AuthModal v-model:isOpen="showAuthModal" :initialTab="authModalTab" />
 
     <header-comp @openAuthModal="handleOpenAuthModal" @HandleDrawer="mini = !mini"></header-comp>
 

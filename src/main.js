@@ -2,6 +2,8 @@ import './assets/main.css'
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 
+import { useVuelidate } from '@vuelidate/core'
+
 // Vuetify
 import 'vuetify/styles'
 import '@fortawesome/fontawesome-free/css/all.css'
@@ -83,6 +85,7 @@ const pinia = createPinia()
 app.use(pinia)
 app.use(router)
 app.use(vuetify)
+app.use(useVuelidate)
 
 const themeStore = useThemeStore()
 
