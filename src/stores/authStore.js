@@ -15,6 +15,7 @@ export const useAuthStore = defineStore('auth', {
   actions: {
     async login(usernameOrEmail, password, rememberMe = false) {
       const snackbarStore = useSnackbarStore()
+      snackbarStore.showLoading()
 
       try {
         const authData = await pb.collection('users').authWithPassword(usernameOrEmail, password)

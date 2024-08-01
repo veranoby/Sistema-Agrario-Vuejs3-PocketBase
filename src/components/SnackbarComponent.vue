@@ -1,6 +1,18 @@
 <template>
-  <v-snackbar v-model="isVisible" :color="color" :timeout="2000" @update:modelValue="closeSnackbar">
+  <v-snackbar
+    v-model="isVisible"
+    :color="color"
+    :timeout="4000"
+    multi-line
+    @update:modelValue="closeSnackbar"
+  >
     {{ message }}
+    <template v-slot:actions>
+      <v-btn color="white" variant="text" small @click="closeSnackbar" v-if="cloaseComp">
+        Cerrar
+      </v-btn>
+      <v-progress-circular color="white" indeterminate v-if="loadComp"></v-progress-circular>
+    </template>
   </v-snackbar>
 </template>
 
@@ -16,6 +28,9 @@ export default {
     const message = computed(() => snackbarStore.message)
     const color = computed(() => snackbarStore.color)
 
+    const loadComp = computed(() => snackbarStore.loading) // nuevo estado para mostrar un loading mientras se procesa algo
+    const cloaseComp = computed(() => snackbarStore.closing) // nuevo estado para mostrar un CERRAR mientras sale mensaje
+
     const closeSnackbar = () => {
       snackbarStore.show = false
     }
@@ -24,6 +39,8 @@ export default {
       isVisible,
       message,
       color,
+      loadComp,
+      cloaseComp,
       closeSnackbar
     }
   }

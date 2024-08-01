@@ -4,13 +4,36 @@ export const useSnackbarStore = defineStore('snackbar', {
   state: () => ({
     show: false,
     message: '',
-    color: ''
+    color: '',
+    loading: false, // nuevo estado para mostrar un loading mientras se procesa algo
+    closing: false // nuevo estado para mostrar un CERRAR mientras sale mensaje
   }),
   actions: {
     showSnackbar(message, color = 'success') {
       this.show = true
       this.message = message
       this.color = color
+      this.loading = false
+      this.closing = true
+    },
+    showError(message) {
+      this.show = true
+      this.message = message
+      this.color = 'error'
+      this.loading = false
+      this.closing = true
+    },
+    showLoading() {
+      this.show = true
+      this.message = 'Procesando..'
+      this.color = 'black'
+
+      this.loading = true
+      this.closing = false
+    },
+    hideLoading() {
+      this.loading = false
+      this.closing = false
     }
   }
 })

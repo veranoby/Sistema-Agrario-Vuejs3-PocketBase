@@ -198,6 +198,7 @@
                     cuenta.
                   </h3>
                 </v-col>
+                <v-btn to="/email-confirmation" color="primary" block>Verify Email</v-btn>
               </v-row>
             </v-form>
           </v-window-item>
