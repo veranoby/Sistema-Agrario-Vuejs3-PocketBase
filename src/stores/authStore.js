@@ -1,29 +1,49 @@
 import { defineStore } from 'pinia'
-import PocketBase from 'pocketbase'
+import { pb } from '@/utils/pocketbase'
+import { handleError } from '@/utils/errorHandler'
 import { useSnackbarStore } from './snackbarStore'
+import { useProfileStore } from './profileStore'
+import { useHaciendaStore } from './haciendaStore'
+import { usePlanStore } from './planStore'
+import { useValidationStore } from './validationStore'
 import router from '@/router'
-
-const pb = new PocketBase('http://127.0.0.1:8090')
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    user: null,
-    token: null,
+    registrationSuccess: false,
+    loading: false,
+
     isLoggedIn: false,
-    registrationSuccess: false
+    token: null
   }),
+
   actions: {
     async login(usernameOrEmail, password, rememberMe = false) {
+      if (this.loading) return // Prevent multiple calls while loading
+      this.loading = true
+
       const snackbarStore = useSnackbarStore()
+      const profileStore = useProfileStore()
+      const haciendaStore = useHaciendaStore()
+      const planStore = usePlanStore()
+
       snackbarStore.showLoading()
 
       try {
         const authData = await pb.collection('users').authWithPassword(usernameOrEmail, password)
 
         if (pb.authStore.isValid) {
-          this.user = authData.record
-          this.token = authData.token
+          profileStore.setUser(authData.record)
+
           this.isLoggedIn = true
+          this.token = pb.authStore.token
+
+          console.log('usuario:', profileStore.user)
+          console.log('isLoggedIn:', this.isLoggedIn)
+          console.log('token:', this.token)
+
+          await planStore.fetchAvailablePlans()
+          await haciendaStore.fetchHacienda(authData.record.hacienda)
 
           if (rememberMe) {
             localStorage.setItem('rememberMe', JSON.stringify({ usernameOrEmail, password }))
@@ -32,83 +52,97 @@ export const useAuthStore = defineStore('auth', {
             localStorage.removeItem('rememberMe')
             localStorage.removeItem('token')
           }
+
           snackbarStore.showSnackbar('Login successful!', 'success')
-          router.push('/dashboard')
+
+          router.push('/dashboard') // Navigate to dashboard.vue
+
+          return true
         } else {
-          throw new Error('Login failed')
+          throw new Error('Login failed: Invalid credentials')
         }
       } catch (error) {
-        console.error(error)
-        snackbarStore.showSnackbar('Login failed: ' + error.message, 'error')
-        throw error
+        handleError(error, 'Invalid credentials')
+
+        return false
+      } finally {
+        this.loading = false
+        snackbarStore.hideLoading()
       }
     },
-    async register({ username, email, firstname, lastname, password, hacienda }) {
+
+    async register(formData, new_role) {
       const snackbarStore = useSnackbarStore()
+      const validationStore = useValidationStore()
+      const haciendaStore = useHaciendaStore()
+      const planStore = usePlanStore()
+
+      snackbarStore.showLoading()
+
+      console.log('new_role:', new_role)
 
       try {
-        // Perform all checks before any database operations
-        await this.checkUsernameTaken(username)
-        await this.checkEmailTaken(email)
-        await this.checkHaciendaTaken(hacienda)
+        let haciendaId
 
-        // If all checks pass, proceed with creating hacienda and user
-        const newHacienda = await this.createHacienda(hacienda)
+        if (new_role === 'administrador') {
+          console.log('entrando a administrador en registro:')
+
+          // Get the "gratis" plan
+          await planStore.fetchAvailablePlans()
+          const gratisPlan = await planStore.getGratisPlan()
+
+          // Use the existing createHacienda method from haciendaStore
+          const newHacienda = await haciendaStore.createHacienda(formData.hacienda, gratisPlan.id)
+
+          haciendaId = newHacienda.id
+        } else {
+          haciendaId = formData.hacienda
+        }
+
         const userData = this.createUserData(
-          username,
-          email,
-          firstname,
-          lastname,
-          password,
-          newHacienda.id
+          formData.username,
+          formData.email,
+          formData.firstname,
+          formData.lastname,
+          formData.password,
+          new_role,
+          haciendaId
         )
+
+        console.log('user_data:', userData)
+
         const record = await pb.collection('users').create(userData)
 
-        // Send an email verification request
-        await pb.collection('users').requestVerification(email)
+        if (new_role === 'administrador') {
+          await this.sendVerificationEmail(formData.email)
 
-        snackbarStore.showSnackbar(
-          'Registrado con éxito. Por favor, consulte su correo electrónico para confirmación.',
-          'success'
-        )
-        console.log('record:', record)
-        this.registrationSuccess = true
+          snackbarStore.showSnackbar(
+            'Registrado con éxito. Por favor, consulte su correo electrónico para confirmación.',
+            'success'
+          )
+          this.registrationSuccess = true
+        } else {
+          await pb.collection('users').update(record.id, {
+            verified: true
+          })
+
+          snackbarStore.showSnackbar('Usuario ' + new_role + ' Registrado con éxito', 'success')
+        }
       } catch (error) {
-        this.registrationSuccess = false
-        this.handleRegistrationError(error)
+        if (new_role === 'administrador') {
+          this.registrationSuccess = false
+        }
+        if (error.message === 'Validation failed') {
+          validationStore.handleRegistrationError(error)
+        } else {
+          handleError(error, 'Registration failed')
+        }
+      } finally {
+        snackbarStore.hideLoading()
       }
     },
-    async checkUsernameTaken(username) {
-      const usernameCheck = await pb
-        .collection('users')
-        .getList(1, 1, { filter: `username="${username}"` })
-      if (usernameCheck.totalItems > 0) {
-        throw new Error('USERNAME_TAKEN')
-      }
-    },
-    async checkEmailTaken(email) {
-      const emailCheck = await pb.collection('users').getList(1, 1, { filter: `email="${email}"` })
-      if (emailCheck.totalItems > 0) {
-        throw new Error('EMAIL_TAKEN')
-      }
-    },
-    async checkHaciendaTaken(hacienda) {
-      const haciendaCheck = await pb
-        .collection('HaciendaLabel')
-        .getList(1, 1, { filter: `name="${hacienda}"` })
-      if (haciendaCheck.totalItems > 0) {
-        throw new Error('HACIENDA_TAKEN')
-      }
-    },
-    async createHacienda(hacienda) {
-      const haciendaData = {
-        name: hacienda,
-        location: '',
-        info: ''
-      }
-      return await pb.collection('HaciendaLabel').create(haciendaData)
-    },
-    createUserData(username, email, firstname, lastname, password, haciendaId) {
+
+    createUserData(username, email, firstname, lastname, password, new_role, new_hacienda) {
       return {
         username,
         email,
@@ -117,43 +151,35 @@ export const useAuthStore = defineStore('auth', {
         passwordConfirm: password,
         name: firstname,
         lastname,
-        role: 'administrador',
-        hacienda: haciendaId
+        role: new_role,
+        info: 'Usuario de hacienda',
+        hacienda: new_hacienda
       }
     },
-    handleRegistrationError(error) {
-      const snackbarStore = useSnackbarStore()
-      let errorMessage
-      switch (error.message) {
-        case 'USERNAME_TAKEN':
-          errorMessage = 'Este nombre de usuario ya está en uso.'
-          break
-        case 'EMAIL_TAKEN':
-          errorMessage = 'Este correo electrónico ya está registrado.'
-          break
-        case 'HACIENDA_TAKEN':
-          errorMessage =
-            'Esta hacienda ya está registrada. No se puede crear otro administrador para la misma hacienda.'
-          break
-        default:
-          errorMessage = 'Error de registro: ' + error.message
+
+    async sendVerificationEmail(email) {
+      //listo
+      try {
+        await pb.collection('users').requestVerification(email)
+        return true
+      } catch (error) {
+        handleError(error, 'Failed to send verification email')
       }
-      snackbarStore.showSnackbar(errorMessage, 'error')
-      console.log(errorMessage)
-      throw new Error(errorMessage)
     },
+
     async confirmEmail(token) {
       const snackbarStore = useSnackbarStore()
 
       try {
-        await pb.collection('users').authConfirm(token)
+        await pb.collection('users').confirmVerification(token)
         snackbarStore.showSnackbar(
-          'Email confirmed successfully! Please Login with your credentials',
+          'Email confirmed successfully! You can now log in with your credentials.',
           'success'
         )
-        router.push('/login')
       } catch (error) {
-        snackbarStore.showSnackbar('Error confirming email: ' + error.message, 'error')
+        handleError(error, 'Failed to confirm email')
+      } finally {
+        snackbarStore.hideLoading()
       }
     },
 
@@ -161,24 +187,31 @@ export const useAuthStore = defineStore('auth', {
       const token = localStorage.getItem('token')
       if (token) {
         try {
-          const authData = await pb.collection('users').authRefresh(token)
-          this.user = authData.user
-          this.token = authData.token
+          const authData = await pb.collection('users').authRefresh()
+          const profileStore = useProfileStore()
+          profileStore.setUser(authData.record)
         } catch (error) {
           localStorage.removeItem('token')
+          this.logout()
         }
       }
     },
+
     logout() {
+      const snackbarStore = useSnackbarStore()
+      const profileStore = useProfileStore()
+
+      snackbarStore.showLoading()
+
       pb.authStore.clear()
-      this.user = null
-      this.token = null
-      this.isLoggedIn = false
+      profileStore.setUser(null)
+
+      this.$state.isLoggedIn = false
+      this.$state.token = null
 
       localStorage.removeItem('rememberMe')
       localStorage.removeItem('token')
 
-      const snackbarStore = useSnackbarStore()
       snackbarStore.showSnackbar('Logged out successfully', 'success')
       router.push('/')
     }

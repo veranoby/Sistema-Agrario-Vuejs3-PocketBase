@@ -13,8 +13,8 @@
               <v-col cols="3" justify="center">
                 <v-img
                   lazy-src="https://picsum.photos/id/11/100/60"
-                  width="80"
-                  height="80"
+                  width="60"
+                  height="60"
                   :src="loginLogo"
                   alt="Login Logo"
                 />
@@ -25,8 +25,10 @@
             </v-row>
 
             <v-form @submit.prevent="login">
+              <!--     <v-form @submit.prevent="handleLogin"> -->
               <v-row justify="center">
-                <v-col cols="12">
+                <v-col cols="12"
+                  ><br />
                   <v-text-field
                     v-model="loginForm.usernameOrEmail"
                     class="compact-form"
@@ -53,8 +55,15 @@
                 </v-col>
               </v-row>
               <v-row>
-                <v-col></v-col>
                 <v-col>
+                  <v-checkbox
+                    class="compact-form"
+                    v-model="loginForm.rememberMe"
+                    label="Remember me"
+                  ></v-checkbox
+                ></v-col>
+                <v-col
+                  ><br />
                   <a
                     class="text-caption text-decoration-none text-green"
                     href="#"
@@ -65,12 +74,7 @@
                 </v-col>
               </v-row>
 
-              <v-checkbox
-                class="compact-form"
-                v-model="loginForm.rememberMe"
-                label="Remember me"
-              ></v-checkbox>
-              <v-btn type="submit" color="green" block>Login</v-btn>
+              <v-btn type="submit" @click="login" color="green" block>Login</v-btn>
             </v-form>
           </v-window-item>
 
@@ -79,8 +83,8 @@
               <v-col justify="center" cols="3">
                 <v-img
                   lazy-src="https://picsum.photos/id/11/100/60"
-                  width="80"
-                  height="80"
+                  width="60"
+                  height="60"
                   :src="registerLogo"
                   alt="Register Logo"
                 />
@@ -93,29 +97,31 @@
               <v-row justify="center" no-gutters v-if="!authStore.registrationSuccess">
                 <v-col cols="6">
                   <v-text-field
-                    class="compact-form"
+                    :class="usernameAvailable ? 'compact-form' : 'compact-form text-red'"
                     v-model="registerForm.username"
                     label="Nombre de usuario"
                     variant="outlined"
                     required
                     :error-messages="v$.username.$errors.map((e) => e.$message)"
-                    color="primary"
+                    :color="usernameAvailable ? 'primary' : 'error'"
+                    @input="v$.username.$touch()"
                     density="compact"
-                    clearable
+                    @blur="checkUsername"
                   ></v-text-field>
                 </v-col>
                 <v-col cols="6">
                   <v-text-field
                     v-model="registerForm.email"
-                    class="compact-form"
+                    :class="emailAvailable ? 'compact-form' : 'compact-form text-red'"
                     label="Email"
                     variant="outlined"
                     type="email"
                     required
                     :error-messages="v$.email.$errors.map((e) => e.$message)"
-                    color="primary"
+                    :color="emailAvailable ? 'primary' : 'error'"
                     density="compact"
-                    clearable
+                    @input="v$.email.$touch()"
+                    @blur="checkEmail"
                   ></v-text-field>
                 </v-col>
                 <v-col cols="6">
@@ -126,9 +132,9 @@
                     variant="outlined"
                     required
                     :error-messages="v$.firstname.$errors.map((e) => e.$message)"
+                    @input="v$.firstname.$touch()"
                     color="primary"
                     density="compact"
-                    clearable
                   ></v-text-field>
                 </v-col>
                 <v-col cols="6">
@@ -140,21 +146,22 @@
                     required
                     :error-messages="v$.lastname.$errors.map((e) => e.$message)"
                     color="primary"
+                    @input="v$.lastname.$touch()"
                     density="compact"
-                    clearable
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12">
                   <v-text-field
                     v-model="registerForm.hacienda"
-                    class="compact-form"
+                    :class="haciendaAvailable ? 'compact-form' : 'compact-form text-red'"
                     label="Hacienda"
                     variant="outlined"
                     required
                     :error-messages="v$.hacienda.$errors.map((e) => e.$message)"
-                    color="primary"
                     density="compact"
-                    clearable
+                    @blur="checkHacienda"
+                    @input="v$.hacienda.$touch()"
+                    :color="haciendaAvailable ? 'primary' : 'error'"
                   ></v-text-field>
                 </v-col>
                 <v-col cols="6">
@@ -170,6 +177,7 @@
                     :type="visible ? 'text' : 'password'"
                     density="compact"
                     prepend-inner-icon="mdi-lock-outline"
+                    @input="v$.password.$touch()"
                     @click:append-inner="visible = !visible"
                   ></v-text-field>
                 </v-col>
@@ -186,19 +194,27 @@
                     :type="visible ? 'text' : 'password'"
                     density="compact"
                     prepend-inner-icon="mdi-lock-outline"
+                    @input="v$.passwordConfirm.$touch()"
                     @click:append-inner="visible = !visible"
                   ></v-text-field>
                 </v-col>
-                <v-btn type="submit" color="primary" block>Register</v-btn>
+                <v-btn type="submit" @click="register" color="blue" block :disabled="!formValid"
+                  >Register</v-btn
+                >
               </v-row>
               <v-row justify="center" no-gutters v-else>
-                <v-col cols="12">
-                  <h3 class="text-center">
-                    ¡Registro exitoso! Por favor, revise su correo electrónico para confirmar su
-                    cuenta.
-                  </h3>
+                <v-col cols="12"
+                  ><br />
+                  <h3 class="text-center text-primary">¡Registro exitoso!</h3>
+                  <br />
+                  <p class="text-center text-sm">
+                    Por favor, revise su correo electrónico para confirmar su cuenta.
+                  </p>
+                  <br />
                 </v-col>
-                <v-btn to="/email-confirmation" color="primary" block>Verify Email</v-btn>
+                <v-btn @click="closeModalAndNavigate" color="primary" size="small" block>
+                  Verify Email
+                </v-btn>
               </v-row>
             </v-form>
           </v-window-item>
@@ -209,8 +225,12 @@
 </template>
 
 <script>
+//import { ref, computed, watch } from 'vue'
 import { ref, computed } from 'vue'
 import { useAuthStore } from '../stores/authStore'
+
+import { useValidationStore } from '../stores/validationStore'
+
 import { useSnackbarStore } from '../stores/snackbarStore'
 import loginLogo from '../assets/login-logo.png'
 import registerLogo from '../assets/register-logo.png'
@@ -225,12 +245,35 @@ export default {
       default: 'login'
     }
   },
-  emits: ['update:isOpen'],
+
+  methods: {
+    closeModalAndNavigate() {
+      this.dialogModel = false
+      this.$router.push({ name: 'EmailConfirmation' })
+    },
+
+    handleLogin() {
+      this.authStore.login(this.loginForm).then((success) => {
+        if (success) {
+          this.dialogModel = false
+          this.snackbarStore.showMessage('Login successful', 'success')
+        } else {
+          this.snackbarStore.showMessage('Login failed', 'error')
+        }
+      })
+    }
+  },
+
+  emits: ['update:isOpen', 'loginSuccess'],
   setup(props, { emit }) {
     const authStore = useAuthStore()
+    const validationStore = useValidationStore()
     const snackbarStore = useSnackbarStore()
     const tab = ref(props.initialTab)
     const visible = ref(false)
+    const usernameAvailable = ref(true)
+    const emailAvailable = ref(true)
+    const haciendaAvailable = ref(true)
 
     const dialogModel = computed({
       get: () => props.isOpen,
@@ -254,8 +297,14 @@ export default {
     })
 
     const rules = {
-      username: { required, minLength: minLength(3) },
-      email: { required, email },
+      username: {
+        required,
+        minLength: minLength(3)
+      },
+      email: {
+        required,
+        email
+      },
       firstname: { required },
       lastname: { required },
       hacienda: { required },
@@ -268,6 +317,61 @@ export default {
 
     const v$ = useVuelidate(rules, registerForm)
 
+    const formValid = computed(() => {
+      return (
+        !v$.value.$invalid &&
+        usernameAvailable.value &&
+        emailAvailable.value &&
+        haciendaAvailable.value
+      )
+    })
+
+    const checkUsername = async () => {
+      if (registerForm.value.username.length >= 3) {
+        try {
+          usernameAvailable.value = await validationStore.checkUsernameTaken(
+            registerForm.value.username
+          )
+
+          console.log('pedido responde', usernameAvailable.value)
+        } catch (error) {
+          //   console.error('Error checking username:', error)
+          usernameAvailable.value = false
+        }
+      } else {
+        usernameAvailable.value = true
+      }
+    }
+    const checkEmail = async () => {
+      if (registerForm.value.email) {
+        try {
+          emailAvailable.value = await validationStore.checkEmailTaken(registerForm.value.email)
+          console.log('checking Email availability:', registerForm.value.email)
+        } catch (error) {
+          console.log('Error checking email:', error)
+          emailAvailable.value = false
+        }
+      } else {
+        emailAvailable.value = true
+      }
+    }
+
+    const checkHacienda = async () => {
+      if (registerForm.value.hacienda) {
+        try {
+          haciendaAvailable.value = await validationStore.checkHaciendaTaken(
+            registerForm.value.hacienda
+          )
+          console.log('checking Hacienda availability:', registerForm.value.hacienda)
+        } catch (error) {
+          console.error('Error checking hacienda:', error)
+          haciendaAvailable.value = false
+        }
+      } else {
+        haciendaAvailable.value = true
+      }
+    }
+
     const login = async () => {
       if (!loginForm.value.usernameOrEmail || !loginForm.value.password) {
         snackbarStore.showSnackbar('Please fill in all fields', 'error')
@@ -275,14 +379,20 @@ export default {
       }
 
       try {
-        await authStore.login(
+        const success = await authStore.login(
           loginForm.value.usernameOrEmail,
           loginForm.value.password,
           loginForm.value.rememberMe
         )
-        dialogModel.value = false
+
+        if (success) {
+          emit('loginSuccess')
+          console.log('emit loginSuccess', success)
+          dialogModel.value = false
+        }
       } catch (error) {
-        console.error('Login error from authmodal:', error)
+        //   console.error('Login error from authmodal:', error)
+        console.log('Login error from authmodal:', error)
       }
     }
 
@@ -294,9 +404,21 @@ export default {
       }
 
       try {
-        await authStore.register({ ...registerForm.value })
+        const registrationData = {
+          username: registerForm.value.username,
+          email: registerForm.value.email,
+          firstname: registerForm.value.firstname,
+          lastname: registerForm.value.lastname,
+          password: registerForm.value.password,
+          hacienda: registerForm.value.hacienda
+        }
+
+        await authStore.register(registrationData, 'administrador', 1)
+
+        //     await authStore.register({ ...registerForm.value }, 'administrador', 1)
+
         // Clear the form and close the dialog only if registration was successful
-        Object.keys(registerForm.value).forEach((key) => (registerForm.value[key] = ''))
+        //   Object.keys(registerForm.value).forEach((key) => (registerForm.value[key] = ''))
         //   dialogModel.value = false
       } catch (error) {
         console.log('Registration error from Authmodal:', error.message)
@@ -314,7 +436,16 @@ export default {
       registerLogo,
       authStore,
       visible,
-      v$
+
+      v$,
+      formValid,
+
+      usernameAvailable,
+      emailAvailable,
+      haciendaAvailable,
+      checkHacienda,
+      checkUsername,
+      checkEmail
     }
   }
 }

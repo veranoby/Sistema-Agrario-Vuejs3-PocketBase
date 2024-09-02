@@ -31,6 +31,7 @@ a,
     /* display: grid; */
     grid-template-columns: 1fr 1fr;
     padding: 0 2rem;
+    min-width: 80%;
   }
 }
 
@@ -54,4 +55,11 @@ body {
   transform-origin: left;
 
   width: 120%;
+}
+
+.compact-form-2 {
+  transform: scale(0.66);
+  transform-origin: left;
+
+  width: 130%;
 }

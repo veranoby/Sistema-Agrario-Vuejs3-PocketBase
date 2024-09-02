@@ -1,6 +1,10 @@
 <template>
   <v-app>
-    <AuthModal v-model:isOpen="showAuthModal" :initialTab="authModalTab" />
+    <AuthModal
+      v-model:isOpen="showAuthModal"
+      :initialTab="authModalTab"
+      @loginSuccess="handleLoginSuccess"
+    />
 
     <header-comp @openAuthModal="handleOpenAuthModal" @HandleDrawer="mini = !mini"></header-comp>
 
@@ -15,7 +19,7 @@
 </template>
 
 <script>
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import HeaderComp from '@/components/Header.vue'
 import SidebarComp from '@/components/Sidebar.vue'
 import AuthModal from '@/components/AuthModal.vue'
@@ -49,6 +53,26 @@ export default {
       showAuthModal.value = true
     }
 
+    const handleLoginSuccess = () => {
+      showAuthModal.value = false
+      // Update the sidebar and login button here
+      navigationLinks.value = [
+        { id: 1, to: '/dashboard', label: 'Dashboard' }
+        // Add more navigation links as needed
+      ]
+      // We don't need to navigate here as it's handled in authStore
+      //  router.push('/dashboard')
+    }
+
+    watch(isLoggedIn, (newValue) => {
+      if (newValue) {
+        handleLoginSuccess()
+      } else {
+        navigationLinks.value = []
+        router.push('/')
+      }
+    })
+
     onMounted(() => {
       const savedCredentials = localStorage.getItem('rememberMe')
       if (savedCredentials) {
@@ -75,6 +99,7 @@ export default {
       showAuthModal,
       authModalTab,
       handleOpenAuthModal,
+      handleLoginSuccess,
       currentTheme
     }
   }

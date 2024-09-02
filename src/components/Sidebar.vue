@@ -1,18 +1,21 @@
 <template>
   <v-sheet v-if="isLoggedIn">
-    <v-list class="d-flex flex-wrap" v-if="navigationLinks && navigationLinks.length > 0">
-      <v-list-item v-for="link in navigationLinks" :key="link.id">
-        <v-list-item-link :to="link.to">{{ link.label }}</v-list-item-link>
+    <v-list>
+      <v-list-item to="/dashboard" link>
+        <v-list-item-title>Dashboard</v-list-item-title>
       </v-list-item>
     </v-list>
-    <v-alert v-else type="error" style="margin: 10px">
-      Error: Failed to load navigation links.
-    </v-alert>
+    <v-list v-if="navigationLinks && navigationLinks.length > 0">
+      <v-list-item v-for="link in navigationLinks" :key="link.id" :to="link.to" link>
+        <v-list-item-title>{{ link.label }}</v-list-item-title>
+      </v-list-item>
+    </v-list>
+    <v-alert v-else type="error"> Error: Failed to load pocketbase navigation links... </v-alert>
   </v-sheet>
 </template>
 
 <script>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useAuthStore } from '../stores/authStore'
 
 export default {
@@ -24,6 +27,12 @@ export default {
     const authStore = useAuthStore()
     const menu = ref(false)
     const isLoggedIn = computed(() => authStore.isLoggedIn)
+
+    watch(isLoggedIn, (newValue) => {
+      if (newValue) {
+        // Refresh sidebar content if needed
+      }
+    })
 
     return { isLoggedIn, menu }
   }

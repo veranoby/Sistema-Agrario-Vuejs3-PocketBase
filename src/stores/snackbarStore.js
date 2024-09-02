@@ -34,6 +34,13 @@ export const useSnackbarStore = defineStore('snackbar', {
     hideLoading() {
       this.loading = false
       this.closing = false
+    },
+    hideSnackbar() {
+      this.closing = true // Show "CERRAR" button
+      setTimeout(() => {
+        this.show = false // Hide snackbar after delay
+        this.closing = false // Hide "CERRAR" button
+      }, 2000) // Example delay (adjust as needed)
     }
   }
 })

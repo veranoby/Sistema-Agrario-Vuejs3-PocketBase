@@ -2,7 +2,7 @@
   <v-snackbar
     v-model="isVisible"
     :color="color"
-    :timeout="4000"
+    :timeout="2000"
     multi-line
     @update:modelValue="closeSnackbar"
   >
@@ -32,7 +32,8 @@ export default {
     const cloaseComp = computed(() => snackbarStore.closing) // nuevo estado para mostrar un CERRAR mientras sale mensaje
 
     const closeSnackbar = () => {
-      snackbarStore.show = false
+      snackbarStore.hideSnackbar()
+      // snackbarStore.show = false
     }
 
     return {

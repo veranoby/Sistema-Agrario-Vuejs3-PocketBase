@@ -7,6 +7,7 @@ import ContactUs from '@/components/ContactUs.vue'
 import FAQ from '@/components/FAQ.vue'
 import Dashboard from '@/components/Dashboard.vue'
 import EmailConfirmation from '@/components/Confirmation.vue' // Import the new page
+import ProfileComponent from '@/components/Profile.vue'
 
 const routes = [
   { path: '/', component: HomeComp },
@@ -15,15 +16,22 @@ const routes = [
   { path: '/documentation', component: DocumentationComponent },
   { path: '/contact', component: ContactUs },
   { path: '/faq', component: FAQ },
-  { path: '/confirm', name: 'Confirmation', component: EmailConfirmation },
+
+  { path: '/profile', component: ProfileComponent },
+
+  {
+    path: '/auth/confirm-verification/:token?',
+    component: EmailConfirmation,
+    name: 'EmailConfirmation'
+  },
+
   {
     path: '/dashboard',
     component: Dashboard,
     meta: { requiresAuth: true },
     children: [
-      { path: '', redirect: '/dashboard/resumen' },
-      { path: 'siembras', component: () => import('@/components/SiembrasConfig.vue') },
-      { path: 'hacienda', component: () => import('@/components/HaciendaConfig.vue') }
+      { path: 'siembras', component: () => import('@/components/SiembrasConfig.vue') }
+      //    { path: 'hacienda', component: () => import('@/components/HaciendaConfig.vue') }
     ]
   }
 ]
