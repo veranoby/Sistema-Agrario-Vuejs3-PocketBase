@@ -36,7 +36,7 @@
         variant="flat"
         rounded="lg"
         color="grey-lighten-2"
-        prepend-icon="mdi-user"
+        prepend-icon="mdi-account-circle"
         class="mx-2"
         @click="$router.push('/profile')"
       >

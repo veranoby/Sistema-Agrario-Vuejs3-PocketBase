@@ -36,6 +36,7 @@ export const useHaciendaStore = defineStore('hacienda', {
       }
     },
 
+    /*
     async createHaciendaUser(userData) {
       //listo
       const snackbarStore = useSnackbarStore()
@@ -50,7 +51,7 @@ export const useHaciendaStore = defineStore('hacienda', {
       } finally {
         snackbarStore.hideLoading()
       }
-    },
+    },*/
 
     async deleteHaciendaUser(userId) {
       const snackbarStore = useSnackbarStore()

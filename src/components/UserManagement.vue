@@ -11,8 +11,17 @@
           :key="auditor.id"
           class="flex justify-between items-center mb-2"
         >
-          <span>{{ auditor.name }} {{ auditor.lastname }} ({{ auditor.email }})</span>
-          <v-btn size="small" color="error" @click="deleteUser(auditor.id)">Eliminar</v-btn>
+          <span class="text-xs"
+            >{{ auditor.username }}: {{ auditor.name }} {{ auditor.lastname }} ({{
+              auditor.email
+            }})</span
+          >
+          <v-btn
+            size="x-small"
+            color="red-lighten-2"
+            icon="mdi-minus"
+            @click="deleteUser(auditor.id)"
+          ></v-btn>
         </li>
       </ul>
       <v-btn
@@ -49,8 +58,17 @@
           :key="operador.id"
           class="flex justify-between items-center mb-2"
         >
-          <span>{{ operador.name }} {{ operador.lastname }} ({{ operador.email }})</span>
-          <v-btn size="small" color="error" @click="deleteUser(operador.id)">Eliminar</v-btn>
+          <span class="text-xs"
+            >{{ operador.username }}: {{ operador.name }} {{ operador.lastname }} ({{
+              operador.email
+            }})</span
+          >
+          <v-btn
+            size="x-small"
+            color="red-lighten-2"
+            icon="mdi-minus"
+            @click="deleteUser(operador.id)"
+          ></v-btn>
         </li>
       </ul>
       <v-btn
@@ -66,10 +84,6 @@
         Agregar Operador
       </v-btn>
 
-      <!--     <v-btn v-else size="small" color="primary" class="mt-2" disabled>
-        Límite de Operadores Alcanzado
-      </v-btn> -->
-
       <v-chip
         v-else
         variant="flat"
@@ -84,50 +98,132 @@
 
     <v-dialog v-model="createUserModalOpen" max-width="500px">
       <v-card>
-        <v-card-title
-          >Crear Nuevo {{ userTypeToCreate === 'auditor' ? 'Auditor' : 'Operador' }}</v-card-title
-        >
-        <v-card-text>
-          <v-form @submit.prevent="createUser">
-            <v-text-field
-              v-model="newUser.name"
-              label="Nombre"
-              required
-              :error-messages="validationErrors.name"
-            ></v-text-field>
-            <v-text-field
-              v-model="newUser.lastname"
-              label="Apellido"
-              required
-              :error-messages="validationErrors.lastname"
-            ></v-text-field>
-            <v-text-field
-              v-model="newUser.email"
-              label="Email"
-              type="email"
-              required
-              :error-messages="validationErrors.email"
-            ></v-text-field>
-            <v-text-field
-              v-model="newUser.username"
-              label="Nombre de Usuario"
-              required
-              :error-messages="validationErrors.username"
-            ></v-text-field>
-            <v-text-field
-              v-model="newUser.password"
-              label="Contraseña"
-              type="password"
-              required
-              :error-messages="validationErrors.password"
-            ></v-text-field>
-          </v-form>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn color="blue darken-1" text @click="createUserModalOpen = false">Cancelar</v-btn>
-          <v-btn color="blue darken-1" text @click="createUser">Crear</v-btn>
-        </v-card-actions>
+        <v-form @submit.prevent="createUser">
+          <v-card-title>
+            <div class="grid grid-cols-2 gap-1">
+              <p class="mt-4 mb-0">Crear Nuevo Usuario:</p>
+              <!-- campo role escondido -->
+              <v-text-field
+                append-inner-icon="mdi-alert-octagon"
+                class="compact-form"
+                bg-color="orange-lighten-1"
+                readonly
+                disabled
+                rounded
+                variant="outlined"
+                v-model="newUser.role"
+                label=""
+              ></v-text-field>
+            </div>
+          </v-card-title>
+          <v-card-text>
+            <div class="grid grid-cols-2 gap-1">
+              <v-text-field
+                label="Nombre"
+                class="compact-form"
+                color="primary"
+                v-model="newUser.name"
+                variant="outlined"
+                required
+                density="compact"
+                :error-messages="v$.name.$errors.map((e) => e.$message)"
+                @input="v$.name.$touch()"
+              ></v-text-field>
+              <v-text-field
+                v-model="newUser.lastname"
+                label="Apellido"
+                variant="outlined"
+                required
+                density="compact"
+                class="compact-form"
+                :error-messages="v$.lastname.$errors.map((e) => e.$message)"
+                @input="v$.lastname.$touch()"
+              ></v-text-field>
+
+              <v-text-field
+                v-model="newUser.username"
+                label="Nombre de Usuario"
+                variant="outlined"
+                required
+                density="compact"
+                :class="usernameAvailable ? 'compact-form' : 'compact-form text-red'"
+                :error-messages="v$.username.$errors.map((e) => e.$message)"
+                :color="usernameAvailable ? 'primary' : 'error'"
+                @blur="checkUsername"
+                @input="v$.username.$touch()"
+              ></v-text-field>
+
+              <v-text-field
+                v-model="newUser.email"
+                label="Email"
+                type="email"
+                variant="outlined"
+                required
+                density="compact"
+                :class="emailAvailable ? 'compact-form' : 'compact-form text-red'"
+                :error-messages="v$.email.$errors.map((e) => e.$message)"
+                :color="emailAvailable ? 'primary' : 'error'"
+                @blur="checkEmail"
+                @input="v$.email.$touch()"
+              ></v-text-field>
+
+              <v-text-field
+                v-model="newUser.password"
+                class="compact-form"
+                label="Password"
+                variant="outlined"
+                required
+                :error-messages="v$.password.$errors.map((e) => e.$message)"
+                color="primary"
+                :append-inner-icon="visible ? 'mdi-eye-off' : 'mdi-eye'"
+                :type="visible ? 'text' : 'password'"
+                density="compact"
+                prepend-inner-icon="mdi-lock-outline"
+                @input="v$.password.$touch()"
+                @click:append-inner="visible = !visible"
+              ></v-text-field>
+
+              <v-text-field
+                v-model="newUser.passwordConfirm"
+                class="compact-form"
+                label="Confirm Password"
+                variant="outlined"
+                required
+                :error-messages="v$.passwordConfirm.$errors.map((e) => e.$message)"
+                color="primary"
+                :append-inner-icon="visible ? 'mdi-eye-off' : 'mdi-eye'"
+                :type="visible ? 'text' : 'password'"
+                density="compact"
+                prepend-inner-icon="mdi-lock-outline"
+                @input="v$.passwordConfirm.$touch()"
+                @click:append-inner="visible = !visible"
+              >
+              </v-text-field>
+            </div>
+          </v-card-text>
+          <v-card-actions>
+            <v-btn
+              size="small"
+              variant="flat"
+              rounded="lg"
+              prepend-icon="mdi-lock-reset"
+              color="red-lighten-3"
+              @click="createUserModalOpen = false"
+              >Cancelar</v-btn
+            >
+            <v-btn
+              type="submit"
+              color="green-lighten-2"
+              size="small"
+              variant="flat"
+              rounded="lg"
+              prepend-icon="mdi-check"
+              @click="createUser"
+              :disabled="!formValid"
+              >Crear Usuario</v-btn
+            >
+          </v-card-actions>
+        </v-form>
       </v-card>
     </v-dialog>
   </div>
@@ -138,6 +234,13 @@ import { ref, computed, onMounted } from 'vue'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import { usePlanStore } from '@/stores/planStore'
 import { storeToRefs } from 'pinia'
+import { useSnackbarStore } from '@/stores/snackbarStore'
+
+import { useValidationStore } from '@/stores/validationStore'
+import { useVuelidate } from '@vuelidate/core'
+
+import { required, email, minLength, sameAs } from '@vuelidate/validators'
+import { useAuthStore } from '@/stores/authStore'
 
 export default {
   name: 'UserManagement',
@@ -148,19 +251,81 @@ export default {
     const { mi_hacienda } = storeToRefs(haciendaStore)
     const { currentPlan } = storeToRefs(planStore)
 
+    const snackbarStore = useSnackbarStore()
+    const authStore = useAuthStore()
+
     const auditores = ref([])
     const operadores = ref([])
     const createUserModalOpen = ref(false)
     const userTypeToCreate = ref('')
-    const validationErrors = ref({})
+
+    const validationStore = useValidationStore()
+
+    const visible = ref(false)
+    const usernameAvailable = ref(true)
+    const emailAvailable = ref(true)
 
     const newUser = ref({
       name: '',
       lastname: '',
       email: '',
       username: '',
-      password: ''
+      password: '',
+      passwordConfirm: '',
+      role: ''
     })
+
+    const rules = {
+      username: {
+        required,
+        minLength: minLength(3)
+      },
+      email: {
+        required,
+        email
+      },
+      name: { required },
+      lastname: { required },
+      password: { required, minLength: minLength(8) },
+      passwordConfirm: {
+        required,
+        sameAsPassword: sameAs(computed(() => newUser.value.password))
+      }
+    }
+
+    const v$ = useVuelidate(rules, newUser)
+
+    const formValid = computed(() => {
+      return !v$.value.$invalid && usernameAvailable.value && emailAvailable.value
+    })
+
+    const checkUsername = async () => {
+      if (newUser.value.username.length >= 3) {
+        try {
+          usernameAvailable.value = await validationStore.checkUsernameTaken(newUser.value.username)
+
+          console.log('pedido responde', usernameAvailable.value)
+        } catch (error) {
+          //   console.error('Error checking username:', error)
+          usernameAvailable.value = false
+        }
+      } else {
+        usernameAvailable.value = true
+      }
+    }
+    const checkEmail = async () => {
+      if (newUser.value.email) {
+        try {
+          emailAvailable.value = await validationStore.checkEmailTaken(newUser.value.email)
+          console.log('checking Email availability:', newUser.value.email)
+        } catch (error) {
+          console.log('Error checking email:', error)
+          emailAvailable.value = false
+        }
+      } else {
+        emailAvailable.value = true
+      }
+    }
 
     const canAddAuditor = computed(() => {
       return auditores.value.length < currentPlan.value.auditores
@@ -188,6 +353,17 @@ export default {
         console.error(`No puede agregar más ${userType}es. Limite del plan alcanzado.`)
         return
       }
+
+      newUser.value = {
+        name: '',
+        lastname: '',
+        email: '',
+        username: '',
+        password: '',
+        passwordConfirm: '',
+        role: userType // Set role when opening the modal
+      }
+
       userTypeToCreate.value = userType
       createUserModalOpen.value = true
     }
@@ -203,14 +379,30 @@ export default {
         return
       }
 
+      const isValid = await v$.value.$validate()
+      if (!isValid) {
+        snackbarStore.showSnackbar('Please correct the errors in the form', 'error')
+        return
+      }
+
       try {
-        await haciendaStore.createHaciendaUser({
-          ...newUser.value,
-          role: userTypeToCreate.value,
-          hacienda: mi_hacienda.value.id
-        })
+        const registrationData = {
+          username: newUser.value.username,
+          email: newUser.value.email,
+          firstname: newUser.value.name,
+          lastname: newUser.value.lastname,
+          password: newUser.value.password,
+          hacienda: mi_hacienda.value.id,
+          role: newUser.value.role // Include role in registration data
+        }
+
+        console.log('newUser.value.role:', newUser.value.role)
+        console.log('registrationData:', registrationData)
+
+        await authStore.register(registrationData, newUser.value.role)
+
         createUserModalOpen.value = false
-        newUser.value = { name: '', lastname: '', email: '', username: '', password: '' }
+        //      newUser.value = { name: '', lastname: '', email: '', username: '', password: '' }
         await fetchHaciendaUsers()
       } catch (error) {
         console.error('Error al crear el usuario:', error.message)
@@ -237,7 +429,16 @@ export default {
       operadores,
       createUserModalOpen,
       userTypeToCreate,
-      validationErrors,
+
+      v$,
+      formValid,
+
+      usernameAvailable,
+      emailAvailable,
+      checkUsername,
+      checkEmail,
+      visible,
+
       newUser,
       canAddAuditor,
       canAddOperador,

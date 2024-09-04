@@ -82,7 +82,14 @@ export const useAuthStore = defineStore('auth', {
       console.log('new_role:', new_role)
 
       try {
+        const emailExists = await validationStore.checkEmailTaken(formData.email)
+
+        if (!emailExists) {
+          return
+        }
+
         let haciendaId
+        let verified_user
 
         if (new_role === 'administrador') {
           console.log('entrando a administrador en registro:')
@@ -95,8 +102,13 @@ export const useAuthStore = defineStore('auth', {
           const newHacienda = await haciendaStore.createHacienda(formData.hacienda, gratisPlan.id)
 
           haciendaId = newHacienda.id
+          verified_user = false
         } else {
+          console.log('entrando a NO administrador en registro:')
+
           haciendaId = formData.hacienda
+          //        verified_user = true //should be true, but at the time, pocketbase doesnt handle
+          verified_user = false
         }
 
         const userData = this.createUserData(
@@ -106,12 +118,13 @@ export const useAuthStore = defineStore('auth', {
           formData.lastname,
           formData.password,
           new_role,
-          haciendaId
+          haciendaId,
+          verified_user
         )
 
         console.log('user_data:', userData)
 
-        const record = await pb.collection('users').create(userData)
+        await pb.collection('users').create(userData)
 
         if (new_role === 'administrador') {
           await this.sendVerificationEmail(formData.email)
@@ -122,10 +135,6 @@ export const useAuthStore = defineStore('auth', {
           )
           this.registrationSuccess = true
         } else {
-          await pb.collection('users').update(record.id, {
-            verified: true
-          })
-
           snackbarStore.showSnackbar('Usuario ' + new_role + ' Registrado con éxito', 'success')
         }
       } catch (error) {
@@ -142,7 +151,16 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    createUserData(username, email, firstname, lastname, password, new_role, new_hacienda) {
+    createUserData(
+      username,
+      email,
+      firstname,
+      lastname,
+      password,
+      new_role,
+      new_hacienda,
+      verified
+    ) {
       return {
         username,
         email,
@@ -153,7 +171,8 @@ export const useAuthStore = defineStore('auth', {
         lastname,
         role: new_role,
         info: 'Usuario de hacienda',
-        hacienda: new_hacienda
+        hacienda: new_hacienda,
+        verified: verified
       }
     },
 

@@ -413,7 +413,7 @@ export default {
           hacienda: registerForm.value.hacienda
         }
 
-        await authStore.register(registrationData, 'administrador', 1)
+        await authStore.register(registrationData, 'administrador')
 
         //     await authStore.register({ ...registerForm.value }, 'administrador', 1)
 

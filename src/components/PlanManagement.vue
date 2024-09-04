@@ -2,7 +2,7 @@
   <div class="rounded-lg border-2 px-4 py-4">
     <div class="flex items-center space-x-2 mb-4">
       <h2 class="text-l font-bold">Plan Actual</h2>
-      <v-chip :color="getPlanColor" size="small">
+      <v-chip :color="getPlanColor" variant="tonal" size="small">
         {{ currentPlan.nombre }}
 
         <v-tooltip class="text-sm font-bold" activator="parent" location="bottom"
@@ -13,7 +13,7 @@
       <v-btn
         size="x-small"
         variant="flat"
-        rounded="sm"
+        rounded="smlg"
         prepend-icon="mdi-check"
         color="green-lighten-3"
         @click="openChangePlanModal"
@@ -25,7 +25,7 @@
     <v-dialog v-model="changePlanModalOpen" max-width="600px">
       <v-card>
         <v-card-title
-          ><h1 className="text-2xl font-bold text-center mt-4">Seleccione su Plan</h1></v-card-title
+          ><h1 class="text-2xl font-bold text-center mt-2">Seleccione su Plan</h1></v-card-title
         >
         <!--       <v-card-text>
           <v-radio-group class="compact-form" v-model="selectedPlan">
@@ -40,43 +40,45 @@
 -->
         <v-card-text>
           <v-radio-group class="compact-form" v-model="selectedPlan">
-            <div className="grid grid-cols-3  gap-2">
-              <div
-                v-for="plan in availablePlans"
-                :key="plan.id"
-                className="bg-white rounded-lg shadow-md overflow-hidden border-2 flex flex-col"
-              >
-                <div className="p-4 flex-grow">
-                  <h2 className="text-xl text-align-center font-semibold mb-2">
-                    {{ plan.nombre }}
-                  </h2>
-                  <p className="text-3xl text-align-center font-bold mb-6">${{ plan.precio }}</p>
-                  <ul className="space-y-2">
-                    <li className="flex items-center text-sm">
-                      <v-icon color="green-lighten-2" aria-hidden="false"> mdi-account </v-icon>
-                      Auditores: {{ plan.auditores }}
-                    </li>
-                    <li className="flex items-center text-sm">
-                      <v-icon aria-hidden="false" color="green-lighten-2"> mdi-account </v-icon>
-                      Operadores: {{ plan.operadores }}
-                    </li>
-                  </ul>
-                </div>
-                <div className="p-6 bg-gray-50">
-                  <v-radio
-                    class="text-xs font-bold"
-                    :key="plan.id"
-                    :label="`Seleccionar`"
-                    :value="plan.id"
-                  ></v-radio>
-                </div>
+            <div class="grid grid-cols-3 gap-2">
+              <div v-for="plan in availablePlans" :key="plan.id">
+                <v-hover
+                  ><template v-slot:default="{ isHovering, props }">
+                    <v-card
+                      class="p-4 m-2 bg-white rounded-lg shadow-md overflow-hidden border-2 flex flex-col"
+                      v-bind="props"
+                      :color="isHovering ? 'green-lighten-2' : undefined"
+                    >
+                      <h2 class="text-xl text-align-center font-semibold mb-2">
+                        {{ plan.nombre }}
+                      </h2>
+                      <p class="text-4xl text-align-center font-bold mb-6">${{ plan.precio }}</p>
+                      <ul class="space-y-2">
+                        <li class="flex items-center text-sm">
+                          <v-icon color="green-lighten-2" aria-hidden="false"> mdi-account </v-icon>
+                          Auditores: {{ plan.auditores }}
+                        </li>
+                        <li class="flex items-center text-sm">
+                          <v-icon aria-hidden="false" color="green-lighten-2"> mdi-account </v-icon>
+                          Operadores: {{ plan.operadores }}
+                        </li>
+                      </ul>
+                      <br />
+                      <v-radio
+                        class="text-xs font-bold"
+                        :key="plan.id"
+                        :label="`Seleccionar`"
+                        :value="plan.id"
+                      ></v-radio>
+                    </v-card>
+                  </template>
+                </v-hover>
               </div>
             </div>
           </v-radio-group>
         </v-card-text>
 
         <v-card-actions>
-          <v-spacer></v-spacer>
           <v-btn
             size="small"
             variant="flat"
@@ -122,13 +124,13 @@ export default {
     const getPlanColor = computed(() => {
       switch (currentPlan.value.nombre.toLowerCase()) {
         case 'gratis':
-          return 'grey'
+          return 'grey-lighten-2'
         case 'basico':
-          return 'blue'
+          return 'blue-lighten-2'
         case 'premium':
-          return 'purple'
+          return 'purple-lighten-2'
         default:
-          return 'grey'
+          return 'grey-lighten-2'
       }
     })
 
