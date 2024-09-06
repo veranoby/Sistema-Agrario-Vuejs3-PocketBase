@@ -1,23 +1,25 @@
 <template>
-  <v-card class="pa-4 rounded-lg border-2">
-    <v-card-title class="compact-form-2">
-      <v-file-input
-        v-model="avatarFile"
-        prepend-icon="mdi-camera"
-        label="Upload Avatar"
-        accept="image/*"
-        @change="handleAvatarUpload"
-        show-size
-      ></v-file-input>
-    </v-card-title>
-    <v-card-text>
-      <div class="flex items-center">
-        <v-avatar size="128" class="mr-4">
-          <v-img :src="avatarUrl" alt="Avatar"></v-img>
-        </v-avatar>
-      </div>
-    </v-card-text>
-  </v-card>
+  <div class="flex justify-center items-center p-2">
+    <v-card class="p-2 rounded-lg border-2">
+      <v-card-title class="compact-form-2">
+        <v-file-input
+          v-model="avatarFile"
+          prepend-icon="mdi-camera"
+          label="Upload Avatar"
+          accept="image/*"
+          @change="handleAvatarUpload"
+          show-size
+        ></v-file-input>
+      </v-card-title>
+      <v-card-text>
+        <div class="flex items-center">
+          <v-avatar size="128" class="mr-4">
+            <v-img :src="avatarUrl" alt="Avatar"></v-img>
+          </v-avatar>
+        </div>
+      </v-card-text>
+    </v-card>
+  </div>
 </template>
 
 <script>

@@ -15,7 +15,7 @@ export const useHaciendaStore = defineStore('hacienda', {
   actions: {
     async fetchHacienda(haciendaId) {
       try {
-        const hacienda = await pb.collection('HaciendaLabel').getOne(haciendaId)
+        const hacienda = await pb.collection('Haciendas').getOne(haciendaId)
         this.mi_hacienda = hacienda
         return hacienda
       } catch (error) {
@@ -73,7 +73,7 @@ export const useHaciendaStore = defineStore('hacienda', {
 
       try {
         const updatedHacienda = await pb
-          .collection('HaciendaLabel')
+          .collection('Haciendas')
           .update(this.mi_hacienda.id, haciendaData)
         this.mi_hacienda = updatedHacienda
         snackbarStore.showSnackbar('Hacienda information updated successfully', 'success')
@@ -96,7 +96,7 @@ export const useHaciendaStore = defineStore('hacienda', {
           info: '',
           plan: haciendaPlan
         }
-        const newHacienda = await pb.collection('HaciendaLabel').create(haciendaData)
+        const newHacienda = await pb.collection('Haciendas').create(haciendaData)
         //     this.mi_hacienda = newHacienda
         snackbarStore.showSnackbar('Hacienda created successfully', 'success')
         return newHacienda

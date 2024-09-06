@@ -1,27 +1,45 @@
 <template>
-  <div class="container mx-auto py-12 px-4 md:px-6 lg:px-8">
-    <div class="grid grid-cols-1 rounded-lg border-4 px-2 py-2">
-      <div class="grid gap-4 grid-cols-2 px-2 py-2">
-        <ProfileInfo />
-        <!-- Placeholder for AvatarUpload component -->
-        <AvatarUpload />
-      </div>
+  <br />
+  <div
+    class="d-flex justify-space-between align-center"
+    style="background-color: #ecf2ff; padding: 16px; border-radius: 12px"
+  >
+    <h3 class="text-h5 font-bold mb-0">
+      Perfil Social
+      <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1">
+        {{ userRole }}
+      </v-chip>
+    </h3>
+    <div class="d-none d-lg-block">
+      <img
+        src="https://modernize-vuejs.adminmart.com/assets/ChatBc-DjKi8DA-.png"
+        alt="breadcrumb"
+        style="max-height: 75px"
+      /><!-- Ajusta el tamaño de la imagen si es necesario -->
+    </div>
+  </div>
+
+  <div class="grid grid-cols-3 gap-4 p-2 m-2">
+    <div class="col-span-2 p-2 m-2">
+      <ProfileInfo />
       <!-- Placeholder for PasswordChange component -->
       <PasswordChange />
     </div>
+    <!-- Placeholder for AvatarUpload component -->
+    <AvatarUpload />
+  </div>
 
-    <div
-      v-if="isAdmin"
-      class="mt-12 grid grid-cols-1 gap-8 md:grid-cols-2 rounded-lg border-4 px-4 py-4"
-    >
-      <!-- Placeholder for HaciendaInfo component -->
-      <HaciendaInfo />
-      <!-- Placeholder for UserManagement component (if user is admin) -->
-      <div>
-        <PlanManagement />
-        <br />
-        <UserManagement />
-      </div>
+  <div
+    v-if="isAdmin"
+    class="mt-12 grid grid-cols-1 gap-8 md:grid-cols-2 rounded-lg border-4 px-4 py-4"
+  >
+    <!-- Placeholder for HaciendaInfo component -->
+    <HaciendaInfo />
+    <!-- Placeholder for UserManagement component (if user is admin) -->
+    <div>
+      <PlanManagement />
+      <br />
+      <UserManagement />
     </div>
   </div>
 </template>
@@ -62,12 +80,14 @@ export default defineComponent({
     const { currentPlan } = storeToRefs(planStore)
 
     const isAdmin = computed(() => user.value?.role === 'administrador')
+    const userRole = computed(() => user.value?.role || '')
 
     return {
       user,
       mi_hacienda,
       currentPlan,
-      isAdmin
+      isAdmin,
+      userRole
     }
   }
 })

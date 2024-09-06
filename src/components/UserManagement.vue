@@ -106,7 +106,7 @@
               <v-text-field
                 append-inner-icon="mdi-alert-octagon"
                 class="compact-form"
-                bg-color="orange-lighten-1"
+                bg-color="grey-lighten-1"
                 readonly
                 disabled
                 rounded

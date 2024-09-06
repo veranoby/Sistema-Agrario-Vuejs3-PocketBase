@@ -1,56 +1,79 @@
 <template>
-  <v-form @submit.prevent="changePassword" class="mt-8">
-    <div class="grid grid-cols-1 rounded-lg border-2 px-2 py-2">
-      <h2 class="text-l font-bold">Cambiar contraseña</h2>
+  <div>
+    <v-btn
+      class="w-full p-2"
+      variant="outlined"
+      rounded="lg"
+      color="grey-lighten-1"
+      prepend-icon="mdi-lock"
+      @click="openDialog"
+    >
+      Cambiar Contraseña
+    </v-btn>
 
-      <div class="grid grid-cols-3 gap-2">
-        <v-text-field
-          v-model="oldPassword"
-          label="Contraseña actual"
-          variant="outlined"
-          type="password"
-          density="compact"
-          class="compact-form"
-          :error-messages="errors.oldPassword"
-        ></v-text-field>
+    <!-- Diálogo para cambiar la contraseña -->
+    <v-dialog v-model="dialogOpen" max-width="600px">
+      <v-card>
+        <v-card-title>Cambiar Contraseña</v-card-title>
+        <v-card-text>
+          <v-form @submit.prevent="changePassword">
+            <v-text-field
+              class="compact-form"
+              v-model="oldPassword"
+              label="Contraseña actual"
+              variant="outlined"
+              type="password"
+              density="compact"
+              :error-messages="errors.oldPassword"
+            ></v-text-field>
 
-        <v-text-field
-          v-model="newPassword"
-          label="Nueva contraseña"
-          variant="outlined"
-          type="password"
-          density="compact"
-          class="compact-form"
-          :error-messages="errors.newPassword"
-        ></v-text-field>
+            <v-text-field
+              class="compact-form"
+              v-model="newPassword"
+              label="Nueva contraseña"
+              variant="outlined"
+              type="password"
+              density="compact"
+              :error-messages="errors.newPassword"
+            ></v-text-field>
 
-        <v-text-field
-          v-model="confirmPassword"
-          label="Confirmar nueva contraseña"
-          variant="outlined"
-          type="password"
-          density="compact"
-          class="compact-form"
-          :error-messages="errors.confirmPassword"
-        ></v-text-field>
-      </div>
-      <div class="grid grid-cols-2">
-        <div class="text-left mt-4">
+            <v-text-field
+              v-model="confirmPassword"
+              class="compact-form"
+              label="Confirmar nueva contraseña"
+              variant="outlined"
+              type="password"
+              density="compact"
+              :error-messages="errors.confirmPassword"
+            ></v-text-field>
+          </v-form>
+        </v-card-text>
+        <v-card-actions>
           <v-btn
             size="small"
             variant="flat"
             rounded="lg"
-            prepend-icon="mdi-lock-reset"
+            prepend-icon="mdi-cancel"
             color="red-lighten-3"
-            type="submit"
+            @click="dialogOpen = false"
+          >
+            Cancelar
+          </v-btn>
+          <v-btn
+            size="small"
+            variant="flat"
+            rounded="lg"
+            prepend-icon="mdi-check"
+            color="green-lighten-3"
+            @click="changePassword"
             :loading="isLoading"
           >
             Cambiar contraseña
           </v-btn>
-        </div>
-      </div>
-    </div>
-  </v-form>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  </div>
 </template>
 
 <script>
@@ -64,6 +87,7 @@ export default defineComponent({
     const profileStore = useProfileStore()
     //   const snackbarStore = useSnackbarStore()
 
+    const dialogOpen = ref(false)
     const oldPassword = ref('')
     const newPassword = ref('')
     const confirmPassword = ref('')
@@ -112,6 +136,7 @@ export default defineComponent({
         oldPassword.value = ''
         newPassword.value = ''
         confirmPassword.value = ''
+        dialogOpen.value = false // Cerrar el diálogo después de cambiar la contraseña
       } catch (error) {
         //  snackbarStore.showSnackbar('Error al cambiar la contraseña: ' + error.message, 'error')
       } finally {
@@ -119,13 +144,19 @@ export default defineComponent({
       }
     }
 
+    const openDialog = () => {
+      dialogOpen.value = true
+    }
+
     return {
+      dialogOpen,
       oldPassword,
       newPassword,
       confirmPassword,
       isLoading,
       errors,
-      changePassword
+      changePassword,
+      openDialog
     }
   }
 })
