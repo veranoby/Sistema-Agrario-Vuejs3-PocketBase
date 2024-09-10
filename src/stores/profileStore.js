@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
 import { useSnackbarStore } from './snackbarStore'
+import placeholderUser from '@/assets/placeholder-user.png'
 
 export const useProfileStore = defineStore('profile', {
   state: () => ({
@@ -15,7 +16,7 @@ export const useProfileStore = defineStore('profile', {
 
         //    return `${pb.baseUrl}/api/files/${state.user.collectionName}/${state.user.id}/${state.user.avatar}`
       }
-      return '../assets/placeholder-user.jpg'
+      return placeholderUser
     },
     fullName: (state) => (state.user ? `${state.user.name} ${state.user.lastname}` : '')
   },

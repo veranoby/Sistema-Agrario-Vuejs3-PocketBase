@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
 import { useSnackbarStore } from './snackbarStore'
+import placeholderHacienda from '@/assets/granja.png'
 
 export const useHaciendaStore = defineStore('hacienda', {
   state: () => ({
@@ -9,15 +10,19 @@ export const useHaciendaStore = defineStore('hacienda', {
   }),
 
   getters: {
-    haciendaName: (state) => (state.mi_hacienda ? state.mi_hacienda.name : '')
+    haciendaName: (state) => state.mi_hacienda?.name || '',
+    avatarHaciendaUrl: (state) => {
+      if (state.mi_hacienda?.avatar) {
+        return pb.getFileUrl(state.mi_hacienda, state.mi_hacienda.avatar)
+      }
+      return placeholderHacienda
+    }
   },
 
   actions: {
     async fetchHacienda(haciendaId) {
       try {
-        const hacienda = await pb.collection('Haciendas').getOne(haciendaId)
-        this.mi_hacienda = hacienda
-        return hacienda
+        this.mi_hacienda = await pb.collection('Haciendas').getOne(haciendaId)
       } catch (error) {
         handleError(error, 'Error loading hacienda information')
       }
@@ -35,23 +40,6 @@ export const useHaciendaStore = defineStore('hacienda', {
         handleError(error, 'Error fetching hacienda users')
       }
     },
-
-    /*
-    async createHaciendaUser(userData) {
-      //listo
-      const snackbarStore = useSnackbarStore()
-      snackbarStore.showLoading()
-
-      try {
-        const newUser = await pb.collection('users').create(userData)
-        snackbarStore.showSnackbar('User created successfully', 'success')
-        return newUser
-      } catch (error) {
-        handleError(error, 'Failed to create user')
-      } finally {
-        snackbarStore.hideLoading()
-      }
-    },*/
 
     async deleteHaciendaUser(userId) {
       const snackbarStore = useSnackbarStore()
@@ -72,6 +60,11 @@ export const useHaciendaStore = defineStore('hacienda', {
       snackbarStore.showLoading()
 
       try {
+        // Convertir el nombre a mayúsculas si está presente
+        if (haciendaData.name) {
+          haciendaData.name = haciendaData.name.toUpperCase()
+        }
+
         const updatedHacienda = await pb
           .collection('Haciendas')
           .update(this.mi_hacienda.id, haciendaData)
@@ -91,7 +84,7 @@ export const useHaciendaStore = defineStore('hacienda', {
 
       try {
         const haciendaData = {
-          name: haciendaName.toUpperCase(),
+          name: haciendaName.toUpperCase(), // Convertir a mayúsculas
           location: '',
           info: '',
           plan: haciendaPlan
@@ -105,6 +98,26 @@ export const useHaciendaStore = defineStore('hacienda', {
       } finally {
         snackbarStore.hideLoading()
       }
+    },
+
+    async updateHaciendaAvatar(avatarFile) {
+      const snackbarStore = useSnackbarStore()
+      snackbarStore.showLoading()
+
+      try {
+        const formData = new FormData()
+        formData.append('avatar', avatarFile)
+
+        this.mi_hacienda = await pb.collection('Haciendas').update(this.mi_hacienda.id, formData)
+
+        snackbarStore.showSnackbar('Avatar de hacienda actualizado con éxito', 'success')
+      } catch (error) {
+        handleError(error, 'Error al actualizar el avatar de la hacienda')
+      } finally {
+        snackbarStore.hideLoading()
+      }
     }
+
+    // ... otros métodos ...
   }
 })

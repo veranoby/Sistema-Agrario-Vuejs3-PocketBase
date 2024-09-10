@@ -7,7 +7,7 @@ import ContactUs from '@/components/ContactUs.vue'
 import FAQ from '@/components/FAQ.vue'
 import Dashboard from '@/components/Dashboard.vue'
 import EmailConfirmation from '@/components/Confirmation.vue' // Import the new page
-import ProfileComponent from '@/components/Profile.vue'
+import ProfileComponent from '@/components/UserProfile.vue'
 
 const routes = [
   { path: '/', component: HomeComp },

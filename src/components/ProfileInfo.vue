@@ -20,7 +20,7 @@
       <div class="mb-2">
         <v-icon class="mr-2">mdi-information</v-icon>
 
-        My Info
+        Mi Info
       </div>
       <p class="text-xs">{{ user.info }}</p>
     </div>
@@ -30,42 +30,13 @@
     class="w-full p-2"
     variant="outlined"
     rounded="lg"
-    color="green-lighten-3"
+    color="green-lighten-1"
     prepend-icon="mdi-pencil"
     @click="openDialog"
   >
     Editar Perfil
   </v-btn>
   <br /><br />
-  <!-- Visualización de la información del perfil 
-    <div class="pa-4">
-      <div v-if="user" class="grid grid-cols-2 gap-2">
-        <div class="col-span-2 grid grid-cols-2 gap-4">
-          <div class="flex items-center">
-            <div>
-              <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1"
-                ><v-icon class="mr-2">mdi-account-circle</v-icon>
-                {{ user.username }}
-              </v-chip>
-              {{ user.name }} {{ user.lastname }}
-            </div>
-            <br />
-            <div>
-              <v-icon class="mr-2">mdi-email</v-icon>
-              <div>{{ user.email }}</div>
-            </div>
-          </div>
-
-          <div class="flex items-center">
-            <v-icon class="mr-2">mdi-information</v-icon>
-            <div>Mi Informacion</div>
-            <br />
-            <div>{{ user.info }}</div>
-          </div>
-        </div>
-      </div>
-      <br />
-    </div>-->
 
   <!-- Diálogo para editar el perfil -->
   <v-dialog v-model="dialogOpen" max-width="600px">

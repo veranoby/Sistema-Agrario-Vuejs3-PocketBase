@@ -10,7 +10,8 @@
               {{ userRole }}
             </v-chip>
             <v-chip variant="flat" size="x-small" color="green-lighten-3" class="mx-1">
-              HACIENDA: {{ haciendaName }}
+              <v-avatar start> <v-img :src="avatarHaciendaUrl" alt="Avatar"></v-img> </v-avatar>
+              HACIENDA: {{ mi_hacienda.name }}
             </v-chip>
           </h1>
         </div>
@@ -215,6 +216,7 @@ import { computed } from 'vue'
 import { useProfileStore } from '@/stores/profileStore'
 
 import { useHaciendaStore } from '@/stores/haciendaStore'
+import { storeToRefs } from 'pinia'
 
 export default {
   name: 'DashboardComponent',
@@ -223,11 +225,14 @@ export default {
     const haciendaStore = useHaciendaStore()
 
     const fullName = computed(() => profileStore.fullName)
-    const haciendaName = computed(() => haciendaStore.mi_hacienda.name)
+    // const haciendaName = computed(() => haciendaStore.mi_hacienda.name)
+
+    const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
+
     const userRole = computed(() => profileStore.user.role)
     const avatarUrl = computed(() => profileStore.avatarUrl)
 
-    return { fullName, haciendaName, userRole, avatarUrl }
+    return { fullName, userRole, avatarUrl, mi_hacienda, avatarHaciendaUrl }
   }
 }
 </script>
