@@ -1,16 +1,16 @@
 <template>
   <v-sheet v-if="isLoggedIn">
-    <v-list>
-      <v-list-item to="/dashboard" link>
-        <v-list-item-title>Dashboard</v-list-item-title>
-      </v-list-item>
-    </v-list>
     <v-list v-if="navigationLinks && navigationLinks.length > 0">
       <v-list-item v-for="link in navigationLinks" :key="link.id" :to="link.to" link>
+        <template v-slot:prepend>
+          <v-icon :icon="link.icon"></v-icon>
+        </template>
         <v-list-item-title>{{ link.label }}</v-list-item-title>
       </v-list-item>
     </v-list>
-    <v-alert v-else type="error"> Error: Failed to load pocketbase navigation links... </v-alert>
+    <v-alert v-else type="error">
+      Error: No se pudieron cargar los enlaces de navegación de pocketbase...
+    </v-alert>
   </v-sheet>
 </template>
 

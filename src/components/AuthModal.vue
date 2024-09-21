@@ -1,5 +1,11 @@
 <template>
-  <v-dialog v-model="dialogModel" max-width="500px">
+  <v-dialog
+    v-model="dialogModel"
+    max-width="600px"
+    persistent
+    transition="dialog-bottom-transition"
+    scrollable
+  >
     <v-card>
       <v-tabs v-model="tab" fixed-tabs>
         <v-tab value="login"><v-icon icon="mdi-login"></v-icon> &nbsp; Login</v-tab>

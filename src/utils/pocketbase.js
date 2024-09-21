@@ -36,6 +36,8 @@ zonas:
   gps: json  # Para geolocalización, formato: {lat: number, lng: number}
   bpa: boolean  # Bandera para control de buenas prácticas agrícolas
   siembra: relation(siembras)  # Relación con la siembra actual
+  area: json # para organizar el tamaño, formato: (area: number, unidad: string)
+  contabilizable: boolean # si es una zona contabilizable para cosecha (sumaria las areas de las siembras contabilizables para que SIEMBRAS genere un total)
   avatar: file
 
 # Colección: siembras
@@ -70,7 +72,8 @@ actividades:
   tipo: relation(tipos_actividades)
   nombre: string
   descripcion: string
-  regularidad: json  # Estructura para definir la frecuencia y duración
+  regularidad: json  # Estructura para definir: si tiene recordatorio, id del recordatorio, la frecuencia y duración relacionado a su recordatorio
+  zonas: json  # Estructura para definir: los ids de loas zonas que participaran en esta actividad. puede ser vacio, pueden ser multiples zonas.
   activa: boolean
   metricas_requeridas: json  # Define qué métricas se deben registrar para esta actividad
 
@@ -82,7 +85,7 @@ bitacora:
   hacienda: relation(haciendas)
   fecha: date
   actividad: relation(actividades)
-  zona: relation(zonas)
+  zona: relation(zonas). pueden ser multiples
   descripcion: string
   responsable: relation(users)
   estado: select(planificada, en_progreso, completada, cancelada)

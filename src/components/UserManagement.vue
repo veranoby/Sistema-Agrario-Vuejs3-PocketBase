@@ -1,5 +1,5 @@
 <template>
-  <div class="rounded-lg border-2 px-4 py-4">
+  <div class="rounded-lg border-2 px-4 py-4 shadow-md hover:shadow-xl">
     <h2 class="text-xl font-bold mb-4">Mis Usuarios</h2>
 
     <div class="mb-6">
@@ -96,7 +96,13 @@
       </v-chip>
     </div>
 
-    <v-dialog v-model="createUserModalOpen" max-width="500px">
+    <v-dialog
+      v-model="createUserModalOpen"
+      max-width="600px"
+      persistent
+      transition="dialog-bottom-transition"
+      scrollable
+    >
       <v-card>
         <v-form @submit.prevent="createUser">
           <v-card-title>

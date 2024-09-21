@@ -1,5 +1,9 @@
 @import './base.css';
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 #app {
   max-width: 1280px;
   margin: 0 auto;
@@ -48,11 +52,94 @@ a,
 
 body {
   background-color: var(--color-background);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 500;
 }
+*,
+*::before,
+*::after {
+  font-weight: 600;
+}
+
+/*cabeceras y avatar */
+
+.profile-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  background-color: var(--fondo_claro);
+  padding: 24px; /* Incrementado de 16px a 24px */
+  border-radius: 12px;
+  min-height: 100px; /* Añadido para establecer una altura mínima */
+
+  margin: 20px 0px 10px 20px;
+}
+
+.profile-title {
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin-bottom: 0;
+  position: relative;
+  z-index: 10;
+}
+
+.avatar-container {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 200px;
+
+  overflow: hidden;
+}
+
+.avatar-image {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+  mask-image: linear-gradient(to right, transparent, black 75%);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 75%);
+}
+
+/*CKEditor */
+
+.ck-editor__main,
+.ck-content {
+  min-height: 200px;
+}
+
+.ck-content {
+  padding: 5px 20px 5px 30px !important;
+}
+
+/*Arreglos Tablas Dinamicas */
+
+.v-data-table,
+.tabla-compacta,
+.v-table {
+  font-size: 0.75rem !important;
+  background-color: var(--fondo_claro_tabla) !important ;
+  border-radius: 8px !important;
+}
+
+.v-data-table .v-data-table__expanded {
+  box-shadow: inset 0 3px 6px -3px rgba(0, 0, 0, 0.2) !important;
+}
+
+.v-table thead {
+  background-color: var(--fondo_claro_tabla) !important ;
+  font-size: 0.8rem !important; /* Aumenta el tamaño de la fuente */
+  box-shadow: inset 0 3px 6px -3px rgba(0, 0, 0, 0.2) !important;
+}
+
+/*arreglo a formularios vuetify */
 
 .compact-form {
   transform: scale(0.8);
   transform-origin: left;
+  font-weight: 600;
 
   width: 120%;
 }
@@ -60,6 +147,28 @@ body {
 .compact-form-2 {
   transform: scale(0.66);
   transform-origin: left;
+  font-weight: 700;
 
   width: 130%;
+}
+
+.siembra-header,
+.siembra-info,
+.bitacora-section,
+.zonas-section,
+.bg-dinamico {
+  border-radius: 8px !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  border-color: var(--fondo_claro) !important ;
+  background-color: var(--fondo_claro_tabla) !important ;
+}
+
+/*Arreglos a Vuetify */
+
+.v-expand-transition {
+  transition-duration: 0.5s !important;
+}
+
+.v-expand-transition .v-expand-transition__container {
+  transition: all 0.5s ease-in-out !important;
 }

@@ -57,11 +57,11 @@ export default {
       showAuthModal.value = false
       // Update the sidebar and login button here
       navigationLinks.value = [
-        { id: 1, to: '/dashboard', label: 'Dashboard' }
+        { id: 1, to: '/dashboard', label: 'Dashboard', icon: 'mdi-view-dashboard' },
+        { id: 2, to: '/siembras', label: 'Siembras', icon: 'mdi-sprout' },
+        { id: 3, to: '/zonas', label: 'Zonas', icon: 'mdi-map-marker' }
         // Add more navigation links as needed
       ]
-      // We don't need to navigate here as it's handled in authStore
-      //  router.push('/dashboard')
     }
 
     watch(isLoggedIn, (newValue) => {

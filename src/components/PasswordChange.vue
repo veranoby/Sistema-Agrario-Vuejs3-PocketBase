@@ -1,8 +1,9 @@
 <template>
-  <div>
+  <div class="mt-4">
     <v-btn
-      class="w-full p-2"
-      variant="outlined"
+      min-width="210"
+      size="small"
+      variant="flat"
       rounded="lg"
       color="grey-lighten-1"
       prepend-icon="mdi-lock"
@@ -12,7 +13,13 @@
     </v-btn>
 
     <!-- Diálogo para cambiar la contraseña -->
-    <v-dialog v-model="dialogOpen" max-width="600px">
+    <v-dialog
+      v-model="dialogOpen"
+      max-width="500px"
+      persistent
+      transition="dialog-bottom-transition"
+      scrollable
+    >
       <v-card>
         <v-card-title>Cambiar Contraseña</v-card-title>
         <v-card-text>
