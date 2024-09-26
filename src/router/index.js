@@ -11,6 +11,9 @@ import SiembrasConfig from '@/components/SiembrasConfig.vue'
 import SiembraWorkspace from '@/components/SiembraWorkspace.vue'
 import ZonasConfig from '@/components/zonasConfig.vue'
 
+import ActividadesConfig from '@/components/actividadesConfig.vue'
+import ActividadesWorkspace from '@/components/actividadesWorkspace.vue'
+
 const routes = [
   { path: '/', component: HomeComp },
   { path: '/about', component: AboutUs },
@@ -42,6 +45,16 @@ const routes = [
   {
     path: '/zonas',
     component: ZonasConfig,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/actividades',
+    component: ActividadesConfig,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/actividades/:id',
+    component: ActividadesWorkspace,
     meta: { requiresAuth: true }
   }
 ]

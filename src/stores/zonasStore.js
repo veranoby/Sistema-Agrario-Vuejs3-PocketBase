@@ -38,6 +38,27 @@ export const useZonasStore = defineStore('zonas', {
       try {
         // Convertimos el nombre a mayúsculas
         zonaData.nombre = zonaData.nombre.toUpperCase()
+
+        // Calcular bpa_estado basado en datos_bpa
+        if (zonaData.datos_bpa) {
+          const totalPreguntas = zonaData.datos_bpa.length
+          let puntosObtenidos = 0
+
+          zonaData.datos_bpa.forEach((pregunta) => {
+            if (pregunta.respuesta === 'Cumplido' || pregunta.respuesta === 'Disponible') {
+              puntosObtenidos += 100 // 100 puntos
+            } else if (pregunta.respuesta === 'En proceso') {
+              puntosObtenidos += 50 // 50 puntos
+            }
+            // Si la respuesta es "No implementado", no se suman puntos (0)
+          })
+
+          // Calcular el porcentaje de bpa_estado
+          zonaData.bpa_estado = Math.round((puntosObtenidos / (totalPreguntas * 100)) * 100) // Redondear a entero
+        } else {
+          zonaData.bpa_estado = 0 // Inicializar bpa_estado en 0 si no hay datos_bpa
+        }
+
         const record = await pb.collection('zonas').create(zonaData)
         this.zonas.push(record)
         useSnackbarStore().showSnackbar('Zona agregada exitosamente')
@@ -56,10 +77,30 @@ export const useZonasStore = defineStore('zonas', {
       this.loading = true
       this.error = null
       try {
-        // Convertimos el nombre a mayúsculas si está presente en updateData
         if (updateData.nombre) {
           updateData.nombre = updateData.nombre.toUpperCase()
         }
+
+        // Calcular bpa_estado basado en datos_bpa
+        if (updateData.datos_bpa) {
+          const totalPreguntas = updateData.datos_bpa.length
+          let puntosObtenidos = 0
+
+          updateData.datos_bpa.forEach((pregunta) => {
+            if (pregunta.respuesta === 'Cumplido' || pregunta.respuesta === 'Disponible') {
+              puntosObtenidos += 100 // 100 puntos
+            } else if (pregunta.respuesta === 'En proceso') {
+              puntosObtenidos += 50 // 50 puntos
+            }
+            // Si la respuesta es "No implementado", no se suman puntos (0)
+          })
+
+          // Calcular el porcentaje de bpa_estado
+          updateData.bpa_estado = Math.round((puntosObtenidos / (totalPreguntas * 100)) * 100) // Redondear a entero
+        } else {
+          updateData.bpa_estado = 0 // Inicializar bpa_estado en 0 si no hay datos_bpa
+        }
+
         const record = await pb.collection('zonas').update(id, updateData)
         const index = this.zonas.findIndex((z) => z.id === id)
         if (index !== -1) {

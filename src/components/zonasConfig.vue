@@ -62,10 +62,16 @@
                 ></v-text-field>
               </template>
 
-              <template #[`item.bpa`]="{ item }">
-                <v-icon :color="item.bpa ? 'green' : 'red'">
-                  {{ item.bpa ? 'mdi-check' : 'mdi-close' }}
-                </v-icon>
+              <template #[`item.bpa_estado`]="{ item }">
+                <span
+                  :class="{
+                    'text-red-500': item.bpa_estado < 40,
+                    'text-orange-500': item.bpa_estado >= 40 && item.bpa_estado < 80,
+                    'text-green-500': item.bpa_estado >= 80
+                  }"
+                >
+                  {{ item.bpa_estado }}%
+                </span>
               </template>
 
               <template #[`item.siembra`]="{ item }">
@@ -129,7 +135,7 @@
       </v-col>
     </v-row>
 
-    <v-dialog v-model="dialogoCrear" max-width="500px">
+    <v-dialog v-model="dialogoCrear" max-width="850px">
       <v-card>
         <v-card-title>
           <span class="text-h5">
@@ -138,39 +144,108 @@
         </v-card-title>
         <v-card-text>
           <v-form ref="form" v-model="formularioValido" lazy-validation>
-            <v-text-field
-              v-model="zonaEditando.nombre"
-              label="Nombre"
-              required
-              :rules="[(v) => !!v || 'El nombre es requerido']"
-            ></v-text-field>
-            <v-text-field
-              v-model.number="zonaEditando.area.area"
-              label="Área"
-              type="number"
-              required
-              :rules="[(v) => !!v || 'El área es requerida']"
-            ></v-text-field>
-            <v-select
-              v-model="zonaEditando.area.unidad"
-              :items="['m²', 'ha', 'km²']"
-              label="Unidad de área"
-              required
-              :rules="[(v) => !!v || 'La unidad es requerida']"
-            ></v-select>
-            <v-select
-              v-model="zonaEditando.siembra"
-              :items="siembrasActivas"
-              item-title="nombreCompleto"
-              item-value="id"
-              label="Siembra"
-            ></v-select>
-            <v-textarea v-model="zonaEditando.info" label="Información adicional"></v-textarea>
-            <v-switch v-model="zonaEditando.bpa" label="Buenas Prácticas Agrícolas"></v-switch>
-            <v-switch
-              v-model="zonaEditando.contabilizable"
-              label="Contabilizable para cosecha"
-            ></v-switch>
+            <v-row class="items-start">
+              <v-col cols="6" class="flex flex-col justify-start">
+                <!-- Columna izquierda -->
+                <v-text-field
+                  v-model="zonaEditando.nombre"
+                  label="Nombre"
+                  variant="outlined"
+                  density="compact"
+                  class="compact-form"
+                  required
+                  :rules="[(v) => !!v || 'El nombre es requerido']"
+                ></v-text-field>
+                <v-textarea
+                  variant="outlined"
+                  density="compact"
+                  class="compact-form"
+                  v-model="zonaEditando.info"
+                  label="Información adicional"
+                ></v-textarea>
+                <v-text-field
+                  v-model.number="zonaEditando.area.area"
+                  label="Área"
+                  type="number"
+                  variant="outlined"
+                  density="compact"
+                  class="compact-form"
+                  required
+                  :rules="[(v) => !!v || 'El área es requerida']"
+                ></v-text-field>
+                <v-select
+                  v-model="zonaEditando.area.unidad"
+                  variant="outlined"
+                  density="compact"
+                  class="compact-form"
+                  :items="['m²', 'ha', 'km²']"
+                  label="Unidad de área"
+                  required
+                  :rules="[(v) => !!v || 'La unidad es requerida']"
+                ></v-select>
+                <v-select
+                  v-model="zonaEditando.siembra"
+                  variant="outlined"
+                  density="compact"
+                  class="compact-form"
+                  :items="siembrasActivas"
+                  item-title="nombreCompleto"
+                  item-value="id"
+                  label="Siembra"
+                ></v-select>
+                <v-text-field
+                  v-model="zonaEditando.gps"
+                  variant="outlined"
+                  density="compact"
+                  class="compact-form"
+                  label="GPS (Lat, Lng)"
+                  placeholder="Ej: {lat: 0, lng: 0}"
+                ></v-text-field>
+                <v-checkbox
+                  v-model="zonaEditando.contabilizable"
+                  variant="outlined"
+                  density="compact"
+                  class="compact-form"
+                  label="Contabilizable"
+                ></v-checkbox>
+                <v-file-input
+                  v-model="zonaEditando.avatar"
+                  variant="outlined"
+                  density="compact"
+                  class="compact-form"
+                  label="Avatar"
+                  accept="image/*"
+                ></v-file-input>
+              </v-col>
+              <v-col cols="6" class="flex flex-col justify-start">
+                <!-- Sección para mostrar preguntas de datos_bpa -->
+                <div
+                  class="compact-form bg-dinamico rounded-lg p-3 border-4"
+                  v-if="tipoZonaActual.datos_bpa && tipoZonaActual.datos_bpa.preguntas_bpa"
+                >
+                  <h4 class="text-xl font-bold">SEGUIMIENTO BPA <br /><br /></h4>
+                  <div
+                    v-for="(pregunta, index) in tipoZonaActual.datos_bpa.preguntas_bpa"
+                    :key="index"
+                    class="mb-4"
+                  >
+                    <p class="font-bold">{{ pregunta.pregunta }}</p>
+                    <p v-if="pregunta.descripcion" class="mb-2 text-slate-800 font-extralight">
+                      {{ pregunta.descripcion }}
+                    </p>
+                    <!-- Solo muestra si existe -->
+                    <v-radio-group v-model="zonaEditando.datos_bpa[index].respuesta" class="mt-2">
+                      <v-radio
+                        v-for="(opcion, opcionIndex) in pregunta.opciones"
+                        :key="`${index}-${opcionIndex}`"
+                        :label="opcion"
+                        :value="opcion"
+                      ></v-radio>
+                    </v-radio-group>
+                  </div>
+                </div>
+              </v-col>
+            </v-row>
           </v-form>
         </v-card-text>
         <v-card-actions>
@@ -216,11 +291,10 @@ const zonaEditando = ref({
   nombre: '',
   area: { area: null, unidad: '' },
   info: '',
-  bpa: false,
-  contabilizable: false,
   tipo: null,
   hacienda: computed(() => mi_hacienda.value?.id),
-  siembra: null
+  siembra: null,
+  datos_bpa: []
 })
 const formularioValido = ref(true)
 const form = ref(null)
@@ -239,7 +313,7 @@ const search = ref('')
 
 const headers = [
   { title: 'Nombre', align: 'start', key: 'nombre' },
-  { title: 'BPA', align: 'center', key: 'bpa' },
+  { title: 'BPA', align: 'center', key: 'bpa_estado' },
   { title: 'Siembra', align: 'start', key: 'siembra' },
   { title: 'Acciones', key: 'actions', sortable: false, align: 'end' }
 ]
@@ -267,16 +341,15 @@ onMounted(async () => {
 
 const abrirDialogoCrear = (tipoZona) => {
   modoEdicion.value = false
-  tipoZonaActual.value = tipoZona
+  tipoZonaActual.value = tipoZona // Asignar el tipo de zona actual
   zonaEditando.value = {
     nombre: '',
     area: { area: null, unidad: '' },
     info: '',
-    bpa: false,
-    contabilizable: false,
     tipo: tipoZona.id,
     hacienda: mi_hacienda.value?.id,
-    siembra: null
+    siembra: null,
+    datos_bpa: (tipoZona.datos_bpa?.preguntas_bpa || []).map(() => ({ respuesta: null })) // Inicializar datos_bpa
   }
   dialogoCrear.value = true
 }
@@ -284,7 +357,7 @@ const abrirDialogoCrear = (tipoZona) => {
 const editarZona = (zona) => {
   modoEdicion.value = true
   tipoZonaActual.value = tiposZonas.value.find((tipo) => tipo.id === zona.tipo)
-  zonaEditando.value = { ...zona }
+  zonaEditando.value = { ...zona, datos_bpa: zona.datos_bpa || [] } // Asegurarse de que datos_bpa esté inicializado
   dialogoCrear.value = true
 }
 
@@ -296,10 +369,11 @@ const cerrarDialogo = () => {
 const guardarZona = async () => {
   if (form.value.validate()) {
     try {
+      const zonaToSave = { ...zonaEditando.value }
       if (modoEdicion.value) {
-        await actualizarZona(zonaEditando.value.id, zonaEditando.value)
+        await actualizarZona(zonaToSave.id, zonaToSave)
       } else {
-        await crearZona(zonaEditando.value)
+        await crearZona(zonaToSave)
       }
       cerrarDialogo()
       await cargarZonas()

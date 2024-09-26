@@ -23,6 +23,7 @@ tipos_zonas:
   updated: datetime
   nombre: string
   descripcion: string
+  datos_bpa: json (va a disponer de la seccion preguntas_bpa, en donde se encontraran las preguntas a responderse. generalmente en estructura pregunta,opciones,descripcion. pueden ser multiples preguntas)
 
 # Colección: zonas
 zonas:
@@ -39,6 +40,8 @@ zonas:
   area: json # para organizar el tamaño, formato: (area: number, unidad: string)
   contabilizable: boolean # si es una zona contabilizable para cosecha (sumaria las areas de las siembras contabilizables para que SIEMBRAS genere un total)
   avatar: file
+  bpa_estado: number (aqui se grabara el porcentaje de avance calculado del bpa para esta zona)
+  datos_bpa: JSON (aqui se grabaran las respuestas al formulario cargado por tipos_zonas para este tipo de elemento)
 
 # Colección: siembras
 siembras:
@@ -62,6 +65,8 @@ tipos_actividades:
   updated: datetime
   nombre: string
   descripcion: string
+  datos_bpa: json (va a disponer de la seccion preguntas_bpa, en donde se encontraran las preguntas a responderse. generalmente en estructura pregunta,opciones (radiobuttons),descripcion. pueden ser multiples preguntas)
+
 
 # Colección: actividades
 actividades:
@@ -72,10 +77,13 @@ actividades:
   tipo: relation(tipos_actividades)
   nombre: string
   descripcion: string
-  regularidad: json  # Estructura para definir: si tiene recordatorio, id del recordatorio, la frecuencia y duración relacionado a su recordatorio
-  zonas: json  # Estructura para definir: los ids de loas zonas que participaran en esta actividad. puede ser vacio, pueden ser multiples zonas.
+  recordatorio:  relation(recordatorios).
+  zonas:  relation(zonas). multiple.
+  siembra:  relation(siembras).
   activa: boolean
-  metricas_requeridas: json  # Define qué métricas se deben registrar para esta actividad
+  metricas: json  # Define qué métricas se deben registrar para esta actividad
+  bpa_estado: number (aqui se grabara el porcentaje de avance calculado del bpa para esta actividad)
+  datos_bpa: JSON (aqui se grabaran las respuestas al formulario cargado por tipos_zonas para este tipo de elemento)
 
 # Colección: bitacora
 bitacora:
