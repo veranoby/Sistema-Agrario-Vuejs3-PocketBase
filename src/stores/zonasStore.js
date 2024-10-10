@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { pb } from '@/utils/pocketbase'
 import { useSnackbarStore } from './snackbarStore'
 import { handleError } from '@/utils/errorHandler'
+import { useHaciendaStore } from './haciendaStore' // Añadir esta importación
 
 export const useZonasStore = defineStore('zonas', {
   state: () => ({
@@ -10,6 +11,18 @@ export const useZonasStore = defineStore('zonas', {
     loading: false,
     error: null
   }),
+
+  getters: {
+    // Nuevo getter para calcular el promedio de bpa_estado
+    promedioBpaEstado() {
+      const haciendaStore = useHaciendaStore()
+      const zonasHacienda = this.zonas.filter(
+        (zona) => zona.hacienda === haciendaStore.mi_hacienda?.id
+      )
+      const totalBpaEstado = zonasHacienda.reduce((acc, zona) => acc + (zona.bpa_estado || 0), 0)
+      return zonasHacienda.length ? Math.round(totalBpaEstado / zonasHacienda.length) : 0
+    }
+  },
 
   actions: {
     async fetchZonasBySiembraId(siembraId) {
@@ -32,73 +45,19 @@ export const useZonasStore = defineStore('zonas', {
       }
     },
 
-    async addZona(zonaData) {
-      this.loading = true
-      this.error = null
-      try {
-        // Convertimos el nombre a mayúsculas
-        zonaData.nombre = zonaData.nombre.toUpperCase()
-
-        // Calcular bpa_estado basado en datos_bpa
-        if (zonaData.datos_bpa) {
-          const totalPreguntas = zonaData.datos_bpa.length
-          let puntosObtenidos = 0
-
-          zonaData.datos_bpa.forEach((pregunta) => {
-            if (pregunta.respuesta === 'Cumplido' || pregunta.respuesta === 'Disponible') {
-              puntosObtenidos += 100 // 100 puntos
-            } else if (pregunta.respuesta === 'En proceso') {
-              puntosObtenidos += 50 // 50 puntos
-            }
-            // Si la respuesta es "No implementado", no se suman puntos (0)
-          })
-
-          // Calcular el porcentaje de bpa_estado
-          zonaData.bpa_estado = Math.round((puntosObtenidos / (totalPreguntas * 100)) * 100) // Redondear a entero
-        } else {
-          zonaData.bpa_estado = 0 // Inicializar bpa_estado en 0 si no hay datos_bpa
-        }
-
-        const record = await pb.collection('zonas').create(zonaData)
-        this.zonas.push(record)
-        useSnackbarStore().showSnackbar('Zona agregada exitosamente')
-        return record
-      } catch (error) {
-        console.error('Error adding zona:', error)
-        this.error = 'Failed to add zona'
-        handleError(error, 'Error al agregar la zona')
-        throw error
-      } finally {
-        this.loading = false
-      }
-    },
-
     async updateZona(id, updateData) {
       this.loading = true
       this.error = null
       try {
+        // Validación básica
+        if (!updateData.nombre) throw new Error('El nombre es requerido')
+
         if (updateData.nombre) {
           updateData.nombre = updateData.nombre.toUpperCase()
         }
 
-        // Calcular bpa_estado basado en datos_bpa
         if (updateData.datos_bpa) {
-          const totalPreguntas = updateData.datos_bpa.length
-          let puntosObtenidos = 0
-
-          updateData.datos_bpa.forEach((pregunta) => {
-            if (pregunta.respuesta === 'Cumplido' || pregunta.respuesta === 'Disponible') {
-              puntosObtenidos += 100 // 100 puntos
-            } else if (pregunta.respuesta === 'En proceso') {
-              puntosObtenidos += 50 // 50 puntos
-            }
-            // Si la respuesta es "No implementado", no se suman puntos (0)
-          })
-
-          // Calcular el porcentaje de bpa_estado
-          updateData.bpa_estado = Math.round((puntosObtenidos / (totalPreguntas * 100)) * 100) // Redondear a entero
-        } else {
-          updateData.bpa_estado = 0 // Inicializar bpa_estado en 0 si no hay datos_bpa
+          updateData.bpa_estado = this.calcularBpaEstado(updateData.datos_bpa)
         }
 
         const record = await pb.collection('zonas').update(id, updateData)
@@ -118,21 +77,18 @@ export const useZonasStore = defineStore('zonas', {
       }
     },
 
-    async deleteZona(id) {
-      this.loading = true
-      this.error = null
-      try {
-        await pb.collection('zonas').delete(id)
-        this.zonas = this.zonas.filter((z) => z.id !== id)
-        useSnackbarStore().showSnackbar('Zona eliminada exitosamente')
-      } catch (error) {
-        console.error('Error deleting zona:', error)
-        this.error = 'Failed to delete zona'
-        useSnackbarStore().showError('Error al eliminar la zona')
-        throw error
-      } finally {
-        this.loading = false
-      }
+    // Nuevo método para calcular bpa_estado
+    calcularBpaEstado(datosBpa) {
+      if (!datosBpa || datosBpa.length === 0) return 0
+
+      const puntosObtenidos = datosBpa.reduce((acc, pregunta) => {
+        if (pregunta.respuesta === 'Cumplido' || pregunta.respuesta === 'Disponible')
+          return acc + 100
+        if (pregunta.respuesta === 'En proceso') return acc + 50
+        return acc
+      }, 0)
+
+      return Math.round((puntosObtenidos / (datosBpa.length * 100)) * 100)
     },
 
     async cargarTiposZonas() {
@@ -141,6 +97,7 @@ export const useZonasStore = defineStore('zonas', {
           sort: 'nombre'
         })
         this.tiposZonas = records
+        console.log('tiposZonas:', this.tiposZonas)
       } catch (error) {
         console.error('Error al cargar tipos de zonas:', error)
         handleError(error, 'Error al cargar tipos de zonas')
@@ -168,15 +125,77 @@ export const useZonasStore = defineStore('zonas', {
     },
 
     async crearZona(zonaData) {
-      return this.addZona(zonaData)
-    },
+      this.loading = true
+      this.error = null
+      try {
+        // Validación básica
+        if (!zonaData.nombre) throw new Error('El nombre es requerido')
 
-    async actualizarZona(id, updateData) {
-      return this.updateZona(id, updateData)
+        zonaData.nombre = zonaData.nombre.toUpperCase()
+        zonaData.bpa_estado = this.calcularBpaEstado(zonaData.datos_bpa)
+
+        const record = await pb.collection('zonas').create(zonaData)
+        this.zonas.push(record)
+        useSnackbarStore().showSnackbar('Zona agregada exitosamente')
+        return record
+      } catch (error) {
+        console.error('Error adding zona:', error)
+        this.error = 'Failed to add zona'
+        handleError(error, 'Error al agregar la zona')
+        throw error
+      } finally {
+        this.loading = false
+      }
     },
 
     async eliminarZona(id) {
-      return this.deleteZona(id)
+      this.loading = true
+      this.error = null
+      try {
+        await pb.collection('zonas').delete(id)
+        this.zonas = this.zonas.filter((z) => z.id !== id)
+        useSnackbarStore().showSnackbar('Zona eliminada exitosamente')
+      } catch (error) {
+        console.error('Error deleting zona:', error)
+        this.error = 'Failed to delete zona'
+        useSnackbarStore().showError('Error al eliminar la zona')
+        throw error
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async updateZonaAvatar(zonaId, avatarFile) {
+      const snackbarStore = useSnackbarStore()
+      snackbarStore.showLoading()
+      try {
+        const formData = new FormData()
+        formData.append('avatar', avatarFile)
+
+        const updatedZona = await pb.collection('zonas').update(zonaId, formData)
+
+        // Update the zona in the state
+        const index = this.zonas.findIndex((z) => z.id === updatedZona.id)
+        if (index !== -1) {
+          this.zonas[index] = updatedZona
+        }
+        return updatedZona
+      } catch (error) {
+        handleError(error, 'Error al actualizar el avatar de la zona')
+        throw error
+      } finally {
+        snackbarStore.hideLoading()
+      }
+    },
+
+    async fetchZona(id) {
+      try {
+        const zona = await pb.collection('zonas').getOne(id)
+        return zona
+      } catch (error) {
+        handleError(error, 'Error al obtener la zona')
+        throw error
+      }
     }
   }
 })

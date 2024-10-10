@@ -24,6 +24,8 @@ tipos_zonas:
   nombre: string
   descripcion: string
   datos_bpa: json (va a disponer de la seccion preguntas_bpa, en donde se encontraran las preguntas a responderse. generalmente en estructura pregunta,opciones,descripcion. pueden ser multiples preguntas)
+  metricas: json (metrica_X": {"tipo": "boolean/checkbox/select/number","descripcion": "xyz?"})
+  icon: string
 
 # Colección: zonas
 zonas:
@@ -42,6 +44,7 @@ zonas:
   avatar: file
   bpa_estado: number (aqui se grabara el porcentaje de avance calculado del bpa para esta zona)
   datos_bpa: JSON (aqui se grabaran las respuestas al formulario cargado por tipos_zonas para este tipo de elemento)
+  metricas: json (metrica_X": {"tipo": "boolean/checkbox/select/number","descripcion": "xyz?"})
 
 # Colección: siembras
 siembras:
@@ -66,6 +69,8 @@ tipos_actividades:
   nombre: string
   descripcion: string
   datos_bpa: json (va a disponer de la seccion preguntas_bpa, en donde se encontraran las preguntas a responderse. generalmente en estructura pregunta,opciones (radiobuttons),descripcion. pueden ser multiples preguntas)
+  metricas: json (metrica_X": {"tipo": "boolean/checkbox/select/number","descripcion": "xyz?"})
+  icon: string
 
 
 # Colección: actividades

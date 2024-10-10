@@ -51,10 +51,6 @@
           </v-chip>
 
           <v-chip variant="flat" size="x-small" color="grey-lighten-2" class="mx-1" pill>
-            PROGRAMADA: {{ siembraInfo.area_total }} ha
-          </v-chip>
-
-          <v-chip variant="flat" size="x-small" color="grey-lighten-2" class="mx-1" pill>
             INICIO: {{ formatDate(siembraInfo.fecha_inicio) }}
           </v-chip>
         </h3>
@@ -97,25 +93,24 @@
         <v-card class="bitacora-section" elevation="2">
           <v-card-title class="headline d-flex justify-space-between align-center">
             Bitácora de la Siembra
-            <v-btn color="success" @click="openAddBitacoraDialog">
-              <v-icon left>mdi-plus</v-icon>
-              Agregar Entrada
+
+            <v-btn color="green-lighten-2" @click="openAddBitacoraDialog" icon>
+              <v-icon>mdi-plus</v-icon>
             </v-btn>
           </v-card-title>
           <v-card-text>
-            <div class="d-flex flex-wrap align-center mb-4">
-              <v-select
-                v-model="itemsPerPage"
-                :items="[5, 10, 20]"
-                label="Elementos por página"
-                dense
-                outlined
-                hide-details
-                class="mr-4"
-                style="max-width: 150px"
-              ></v-select>
+            <div class="d-flex flex-wrap align-center mb-0">
+              FILTRAR POR ZONAS:
               <v-chip-group v-model="selectedZonas" column multiple>
-                <v-chip v-for="zona in zonas" :key="zona.id" filter outlined>
+                <v-chip v-for="zona in zonas" :key="zona.id" filter outlined size="small">
+                  {{ zona.nombre }}
+                </v-chip>
+              </v-chip-group>
+            </div>
+            <div class="d-flex flex-wrap align-center mb-0">
+              FILTRAR POR ACTIVIDAD:
+              <v-chip-group v-model="selectedZonas" column multiple>
+                <v-chip v-for="zona in zonas" :key="zona.id" filter outlined size="small">
                   {{ zona.nombre }}
                 </v-chip>
               </v-chip-group>
@@ -128,7 +123,8 @@
                 'items-per-page-options': [5, 10, 20],
                 'items-per-page-text': 'Elementos por página'
               }"
-              class="elevation-1"
+              class="elevation-1 tabla-compacta"
+              density="compact"
             >
               <template #[`item.fecha`]="{ item }">
                 {{ formatDate(item.fecha) }}
@@ -143,7 +139,7 @@
       </v-col>
 
       <!-- Sidebar -->
-      <v-col cols="12" md="4" class="pa-4">
+      <v-col cols="12" md="4" class="px-0 py-4">
         <v-card class="zonas-section mb-4" elevation="2">
           <v-card-title class="headline d-flex justify-space-between align-center">
             Zonas Registradas
@@ -151,24 +147,99 @@
               <v-icon>mdi-plus</v-icon>
             </v-btn>
           </v-card-title>
-          <v-card-text>
-            <v-chip class="mb-4" color="primary" text-color="white">
-              Área Total: {{ totalArea }} {{ areaUnit }}
+          <v-card-text class="px-2 py-0">
+            <v-chip variant="flat" size="x-small" color="green-lighten-1" class="mx-1" pill>
+              ÁREA TOTAL: {{ totalArea }} {{ areaUnit }}
             </v-chip>
-            <v-list>
-              <v-list-item v-for="zona in zonas" :key="zona.id">
-                <v-list-item-title>{{ zona.nombre }}</v-list-item-title>
-                <v-list-item-subtitle>{{ zona.area }} {{ areaUnit }}</v-list-item-subtitle>
-                <template v-slot:append>
-                  <v-btn icon small @click="editZona(zona)">
-                    <v-icon>mdi-pencil</v-icon>
-                  </v-btn>
-                  <v-btn icon small @click="deleteZona(zona)">
-                    <v-icon>mdi-delete</v-icon>
-                  </v-btn>
-                </template>
-              </v-list-item>
-            </v-list>
+            <v-chip variant="flat" size="x-small" color="grey-lighten-2" class="mx-1" pill>
+              PROGRAMADA: {{ siembraInfo.area_total }} ha
+            </v-chip>
+
+            <!-- v-data-table de zonas-->
+
+            <v-data-table
+              :headers="headers"
+              :items="zonas"
+              class="elevation-1 tabla-compacta my-2 mx-0 py-0 px-0"
+              density="compact"
+              item-value="id"
+              show-expand
+              v-model:expanded="expanded"
+              header-class="custom-header"
+            >
+              <template #[`item.bpa_estado`]="{ item }">
+                <span
+                  :class="{
+                    'text-red font-extrabold': item.bpa_estado < 40,
+                    'text-orange font-extrabold': item.bpa_estado >= 40 && item.bpa_estado < 80,
+                    'text-green font-extrabold': item.bpa_estado >= 80
+                  }"
+                >
+                  {{ item.bpa_estado }}%
+                </span>
+              </template>
+
+              <template #[`item.actions`]="{ item }">
+                <v-icon class="me-2" @click="editZona(item)"> mdi-pencil </v-icon>
+                <v-icon @click="deleteZona(item)"> mdi-delete </v-icon>
+              </template>
+
+              <template v-slot:bottom> </template>
+              <!-- eliminar el footer d ela tabla-->
+
+              <template #expanded-row="{ columns, item }">
+                <td :colspan="columns.length">
+                  <v-card flat class="pa-4">
+                    <v-row no-gutters>
+                      <v-col cols="7" class="pr-4">
+                        <v-row no-gutters align="center" class="mb-2">
+                          <v-col cols="auto" class="mr-2">
+                            <v-icon>mdi-map-marker-radius</v-icon>
+                          </v-col>
+                          <v-col>
+                            {{
+                              item.area
+                                ? `${item.area.area} ${item.area.unidad}`
+                                : 'Área no especificada'
+                            }}
+                          </v-col>
+                          <v-col cols="auto" class="ml-4" v-if="item.gps">
+                            <v-icon>mdi-crosshairs-gps</v-icon>
+                          </v-col>
+                          <v-col v-if="item.gps">
+                            Lat: {{ item.gps.lat }}, Lng: {{ item.gps.lng }}
+                          </v-col>
+                        </v-row>
+                        <v-row no-gutters align="center">
+                          <v-col cols="auto" class="mr-2">
+                            <v-icon>mdi-information-outline</v-icon>
+                          </v-col>
+                          <v-col>
+                            {{ item.info || 'Sin información adicional' }}
+                          </v-col>
+                        </v-row>
+                      </v-col>
+                      <v-col cols="5" class="d-flex justify-center align-center">
+                        <v-img
+                          v-if="item.avatar"
+                          :src="getAvatarUrl(item)"
+                          max-width="150"
+                          max-height="150"
+                          contain
+                        >
+                          <template v-slot:placeholder>
+                            <v-icon size="150" color="grey lighten-2">mdi-image-off</v-icon>
+                          </template>
+                        </v-img>
+                        <v-icon v-else size="150" color="grey lighten-2">mdi-image-off</v-icon>
+                      </v-col>
+                    </v-row>
+                  </v-card>
+                </td>
+              </template>
+            </v-data-table>
+
+            <!-- fin v-data table-->
           </v-card-text>
         </v-card>
       </v-col>
@@ -185,22 +256,43 @@
           <v-row>
             <v-col cols="12" md="6">
               <v-form ref="editSiembraForm">
-                <v-text-field v-model="editedSiembra.nombre" label="Nombre"></v-text-field>
-                <v-text-field v-model="editedSiembra.tipo" label="Tipo"></v-text-field>
+                <v-text-field
+                  v-model="editedSiembra.nombre"
+                  label="Nombre"
+                  variant="outlined"
+                  density="compact"
+                  class="compact-form"
+                ></v-text-field>
+                <v-text-field
+                  v-model="editedSiembra.tipo"
+                  label="Tipo"
+                  variant="outlined"
+                  density="compact"
+                  class="compact-form"
+                ></v-text-field>
                 <v-select
                   v-model="editedSiembra.estado"
                   :items="estadosSiembra"
                   label="Estado"
+                  variant="outlined"
+                  density="compact"
+                  class="compact-form"
                 ></v-select>
                 <v-text-field
                   v-model="editedSiembra.area_total"
                   label="Área Objetivo (ha)"
                   type="number"
+                  variant="outlined"
+                  density="compact"
+                  class="compact-form"
                 ></v-text-field>
                 <v-text-field
                   v-model="editedSiembra.fecha_inicio"
                   label="Fecha de Inicio"
                   type="date"
+                  variant="outlined"
+                  density="compact"
+                  class="compact-form"
                 ></v-text-field>
               </v-form>
             </v-col>
@@ -233,14 +325,36 @@
           </v-row>
           <v-row>
             <v-col cols="12">
-              <v-textarea v-model="editedSiembra.info" label="Información General"></v-textarea>
+              <v-textarea
+                variant="outlined"
+                density="compact"
+                class="compact-form"
+                v-model="editedSiembra.info"
+                label="Información General"
+              ></v-textarea>
             </v-col>
           </v-row>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="primary" text @click="saveSiembraEdit">Guardar</v-btn>
-          <v-btn color="error" text @click="editSiembraDialog = false">Cancelar</v-btn>
+          <v-btn
+            size="small"
+            variant="flat"
+            rounded="lg"
+            prepend-icon="mdi-check"
+            color="green-lighten-3"
+            @click="saveSiembraEdit"
+            >Guardar</v-btn
+          >
+          <v-btn
+            size="small"
+            variant="flat"
+            rounded="lg"
+            prepend-icon="mdi-cancel"
+            color="red-lighten-3"
+            @click="editSiembraDialog = false"
+            >Cancelar</v-btn
+          >
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -294,20 +408,152 @@
       </v-card>
     </v-dialog>
 
-    <v-dialog v-model="addZonaDialog" max-width="500px">
+    <!-- CREAR ZONAS EN ESTA SIEMBRA-->
+    <v-dialog v-model="addZonaDialog" max-width="900px">
       <v-card>
-        <v-card-title class="headline">Agregar Zona</v-card-title>
-        <v-card-text>
-          <v-form ref="addZonaForm">
-            <v-text-field v-model="newZona.nombre" label="Nombre"></v-text-field>
-            <v-text-field v-model="newZona.area" label="Área" type="number"></v-text-field>
-            <v-textarea v-model="newZona.info" label="Información"></v-textarea>
+        <v-card-title class="pb-0 pt-4">
+          <span class="text-h5">{{ modoEdicionZona ? 'Editar' : 'Crear' }} Zona</span>
+        </v-card-title>
+        <v-card-text class="py-0">
+          <v-form ref="form" v-model="formularioValidoZona" lazy-validation>
+            <v-row class="compact-form">
+              <v-col cols="6" class="pb-0 mb-0">
+                <!-- Nombre de la Zona -->
+                <v-text-field
+                  v-model="zonaEditando.nombre"
+                  label="Nombre"
+                  variant="outlined"
+                  required
+                  :rules="[(v) => !!v || 'El nombre es requerido']"
+                ></v-text-field>
+
+                <!-- Área y Unidad de la Zona -->
+                <v-row>
+                  <v-col>
+                    <v-text-field
+                      v-model.number="zonaEditando.area.area"
+                      label="Área"
+                      type="number"
+                      variant="outlined"
+                      required
+                      :rules="[(v) => !!v || 'El área es requerida']"
+                    ></v-text-field>
+                  </v-col>
+                  <v-col>
+                    <v-select
+                      v-model="zonaEditando.area.unidad"
+                      variant="outlined"
+                      :items="['m²', 'ha', 'km²']"
+                      label="Unidad de área"
+                      required
+                      :rules="[(v) => !!v || 'La unidad es requerida']"
+                    ></v-select>
+                  </v-col>
+                </v-row>
+
+                <!-- Selector de Tipo de Zona -->
+                <v-select
+                  v-model="zonaEditando.tipo"
+                  :disabled="modoEdicionZona"
+                  :items="tiposZonas"
+                  item-title="nombre"
+                  item-value="id"
+                  label="Tipo de Zona"
+                  variant="outlined"
+                  @update:modelValue="onTipoZonaChange(zonaEditando.tipo)"
+                  required
+                  :rules="[(v) => !!v || 'Seleccione un tipo de zona']"
+                ></v-select>
+
+                <!-- GPS -->
+                <v-text-field
+                  v-model="zonaEditando.gps"
+                  variant="outlined"
+                  label="GPS (Lat, Lng)"
+                  placeholder="Ej: {lat: 0, lng: 0}"
+                ></v-text-field>
+
+                <!-- Checkbox Contabilizable -->
+                <v-checkbox
+                  v-model="zonaEditando.contabilizable"
+                  label="Contabilizable"
+                ></v-checkbox>
+              </v-col>
+
+              <v-col cols="6" class="pb-0 mb-0">
+                <!-- Información Adicional -->
+                <v-textarea
+                  variant="outlined"
+                  density="compact"
+                  v-model="zonaEditando.info"
+                  label="Información adicional"
+                ></v-textarea>
+
+                <!-- Avatar -->
+                <v-file-input
+                  v-model="avatarFileZona"
+                  rounded
+                  variant="outlined"
+                  label="Cargar Avatar"
+                  accept="image/*"
+                  @change="updateAvatarZona"
+                ></v-file-input>
+              </v-col>
+            </v-row>
+
+            <!-- Formulario de Seguimiento BPA (solo si se ha seleccionado un tipo de zona) -->
+            <v-row v-if="zonaEditando.tipo" class="mt-0">
+              <v-col class="py-0">
+                <div class="compact-form bg-dinamico rounded-lg px-3 border-4 py-0">
+                  <h4 class="text-2xl font-bold py-4">SEGUIMIENTO BPA</h4>
+
+                  <v-row>
+                    <v-col
+                      v-for="(pregunta, index) in tiposZonas.find((z) => z.id === zonaEditando.tipo)
+                        .datos_bpa.preguntas_bpa"
+                      :key="index"
+                      cols="6"
+                    >
+                      <p class="font-extrabold">{{ pregunta.pregunta }}</p>
+                      <p v-if="pregunta.descripcion" class="mb-2 text-slate-800 font-extralight">
+                        {{ pregunta.descripcion }}
+                      </p>
+                      <v-radio-group v-model="zonaEditando.datos_bpa[index].respuesta" class="mt-2">
+                        <v-radio
+                          v-for="(opcion, opcionIndex) in pregunta.opciones"
+                          :key="`${index}-${opcionIndex}`"
+                          :label="opcion"
+                          :value="opcion"
+                        ></v-radio>
+                      </v-radio-group>
+                    </v-col>
+                  </v-row>
+                </div>
+              </v-col>
+            </v-row>
           </v-form>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="primary" text @click="saveZona">Guardar</v-btn>
-          <v-btn color="error" text @click="addZonaDialog = false">Cancelar</v-btn>
+          <v-btn
+            size="small"
+            variant="flat"
+            rounded="lg"
+            prepend-icon="mdi-cancel"
+            color="red-lighten-3"
+            @click="cerrarDialogoZona"
+            >Cancelar</v-btn
+          >
+          <v-btn
+            size="small"
+            variant="flat"
+            rounded="lg"
+            prepend-icon="mdi-check"
+            color="green-lighten-3"
+            @click="guardarZona"
+            :disabled="!formularioValidoZona"
+            >Guardar</v-btn
+          >
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -341,8 +587,9 @@ export default {
 
     const siembraId = ref(route.params.id)
     const siembraInfo = ref({})
-    const zonas = ref([])
     const bitacora = ref([])
+
+    const { zonas, tiposZonas, eliminarZona } = storeToRefs(zonasStore)
 
     const { user } = storeToRefs(profileStore)
     const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
@@ -365,9 +612,17 @@ export default {
     const totalArea = computed(() => {
       return zonas.value
         .filter((zona) => zona.contabilizable)
-        .reduce((sum, zona) => sum + (parseFloat(zona.area) || 0), 0)
+        .reduce((sum, zona) => sum + (parseFloat(zona.area.area) || 0), 0)
         .toFixed(2)
     })
+
+    const headers = [
+      { title: 'Nombre', align: 'start', key: 'nombre' },
+      { title: 'BPA', align: 'center', key: 'bpa_estado' },
+      { title: 'Acciones', key: 'actions', sortable: false, align: 'end' }
+    ]
+
+    const expanded = ref([])
 
     const areaUnit = ref('ha')
     const itemsPerPage = ref(10)
@@ -388,11 +643,6 @@ export default {
       responsable: '',
       estado: 'planificada',
       notas: ''
-    })
-    const newZona = ref({
-      nombre: '',
-      area: '',
-      info: ''
     })
 
     const estadosSiembra = ['planificada', 'en_crecimiento', 'cosechada', 'finalizada']
@@ -429,22 +679,64 @@ export default {
       })
     })
 
-    onMounted(async () => {
-      try {
-        await Promise.all([
-          loadSiembraInfo(),
-          loadZonas(),
-          loadBitacora(),
-          loadHacienda(),
-          loadActividades(),
-          loadUsuarios()
-        ])
-      } catch (error) {
-        handleError(error, 'Error al cargar los datos iniciales')
-      } finally {
-        isLoading.value = false
-      }
+    const tipoZonaActual = ref(null)
+
+    const modoEdicionZona = ref(false)
+    const zonaEditando = ref({
+      nombre: '',
+      area: { area: null, unidad: '' },
+      info: '',
+      contabilizable: false,
+      gps: '',
+      datos_bpa: []
     })
+    const avatarFileZona = ref(null)
+    const formularioValidoZona = ref(true)
+    const form = ref(null)
+
+    async function guardarZona() {
+      if (form.value.validate()) {
+        try {
+          zonaEditando.value.siembra = siembraId.value
+          zonaEditando.value.hacienda = mi_hacienda.value.id
+
+          if (modoEdicionZona.value) {
+            await zonasStore.updateZona(zonaEditando.value.id, zonaEditando.value)
+          } else {
+            await zonasStore.crearZona(zonaEditando.value)
+          }
+
+          cerrarDialogoZona()
+          snackbarStore.showSnackbar('Zona guardada exitosamente', 'success')
+        } catch (error) {
+          handleError(error, 'Error al guardar la zona')
+        }
+      }
+    }
+
+    const cerrarDialogoZona = () => {
+      addZonaDialog.value = false
+      avatarFileZona.value = null // Limpiar el archivo después de la actualización
+    }
+
+    const updateAvatarZona = async () => {
+      if (avatarFileZona.value) {
+        if (zonaEditando.value.id) {
+          await zonasStore.updateZonaAvatar(zonaEditando.value.id, avatarFileZona.value)
+          zonaEditando.value = { ...zonasStore.zonas.find((z) => z.id === zonaEditando.value.id) }
+          avatarFileZona.value = null // Limpiar el archivo después de la actualización
+        }
+      }
+    }
+
+    function onTipoZonaChange(tipoZonaId) {
+      const tipoZonaSeleccionado = tiposZonas.value.find((tipo) => tipo.id === tipoZonaId)
+      if (tipoZonaSeleccionado && tipoZonaSeleccionado.datos_bpa) {
+        zonaEditando.value.datos_bpa = tipoZonaSeleccionado.datos_bpa.preguntas_bpa.map(() => ({
+          respuesta: null
+        }))
+      }
+    }
 
     // En la función loadSiembraInfo, no es necesario forzar la actualización del avatar
     async function loadSiembraInfo() {
@@ -453,14 +745,6 @@ export default {
         siembraInfo.value = siembra
       } catch (error) {
         handleError(error, 'Error al cargar la información de la siembra')
-      }
-    }
-
-    async function loadZonas() {
-      try {
-        zonas.value = await zonasStore.fetchZonasBySiembraId(siembraId.value)
-      } catch (error) {
-        handleError(error, 'Error al cargar las zonas')
       }
     }
 
@@ -524,10 +808,16 @@ export default {
     }
 
     function openAddZonaDialog() {
-      newZona.value = {
+      modoEdicionZona.value = false
+      zonaEditando.value = {
         nombre: '',
-        area: '',
-        info: ''
+        area: { area: null, unidad: 'ha' },
+        info: '',
+        contabilizable: false,
+        gps: '',
+        datos_bpa: [],
+        siembra: siembraId.value,
+        hacienda: mi_hacienda.value.id
       }
       addZonaDialog.value = true
     }
@@ -581,22 +871,6 @@ export default {
       }
     }
 
-    async function saveZona() {
-      try {
-        const zona = {
-          ...newZona.value,
-          siembra: siembraId.value,
-          hacienda: mi_hacienda.value.id
-        }
-        await zonasStore.addZona(zona)
-        addZonaDialog.value = false
-        loadZonas()
-        snackbarStore.showSnackbar('Zona agregada con éxito', 'success')
-      } catch (error) {
-        handleError(error, 'Error al agregar zona')
-      }
-    }
-
     async function editBitacoraItem(item) {
       try {
         const updatedItem = await bitacoraStore.updateBitacoraEntry(item.id, item)
@@ -622,54 +896,22 @@ export default {
       }
     }
 
-    async function editZona(zona) {
-      try {
-        const updatedZona = await zonasStore.updateZona(zona.id, zona)
-        const index = zonas.value.findIndex((z) => z.id === zona.id)
-        if (index !== -1) {
-          zonas.value[index] = updatedZona
-        }
-        snackbarStore.showSnackbar('Zona actualizada con éxito', 'success')
-      } catch (error) {
-        handleError(error, 'Error al actualizar zona')
-      }
+    function editZona(zona) {
+      modoEdicionZona.value = true
+      zonaEditando.value = { ...zona }
+      addZonaDialog.value = true
+      tipoZonaActual.value = zona // Asignar el tipo de zona actual
     }
 
     async function deleteZona(zona) {
       if (confirm('¿Está seguro de que desea eliminar esta zona?')) {
         try {
-          await zonasStore.deleteZona(zona.id)
+          await eliminarZona(zona.id)
           zonas.value = zonas.value.filter((z) => z.id !== zona.id)
           snackbarStore.showSnackbar('Zona eliminada con éxito', 'success')
         } catch (error) {
           handleError(error, 'Error al eliminar zona')
         }
-      }
-    }
-
-    async function uploadFile(file) {
-      snackbarStore.showLoading()
-
-      try {
-        const formData = new FormData()
-        formData.append('avatar', file)
-
-        const updatedSiembra = await pb.collection('siembras').update(siembraId.value, formData)
-
-        // Actualizar el estado local
-        editedSiembra.value.avatar = updatedSiembra.avatar
-        siembraInfo.value.avatar = updatedSiembra.avatar
-
-        // Actualizar el store de siembras
-        await siembrasStore.updateSiembraAvatar(siembraId.value, updatedSiembra.avatar)
-
-        snackbarStore.showSnackbar('Avatar de siembra actualizado con éxito', 'success')
-        return updatedSiembra.avatar
-      } catch (error) {
-        handleError(error, 'Error al actualizar el avatar de la siembra')
-        throw error
-      } finally {
-        snackbarStore.hideLoading()
       }
     }
 
@@ -689,8 +931,33 @@ export default {
       }
     }
 
+    const getAvatarUrl = (zona) => {
+      if (zona.avatar) {
+        return pb.getFileUrl(zona, zona.avatar)
+      }
+      return null // This will activate the placeholder
+    }
+
     watch([selectedZonas, selectedActividades], () => {
       loadBitacora()
+    })
+
+    onMounted(async () => {
+      try {
+        await loadSiembraInfo() // Asegúrate de que esto se complete primero
+        await Promise.all([
+          zonasStore.cargarTiposZonas(),
+          loadBitacora(),
+          loadActividades(),
+          loadUsuarios(),
+          loadHacienda(),
+          zonasStore.fetchZonasBySiembraId(siembraId.value) // Ahora siembraId debería estar definido
+        ])
+      } catch (error) {
+        handleError(error, 'Error al cargar los datos iniciales')
+      } finally {
+        isLoading.value = false
+      }
     })
 
     return {
@@ -698,21 +965,16 @@ export default {
       siembraAvatarUrl,
       editedSiembra,
       avatarFile,
-      uploadFile,
       handleAvatarUpload,
       getSiembraAvatarUrl,
-      siembrasStore, // Asegúrate de incluir esto
-
       saveSiembraEdit,
       getStatusColor,
-
       totalArea,
       editSiembraDialog,
-
       estadosSiembra,
       openEditDialog,
-
       formatDate,
+      form,
       zonas,
       bitacora,
       user,
@@ -722,28 +984,35 @@ export default {
       usuarios,
       userRole,
       avatarUrl,
-
       areaUnit,
       itemsPerPage,
       selectedZonas,
-      selectedActividades,
       addBitacoraDialog,
       addZonaDialog,
       newBitacora,
-      newZona,
       estadosBitacora,
       bitacoraHeaders,
       filteredBitacora,
       openAddBitacoraDialog,
       openAddZonaDialog,
       saveBitacoraEntry,
-      saveZona,
       editBitacoraItem,
       deleteBitacoraItem,
       editZona,
       deleteZona,
-      zonasStore,
-      isLoading
+      isLoading,
+      modoEdicionZona,
+      zonaEditando,
+      avatarFileZona,
+      formularioValidoZona,
+      guardarZona,
+      cerrarDialogoZona,
+      updateAvatarZona,
+      onTipoZonaChange,
+      tiposZonas,
+      headers,
+      getAvatarUrl,
+      expanded
     }
   }
 }

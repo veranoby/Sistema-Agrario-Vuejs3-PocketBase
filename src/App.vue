@@ -60,7 +60,7 @@ export default {
         { id: 1, to: '/dashboard', label: 'Dashboard', icon: 'mdi-view-dashboard' },
         { id: 2, to: '/siembras', label: 'Siembras', icon: 'mdi-sprout' },
         { id: 3, to: '/zonas', label: 'Zonas', icon: 'mdi-map-marker' },
-        { id: 4, to: '/actividades', label: 'Actividades', icon: 'mdi-map-info' }
+        { id: 4, to: '/actividades', label: 'Actividades', icon: 'mdi-checkbox-marked' }
         // Add more navigation links as needed
       ]
     }

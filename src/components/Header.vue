@@ -4,57 +4,59 @@
       <v-app-bar-nav-icon @click="$emit('HandleDrawer')"></v-app-bar-nav-icon>
     </template>
     <v-app-bar-title @click="$router.push('/')"
-      >Agro Assist <v-icon size="24" color="green">mdi-leaf</v-icon>
-      {{ PaginaActual }}</v-app-bar-title
+      ><span class="hidden sm:inline">Agro Assist </span
+      ><v-icon size="24" color="green">mdi-leaf</v-icon> {{ PaginaActual }}</v-app-bar-title
     >
 
     <v-spacer></v-spacer>
 
     <template v-slot:append>
-      <v-btn text size="x-small" @click="$router.push('/about')">Quienes Somos</v-btn>
-      <v-btn text size="x-small" @click="$router.push('/documentation')">Documentacion</v-btn>
-      <v-btn text size="x-small" @click="$router.push('/contact')">Contactenos</v-btn>
-      <v-btn text size="x-small" @click="$router.push('/faq')">FAQ</v-btn>
+      <div class="flex flex-row sm:flex-row text-sm sm:text-base">
+        <!-- Cambiar a flex-row para mantener horizontal -->
+        <v-btn text size="x-small" @click="$router.push('/about')" class="flex items-center">
+          <v-icon class="mr-2" icon="mdi-information"></v-icon>
+          <!-- Icono para "Quienes Somos" -->
+          <span class="hidden sm:inline">Quienes Somos</span>
+          <!-- Ocultar texto en pantallas pequeñas -->
+        </v-btn>
+        <v-btn
+          text
+          size="x-small"
+          @click="$router.push('/documentation')"
+          class="flex items-center"
+        >
+          <v-icon class="mr-2" icon="mdi-book"></v-icon>
+          <!-- Icono para "Documentacion" -->
+          <span class="hidden sm:inline">Documentacion</span>
+        </v-btn>
+        <v-btn text size="x-small" @click="$router.push('/contact')" class="flex items-center">
+          <v-icon class="mr-2" icon="mdi-email"></v-icon>
+          <!-- Icono para "Contactenos" -->
+          <span class="hidden sm:inline">Contactenos</span>
+        </v-btn>
+        <v-btn text size="x-small" @click="$router.push('/faq')" class="flex items-center">
+          <v-icon class="mr-2" icon="mdi-help-circle"></v-icon>
+          <!-- Icono para "FAQ" -->
+          <span class="hidden sm:inline">FAQ</span>
+        </v-btn>
+      </div>
 
       <v-spacer></v-spacer>
 
-      <v-btn
-        size="small"
-        variant="flat"
-        rounded="lg"
-        prepend-icon="mdi-login"
-        color="grey-lighten-2"
-        class="mx-2"
-        v-if="!isLoggedIn"
-        @click="$emit('openAuthModal')"
-        >INGRESAR</v-btn
-      >
-
-      <v-btn
-        v-if="isLoggedIn"
-        size="small"
-        variant="flat"
-        rounded="lg"
-        color="grey-lighten-2"
-        prepend-icon="mdi-account-circle"
-        class="mx-2"
-        @click="$router.push('/profile')"
-      >
-        Mi Info / Hacienda
-      </v-btn>
-
-      <v-btn
-        v-if="isLoggedIn"
-        size="small"
-        variant="flat"
-        rounded="lg"
-        prepend-icon="mdi-logout"
-        color="grey-lighten-2"
-        @click="handleLogout"
-        class="mx-2"
-      >
-        Logout
-      </v-btn>
+      <div class="flex flex-col sm:flex-row">
+        <v-btn
+          size="small"
+          variant="flat"
+          rounded="lg"
+          prepend-icon="mdi-login"
+          color="grey-lighten-2"
+          class="mx-2"
+          v-if="!isLoggedIn"
+          @click="$emit('openAuthModal')"
+        >
+          <span class="text-xs sm:text-sm">INGRESAR</span></v-btn
+        >
+      </div>
       <v-spacer></v-spacer>
 
       <v-icon @click="toggleTheme" icon="mdi-brightness-4" />
