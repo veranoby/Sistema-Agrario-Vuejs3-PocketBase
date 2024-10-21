@@ -105,7 +105,7 @@ bitacora:
   metricas: json  # Almacena datos específicos de la actividad según metricas_requeridas
   notas: string
 
-# Colección: recordatorios
+# Colección: programaciones
 recordatorios:
   id: string
   created: datetime

@@ -31,7 +31,15 @@ export const useSiembrasStore = defineStore('siembras', {
   },
 
   actions: {
-    async fetchSiembras() {
+    async cargarSiembras() {
+      const siembrasLocal = localStorage.getItem('siembras')
+      if (siembrasLocal) {
+        this.siembras = JSON.parse(siembrasLocal)
+        console.log('Cargado desde localStorage:', this.siembras)
+        return
+      }
+
+      // Lógica para cargar desde el servidor
       this.loading = true
       this.error = null
       try {
@@ -40,9 +48,11 @@ export const useSiembrasStore = defineStore('siembras', {
           expand: 'zona,hacienda'
         })
         this.siembras = records
+        localStorage.setItem('siembras', JSON.stringify(records))
+        console.log('Siembras actualizadas en localStorage:', this.siembras)
       } catch (error) {
-        console.error('Error fetching siembras:', error)
-        this.error = 'Failed to fetch siembras'
+        console.error('Error cargando siembras:', error)
+        this.error = 'Error al cargar siembras'
         useSnackbarStore().showError('Error al cargar las siembras')
       } finally {
         this.loading = false

@@ -14,7 +14,8 @@ export const useAuthStore = defineStore('auth', {
     loading: false,
 
     isLoggedIn: false,
-    token: null
+    token: null,
+    rememberMe: null
   }),
 
   actions: {
@@ -46,12 +47,15 @@ export const useAuthStore = defineStore('auth', {
           await haciendaStore.fetchHacienda(authData.record.hacienda)
 
           if (rememberMe) {
-            localStorage.setItem('rememberMe', JSON.stringify({ usernameOrEmail, password }))
-            localStorage.setItem('token', this.token)
+            this.$state.rememberMe = { usernameOrEmail, password } // Almacenar en el estado
+            console.log('Guardando credenciales en el estado:', this.$state.rememberMe)
           } else {
-            localStorage.removeItem('rememberMe')
-            localStorage.removeItem('token')
+            this.$state.rememberMe = null // Limpiar el estado
           }
+
+          // Sincronizar con localStorage solo cuando sea necesario
+          localStorage.setItem('token', this.token)
+          console.log('Token guardado en localStorage:', this.token)
 
           snackbarStore.showSnackbar('Login successful!', 'success')
 
@@ -205,6 +209,7 @@ export const useAuthStore = defineStore('auth', {
     async checkAuth() {
       const token = localStorage.getItem('token')
       if (token) {
+        console.log('Token encontrado en localStorage:', token)
         try {
           const authData = await pb.collection('users').authRefresh()
           const profileStore = useProfileStore()
@@ -228,8 +233,13 @@ export const useAuthStore = defineStore('auth', {
       this.$state.isLoggedIn = false
       this.$state.token = null
 
+      // Sincronizar el estado con localStorage
       localStorage.removeItem('rememberMe')
       localStorage.removeItem('token')
+      console.log('Limpiando localStorage en logout')
+
+      localStorage.removeItem('tiposZonas')
+      localStorage.removeItem('tiposActividades')
 
       snackbarStore.showSnackbar('Logged out successfully', 'success')
       router.push('/')

@@ -78,7 +78,6 @@ body {
 }
 
 .profile-title {
-  font-size: 1.25rem;
   font-weight: bold;
   margin-bottom: 0;
   position: relative;
@@ -101,6 +100,10 @@ body {
   object-fit: cover;
   mask-image: linear-gradient(to right, transparent, black 75%);
   -webkit-mask-image: linear-gradient(to right, transparent, black 75%);
+}
+
+.text-xxs {
+  font-size: 0.6rem; /* Ajusta el tamaño según sea necesario */
 }
 
 /*CKEditor */

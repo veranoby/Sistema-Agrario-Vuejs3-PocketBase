@@ -65,6 +65,11 @@ export const useZonasStore = defineStore('zonas', {
         if (index !== -1) {
           this.zonas[index] = { ...this.zonas[index], ...record }
         }
+
+        // Actualizar localStorage solo si se actualiza la zona
+        localStorage.setItem('zonas', JSON.stringify(this.zonas))
+        console.log('Zonas actualizadas en localStorage:', this.zonas)
+
         useSnackbarStore().showSnackbar('Zona actualizada exitosamente')
         return record
       } catch (error) {
@@ -92,11 +97,21 @@ export const useZonasStore = defineStore('zonas', {
     },
 
     async cargarTiposZonas() {
+      // Verificar si los tipos de zonas están en localStorage
+      const tiposZonasLocal = localStorage.getItem('tiposZonas')
+      if (tiposZonasLocal) {
+        this.tiposZonas = JSON.parse(tiposZonasLocal)
+        console.log('Cargado desde localStorage:', this.tiposZonas)
+        return this.tiposZonas
+      }
+
       try {
         const records = await pb.collection('tipos_zonas').getFullList({
           sort: 'nombre'
         })
         this.tiposZonas = records
+        // Guardar en localStorage
+        localStorage.setItem('tiposZonas', JSON.stringify(records))
         console.log('tiposZonas:', this.tiposZonas)
       } catch (error) {
         console.error('Error al cargar tipos de zonas:', error)
@@ -106,6 +121,14 @@ export const useZonasStore = defineStore('zonas', {
 
     // Añadimos esta nueva función
     async cargarZonas() {
+      const zonasLocal = localStorage.getItem('zonas')
+      if (zonasLocal) {
+        this.zonas = JSON.parse(zonasLocal)
+        console.log('Cargado desde localStorage:', this.zonas)
+        return
+      }
+
+      // Lógica para cargar desde el servidor
       this.loading = true
       this.error = null
       try {
@@ -113,12 +136,12 @@ export const useZonasStore = defineStore('zonas', {
           sort: 'nombre'
         })
         this.zonas = records
-        return records
+        localStorage.setItem('zonas', JSON.stringify(records))
+        console.log('Zonas actualizadas en localStorage:', this.zonas)
       } catch (error) {
         console.error('Error cargando zonas:', error)
         this.error = 'Error al cargar zonas'
         useSnackbarStore().showError('Error al cargar las zonas')
-        throw error
       } finally {
         this.loading = false
       }
@@ -136,6 +159,11 @@ export const useZonasStore = defineStore('zonas', {
 
         const record = await pb.collection('zonas').create(zonaData)
         this.zonas.push(record)
+
+        // Actualizar localStorage
+        localStorage.setItem('zonas', JSON.stringify(this.zonas))
+        console.log('Zonas actualizadas en localStorage:', this.zonas)
+
         useSnackbarStore().showSnackbar('Zona agregada exitosamente')
         return record
       } catch (error) {
@@ -154,6 +182,11 @@ export const useZonasStore = defineStore('zonas', {
       try {
         await pb.collection('zonas').delete(id)
         this.zonas = this.zonas.filter((z) => z.id !== id)
+
+        // Actualizar localStorage
+        localStorage.setItem('zonas', JSON.stringify(this.zonas))
+        console.log('Zonas actualizadas en localStorage:', this.zonas)
+
         useSnackbarStore().showSnackbar('Zona eliminada exitosamente')
       } catch (error) {
         console.error('Error deleting zona:', error)
@@ -196,6 +229,19 @@ export const useZonasStore = defineStore('zonas', {
         handleError(error, 'Error al obtener la zona')
         throw error
       }
+    },
+
+    // Método para determinar si se debe actualizar desde el servidor
+    shouldUpdateFromServer(lastUpdated) {
+      // Implementar lógica para determinar si los datos están desactualizados
+      // Por ejemplo, comparar timestamps o un flag de actualización
+      const currentTime = new Date().getTime()
+      const lastUpdateTime = new Date(lastUpdated).getTime()
+      const timeDifference = currentTime - lastUpdateTime
+
+      // Definir un intervalo (por ejemplo, 5 minutos) para considerar los datos como desactualizados
+      const updateInterval = 5 * 60 * 1000 // 5 minutos en milisegundos
+      return timeDifference > updateInterval
     }
   }
 })

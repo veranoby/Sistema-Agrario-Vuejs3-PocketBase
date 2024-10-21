@@ -6,7 +6,7 @@ import placeholderUser from '@/assets/placeholder-user.png'
 
 export const useProfileStore = defineStore('profile', {
   state: () => ({
-    user: null
+    user: JSON.parse(localStorage.getItem('user')) || null // Cargar desde localStorage
   }),
 
   getters: {
@@ -46,7 +46,9 @@ export const useProfileStore = defineStore('profile', {
 
       try {
         const updatedUser = await pb.collection('users').update(this.user.id, profileData)
-        this.user = updatedUser
+        this.setUser(updatedUser)
+        localStorage.setItem('user', JSON.stringify(updatedUser)) // Sincronizar con localStorage
+        console.log('Perfil actualizado en localStorage:', updatedUser)
         snackbarStore.showSnackbar('Profile updated successfully', 'success')
       } catch (error) {
         handleError(error, 'Failed to update profile')
@@ -75,6 +77,8 @@ export const useProfileStore = defineStore('profile', {
 
     setUser(user) {
       this.user = user
+      localStorage.setItem('user', JSON.stringify(user)) // Sincronizar con localStorage
+      console.log('Usuario establecido en localStorage:', user)
     }
   }
 })

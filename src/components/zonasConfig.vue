@@ -1,177 +1,204 @@
 <template>
-  <v-container fluid class="pa-6">
-    <div class="grid grid-cols-4 gap-2 p-2 m-2">
-      <header class="col-span-3 p-2 bg-background shadow-sm">
-        <div class="profile-container mt-0 ml-0">
-          <h3 class="profile-title">
-            Zonas y logística de trabajo
-            <v-chip variant="flat" size="x-small" color="grey-lighten-2" class="mx-1" pill>
-              <v-avatar start> <v-img :src="avatarUrl" alt="Avatar"></v-img> </v-avatar>
-              {{ userRole }}
-            </v-chip>
-            <v-chip variant="flat" size="x-small" color="green-lighten-3" class="mx-1" pill>
-              <v-avatar start> <v-img :src="avatarHaciendaUrl" alt="Avatar"></v-img> </v-avatar>
-              HACIENDA: {{ mi_hacienda?.name }}
-            </v-chip>
-          </h3>
+  <v-container fluid class="pa-2">
+    <div class="grid grid-cols-4 gap-2 p-0 m-2">
+      <header class="col-span-4 bg-background shadow-sm p-0">
+        <div class="profile-container mt-0 ml-0 px-2 py-2">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <!-- Title and Chips Section -->
+            <div class="w-full sm:flex-grow">
+              <h3 class="profile-title text-sm sm:text-lg mb-2 sm:mb-0">
+                Zonas y logística de trabajo
+                <v-chip variant="flat" size="x-small" color="grey-lighten-2" class="mx-1" pill>
+                  <v-avatar start>
+                    <v-img :src="avatarUrl" alt="Avatar"></v-img>
+                  </v-avatar>
+                  {{ userRole }}
+                </v-chip>
+                <v-chip variant="flat" size="x-small" color="green-lighten-3" class="mx-1" pill>
+                  <v-avatar start>
+                    <v-img :src="avatarHaciendaUrl" alt="Avatar"></v-img>
+                  </v-avatar>
+                  {{ mi_hacienda.name }}
+                </v-chip>
+              </h3>
+            </div>
+
+            <!-- EXTRAS Section -->
+            <div class="w-full sm:w-auto z-10 text-center">
+              <!-- circular progress control-->
+              <h4
+                :class="{
+                  'text-red font-extrabold pt-0 pb-2 text-xs sm:text-sm': promedioBpaEstado < 40,
+                  'text-orange font-extrabold pt-0 pb-2 text-xs sm:text-sm':
+                    promedioBpaEstado >= 40 && promedioBpaEstado < 80,
+                  'text-green font-extrabold pt-0 pb-2 text-xs sm:text-sm': promedioBpaEstado >= 80
+                }"
+              >
+                Avance BPA:
+                <span class="hidden sm:inline">Zonas y logística</span>
+              </h4>
+              <!-- Título agregado -->
+              <v-progress-circular
+                :model-value="promedioBpaEstado"
+                :size="78"
+                :width="8"
+                :color="colorBpaEstado"
+              >
+                <template v-slot:default> {{ promedioBpaEstado }} % </template>
+              </v-progress-circular>
+            </div>
+          </div>
+
           <div class="avatar-container">
             <img :src="avatarHaciendaUrl" alt="Avatar de hacienda" class="avatar-image" />
           </div>
         </div>
       </header>
-      <!-- circular progress control-->
-      <div class="mt-2 text-center">
-        <!-- Centrado del contenido -->
-        <h4
-          :class="{
-            'text-red font-extrabold pt-0 pb-2': promedioBpaEstado < 40,
-            'text-orange font-extrabold pt-0 pb-2':
-              promedioBpaEstado >= 40 && promedioBpaEstado < 80,
-            'text-green font-extrabold pt-0 pb-2': promedioBpaEstado >= 80
-          }"
-        >
-          Avance BPA: Zonas y logística
-        </h4>
-        <!-- Título agregado -->
-        <v-progress-circular
-          :model-value="promedioBpaEstado"
-          :size="78"
-          :width="8"
-          :color="colorBpaEstado"
-        >
-          <template v-slot:default> {{ promedioBpaEstado }} % </template>
-        </v-progress-circular>
-      </div>
     </div>
 
-    <v-tabs v-model="tab" background-color="transparent" color="primary">
-      <v-tab v-for="tipoZona in tiposZonas" :key="tipoZona.id" :value="tipoZona.id">
-        {{ tipoZona.nombre }}
-      </v-tab>
-    </v-tabs>
+    <main class="flex-1 py-2">
+      <v-container class="rounded-lg border-2 py-0 px-0">
+        <v-tabs
+          v-model="tab"
+          align-tabs="center"
+          bg-color="green-lighten-1"
+          color="black"
+          height="60"
+          slider-color="black"
+          stacked
+          show-arrows
+          class="rounded-lg"
+        >
+          <v-tab v-for="tipoZona in tiposZonas" :key="tipoZona.id" :value="tipoZona.id">
+            <v-icon>{{ tipoZona.icon }}</v-icon>
+            <span class="text-xxs truncate" style="max-width: 160px; white-space: normal">{{
+              tipoZona.nombre
+            }}</span>
+          </v-tab>
+        </v-tabs>
 
-    <v-tabs-window v-model="tab">
-      <v-tabs-window-item v-for="tipoZona in tiposZonas" :key="tipoZona.id" :value="tipoZona.id">
-        <v-card class="mb-6 bg-dinamico">
-          <v-card-title class="d-flex justify-space-between align-center">
-            <v-tooltip :text="tipoZona.descripcion || 'No disponible'" location="top">
-              <template v-slot:activator="{ props }">
-                <span class="text-base" v-bind="props">
-                  <v-icon>{{ tipoZona.icon }}</v-icon> {{ tipoZona.nombre }}
-                </span>
-              </template>
-              <template v-slot:default>
-                <span v-html="tipoZona.descripcion || 'No disponible'"></span>
-              </template>
-            </v-tooltip>
-
-            <v-btn
-              color="green-lighten-2"
-              icon="mdi-plus"
-              size="small"
-              @click="abrirDialogoCrear(tipoZona)"
-            ></v-btn>
-          </v-card-title>
-          <v-card-text>
-            <v-data-table
-              :headers="headers"
-              :items="getZonasPorTipo(tipoZona.id)"
-              :search="search"
-              :items-per-page="10"
-              :loading="zonasStore.loading"
-              class="elevation-1 tabla-compacta"
-              density="compact"
-              item-value="id"
-              show-expand
-              v-model:expanded="expanded"
-              header-class="custom-header"
-            >
-              <template #top>
-                <v-text-field
-                  v-model="search"
-                  label="Buscar"
-                  variant="outlined"
-                  class="mx-4 compact-form-2"
-                ></v-text-field>
-              </template>
-
-              <template #[`item.bpa_estado`]="{ item }">
+        <v-tabs-window v-model="tab">
+          <v-tabs-window-item
+            v-for="tipoZona in tiposZonas"
+            :key="tipoZona.id"
+            :value="tipoZona.id"
+          >
+            <v-card class="bg-dinamico">
+              <v-card-title class="d-flex justify-space-between align-center">
                 <span
-                  :class="{
-                    'text-red font-extrabold': item.bpa_estado < 40,
-                    'text-orange font-extrabold': item.bpa_estado >= 40 && item.bpa_estado < 80,
-                    'text-green font-extrabold': item.bpa_estado >= 80
-                  }"
+                  class="hidden sm:inline text-sm truncate"
+                  style="max-width: 80%; white-space: normal"
+                  v-html="tipoZona.descripcion || 'Sin descripcion disponible'"
+                ></span>
+
+                <v-btn
+                  color="green-lighten-2"
+                  icon="mdi-plus"
+                  size="small"
+                  @click="abrirDialogoCrear(tipoZona)"
+                ></v-btn>
+              </v-card-title>
+              <v-card-text>
+                <v-data-table
+                  :headers="headers"
+                  :items="getZonasPorTipo(tipoZona.id)"
+                  :search="search"
+                  :items-per-page="10"
+                  :loading="zonasStore.loading"
+                  class="elevation-1 tabla-compacta"
+                  density="compact"
+                  item-value="id"
+                  show-expand
+                  v-model:expanded="expanded"
+                  header-class="custom-header"
                 >
-                  {{ item.bpa_estado }}%
-                </span>
-              </template>
+                  <template #top>
+                    <v-text-field
+                      v-model="search"
+                      label="Buscar"
+                      variant="outlined"
+                      class="mx-4 compact-form-2"
+                    ></v-text-field>
+                  </template>
 
-              <template #[`item.siembra`]="{ item }">
-                {{ getSiembraNombre(item.siembra) }}
-              </template>
+                  <template #[`item.bpa_estado`]="{ item }">
+                    <span
+                      :class="{
+                        'text-red font-extrabold': item.bpa_estado < 40,
+                        'text-orange font-extrabold': item.bpa_estado >= 40 && item.bpa_estado < 80,
+                        'text-green font-extrabold': item.bpa_estado >= 80
+                      }"
+                    >
+                      {{ item.bpa_estado }}%
+                    </span>
+                  </template>
 
-              <template #[`item.actions`]="{ item }">
-                <v-icon class="me-2" @click="editarZona(item)"> mdi-pencil </v-icon>
-                <v-icon @click="confirmarEliminarZona(item)"> mdi-delete </v-icon>
-              </template>
+                  <template #[`item.siembra`]="{ item }">
+                    {{ getSiembraNombre(item.siembra) }}
+                  </template>
 
-              <template #expanded-row="{ columns, item }">
-                <td :colspan="columns.length">
-                  <v-card flat class="pa-4">
-                    <v-row no-gutters>
-                      <v-col cols="7" class="pr-4">
-                        <v-row no-gutters align="center" class="mb-2">
-                          <v-col cols="auto" class="mr-2">
-                            <v-icon>mdi-map-marker-radius</v-icon>
+                  <template #[`item.actions`]="{ item }">
+                    <v-icon class="me-2" @click="editarZona(item)"> mdi-pencil </v-icon>
+                    <v-icon @click="confirmarEliminarZona(item)"> mdi-delete </v-icon>
+                  </template>
+
+                  <template #expanded-row="{ columns, item }">
+                    <td :colspan="columns.length">
+                      <v-card flat class="pa-4">
+                        <v-row no-gutters>
+                          <v-col cols="7" class="pr-4">
+                            <v-row no-gutters align="center" class="mb-2">
+                              <v-col cols="auto" class="mr-2">
+                                <v-icon>mdi-map-marker-radius</v-icon>
+                              </v-col>
+                              <v-col>
+                                {{
+                                  item.area
+                                    ? `${item.area.area} ${item.area.unidad}`
+                                    : 'Área no especificada'
+                                }}
+                              </v-col>
+                              <v-col cols="auto" class="ml-4" v-if="item.gps">
+                                <v-icon>mdi-crosshairs-gps</v-icon>
+                              </v-col>
+                              <v-col v-if="item.gps">
+                                Lat: {{ item.gps.lat }}, Lng: {{ item.gps.lng }}
+                              </v-col>
+                            </v-row>
+                            <v-row no-gutters align="center">
+                              <v-col cols="auto" class="mr-2">
+                                <v-icon>mdi-information-outline</v-icon>
+                              </v-col>
+                              <v-col>
+                                {{ item.info || 'Sin información adicional' }}
+                              </v-col>
+                            </v-row>
                           </v-col>
-                          <v-col>
-                            {{
-                              item.area
-                                ? `${item.area.area} ${item.area.unidad}`
-                                : 'Área no especificada'
-                            }}
-                          </v-col>
-                          <v-col cols="auto" class="ml-4" v-if="item.gps">
-                            <v-icon>mdi-crosshairs-gps</v-icon>
-                          </v-col>
-                          <v-col v-if="item.gps">
-                            Lat: {{ item.gps.lat }}, Lng: {{ item.gps.lng }}
+                          <v-col cols="5" class="d-flex justify-center align-center">
+                            <v-img
+                              v-if="item.avatar"
+                              :src="getAvatarUrl(item)"
+                              max-width="150"
+                              max-height="150"
+                              contain
+                            >
+                              <template v-slot:placeholder>
+                                <v-icon size="150" color="grey lighten-2">mdi-image-off</v-icon>
+                              </template>
+                            </v-img>
+                            <v-icon v-else size="150" color="grey lighten-2">mdi-image-off</v-icon>
                           </v-col>
                         </v-row>
-                        <v-row no-gutters align="center">
-                          <v-col cols="auto" class="mr-2">
-                            <v-icon>mdi-information-outline</v-icon>
-                          </v-col>
-                          <v-col>
-                            {{ item.info || 'Sin información adicional' }}
-                          </v-col>
-                        </v-row>
-                      </v-col>
-                      <v-col cols="5" class="d-flex justify-center align-center">
-                        <v-img
-                          v-if="item.avatar"
-                          :src="getAvatarUrl(item)"
-                          max-width="150"
-                          max-height="150"
-                          contain
-                        >
-                          <template v-slot:placeholder>
-                            <v-icon size="150" color="grey lighten-2">mdi-image-off</v-icon>
-                          </template>
-                        </v-img>
-                        <v-icon v-else size="150" color="grey lighten-2">mdi-image-off</v-icon>
-                      </v-col>
-                    </v-row>
-                  </v-card>
-                </td>
-              </template>
-            </v-data-table>
-          </v-card-text>
-        </v-card>
-      </v-tabs-window-item>
-    </v-tabs-window>
-
+                      </v-card>
+                    </td>
+                  </template>
+                </v-data-table>
+              </v-card-text>
+            </v-card>
+          </v-tabs-window-item>
+        </v-tabs-window>
+      </v-container>
+    </main>
     <v-dialog v-model="dialogoCrear" max-width="900px">
       <v-card>
         <v-card-title>
