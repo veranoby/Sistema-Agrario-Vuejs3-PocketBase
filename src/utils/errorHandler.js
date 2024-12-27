@@ -11,6 +11,7 @@ export function handleError(error, defaultMessage = 'An error occurred') {
     errorMessage = error.message
   }
 
+  /*
   console.log('entrada error:', error.data)
 
   if (error.data && error.data.data) {
@@ -30,7 +31,9 @@ export function handleError(error, defaultMessage = 'An error occurred') {
       errorMessage = 'Old password error: ' + errors.oldPassword.message
     }
   }
+*/
 
-  console.log('error fuera de filtro:', error)
+  console.error('Error:', error)
+
   snackbarStore.showSnackbar(errorMessage, 'error')
 }

@@ -4,8 +4,8 @@ export const pb = new PocketBase('http://127.0.0.1:8090')
 
 /* ESTRUCTURA DE COLECCIONES DE POCKETYBASE
 
-# Colección: haciendas
-haciendas:
+# Colección: 
+Haciendas:
   id: string
   created: datetime
   updated: datetime
@@ -16,7 +16,7 @@ haciendas:
   plan: select(basico, estandar, premium)  # Define el número de usuarios permitidos
   avatar: file
 
-# Colección: tipos_zonas
+# Colección: 
 tipos_zonas:
   id: string
   created: datetime
@@ -27,7 +27,7 @@ tipos_zonas:
   metricas: json (metrica_X": {"tipo": "boolean/checkbox/select/number","descripcion": "xyz?"})
   icon: string
 
-# Colección: zonas
+# Colección: 
 zonas:
   id: string
   created: datetime
@@ -46,8 +46,8 @@ zonas:
   datos_bpa: JSON (aqui se grabaran las respuestas al formulario cargado por tipos_zonas para este tipo de elemento)
   metricas: json (metrica_X": {"tipo": "boolean/checkbox/select/number","descripcion": "xyz?"})
 
-# Colección: siembras
-siembras:
+# Colección: 
+Siembras:
   id: string
   created: datetime
   updated: datetime
@@ -61,7 +61,7 @@ siembras:
   info: string
   avatar: file
   
-# Colección: tipos_actividades
+# Colección: 
 tipos_actividades:
   id: string
   created: datetime
@@ -73,7 +73,7 @@ tipos_actividades:
   icon: string
 
 
-# Colección: actividades
+# Colección: 
 actividades:
   id: string
   created: datetime
@@ -90,7 +90,7 @@ actividades:
   bpa_estado: number (aqui se grabara el porcentaje de avance calculado del bpa para esta actividad)
   datos_bpa: JSON (aqui se grabaran las respuestas al formulario cargado por tipos_zonas para este tipo de elemento)
 
-# Colección: bitacora
+# Colección: 
 bitacora:
   id: string
   created: datetime
@@ -105,8 +105,8 @@ bitacora:
   metricas: json  # Almacena datos específicos de la actividad según metricas_requeridas
   notas: string
 
-# Colección: programaciones
-recordatorios:
+# Colección: 
+programaciones:
   id: string
   created: datetime
   updated: datetime

@@ -2,30 +2,81 @@ import { defineStore } from 'pinia'
 import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
 import { useSnackbarStore } from './snackbarStore'
-import placeholderHacienda from '@/assets/granja.png'
+import { useSyncStore } from './syncStore'
+import { useAvatarStore } from './avatarStore'
 
 export const useHaciendaStore = defineStore('hacienda', {
-  state: () => ({
-    mi_hacienda: JSON.parse(localStorage.getItem('mi_hacienda')) || null // Cargar desde localStorage
-  }),
+  state: () => {
+    const syncStore = useSyncStore()
+    return {
+      mi_hacienda: syncStore.loadFromLocalStorage('mi_hacienda')
+    }
+  },
 
   getters: {
     haciendaName: (state) => state.mi_hacienda?.name || '',
     avatarHaciendaUrl: (state) => {
-      if (state.mi_hacienda?.avatar) {
-        return pb.getFileUrl(state.mi_hacienda, state.mi_hacienda.avatar)
-      }
-      return placeholderHacienda
+      const avatarStore = useAvatarStore()
+      return avatarStore.getAvatarUrl({ ...state.mi_hacienda, type: 'hacienda' }, 'Haciendas')
     }
   },
 
   actions: {
+    async updateHacienda(haciendaData) {
+      const syncStore = useSyncStore()
+
+      const dataToUpdate = { ...haciendaData }
+      if (!dataToUpdate.avatar && this.mi_hacienda.avatar) {
+        dataToUpdate.avatar = this.mi_hacienda.avatar
+      }
+
+      if (!syncStore.isOnline) {
+        console.log('No hay conexión a Internet. Agregando a cola de sincronización.')
+        await syncStore.queueOperation({
+          type: 'update',
+          collection: 'Haciendas',
+          id: this.mi_hacienda.id,
+          data: dataToUpdate
+        })
+        this.mi_hacienda = { ...this.mi_hacienda, ...dataToUpdate }
+        return
+      }
+
+      const snackbarStore = useSnackbarStore()
+      snackbarStore.showLoading()
+
+      try {
+        // Convertir el nombre a mayúsculas si está presente
+        if (haciendaData.name) {
+          haciendaData.name = haciendaData.name.toUpperCase()
+        }
+
+        const updatedHacienda = await pb
+          .collection('Haciendas')
+          .update(this.mi_hacienda.id, haciendaData)
+        this.mi_hacienda = updatedHacienda
+        syncStore.saveToLocalStorage('mi_hacienda', this.mi_hacienda)
+        snackbarStore.showSnackbar('Hacienda actualizada con éxito', 'success')
+
+        return updatedHacienda
+      } catch (error) {
+        handleError(error, 'Error al actualizar la hacienda')
+      } finally {
+        snackbarStore.hideLoading()
+      }
+    },
+
     async fetchHacienda(haciendaId) {
+      const syncStore = useSyncStore()
       try {
         this.mi_hacienda = await pb.collection('Haciendas').getOne(haciendaId)
-        console.log('Cargando hacienda desde la API:', this.mi_hacienda)
-        localStorage.setItem('mi_hacienda', JSON.stringify(this.mi_hacienda)) // Sincronizar con localStorage solo cuando sea necesario
-        console.log('Hacienda guardada en localStorage:', this.mi_hacienda)
+        this.baseImageUrl = pb.baseUrl + '/api/files'
+
+        console.log('baseImageUrl:', this.baseImageUrl)
+
+        // Usar syncStore en lugar de localStorage directamente
+        syncStore.saveToLocalStorage('mi_hacienda', this.mi_hacienda)
+        syncStore.saveToLocalStorage('baseImageUrl', this.baseImageUrl)
       } catch (error) {
         handleError(error, 'Error loading hacienda information')
       }
@@ -48,46 +99,34 @@ export const useHaciendaStore = defineStore('hacienda', {
 
     async deleteHaciendaUser(userId) {
       const snackbarStore = useSnackbarStore()
+      const syncStore = useSyncStore()
       snackbarStore.showLoading()
 
       try {
+        if (!syncStore.isOnline) {
+          await syncStore.queueOperation({
+            type: 'delete',
+            collection: 'users',
+            id: userId
+          })
+          // Actualizar UI inmediatamente
+          const users =
+            syncStore.loadFromLocalStorage(`hacienda_users_${this.mi_hacienda.id}`) || []
+          const updatedUsers = users.filter((user) => user.id !== userId)
+          syncStore.saveToLocalStorage(`hacienda_users_${this.mi_hacienda.id}`, updatedUsers)
+          return
+        }
+
         await pb.collection('users').delete(userId)
         // Actualizar localStorage después de eliminar
         console.log('Actualizando localStorage después de eliminar usuario')
-        const users =
-          JSON.parse(localStorage.getItem(`hacienda_users_${this.mi_hacienda.id}`)) || []
+        const users = syncStore.loadFromLocalStorage(`hacienda_users_${this.mi_hacienda.id}`) || []
         const updatedUsers = users.filter((user) => user.id !== userId)
-        localStorage.setItem(`hacienda_users_${this.mi_hacienda.id}`, JSON.stringify(updatedUsers))
-        snackbarStore.showSnackbar('User deleted successfully', 'success')
-        console.log('Actualizando localStorage después de eliminar usuario')
+        syncStore.saveToLocalStorage(`hacienda_users_${this.mi_hacienda.id}`, updatedUsers)
+
+        snackbarStore.showSnackbar('Usuario eliminado con éxito', 'success')
       } catch (error) {
-        handleError(error, 'Failed to delete user')
-      } finally {
-        snackbarStore.hideLoading()
-      }
-    },
-
-    async updateHacienda(haciendaData) {
-      const snackbarStore = useSnackbarStore()
-      snackbarStore.showLoading()
-
-      try {
-        // Convertir el nombre a mayúsculas si está presente
-        if (haciendaData.name) {
-          haciendaData.name = haciendaData.name.toUpperCase()
-        }
-
-        const updatedHacienda = await pb
-          .collection('Haciendas')
-          .update(this.mi_hacienda.id, haciendaData)
-        this.mi_hacienda = updatedHacienda
-        console.log('Hacienda actualizada en localStorage:', this.mi_hacienda)
-        localStorage.setItem('mi_hacienda', JSON.stringify(this.mi_hacienda)) // Sincronizar con localStorage
-        snackbarStore.showSnackbar('Hacienda information updated successfully', 'success')
-        console.log('Actualizando localStorage con nueva información de hacienda')
-        return updatedHacienda
-      } catch (error) {
-        handleError(error, 'Failed to update hacienda information')
+        handleError(error, 'Error al eliminar usuario')
       } finally {
         snackbarStore.hideLoading()
       }
@@ -95,6 +134,7 @@ export const useHaciendaStore = defineStore('hacienda', {
 
     async createHacienda(haciendaName, haciendaPlan) {
       const snackbarStore = useSnackbarStore()
+      const syncStore = useSyncStore()
       snackbarStore.showLoading()
 
       try {
@@ -106,33 +146,13 @@ export const useHaciendaStore = defineStore('hacienda', {
         }
         const newHacienda = await pb.collection('Haciendas').create(haciendaData)
         // Guardar nueva hacienda en localStorage
-        localStorage.setItem('mi_hacienda', JSON.stringify(newHacienda))
+        syncStore.saveToLocalStorage('mi_hacienda', newHacienda)
         console.log('Nueva hacienda guardada en localStorage:', newHacienda)
         snackbarStore.showSnackbar('Hacienda created successfully', 'success')
         console.log('Guardando nueva hacienda en localStorage')
         return newHacienda
       } catch (error) {
         handleError(error, 'Failed to create hacienda')
-      } finally {
-        snackbarStore.hideLoading()
-      }
-    },
-
-    async updateHaciendaAvatar(avatarFile) {
-      const snackbarStore = useSnackbarStore()
-      snackbarStore.showLoading()
-
-      try {
-        const formData = new FormData()
-        formData.append('avatar', avatarFile)
-
-        this.mi_hacienda = await pb.collection('Haciendas').update(this.mi_hacienda.id, formData)
-
-        snackbarStore.showSnackbar('Avatar de hacienda actualizado con éxito', 'success')
-        localStorage.setItem('mi_hacienda', JSON.stringify(this.mi_hacienda)) // Actualizar localStorage
-        console.log('Actualizando localStorage con nuevo avatar de hacienda')
-      } catch (error) {
-        handleError(error, 'Error al actualizar el avatar de la hacienda')
       } finally {
         snackbarStore.hideLoading()
       }

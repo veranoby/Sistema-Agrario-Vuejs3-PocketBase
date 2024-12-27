@@ -1,64 +1,76 @@
 @import './base.css';
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-#app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 1rem;
-  font-weight: normal;
-}
-
-a,
-.green {
-  text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-  padding: 3px;
-}
-
-@media (hover: hover) {
-  a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
-  }
-}
-
-@media (min-width: 1024px) {
-  body {
-    display: flex;
-    place-items: center;
-  }
-
-  #app {
-    /* display: grid; */
-    grid-template-columns: 1fr 1fr;
-    padding: 0 1rem;
-    min-width: 80%;
-  }
-}
-
 :root {
-  --color-background: #ffffff; /* Default light theme background */
-  --color-background-dark: #121212; /* Default dark theme background */
+  --font-family-sans: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-background: var(--color-background-dark);
-  }
+/* Tema claro por defecto */
+:root {
+  --color-background: #ffffff;
+  --color-text: #2c3e50;
+  --color-border: #eaeaea;
+  --fondo_claro: #7a99b357;
+  --fondo_claro_tabla: #6380a217;
+  --color_titulo: #000000;
 }
 
+/* Tema oscuro */
+[data-theme='dark'] {
+  --color-background: #121212;
+  --color-text: #ffffff;
+  --color-border: #2c2c2c;
+  --fondo_claro: #7a99b357;
+  --fondo_claro_tabla: #6e97b21c;
+
+  --color_titulo: #ffffff;
+}
+
+html,
 body {
-  background-color: var(--color-background);
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  min-height: 100vh;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: 'Plus Jakarta Sans';
   font-weight: 500;
 }
 *,
 *::before,
 *::after {
   font-weight: 600;
+}
+
+/* Centrar el contenido de la aplicación */
+#app {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0 auto;
+  /* padding: 0;*/
+  display: flex;
+  flex-direction: column;
+
+  font-weight: normal;
+
+  padding: 0 1rem;
+  min-width: 80%;
+}
+
+/* Mantener los estilos existentes pero ajustar el layout */
+@media (min-width: 1024px) {
+  #app {
+    max-width: 100%;
+  }
+
+  .content-wrapper {
+    width: 90%;
+    margin: 0 auto;
+  }
 }
 
 /*cabeceras y avatar */
@@ -147,16 +159,6 @@ body {
   width: 120%;
 }
 
-/*
-.compact-form {
-  transform: scale(0.75);
-  transform-origin: left;
-  font-weight: 600;
-  display: inline-flex; 
-  margin-right: 2px; 
-}
-*/
-
 .compact-form-2 {
   transform: scale(0.66);
   transform-origin: left;
@@ -208,7 +210,7 @@ body {
 .v-expand-transition {
   transition-duration: 0.5s !important;
 }
-
 .v-expand-transition .v-expand-transition__container {
   transition: all 0.5s ease-in-out !important;
 }
+/* ... resto de tus estilos ... */

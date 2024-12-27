@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col rounded-lg border-2 px-4 py-4">
+  <div class="flex flex-col border-1 px-4 py-4 bg-dinamico">
     <div class="flex items-center justify-between mb-4">
       <h2 class="text-l font-bold">Plan Actual</h2>
       <v-chip :color="getPlanColor" variant="tonal" size="small" class="ml-4">
@@ -17,7 +17,7 @@
 
   <v-dialog
     v-model="changePlanModalOpen"
-    max-width="600px"
+    max-width="800px"
     persistent
     transition="dialog-bottom-transition"
     scrollable
@@ -27,13 +27,13 @@
         ><h1 class="text-2xl font-bold text-center mt-2">Seleccione su Plan</h1></v-card-title
       >
       <v-card-text>
-        <v-radio-group class="compact-form" v-model="selectedPlan">
+        <v-radio-group class="" v-model="selectedPlan">
           <div class="grid grid-cols-3 gap-2">
             <div v-for="plan in availablePlans" :key="plan.id">
               <v-hover
                 ><template v-slot:default="{ isHovering, props }">
                   <v-card
-                    class="p-4 m-2 bg-white rounded-lg shadow-md overflow-hidden border-2 flex flex-col"
+                    class="p-4 m-2 rounded-lg shadow-md overflow-hidden border-2 flex flex-col"
                     v-bind="props"
                     :color="isHovering ? 'green-lighten-2' : undefined"
                   >
@@ -53,7 +53,7 @@
                     </ul>
                     <br />
                     <v-radio
-                      class="text-xs font-bold"
+                      class="compact-form text-xs font-bold"
                       :key="plan.id"
                       :label="`Seleccionar`"
                       :value="plan.id"

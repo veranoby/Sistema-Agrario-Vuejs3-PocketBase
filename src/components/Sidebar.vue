@@ -48,13 +48,13 @@ export default {
   props: {
     navigationLinks: Array // Array of navigation links objects (see below)
   },
-  setup() {
+  setup(props, { emit }) {
     const authStore = useAuthStore()
     const isLoggedIn = computed(() => authStore.isLoggedIn)
 
     watch(isLoggedIn, (newValue) => {
-      if (newValue) {
-        // Refresh sidebar content if needed
+      if (!newValue) {
+        emit('updateSidebarVisibility', false) // Emitir evento para ocultar el sidebar
       }
     })
 

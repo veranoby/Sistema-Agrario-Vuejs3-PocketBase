@@ -7,19 +7,34 @@ import { useHaciendaStore } from './haciendaStore'
 import { usePlanStore } from './planStore'
 import { useValidationStore } from './validationStore'
 import router from '@/router'
+import { useSyncStore } from './syncStore'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     registrationSuccess: false,
     loading: false,
-
-    isLoggedIn: false,
+    user: null,
     token: null,
+    isLoggedIn: false,
     rememberMe: null
   }),
 
   actions: {
+    async init() {
+      const syncStore = useSyncStore()
+      const token = syncStore.loadFromLocalStorage('token')
+      if (token) {
+        try {
+          const authData = await pb.collection('users').authRefresh()
+          this.setSession(authData)
+        } catch (error) {
+          this.logout()
+        }
+      }
+    },
+
     async login(usernameOrEmail, password, rememberMe = false) {
+      const syncStore = useSyncStore()
       if (this.loading) return // Prevent multiple calls while loading
       this.loading = true
 
@@ -27,6 +42,10 @@ export const useAuthStore = defineStore('auth', {
       const profileStore = useProfileStore()
       const haciendaStore = useHaciendaStore()
       const planStore = usePlanStore()
+
+      if (!syncStore.isOnline) {
+        throw new Error('Se requiere conexión a internet para el primer inicio de sesión')
+      }
 
       snackbarStore.showLoading()
 
@@ -36,8 +55,7 @@ export const useAuthStore = defineStore('auth', {
         if (pb.authStore.isValid) {
           profileStore.setUser(authData.record)
 
-          this.isLoggedIn = true
-          this.token = pb.authStore.token
+          this.setSession(authData)
 
           console.log('usuario:', profileStore.user)
           console.log('isLoggedIn:', this.isLoggedIn)
@@ -46,21 +64,13 @@ export const useAuthStore = defineStore('auth', {
           await planStore.fetchAvailablePlans()
           await haciendaStore.fetchHacienda(authData.record.hacienda)
 
+          router.push('/dashboard') // Navigate to dashboard.vue
           if (rememberMe) {
-            this.$state.rememberMe = { usernameOrEmail, password } // Almacenar en el estado
-            console.log('Guardando credenciales en el estado:', this.$state.rememberMe)
-          } else {
-            this.$state.rememberMe = null // Limpiar el estado
+            syncStore.saveToLocalStorage('token', this.token)
+            syncStore.saveToLocalStorage('user', authData.record)
           }
 
-          // Sincronizar con localStorage solo cuando sea necesario
-          localStorage.setItem('token', this.token)
-          console.log('Token guardado en localStorage:', this.token)
-
-          snackbarStore.showSnackbar('Login successful!', 'success')
-
-          router.push('/dashboard') // Navigate to dashboard.vue
-
+          //    await syncStore.queueOperation({ type: 'login', data: { usernameOrEmail, password } })
           return true
         } else {
           throw new Error('Login failed: Invalid credentials')
@@ -73,6 +83,15 @@ export const useAuthStore = defineStore('auth', {
         this.loading = false
         snackbarStore.hideLoading()
       }
+    },
+
+    setSession(authData) {
+      this.user = authData.record
+      this.token = pb.authStore.token
+      this.isLoggedIn = true
+
+      const syncStore = useSyncStore()
+      syncStore.init()
     },
 
     async register(formData, new_role) {
@@ -189,7 +208,6 @@ export const useAuthStore = defineStore('auth', {
         handleError(error, 'Failed to send verification email')
       }
     },
-
     async confirmEmail(token) {
       const snackbarStore = useSnackbarStore()
 
@@ -221,28 +239,37 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    logout() {
+    async logout() {
       const snackbarStore = useSnackbarStore()
-      const profileStore = useProfileStore()
+      //    const syncStore = useSyncStore()
 
-      snackbarStore.showLoading()
+      try {
+        router.push('/dashboard')
+        //     pb.authStore.clear()
+        //    this.user = null
+        this.token = null
+        this.isLoggedIn = false
 
-      pb.authStore.clear()
-      profileStore.setUser(null)
+        // Limpiar todo el localStorage
+        localStorage.clear()
 
-      this.$state.isLoggedIn = false
-      this.$state.token = null
+        // O si prefieres usar syncStore para mantener la consistencia
+        // syncStore.removeFromLocalStorage('token')
+        // syncStore.removeFromLocalStorage('user')
+        // syncStore.removeFromLocalStorage('rememberMe')
+        // syncStore.removeFromLocalStorage('zonas')
+        // syncStore.removeFromLocalStorage('tiposZonas')
+        // syncStore.removeFromLocalStorage('actividades')
+        // syncStore.removeFromLocalStorage('tiposActividades')
+        // syncStore.removeFromLocalStorage('siembras')
 
-      // Sincronizar el estado con localStorage
-      localStorage.removeItem('rememberMe')
-      localStorage.removeItem('token')
-      console.log('Limpiando localStorage en logout')
+        snackbarStore.showSnackbar('Logged out successfully', 'success')
 
-      localStorage.removeItem('tiposZonas')
-      localStorage.removeItem('tiposActividades')
-
-      snackbarStore.showSnackbar('Logged out successfully', 'success')
-      router.push('/')
+        // Redirigir después de limpiar el estado
+      } catch (error) {
+        console.error('Error during logout:', error)
+        snackbarStore.showSnackbar('Error al cerrar sesión', 'error')
+      }
     }
   }
 })

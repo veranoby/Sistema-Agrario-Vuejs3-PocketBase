@@ -1,5 +1,5 @@
 <template>
-  <div class="rounded-lg border-2 px-4 py-4 shadow-md hover:shadow-xl">
+  <div class="bg-dinamico border-1 px-4 py-4 shadow-md hover:shadow-xl">
     <h2 class="text-xl font-bold mb-4">Mis Usuarios</h2>
 
     <div class="mb-6">

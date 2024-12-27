@@ -1,19 +1,21 @@
 import { defineStore } from 'pinia'
 import { pb } from '@/utils/pocketbase'
+import { useSyncStore } from './syncStore'
 import { useSnackbarStore } from './snackbarStore'
 import { handleError } from '@/utils/errorHandler'
-import { useHaciendaStore } from './haciendaStore' // Añadir esta importación
+import { useHaciendaStore } from './haciendaStore'
 
 export const useZonasStore = defineStore('zonas', {
   state: () => ({
     zonas: [],
     tiposZonas: [],
     loading: false,
-    error: null
+    error: null,
+    version: 1,
+    lastSync: null
   }),
 
   getters: {
-    // Nuevo getter para calcular el promedio de bpa_estado
     promedioBpaEstado() {
       const haciendaStore = useHaciendaStore()
       const zonasHacienda = this.zonas.filter(
@@ -25,64 +27,174 @@ export const useZonasStore = defineStore('zonas', {
   },
 
   actions: {
-    async fetchZonasBySiembraId(siembraId) {
-      this.loading = true
+    async init() {
+      const syncStore = useSyncStore()
+
+      // Cargar tipos de zonas
+      await this.cargarTiposZonas()
+
+      // Si está online, sincronizar con servidor
+      if (syncStore.isOnline) {
+        await this.syncWithServer()
+      }
+    },
+
+    async cargarZonas() {
+      const syncStore = useSyncStore()
+      const haciendaStore = useHaciendaStore()
       this.error = null
+      this.loading = true
+
+      // Cargar datos locales primero
+      const zonasLocal = syncStore.loadFromLocalStorage('zonas')
+      if (zonasLocal) {
+        this.zonas = zonasLocal
+        console.log('Cargado zonas desde localStorage:', this.zonas)
+        this.loading = false
+        return
+      }
+
       try {
+        // Obtener solo las zonas de la hacienda actual
         const records = await pb.collection('zonas').getFullList({
-          filter: `siembra="${siembraId}"`,
-          sort: 'nombre'
+          sort: 'nombre',
+          filter: `hacienda="${haciendaStore.mi_hacienda?.id}"`
         })
         this.zonas = records
-        return records
+        this.lastSync = Date.now()
+
+        console.log('Zonas actualizadas en localStorage:', this.zonas)
+        // Guardar zonas en localStorage para uso offline
+        syncStore.saveToLocalStorage('zonas', records)
       } catch (error) {
-        console.error('Error fetching zonas:', error)
-        this.error = 'Failed to fetch zonas'
-        useSnackbarStore().showError('Error al cargar las zonas')
-        throw error
+        console.error('Error syncing zonas:', error)
+        handleError(error, 'Error al sincronizar zonas')
       } finally {
         this.loading = false
+      }
+    },
+
+    async syncWithServer() {
+      // Sincronizar cambios pendientes
+      await this.cargarZonas() // Cargar zonas desde el servidor
+      // Aquí puedes agregar lógica para sincronizar cambios pendientes
+    },
+
+    async crearZona(zonaData) {
+      const syncStore = useSyncStore()
+
+      // Asegurarse de que las métricas estén en el formato correcto
+      if (zonaData.metricas) {
+        zonaData.metricas = Object.fromEntries(
+          Object.entries(zonaData.metricas).map(([key, value]) => [key, value.valor])
+        )
+      }
+
+      zonaData.bpa_estado = this.calcularBpaEstado(zonaData.datos_bpa)
+
+      if (!syncStore.isOnline) {
+        const tempId = `temp_${Date.now()}`
+        const tempZona = {
+          ...zonaData,
+          id: tempId,
+          created: new Date().toISOString(),
+          updated: new Date().toISOString(),
+          version: this.version
+        }
+
+        this.zonas.push(tempZona)
+        // Actualizar localStorage
+        syncStore.saveToLocalStorage('zonas', this.zonas)
+
+        await syncStore.queueOperation({
+          type: 'create',
+          collection: 'zonas',
+          data: tempZona,
+          tempId
+        })
+
+        return tempZona
+      }
+
+      try {
+        const record = await pb.collection('zonas').create(zonaData)
+        this.zonas.push(record)
+        // Actualizar localStorage
+        syncStore.saveToLocalStorage('zonas', this.zonas)
+        return record
+      } catch (error) {
+        handleError(error, 'Error al crear zona')
+        throw error
       }
     },
 
     async updateZona(id, updateData) {
-      this.loading = true
-      this.error = null
+      const syncStore = useSyncStore()
+      updateData.bpa_estado = this.calcularBpaEstado(updateData.datos_bpa)
+
+      if (!syncStore.isOnline) {
+        const index = this.zonas.findIndex((z) => z.id === id)
+        if (index !== -1) {
+          this.zonas[index] = { ...this.zonas[index], ...updateData }
+          // Actualizar localStorage
+          syncStore.saveToLocalStorage('zonas', this.zonas)
+        }
+
+        await syncStore.queueOperation({
+          type: 'update',
+          collection: 'zonas',
+          id,
+          data: updateData
+        })
+
+        return this.zonas[index]
+      }
+
       try {
-        // Validación básica
-        if (!updateData.nombre) throw new Error('El nombre es requerido')
-
-        if (updateData.nombre) {
-          updateData.nombre = updateData.nombre.toUpperCase()
-        }
-
-        if (updateData.datos_bpa) {
-          updateData.bpa_estado = this.calcularBpaEstado(updateData.datos_bpa)
-        }
-
         const record = await pb.collection('zonas').update(id, updateData)
         const index = this.zonas.findIndex((z) => z.id === id)
         if (index !== -1) {
-          this.zonas[index] = { ...this.zonas[index], ...record }
+          this.zonas[index] = record
+          // Actualizar localStorage
+          syncStore.saveToLocalStorage('zonas', this.zonas)
         }
-
-        // Actualizar localStorage solo si se actualiza la zona
-        localStorage.setItem('zonas', JSON.stringify(this.zonas))
-        console.log('Zonas actualizadas en localStorage:', this.zonas)
-
-        useSnackbarStore().showSnackbar('Zona actualizada exitosamente')
         return record
       } catch (error) {
-        console.error('Error updating zona:', error)
-        this.error = 'Failed to update zona'
-        handleError(error, 'Error al actualizar la zona')
+        handleError(error, 'Error al actualizar zona')
         throw error
-      } finally {
-        this.loading = false
       }
     },
 
-    // Nuevo método para calcular bpa_estado
+    async eliminarZona(id) {
+      const syncStore = useSyncStore()
+
+      if (!syncStore.isOnline) {
+        const index = this.zonas.findIndex((z) => z.id === id)
+        if (index !== -1) {
+          this.zonas.splice(index, 1)
+          syncStore.saveToLocalStorage('zonas', this.zonas)
+        }
+
+        await syncStore.queueOperation({
+          type: 'deleteZona',
+          id
+        })
+
+        return
+      }
+
+      try {
+        await pb.collection('zonas').delete(id)
+        this.zonas = this.zonas.filter((zona) => zona.id !== id)
+        syncStore.saveToLocalStorage('zonas', this.zonas)
+
+        return true
+      } catch (error) {
+        handleError(error, 'Error al eliminar zona')
+        throw error
+      }
+    },
+
     calcularBpaEstado(datosBpa) {
       if (!datosBpa || datosBpa.length === 0) return 0
 
@@ -97,11 +209,10 @@ export const useZonasStore = defineStore('zonas', {
     },
 
     async cargarTiposZonas() {
-      // Verificar si los tipos de zonas están en localStorage
-      const tiposZonasLocal = localStorage.getItem('tiposZonas')
+      const tiposZonasLocal = useSyncStore().loadFromLocalStorage('tiposZonas')
       if (tiposZonasLocal) {
-        this.tiposZonas = JSON.parse(tiposZonasLocal)
-        console.log('Cargado desde localStorage:', this.tiposZonas)
+        this.tiposZonas = tiposZonasLocal
+        console.log('Cargado tiposZonas desde localStorage:', this.tiposZonas)
         return this.tiposZonas
       }
 
@@ -110,91 +221,11 @@ export const useZonasStore = defineStore('zonas', {
           sort: 'nombre'
         })
         this.tiposZonas = records
-        // Guardar en localStorage
-        localStorage.setItem('tiposZonas', JSON.stringify(records))
-        console.log('tiposZonas:', this.tiposZonas)
+        // Guardar zonas en localStorage para uso offline
+        useSyncStore().saveToLocalStorage('tiposZonas', records)
+        console.log('tiposZonas actualizadas:', this.tiposZonas)
       } catch (error) {
-        console.error('Error al cargar tipos de zonas:', error)
         handleError(error, 'Error al cargar tipos de zonas')
-      }
-    },
-
-    // Añadimos esta nueva función
-    async cargarZonas() {
-      const zonasLocal = localStorage.getItem('zonas')
-      if (zonasLocal) {
-        this.zonas = JSON.parse(zonasLocal)
-        console.log('Cargado desde localStorage:', this.zonas)
-        return
-      }
-
-      // Lógica para cargar desde el servidor
-      this.loading = true
-      this.error = null
-      try {
-        const records = await pb.collection('zonas').getFullList({
-          sort: 'nombre'
-        })
-        this.zonas = records
-        localStorage.setItem('zonas', JSON.stringify(records))
-        console.log('Zonas actualizadas en localStorage:', this.zonas)
-      } catch (error) {
-        console.error('Error cargando zonas:', error)
-        this.error = 'Error al cargar zonas'
-        useSnackbarStore().showError('Error al cargar las zonas')
-      } finally {
-        this.loading = false
-      }
-    },
-
-    async crearZona(zonaData) {
-      this.loading = true
-      this.error = null
-      try {
-        // Validación básica
-        if (!zonaData.nombre) throw new Error('El nombre es requerido')
-
-        zonaData.nombre = zonaData.nombre.toUpperCase()
-        zonaData.bpa_estado = this.calcularBpaEstado(zonaData.datos_bpa)
-
-        const record = await pb.collection('zonas').create(zonaData)
-        this.zonas.push(record)
-
-        // Actualizar localStorage
-        localStorage.setItem('zonas', JSON.stringify(this.zonas))
-        console.log('Zonas actualizadas en localStorage:', this.zonas)
-
-        useSnackbarStore().showSnackbar('Zona agregada exitosamente')
-        return record
-      } catch (error) {
-        console.error('Error adding zona:', error)
-        this.error = 'Failed to add zona'
-        handleError(error, 'Error al agregar la zona')
-        throw error
-      } finally {
-        this.loading = false
-      }
-    },
-
-    async eliminarZona(id) {
-      this.loading = true
-      this.error = null
-      try {
-        await pb.collection('zonas').delete(id)
-        this.zonas = this.zonas.filter((z) => z.id !== id)
-
-        // Actualizar localStorage
-        localStorage.setItem('zonas', JSON.stringify(this.zonas))
-        console.log('Zonas actualizadas en localStorage:', this.zonas)
-
-        useSnackbarStore().showSnackbar('Zona eliminada exitosamente')
-      } catch (error) {
-        console.error('Error deleting zona:', error)
-        this.error = 'Failed to delete zona'
-        useSnackbarStore().showError('Error al eliminar la zona')
-        throw error
-      } finally {
-        this.loading = false
       }
     },
 
@@ -206,8 +237,6 @@ export const useZonasStore = defineStore('zonas', {
         formData.append('avatar', avatarFile)
 
         const updatedZona = await pb.collection('zonas').update(zonaId, formData)
-
-        // Update the zona in the state
         const index = this.zonas.findIndex((z) => z.id === updatedZona.id)
         if (index !== -1) {
           this.zonas[index] = updatedZona
@@ -229,19 +258,53 @@ export const useZonasStore = defineStore('zonas', {
         handleError(error, 'Error al obtener la zona')
         throw error
       }
-    },
-
-    // Método para determinar si se debe actualizar desde el servidor
-    shouldUpdateFromServer(lastUpdated) {
-      // Implementar lógica para determinar si los datos están desactualizados
-      // Por ejemplo, comparar timestamps o un flag de actualización
-      const currentTime = new Date().getTime()
-      const lastUpdateTime = new Date(lastUpdated).getTime()
-      const timeDifference = currentTime - lastUpdateTime
-
-      // Definir un intervalo (por ejemplo, 5 minutos) para considerar los datos como desactualizados
-      const updateInterval = 5 * 60 * 1000 // 5 minutos en milisegundos
-      return timeDifference > updateInterval
     }
+
+    /*   async fetchZonasBySiembraId(siembraId) {
+      const syncStore = useSyncStore()
+      this.loading = true
+      this.error = null
+
+      try {
+        // Primero intentamos obtener las zonas del store local
+        if (this.zonas.length > 0) {
+          const zonasFiltered = this.zonas.filter((zona) => zona.siembra === siembraId)
+          console.log('zonas filtradas store:', zonasFiltered)
+          if (zonasFiltered.length > 0) {
+            return zonasFiltered
+          }
+        }
+
+        // Si no hay en el store, intentamos obtener de localStorage
+        const zonasLocal = syncStore.loadFromLocalStorage('zonas')
+        if (zonasLocal) {
+          const zonasFiltered = zonasLocal.filter((zona) => zona.siembra === siembraId)
+          //         this.zonas = zonasLocal // Actualizamos el store con todos los datos
+          console.log('zonas filtradas local:', zonasFiltered)
+
+          return zonasFiltered
+        }
+
+        // Si no hay datos locales y hay conexión, obtenemos del servidor
+        if (syncStore.isOnline) {
+          const records = await pb.collection('zonas').getFullList({
+            filter: `siembra="${siembraId}"`,
+            sort: 'nombre'
+          })
+          console.log('zonas filtradas online:', records)
+          // Aquí no guardamos en localStorage porque solo son zonas filtradas
+          return records
+        }
+
+        return [] // Si no hay datos y estamos offline, retornamos array vacío
+      } catch (error) {
+        console.error('Error fetching zonas:', error)
+        this.error = 'Error al cargar las zonas'
+        useSnackbarStore().showError('Error al cargar las zonas')
+        throw error
+      } finally {
+        this.loading = false
+      }
+    } */
   }
 })

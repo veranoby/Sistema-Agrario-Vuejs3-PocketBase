@@ -2,18 +2,20 @@ import { defineStore } from 'pinia'
 import { pb } from '@/utils/pocketbase'
 import { useSnackbarStore } from './snackbarStore'
 import { handleError } from '@/utils/errorHandler'
-import { useHaciendaStore } from './haciendaStore' // Añadir esta importación
+import { useSyncStore } from './syncStore'
+import { useHaciendaStore } from './haciendaStore'
+import { localStorageManager } from '@/utils/localStorageUtils'
 
 export const useActividadesStore = defineStore('actividades', {
   state: () => ({
-    actividades: [],
-    tiposActividades: [],
+    actividades: localStorageManager.load('actividades') || [],
+    tiposActividades: localStorageManager.load('tiposActividades') || [],
     loading: false,
-    error: null
+    error: null,
+    version: 1
   }),
 
   getters: {
-    // Nuevo getter para calcular el promedio de bpa_estado
     promedioBpaEstado() {
       const haciendaStore = useHaciendaStore()
       const actividadesHacienda = this.actividades.filter(
@@ -30,6 +32,126 @@ export const useActividadesStore = defineStore('actividades', {
   },
 
   actions: {
+    async cargarActividades() {
+      this.loading = true
+      const syncStore = useSyncStore()
+      const haciendaStore = useHaciendaStore()
+
+      try {
+        if (syncStore.isOnline) {
+          const records = await pb.collection('actividades').getFullList({
+            sort: 'nombre',
+            filter: `hacienda="${haciendaStore.mi_hacienda?.id}"`
+          })
+          this.actividades = records
+          localStorageManager.save('actividades', records)
+        } else {
+          this.actividades = localStorageManager.load('actividades') || []
+        }
+      } catch (error) {
+        handleError(error, 'Error al cargar actividades')
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async crearActividad(actividadData) {
+      const syncStore = useSyncStore()
+
+      if (!syncStore.isOnline) {
+        const tempId = `temp_${Date.now()}`
+        const tempActividad = {
+          ...actividadData,
+          id: tempId,
+          created: new Date().toISOString(),
+          updated: new Date().toISOString()
+        }
+
+        this.actividades.push(tempActividad)
+        localStorageManager.save('actividades', this.actividades)
+
+        await syncStore.queueOperation({
+          type: 'create',
+          collection: 'actividades',
+          data: actividadData,
+          tempId
+        })
+
+        return tempActividad
+      }
+
+      try {
+        const record = await pb.collection('actividades').create(actividadData)
+        this.actividades.push(record)
+        localStorageManager.save('actividades', this.actividades)
+        return record
+      } catch (error) {
+        handleError(error, 'Error al crear actividad')
+        throw error
+      }
+    },
+
+    async updateActividad(id, updateData) {
+      const syncStore = useSyncStore()
+
+      if (!syncStore.isOnline) {
+        const index = this.actividades.findIndex((a) => a.id === id)
+        if (index !== -1) {
+          this.actividades[index] = { ...this.actividades[index], ...updateData }
+          localStorageManager.save('actividades', this.actividades)
+        }
+
+        await syncStore.queueOperation({
+          type: 'update',
+          collection: 'actividades',
+          id,
+          data: updateData
+        })
+
+        return this.actividades[index]
+      }
+
+      try {
+        const record = await pb.collection('actividades').update(id, updateData)
+        const index = this.actividades.findIndex((a) => a.id === id)
+        if (index !== -1) {
+          this.actividades[index] = record
+          localStorageManager.save('actividades', this.actividades)
+        }
+        return record
+      } catch (error) {
+        handleError(error, 'Error al actualizar actividad')
+        throw error
+      }
+    },
+
+    async deleteActividad(id) {
+      const syncStore = useSyncStore()
+
+      if (!syncStore.isOnline) {
+        this.actividades = this.actividades.filter((a) => a.id !== id)
+        localStorageManager.save('actividades', this.actividades)
+
+        await syncStore.queueOperation({
+          type: 'delete',
+          collection: 'actividades',
+          id
+        })
+
+        return true
+      }
+
+      try {
+        await pb.collection('actividades').delete(id)
+        this.actividades = this.actividades.filter((a) => a.id !== id)
+        localStorageManager.save('actividades', this.actividades)
+        return true
+      } catch (error) {
+        handleError(error, 'Error al eliminar actividad')
+        throw error
+      }
+    },
+
     async fetchActividadesBySiembraId(siembraId) {
       this.loading = true
       this.error = null
@@ -44,43 +166,6 @@ export const useActividadesStore = defineStore('actividades', {
         console.error('Error fetching actividades:', error)
         this.error = 'Failed to fetch actividades'
         useSnackbarStore().showError('Error al cargar las actividades')
-        throw error
-      } finally {
-        this.loading = false
-      }
-    },
-
-    async updateActividad(id, updateData) {
-      this.loading = true
-      this.error = null
-      try {
-        // Validación básica
-        if (!updateData.nombre) throw new Error('El nombre es requerido')
-
-        if (updateData.nombre) {
-          updateData.nombre = updateData.nombre.toUpperCase()
-        }
-
-        if (updateData.datos_bpa) {
-          updateData.bpa_estado = this.calcularBpaEstado(updateData.datos_bpa)
-        }
-
-        const record = await pb.collection('actividades').update(id, updateData)
-        const index = this.actividades.findIndex((z) => z.id === id)
-        if (index !== -1) {
-          this.actividades[index] = { ...this.actividades[index], ...record }
-        }
-
-        // Actualizar localStorage solo si se actualiza la actividad
-        localStorage.setItem('actividades', JSON.stringify(this.actividades))
-        console.log('Actividades actualizadas en localStorage:', this.actividades)
-
-        useSnackbarStore().showSnackbar('Actividad actualizada exitosamente')
-        return record
-      } catch (error) {
-        console.error('Error updating actividad:', error)
-        this.error = 'Failed to update actividad'
-        handleError(error, 'Error al actualizar la actividad')
         throw error
       } finally {
         this.loading = false
@@ -124,85 +209,6 @@ export const useActividadesStore = defineStore('actividades', {
       }
     },
 
-    // Añadimos esta nueva función
-    async cargarActividades() {
-      const actividadesLocal = localStorage.getItem('actividades')
-      if (actividadesLocal) {
-        this.actividades = JSON.parse(actividadesLocal)
-        console.log('Cargado desde localStorage:', this.actividades)
-        return
-      }
-
-      // Lógica para cargar desde el servidor
-      this.loading = true
-      this.error = null
-      try {
-        const records = await pb.collection('actividades').getFullList({
-          sort: 'nombre'
-        })
-        this.actividades = records
-        localStorage.setItem('actividades', JSON.stringify(records))
-        console.log('Actividades actualizadas en localStorage:', this.actividades)
-      } catch (error) {
-        console.error('Error cargando actividades:', error)
-        this.error = 'Error al cargar actividades'
-        useSnackbarStore().showError('Error al cargar las actividades')
-      } finally {
-        this.loading = false
-      }
-    },
-
-    async crearActividad(actividadData) {
-      this.loading = true
-      this.error = null
-      try {
-        // Validación básica
-        if (!actividadData.nombre) throw new Error('El nombre es requerido')
-
-        actividadData.nombre = actividadData.nombre.toUpperCase()
-        actividadData.bpa_estado = this.calcularBpaEstado(actividadData.datos_bpa)
-
-        const record = await pb.collection('actividades').create(actividadData)
-        this.actividades.push(record)
-
-        // Actualizar localStorage
-        localStorage.setItem('actividades', JSON.stringify(this.actividades))
-        console.log('Actividades actualizadas en localStorage:', this.actividades)
-
-        useSnackbarStore().showSnackbar('Actividad agregada exitosamente')
-        return record
-      } catch (error) {
-        console.error('Error adding actividad:', error)
-        this.error = 'Failed to add actividad'
-        handleError(error, 'Error al agregar la actividad')
-        throw error
-      } finally {
-        this.loading = false
-      }
-    },
-
-    async eliminarActividad(id) {
-      this.loading = true
-      this.error = null
-      try {
-        await pb.collection('actividades').delete(id)
-        this.actividades = this.actividades.filter((z) => z.id !== id)
-
-        // Actualizar localStorage
-        localStorage.setItem('actividades', JSON.stringify(this.actividades))
-        console.log('Actividades actualizadas en localStorage:', this.actividades)
-
-        useSnackbarStore().showSnackbar('Actividad eliminada exitosamente')
-      } catch (error) {
-        console.error('Error deleting actividad:', error)
-        this.error = 'Failed to delete actividad'
-        useSnackbarStore().showError('Error al eliminar la actividad')
-        throw error
-      } finally {
-        this.loading = false
-      }
-    },
-
     async updateActividadAvatar(actividadId, avatarFile) {
       const snackbarStore = useSnackbarStore()
       snackbarStore.showLoading()
@@ -236,17 +242,18 @@ export const useActividadesStore = defineStore('actividades', {
       }
     },
 
-    // Método para determinar si se debe actualizar desde el servidor
-    shouldUpdateFromServer(lastUpdated) {
-      // Implementar lógica para determinar si los datos están desactualizados
-      // Por ejemplo, comparar timestamps o un flag de actualización
+    // Mejorar la función shouldUpdateFromServer
+    shouldUpdateFromServer(lastUpdated, entityData) {
+      if (!lastUpdated) return true
+
+      // Verificar conflictos de versión
+      if (entityData.version !== this.version) return true
+
       const currentTime = new Date().getTime()
       const lastUpdateTime = new Date(lastUpdated).getTime()
       const timeDifference = currentTime - lastUpdateTime
 
-      // Definir un intervalo (por ejemplo, 5 minutos) para considerar los datos como desactualizados
-      const updateInterval = 5 * 60 * 1000 // 5 minutos en milisegundos
-      return timeDifference > updateInterval
+      return timeDifference > this.syncInterval
     }
   }
 })

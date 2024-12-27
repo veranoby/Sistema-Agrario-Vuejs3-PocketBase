@@ -55,11 +55,7 @@
           </v-chip>
         </h3>
         <div class="avatar-container">
-          <img
-            :src="getSiembraAvatarUrl(siembraInfo)"
-            alt="Avatar de Siembra"
-            class="avatar-image"
-          />
+          <img :src="siembraAvatarUrl" alt="Avatar de Siembra" class="avatar-image" />
         </div>
       </div>
     </header>
@@ -142,24 +138,39 @@
       <v-col cols="12" md="4" class="px-0 py-4">
         <v-card class="zonas-section mb-4" elevation="2">
           <v-card-title class="headline d-flex justify-space-between align-center">
-            Zonas Registradas
+            Zonas Registradas (Lotes)
             <v-btn color="green-lighten-2" @click="openAddZonaDialog" icon>
               <v-icon>mdi-plus</v-icon>
             </v-btn>
           </v-card-title>
           <v-card-text class="px-2 py-0">
-            <v-chip variant="flat" size="x-small" color="green-lighten-1" class="mx-1" pill>
-              ÁREA TOTAL: {{ totalArea }} {{ areaUnit }}
+            <v-chip
+              variant="flat"
+              :color="
+                totalArea < siembraInfo.area_total / 3
+                  ? 'red'
+                  : totalArea < (2 * siembraInfo.area_total) / 3
+                    ? 'orange'
+                    : totalArea === siembraInfo.area_total
+                      ? 'green'
+                      : 'green-lighten-2'
+              "
+              size="x-small"
+              class="mx-1"
+              pill
+            >
+              ÁREA ACTUAL: {{ totalArea }} {{ areaUnit }}
             </v-chip>
-            <v-chip variant="flat" size="x-small" color="grey-lighten-2" class="mx-1" pill>
-              PROGRAMADA: {{ siembraInfo.area_total }} ha
+
+            <v-chip variant="flat" size="x-small" color="green" class="mx-1" pill>
+              ÁREA OBJTIVO: {{ siembraInfo.area_total }} ha
             </v-chip>
 
             <!-- v-data-table de zonas-->
 
             <v-data-table
               :headers="headers"
-              :items="zonas"
+              :items="zonasfiltradas"
               class="elevation-1 tabla-compacta my-2 mx-0 py-0 px-0"
               density="compact"
               item-value="id"
@@ -167,6 +178,10 @@
               v-model:expanded="expanded"
               header-class="custom-header"
             >
+              <template #[`item.area`]="{ item }">
+                <span>{{ item.area.area }} {{ item.area.unidad }}</span>
+              </template>
+
               <template #[`item.bpa_estado`]="{ item }">
                 <span
                   :class="{
@@ -185,7 +200,7 @@
               </template>
 
               <template v-slot:bottom> </template>
-              <!-- eliminar el footer d ela tabla-->
+              <!-- eliminar el footer de la tabla-->
 
               <template #expanded-row="{ columns, item }">
                 <td :colspan="columns.length">
@@ -194,16 +209,6 @@
                       <v-col cols="7" class="pr-4">
                         <v-row no-gutters align="center" class="mb-2">
                           <v-col cols="auto" class="mr-2">
-                            <v-icon>mdi-map-marker-radius</v-icon>
-                          </v-col>
-                          <v-col>
-                            {{
-                              item.area
-                                ? `${item.area.area} ${item.area.unidad}`
-                                : 'Área no especificada'
-                            }}
-                          </v-col>
-                          <v-col cols="auto" class="ml-4" v-if="item.gps">
                             <v-icon>mdi-crosshairs-gps</v-icon>
                           </v-col>
                           <v-col v-if="item.gps">
@@ -222,7 +227,7 @@
                       <v-col cols="5" class="d-flex justify-center align-center">
                         <v-img
                           v-if="item.avatar"
-                          :src="getAvatarUrl(item)"
+                          :src="getAvatarUrl(item.id)"
                           max-width="150"
                           max-height="150"
                           contain
@@ -249,13 +254,21 @@
 
     <!-- Editar Siembra -->
 
-    <v-dialog v-model="editSiembraDialog" max-width="800px">
+    <v-dialog
+      v-model="editSiembraDialog"
+      max-width="800px"
+      persistent
+      transition="dialog-bottom-transition"
+      scrollable
+    >
       <v-card>
-        <v-card-title class="headline">Editar Siembra</v-card-title>
-        <v-card-text>
-          <v-row>
-            <v-col cols="12" md="6">
-              <v-form ref="editSiembraForm">
+        <v-form ref="editSiembraForm">
+          <v-card-title class="headline"
+            ><h2 class="text-xl font-bold mt-2">Editar Siembra</h2></v-card-title
+          >
+          <v-card-text>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
                 <v-text-field
                   v-model="editedSiembra.nombre"
                   label="Nombre"
@@ -294,68 +307,64 @@
                   density="compact"
                   class="compact-form"
                 ></v-text-field>
-              </v-form>
-            </v-col>
-            <v-col cols="12" md="6">
-              <div class="flex justify-center items-center p-2">
-                <v-card class="p-2 rounded-lg border-2">
-                  <v-card-title class="compact-form-2">
-                    <v-file-input
-                      v-model="avatarFile"
-                      rounded
-                      variant="outlined"
-                      color="green"
-                      prepend-icon="mdi-camera"
-                      label="Cambiar Avatar"
-                      accept="image/*"
-                      @change="handleAvatarUpload"
-                      show-size
-                    ></v-file-input>
-                  </v-card-title>
-                  <v-card-text>
-                    <div class="flex items-center justify-center">
-                      <v-avatar size="192" class="mr-4">
-                        <v-img :src="siembraAvatarUrl" alt="Avatar de Siembra"></v-img>
-                      </v-avatar>
-                    </div>
-                  </v-card-text>
-                </v-card>
               </div>
-            </v-col>
-          </v-row>
-          <v-row>
-            <v-col cols="12">
-              <v-textarea
-                variant="outlined"
-                density="compact"
-                class="compact-form"
-                v-model="editedSiembra.info"
-                label="Información General"
-              ></v-textarea>
-            </v-col>
-          </v-row>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn
-            size="small"
-            variant="flat"
-            rounded="lg"
-            prepend-icon="mdi-check"
-            color="green-lighten-3"
-            @click="saveSiembraEdit"
-            >Guardar</v-btn
-          >
-          <v-btn
-            size="small"
-            variant="flat"
-            rounded="lg"
-            prepend-icon="mdi-cancel"
-            color="red-lighten-3"
-            @click="editSiembraDialog = false"
-            >Cancelar</v-btn
-          >
-        </v-card-actions>
+              <div>
+                <!-- Selector de Avatar -->
+                <AvatarForm
+                  v-model="showAvatarDialog"
+                  collection="Siembras"
+                  :entityId="siembraInfo?.id"
+                  :currentAvatarUrl="siembraAvatarUrl"
+                  :hasCurrentAvatar="!!siembraInfo?.avatar"
+                  @avatar-updated="handleAvatarUpdated"
+                />
+                <div class="flex items-center justify-center mt-0 relative">
+                  <v-avatar size="192">
+                    <v-img :src="siembraAvatarUrl" alt="Avatar de Siembra"></v-img>
+                  </v-avatar>
+                  <!-- Botón para abrir el diálogo de avatar -->
+                  <v-btn
+                    icon
+                    size="small"
+                    color="green-lighten-2"
+                    class="absolute bottom-0 right-0"
+                    @click="showAvatarDialog = true"
+                  >
+                    <v-icon>mdi-pencil</v-icon>
+                  </v-btn>
+                </div>
+              </div>
+            </div>
+            <div class="mt-4">
+              <div class="mb-2">
+                <v-icon class="mr-2">mdi-information</v-icon>
+                Mi Info
+              </div>
+              <ckeditor v-model="editedSiembra.info" :editor="editor" :config="editorConfig" />
+            </div>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn
+              size="small"
+              variant="flat"
+              rounded="lg"
+              prepend-icon="mdi-check"
+              color="green-lighten-3"
+              @click="saveSiembraEdit"
+              >Guardar</v-btn
+            >
+            <v-btn
+              size="small"
+              variant="flat"
+              rounded="lg"
+              prepend-icon="mdi-cancel"
+              color="red-lighten-3"
+              @click="editSiembraDialog = false"
+              >Cancelar</v-btn
+            >
+          </v-card-actions>
+        </v-form>
       </v-card>
     </v-dialog>
 
@@ -409,159 +418,33 @@
     </v-dialog>
 
     <!-- CREAR ZONAS EN ESTA SIEMBRA-->
-    <v-dialog v-model="addZonaDialog" max-width="900px">
-      <v-card>
-        <v-card-title class="pb-0 pt-4">
-          <span class="text-h5">{{ modoEdicionZona ? 'Editar' : 'Crear' }} Zona</span>
-        </v-card-title>
-        <v-card-text class="py-0">
-          <v-form ref="form" v-model="formularioValidoZona" lazy-validation>
-            <v-row class="compact-form">
-              <v-col cols="6" class="pb-0 mb-0">
-                <!-- Nombre de la Zona -->
-                <v-text-field
-                  v-model="zonaEditando.nombre"
-                  label="Nombre"
-                  variant="outlined"
-                  required
-                  :rules="[(v) => !!v || 'El nombre es requerido']"
-                ></v-text-field>
+    <v-dialog v-model="addZonaDialog" persistent max-width="1000px">
+      <ZonaForm
+        :modo-edicion="modoEdicionZona"
+        :zona-inicial="zonaEditando"
+        :tipo-zona-actual="tipoZonaActual"
+        :siembra-context="siembraInfo"
+        :from-siembra-workspace="true"
+        @close="cerrarDialogoZona"
+        @saved="onZonaSaved"
+      />
+    </v-dialog>
 
-                <!-- Área y Unidad de la Zona -->
-                <v-row>
-                  <v-col>
-                    <v-text-field
-                      v-model.number="zonaEditando.area.area"
-                      label="Área"
-                      type="number"
-                      variant="outlined"
-                      required
-                      :rules="[(v) => !!v || 'El área es requerida']"
-                    ></v-text-field>
-                  </v-col>
-                  <v-col>
-                    <v-select
-                      v-model="zonaEditando.area.unidad"
-                      variant="outlined"
-                      :items="['m²', 'ha', 'km²']"
-                      label="Unidad de área"
-                      required
-                      :rules="[(v) => !!v || 'La unidad es requerida']"
-                    ></v-select>
-                  </v-col>
-                </v-row>
-
-                <!-- Selector de Tipo de Zona -->
-                <v-select
-                  v-model="zonaEditando.tipo"
-                  :disabled="modoEdicionZona"
-                  :items="tiposZonas"
-                  item-title="nombre"
-                  item-value="id"
-                  label="Tipo de Zona"
-                  variant="outlined"
-                  @update:modelValue="onTipoZonaChange(zonaEditando.tipo)"
-                  required
-                  :rules="[(v) => !!v || 'Seleccione un tipo de zona']"
-                ></v-select>
-
-                <!-- GPS -->
-                <v-text-field
-                  v-model="zonaEditando.gps"
-                  variant="outlined"
-                  label="GPS (Lat, Lng)"
-                  placeholder="Ej: {lat: 0, lng: 0}"
-                ></v-text-field>
-
-                <!-- Checkbox Contabilizable -->
-                <v-checkbox
-                  v-model="zonaEditando.contabilizable"
-                  label="Contabilizable"
-                ></v-checkbox>
-              </v-col>
-
-              <v-col cols="6" class="pb-0 mb-0">
-                <!-- Información Adicional -->
-                <v-textarea
-                  variant="outlined"
-                  density="compact"
-                  v-model="zonaEditando.info"
-                  label="Información adicional"
-                ></v-textarea>
-
-                <!-- Avatar -->
-                <v-file-input
-                  v-model="avatarFileZona"
-                  rounded
-                  variant="outlined"
-                  label="Cargar Avatar"
-                  accept="image/*"
-                  @change="updateAvatarZona"
-                ></v-file-input>
-              </v-col>
-            </v-row>
-
-            <!-- Formulario de Seguimiento BPA (solo si se ha seleccionado un tipo de zona) -->
-            <v-row v-if="zonaEditando.tipo" class="mt-0">
-              <v-col class="py-0">
-                <div class="compact-form bg-dinamico rounded-lg px-3 border-4 py-0">
-                  <h4 class="text-2xl font-bold py-4">SEGUIMIENTO BPA</h4>
-
-                  <v-row>
-                    <v-col
-                      v-for="(pregunta, index) in tiposZonas.find((z) => z.id === zonaEditando.tipo)
-                        .datos_bpa.preguntas_bpa"
-                      :key="index"
-                      cols="6"
-                    >
-                      <p class="font-extrabold">{{ pregunta.pregunta }}</p>
-                      <p v-if="pregunta.descripcion" class="mb-2 text-slate-800 font-extralight">
-                        {{ pregunta.descripcion }}
-                      </p>
-                      <v-radio-group v-model="zonaEditando.datos_bpa[index].respuesta" class="mt-2">
-                        <v-radio
-                          v-for="(opcion, opcionIndex) in pregunta.opciones"
-                          :key="`${index}-${opcionIndex}`"
-                          :label="opcion"
-                          :value="opcion"
-                        ></v-radio>
-                      </v-radio-group>
-                    </v-col>
-                  </v-row>
-                </div>
-              </v-col>
-            </v-row>
-          </v-form>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn
-            size="small"
-            variant="flat"
-            rounded="lg"
-            prepend-icon="mdi-cancel"
-            color="red-lighten-3"
-            @click="cerrarDialogoZona"
-            >Cancelar</v-btn
-          >
-          <v-btn
-            size="small"
-            variant="flat"
-            rounded="lg"
-            prepend-icon="mdi-check"
-            color="green-lighten-3"
-            @click="guardarZona"
-            :disabled="!formularioValidoZona"
-            >Guardar</v-btn
-          >
-        </v-card-actions>
-      </v-card>
+    <v-dialog v-model="showAvatarDialog" max-width="500px">
+      <AvatarForm
+        v-model="showAvatarDialog"
+        collection="Siembras"
+        :entityId="siembraInfo.id"
+        :currentAvatarUrl="siembraAvatarUrl"
+        :hasCurrentAvatar="!!siembraInfo.avatar"
+        @avatar-updated="handleAvatarUpdated"
+      />
     </v-dialog>
   </v-container>
   <v-progress-circular v-else indeterminate color="primary"></v-progress-circular>
 </template>
 
-<script>
+<script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useSiembrasStore } from '@/stores/siembrasStore'
@@ -571,451 +454,400 @@ import { useHaciendaStore } from '@/stores/haciendaStore'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 import { handleError } from '@/utils/errorHandler'
 import { storeToRefs } from 'pinia'
-import { pb } from '@/utils/pocketbase'
+
 import { useZonasStore } from '@/stores/zonasStore'
+import ZonaForm from '@/components/forms/ZonaForm.vue'
+import { editor, editorConfig } from '@/utils/ckeditorConfig'
 
-export default {
-  name: 'SiembraWorkspace',
-  setup() {
-    const route = useRoute()
-    const siembrasStore = useSiembrasStore()
-    const bitacoraStore = useBitacoraStore()
-    const profileStore = useProfileStore()
-    const haciendaStore = useHaciendaStore()
-    const snackbarStore = useSnackbarStore()
-    const zonasStore = useZonasStore()
+import AvatarForm from '@/components/forms/AvatarForm.vue'
+import { useAvatarStore } from '@/stores/avatarStore'
 
-    const siembraId = ref(route.params.id)
-    const siembraInfo = ref({})
-    const bitacora = ref([])
+const route = useRoute()
+const siembrasStore = useSiembrasStore()
+const bitacoraStore = useBitacoraStore()
+const profileStore = useProfileStore()
+const haciendaStore = useHaciendaStore()
+const snackbarStore = useSnackbarStore()
+const zonasStore = useZonasStore()
+const avatarStore = useAvatarStore()
 
-    const { zonas, tiposZonas, eliminarZona } = storeToRefs(zonasStore)
+const siembraId = ref(route.params.id)
+const siembraInfo = ref({})
+const bitacora = ref([])
 
-    const { user } = storeToRefs(profileStore)
-    const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
+const { zonas, tiposZonas, eliminarZona } = storeToRefs(zonasStore)
 
-    const userRole = computed(() => user.value?.role || '')
+const { user } = storeToRefs(profileStore)
+const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
 
-    const avatarUrl = computed(() => profileStore.avatarUrl)
-    const avatarFile = ref(null)
+const userRole = computed(() => user.value?.role || '')
 
-    const siembraAvatarUrl = computed(() => {
-      return siembrasStore.getSiembraAvatarUrl(siembraInfo.value)
-    })
-    const getSiembraAvatarUrl = siembrasStore.getSiembraAvatarUrl
+const avatarUrl = computed(() => profileStore.avatarUrl)
 
-    const actividades = ref([])
-    const usuarios = ref([])
+const siembraAvatarUrl = computed(() => {
+  return avatarStore.getAvatarUrl({ ...siembraInfo.value, type: 'siembra' }, 'Siembras')
+})
 
-    const isLoading = ref(true)
+const actividades = ref([])
+const usuarios = ref([])
 
-    const totalArea = computed(() => {
-      return zonas.value
-        .filter((zona) => zona.contabilizable)
-        .reduce((sum, zona) => sum + (parseFloat(zona.area.area) || 0), 0)
-        .toFixed(2)
-    })
+const isLoading = ref(true)
 
-    const headers = [
-      { title: 'Nombre', align: 'start', key: 'nombre' },
-      { title: 'BPA', align: 'center', key: 'bpa_estado' },
-      { title: 'Acciones', key: 'actions', sortable: false, align: 'end' }
-    ]
+const totalArea = computed(() => {
+  return zonas.value
+    .filter((zona) => zona.contabilizable && zona.siembra === siembraId.value)
+    .reduce((sum, zona) => sum + (parseFloat(zona.area.area) || 0), 0)
+    .toFixed(2)
+})
 
-    const expanded = ref([])
+const headers = [
+  { title: 'Nombre', align: 'start', key: 'nombre' },
+  { title: 'Área', align: 'center', key: 'area' },
+  { title: 'BPA', align: 'center', key: 'bpa_estado' },
+  { title: 'Acciones', key: 'actions', sortable: false, align: 'end' }
+]
 
-    const areaUnit = ref('ha')
-    const itemsPerPage = ref(10)
-    const selectedZonas = ref([])
-    const selectedActividades = ref([])
+const expanded = ref([])
 
-    const editSiembraDialog = ref(false)
-    const editedSiembra = ref({})
+const areaUnit = ref('ha')
+const itemsPerPage = ref(10)
+const selectedZonas = ref([])
+const selectedActividades = ref([])
 
-    const addBitacoraDialog = ref(false)
-    const addZonaDialog = ref(false)
+const editSiembraDialog = ref(false)
+const editedSiembra = ref({})
 
-    const newBitacora = ref({
-      fecha: new Date().toISOString().split('T')[0],
-      actividad: '',
-      zonas: [],
-      descripcion: '',
-      responsable: '',
-      estado: 'planificada',
-      notas: ''
-    })
+const addBitacoraDialog = ref(false)
+const addZonaDialog = ref(false)
 
-    const estadosSiembra = ['planificada', 'en_crecimiento', 'cosechada', 'finalizada']
-    const getStatusColor = (status) => {
-      const colors = {
-        planificada: 'blue',
-        en_crecimiento: 'green',
-        cosechada: 'orange',
-        finalizada: 'gray'
-      }
-      return colors[status] || 'gray'
+const newBitacora = ref({
+  fecha: new Date().toISOString().split('T')[0],
+  actividad: '',
+  zonas: [],
+  descripcion: '',
+  responsable: '',
+  estado: 'planificada',
+  notas: ''
+})
+
+const estadosSiembra = ['planificada', 'en_crecimiento', 'cosechada', 'finalizada']
+const getStatusColor = (status) => {
+  const colors = {
+    planificada: 'blue',
+    en_crecimiento: 'green',
+    cosechada: 'orange',
+    finalizada: 'gray'
+  }
+  return colors[status] || 'gray'
+}
+
+const estadosBitacora = ['planificada', 'en_progreso', 'completada', 'cancelada']
+
+const bitacoraHeaders = [
+  { text: 'Fecha', value: 'fecha' },
+  { text: 'Actividad', value: 'actividad.nombre' },
+  { text: 'Zona', value: 'zona.nombre' },
+  { text: 'Responsable', value: 'responsable.name' },
+  { text: 'Estado', value: 'estado' },
+  { text: 'Acciones', value: 'actions', sortable: false }
+]
+
+const filteredBitacora = computed(() => {
+  return bitacora.value.filter((entry) => {
+    const zonaMatch =
+      selectedZonas.value.length === 0 ||
+      entry.zonas.some((zona) => selectedZonas.value.includes(zona.id))
+    const actividadMatch =
+      selectedActividades.value.length === 0 ||
+      selectedActividades.value.includes(entry.actividad.id)
+    return zonaMatch && actividadMatch
+  })
+})
+
+const modoEdicionZona = ref(false)
+const zonaEditando = ref({
+  nombre: '',
+  area: { area: null, unidad: '' },
+  info: '',
+  contabilizable: false,
+  gps: '',
+  datos_bpa: [],
+  metricas: {}
+})
+const avatarFileZona = ref(null)
+
+const tipoZonaActual = ref(null)
+
+const zonasfiltradas = computed(() => {
+  console.log('Todas las zonas:', zonas.value) // Debug
+  console.log('SiembraId actual:', siembraId.value) // Debug
+  return zonas.value?.filter((zona) => zona.siembra === siembraId.value) || []
+})
+
+const cerrarDialogoZona = () => {
+  addZonaDialog.value = false
+  avatarFileZona.value = null // Limpiar el archivo después de la actualización
+}
+
+// En la función loadSiembraInfo, no es necesario forzar la actualización del avatar
+async function loadSiembraInfo() {
+  try {
+    const siembra = await siembrasStore.fetchSiembraById(siembraId.value)
+    siembraInfo.value = siembra
+  } catch (error) {
+    handleError(error, 'Error al cargar la información de la siembra')
+  }
+}
+
+async function loadBitacora() {
+  try {
+    bitacora.value = await bitacoraStore.fetchBitacoraBySiembraId(siembraId.value)
+  } catch (error) {
+    handleError(error, 'Error al cargar la bitácora')
+  }
+}
+
+async function loadHacienda() {
+  try {
+    await haciendaStore.fetchHacienda(siembraInfo.value.hacienda)
+  } catch (error) {
+    handleError(error, 'Error al cargar la información de la hacienda')
+  }
+}
+
+async function loadActividades() {
+  try {
+    actividades.value = await siembrasStore.fetchActividadesByHaciendaId(mi_hacienda.value.id)
+  } catch (error) {
+    handleError(error, 'Error al cargar las actividades')
+  }
+}
+
+async function loadUsuarios() {
+  try {
+    usuarios.value = await haciendaStore.fetchHaciendaUsers()
+  } catch (error) {
+    handleError(error, 'Error al cargar los usuarios')
+  }
+}
+
+function formatDate(date) {
+  return new Date(date).toLocaleDateString()
+}
+
+function openEditDialog() {
+  editedSiembra.value = {
+    ...siembraInfo.value,
+    fecha_inicio: siembraInfo.value.fecha_inicio
+      ? new Date(siembraInfo.value.fecha_inicio).toISOString().split('T')[0]
+      : ''
+  }
+  editSiembraDialog.value = true
+}
+
+function openAddBitacoraDialog() {
+  newBitacora.value = {
+    fecha: new Date().toISOString().split('T')[0],
+    actividad: '',
+    zonas: [],
+    descripcion: '',
+    responsable: '',
+    estado: 'planificada',
+    notas: ''
+  }
+  addBitacoraDialog.value = true
+}
+
+function openAddZonaDialog() {
+  modoEdicionZona.value = false
+  const tipoLote = tiposZonas.value.find((tipo) => tipo.nombre === 'Lotes')
+  tipoZonaActual.value = tipoLote
+
+  zonaEditando.value = {
+    nombre: '',
+    area: { area: null, unidad: 'ha' },
+    info: '',
+    contabilizable: true,
+    gps: '',
+    tipo: tipoLote?.id,
+    datos_bpa: [],
+    metricas: {},
+    siembra: siembraId.value,
+    hacienda: mi_hacienda.value?.id
+  }
+
+  addZonaDialog.value = true
+}
+
+async function saveSiembraEdit() {
+  try {
+    if (!editedSiembra.value.nombre || !editedSiembra.value.estado) {
+      throw new Error('Nombre y estado son campos requeridos')
     }
 
-    const estadosBitacora = ['planificada', 'en_progreso', 'completada', 'cancelada']
+    editedSiembra.value.nombre = editedSiembra.value.nombre.toUpperCase()
+    editedSiembra.value.tipo = editedSiembra.value.tipo.toUpperCase()
 
-    const bitacoraHeaders = [
-      { text: 'Fecha', value: 'fecha' },
-      { text: 'Actividad', value: 'actividad.nombre' },
-      { text: 'Zona', value: 'zona.nombre' },
-      { text: 'Responsable', value: 'responsable.name' },
-      { text: 'Estado', value: 'estado' },
-      { text: 'Acciones', value: 'actions', sortable: false }
-    ]
-
-    const filteredBitacora = computed(() => {
-      return bitacora.value.filter((entry) => {
-        const zonaMatch =
-          selectedZonas.value.length === 0 ||
-          entry.zonas.some((zona) => selectedZonas.value.includes(zona.id))
-        const actividadMatch =
-          selectedActividades.value.length === 0 ||
-          selectedActividades.value.includes(entry.actividad.id)
-        return zonaMatch && actividadMatch
-      })
-    })
-
-    const tipoZonaActual = ref(null)
-
-    const modoEdicionZona = ref(false)
-    const zonaEditando = ref({
-      nombre: '',
-      area: { area: null, unidad: '' },
-      info: '',
-      contabilizable: false,
-      gps: '',
-      datos_bpa: []
-    })
-    const avatarFileZona = ref(null)
-    const formularioValidoZona = ref(true)
-    const form = ref(null)
-
-    async function guardarZona() {
-      if (form.value.validate()) {
-        try {
-          zonaEditando.value.siembra = siembraId.value
-          zonaEditando.value.hacienda = mi_hacienda.value.id
-
-          if (modoEdicionZona.value) {
-            await zonasStore.updateZona(zonaEditando.value.id, zonaEditando.value)
-          } else {
-            await zonasStore.crearZona(zonaEditando.value)
-          }
-
-          cerrarDialogoZona()
-          snackbarStore.showSnackbar('Zona guardada exitosamente', 'success')
-        } catch (error) {
-          handleError(error, 'Error al guardar la zona')
-        }
-      }
+    // Crear un nuevo objeto con solo los campos necesarios
+    const siembraToUpdate = {
+      nombre: editedSiembra.value.nombre,
+      tipo: editedSiembra.value.tipo,
+      estado: editedSiembra.value.estado,
+      area_total: editedSiembra.value.area_total,
+      fecha_inicio: editedSiembra.value.fecha_inicio
+        ? new Date(editedSiembra.value.fecha_inicio).toISOString()
+        : null,
+      info: editedSiembra.value.info
     }
 
-    const cerrarDialogoZona = () => {
-      addZonaDialog.value = false
-      avatarFileZona.value = null // Limpiar el archivo después de la actualización
+    // Actualizar la siembra sin incluir información del avatar
+    await siembrasStore.updateSiembra(siembraId.value, siembraToUpdate)
+
+    // Recargar la información de la siembra
+    siembraInfo.value = await siembrasStore.fetchSiembraById(siembraId.value)
+    editSiembraDialog.value = false
+    snackbarStore.showSnackbar('Siembra actualizada con éxito', 'success')
+  } catch (error) {
+    handleError(error, 'Error al actualizar la siembra')
+  }
+}
+
+async function saveBitacoraEntry() {
+  try {
+    const entry = {
+      ...newBitacora.value,
+      siembra: siembraId.value,
+      hacienda: mi_hacienda.value.id
     }
+    await bitacoraStore.addBitacoraEntry(entry)
+    addBitacoraDialog.value = false
+    loadBitacora()
+    snackbarStore.showSnackbar('Entrada de bitácora agregada con éxito', 'success')
+  } catch (error) {
+    handleError(error, 'Error al agregar entrada de bitácora')
+  }
+}
 
-    const updateAvatarZona = async () => {
-      if (avatarFileZona.value) {
-        if (zonaEditando.value.id) {
-          await zonasStore.updateZonaAvatar(zonaEditando.value.id, avatarFileZona.value)
-          zonaEditando.value = { ...zonasStore.zonas.find((z) => z.id === zonaEditando.value.id) }
-          avatarFileZona.value = null // Limpiar el archivo después de la actualización
-        }
-      }
+async function editBitacoraItem(item) {
+  try {
+    const updatedItem = await bitacoraStore.updateBitacoraEntry(item.id, item)
+    const index = bitacora.value.findIndex((entry) => entry.id === item.id)
+    if (index !== -1) {
+      bitacora.value[index] = updatedItem
     }
+    snackbarStore.showSnackbar('Entrada de bitácora actualizada con éxito', 'success')
+  } catch (error) {
+    handleError(error, 'Error al actualizar entrada de bitácora')
+  }
+}
 
-    function onTipoZonaChange(tipoZonaId) {
-      const tipoZonaSeleccionado = tiposZonas.value.find((tipo) => tipo.id === tipoZonaId)
-      if (tipoZonaSeleccionado && tipoZonaSeleccionado.datos_bpa) {
-        zonaEditando.value.datos_bpa = tipoZonaSeleccionado.datos_bpa.preguntas_bpa.map(() => ({
-          respuesta: null
-        }))
-      }
-    }
-
-    // En la función loadSiembraInfo, no es necesario forzar la actualización del avatar
-    async function loadSiembraInfo() {
-      try {
-        const siembra = await siembrasStore.fetchSiembraById(siembraId.value)
-        siembraInfo.value = siembra
-      } catch (error) {
-        handleError(error, 'Error al cargar la información de la siembra')
-      }
-    }
-
-    async function loadBitacora() {
-      try {
-        bitacora.value = await bitacoraStore.fetchBitacoraBySiembraId(siembraId.value)
-      } catch (error) {
-        handleError(error, 'Error al cargar la bitácora')
-      }
-    }
-
-    async function loadHacienda() {
-      try {
-        await haciendaStore.fetchHacienda(siembraInfo.value.hacienda)
-      } catch (error) {
-        handleError(error, 'Error al cargar la información de la hacienda')
-      }
-    }
-
-    async function loadActividades() {
-      try {
-        actividades.value = await siembrasStore.fetchActividadesByHaciendaId(mi_hacienda.value.id)
-      } catch (error) {
-        handleError(error, 'Error al cargar las actividades')
-      }
-    }
-
-    async function loadUsuarios() {
-      try {
-        usuarios.value = await haciendaStore.fetchHaciendaUsers()
-      } catch (error) {
-        handleError(error, 'Error al cargar los usuarios')
-      }
-    }
-
-    function formatDate(date) {
-      return new Date(date).toLocaleDateString()
-    }
-
-    function openEditDialog() {
-      editedSiembra.value = {
-        ...siembraInfo.value,
-        fecha_inicio: siembraInfo.value.fecha_inicio
-          ? new Date(siembraInfo.value.fecha_inicio).toISOString().split('T')[0]
-          : ''
-      }
-      editSiembraDialog.value = true
-    }
-
-    function openAddBitacoraDialog() {
-      newBitacora.value = {
-        fecha: new Date().toISOString().split('T')[0],
-        actividad: '',
-        zonas: [],
-        descripcion: '',
-        responsable: '',
-        estado: 'planificada',
-        notas: ''
-      }
-      addBitacoraDialog.value = true
-    }
-
-    function openAddZonaDialog() {
-      modoEdicionZona.value = false
-      zonaEditando.value = {
-        nombre: '',
-        area: { area: null, unidad: 'ha' },
-        info: '',
-        contabilizable: false,
-        gps: '',
-        datos_bpa: [],
-        siembra: siembraId.value,
-        hacienda: mi_hacienda.value.id
-      }
-      addZonaDialog.value = true
-    }
-
-    async function saveSiembraEdit() {
-      try {
-        if (!editedSiembra.value.nombre || !editedSiembra.value.estado) {
-          throw new Error('Nombre y estado son campos requeridos')
-        }
-
-        editedSiembra.value.nombre = editedSiembra.value.nombre.toUpperCase()
-        editedSiembra.value.tipo = editedSiembra.value.tipo.toUpperCase()
-
-        // Crear un nuevo objeto con solo los campos necesarios
-        const siembraToUpdate = {
-          nombre: editedSiembra.value.nombre,
-          tipo: editedSiembra.value.tipo,
-          estado: editedSiembra.value.estado,
-          area_total: editedSiembra.value.area_total,
-          fecha_inicio: editedSiembra.value.fecha_inicio
-            ? new Date(editedSiembra.value.fecha_inicio).toISOString()
-            : null,
-          info: editedSiembra.value.info
-        }
-
-        // Actualizar la siembra sin incluir información del avatar
-        await siembrasStore.updateSiembra(siembraId.value, siembraToUpdate)
-
-        // Recargar la información de la siembra
-        siembraInfo.value = await siembrasStore.fetchSiembraById(siembraId.value)
-        editSiembraDialog.value = false
-        snackbarStore.showSnackbar('Siembra actualizada con éxito', 'success')
-      } catch (error) {
-        handleError(error, 'Error al actualizar la siembra')
-      }
-    }
-
-    async function saveBitacoraEntry() {
-      try {
-        const entry = {
-          ...newBitacora.value,
-          siembra: siembraId.value,
-          hacienda: mi_hacienda.value.id
-        }
-        await bitacoraStore.addBitacoraEntry(entry)
-        addBitacoraDialog.value = false
-        loadBitacora()
-        snackbarStore.showSnackbar('Entrada de bitácora agregada con éxito', 'success')
-      } catch (error) {
-        handleError(error, 'Error al agregar entrada de bitácora')
-      }
-    }
-
-    async function editBitacoraItem(item) {
-      try {
-        const updatedItem = await bitacoraStore.updateBitacoraEntry(item.id, item)
-        const index = bitacora.value.findIndex((entry) => entry.id === item.id)
-        if (index !== -1) {
-          bitacora.value[index] = updatedItem
-        }
-        snackbarStore.showSnackbar('Entrada de bitácora actualizada con éxito', 'success')
-      } catch (error) {
-        handleError(error, 'Error al actualizar entrada de bitácora')
-      }
-    }
-
-    async function deleteBitacoraItem(item) {
-      if (confirm('¿Está seguro de que desea eliminar esta entrada de la bitácora?')) {
-        try {
-          await bitacoraStore.deleteBitacoraEntry(item.id)
-          bitacora.value = bitacora.value.filter((entry) => entry.id !== item.id)
-          snackbarStore.showSnackbar('Entrada de bitácora eliminada con éxito', 'success')
-        } catch (error) {
-          handleError(error, 'Error al eliminar entrada de bitácora')
-        }
-      }
-    }
-
-    function editZona(zona) {
-      modoEdicionZona.value = true
-      zonaEditando.value = { ...zona }
-      addZonaDialog.value = true
-      tipoZonaActual.value = zona // Asignar el tipo de zona actual
-    }
-
-    async function deleteZona(zona) {
-      if (confirm('¿Está seguro de que desea eliminar esta zona?')) {
-        try {
-          await eliminarZona(zona.id)
-          zonas.value = zonas.value.filter((z) => z.id !== zona.id)
-          snackbarStore.showSnackbar('Zona eliminada con éxito', 'success')
-        } catch (error) {
-          handleError(error, 'Error al eliminar zona')
-        }
-      }
-    }
-
-    async function handleAvatarUpload() {
-      if (avatarFile.value) {
-        try {
-          snackbarStore.showLoading()
-          await siembrasStore.updateSiembraAvatar(siembraId.value, avatarFile.value)
-          siembraInfo.value = await siembrasStore.fetchSiembraById(siembraId.value)
-          snackbarStore.showSnackbar('Avatar de siembra actualizado con éxito', 'success')
-        } catch (error) {
-          handleError(error, 'Error al actualizar el avatar de la siembra')
-        } finally {
-          snackbarStore.hideLoading()
-          avatarFile.value = null
-        }
-      }
-    }
-
-    const getAvatarUrl = (zona) => {
-      if (zona.avatar) {
-        return pb.getFileUrl(zona, zona.avatar)
-      }
-      return null // This will activate the placeholder
-    }
-
-    watch([selectedZonas, selectedActividades], () => {
-      loadBitacora()
-    })
-
-    onMounted(async () => {
-      try {
-        await loadSiembraInfo() // Asegúrate de que esto se complete primero
-        await Promise.all([
-          zonasStore.cargarTiposZonas(),
-          loadBitacora(),
-          loadActividades(),
-          loadUsuarios(),
-          loadHacienda(),
-          zonasStore.fetchZonasBySiembraId(siembraId.value) // Ahora siembraId debería estar definido
-        ])
-      } catch (error) {
-        handleError(error, 'Error al cargar los datos iniciales')
-      } finally {
-        isLoading.value = false
-      }
-    })
-
-    return {
-      siembraInfo,
-      siembraAvatarUrl,
-      editedSiembra,
-      avatarFile,
-      handleAvatarUpload,
-      getSiembraAvatarUrl,
-      saveSiembraEdit,
-      getStatusColor,
-      totalArea,
-      editSiembraDialog,
-      estadosSiembra,
-      openEditDialog,
-      formatDate,
-      form,
-      zonas,
-      bitacora,
-      user,
-      mi_hacienda,
-      avatarHaciendaUrl,
-      actividades,
-      usuarios,
-      userRole,
-      avatarUrl,
-      areaUnit,
-      itemsPerPage,
-      selectedZonas,
-      addBitacoraDialog,
-      addZonaDialog,
-      newBitacora,
-      estadosBitacora,
-      bitacoraHeaders,
-      filteredBitacora,
-      openAddBitacoraDialog,
-      openAddZonaDialog,
-      saveBitacoraEntry,
-      editBitacoraItem,
-      deleteBitacoraItem,
-      editZona,
-      deleteZona,
-      isLoading,
-      modoEdicionZona,
-      zonaEditando,
-      avatarFileZona,
-      formularioValidoZona,
-      guardarZona,
-      cerrarDialogoZona,
-      updateAvatarZona,
-      onTipoZonaChange,
-      tiposZonas,
-      headers,
-      getAvatarUrl,
-      expanded
+async function deleteBitacoraItem(item) {
+  if (confirm('¿Está seguro de que desea eliminar esta entrada de la bitácora?')) {
+    try {
+      await bitacoraStore.deleteBitacoraEntry(item.id)
+      bitacora.value = bitacora.value.filter((entry) => entry.id !== item.id)
+      snackbarStore.showSnackbar('Entrada de bitácora eliminada con éxito', 'success')
+    } catch (error) {
+      handleError(error, 'Error al eliminar entrada de bitácora')
     }
   }
 }
+
+function editZona(zona) {
+  modoEdicionZona.value = true
+  const tipoZona = tiposZonas.value.find((tipo) => tipo.id === zona.tipo)
+  tipoZonaActual.value = tipoZona
+
+  // Inicializar métricas
+  const metricasInicializadas = {}
+  if (tipoZona?.metricas?.metricas) {
+    Object.entries(tipoZona.metricas.metricas).forEach(([key, value]) => {
+      metricasInicializadas[key] = {
+        ...value,
+        valor:
+          zona.metricas?.[key]?.valor ??
+          (value.tipo === 'checkbox'
+            ? []
+            : value.tipo === 'number'
+              ? 0
+              : value.tipo === 'select'
+                ? null
+                : value.tipo === 'boolean'
+                  ? false
+                  : null)
+      }
+    })
+  }
+
+  zonaEditando.value = {
+    ...zona,
+    datos_bpa: zona.datos_bpa || [],
+    metricas: metricasInicializadas
+  }
+
+  addZonaDialog.value = true
+}
+
+async function deleteZona(zona) {
+  if (confirm('¿Está seguro de que desea eliminar esta zona?')) {
+    try {
+      await eliminarZona(zona.id)
+      //       zonas.value = zonas.value.filter((z) => z.id !== zona.id)
+      snackbarStore.showSnackbar('Zona eliminada con éxito', 'success')
+    } catch (error) {
+      handleError(error, 'Error al eliminar zona')
+    }
+  }
+}
+
+import placeholderZonas from '@/assets/placeholder-zonas.png'
+
+const getAvatarUrl = (zonaId) => {
+  console.log('checando cargaimagenzona', zonaId)
+  const zona = zonas.value.find((s) => s.id === zonaId)
+  if (!zona) return placeholderZonas
+  return avatarStore.getAvatarUrl({ ...zona, type: 'zona' }, 'zonas')
+}
+
+watch([selectedZonas, selectedActividades], () => {
+  loadBitacora()
+})
+
+onMounted(async () => {
+  try {
+    await loadSiembraInfo()
+    await Promise.all([
+      zonasStore.cargarZonas(),
+      zonasStore.cargarTiposZonas(),
+      loadBitacora(),
+      loadActividades(),
+      loadUsuarios(),
+      loadHacienda()
+    ])
+  } catch (error) {
+    handleError(error, 'Error al cargar los datos iniciales')
+  } finally {
+    isLoading.value = false
+  }
+})
+
+const onZonaSaved = async () => {
+  addZonaDialog.value = false
+  await loadBitacora()
+  snackbarStore.showSnackbar('Zona guardada exitosamente', 'success')
+}
+
+const handleAvatarUpdated = (updatedRecord) => {
+  siembrasStore.$patch((state) => {
+    const index = state.siembras.findIndex((s) => s.id === updatedRecord.id)
+    if (index !== -1) {
+      state.siembras[index] = { ...state.siembras[index], ...updatedRecord }
+    }
+  })
+  siembraInfo.value = { ...siembraInfo.value, ...updatedRecord }
+}
+
+const showAvatarDialog = ref(false)
 </script>
 
 <style scoped></style>

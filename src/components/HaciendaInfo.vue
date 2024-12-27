@@ -31,29 +31,28 @@
           <v-icon class="mr-2">mdi-information</v-icon>
           <strong>Información:</strong>
         </div>
-        <v-btn color="green-lighten-2" @click="openEditDialog" icon>
+        <v-btn color="green-lighten-2" @click="openEditDialog" icon size="x-small">
           <v-icon>mdi-pencil</v-icon>
         </v-btn>
       </div>
       <div
-        class="rounded-lg border-2 p-4 mt-2 mb-4"
+        class="bg-dinamico border-1 p-4 mt-2 mb-4"
         v-html="mi_hacienda?.info || 'No disponible'"
       ></div>
     </div>
 
     <v-dialog
       v-model="editDialog"
-      max-width="1000px"
+      max-width="800px"
       persistent
       transition="dialog-bottom-transition"
       scrollable
-      class="flex items-center"
     >
       <v-card v-if="editedHacienda">
-        <v-card-title>Editar Hacienda</v-card-title>
+        <v-card-title> <h2 class="text-xl font-bold mt-2">Editar Hacienda</h2></v-card-title>
         <v-card-text>
-          <v-row>
-            <v-col cols="6">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
               <v-text-field
                 class="compact-form"
                 v-model="editedHacienda.name"
@@ -76,45 +75,51 @@
                 label="Longitud"
                 type="number"
               ></v-text-field>
-            </v-col>
-            <v-col cols="6">
-              <v-card class="p-2 rounded-lg border-2">
-                <v-card-title class="compact-form-2">
-                  <v-file-input
-                    v-model="avatarFile"
-                    rounded
-                    variant="outlined"
-                    color="green"
-                    prepend-icon="mdi-camera"
-                    label="Upload Avatar"
-                    accept="image/*"
-                    @change="updateAvatar"
-                    show-size
-                  ></v-file-input>
-                </v-card-title>
-                <v-card-text>
-                  <div class="flex items-center justify-center">
-                    <v-avatar size="192" class="mr-4">
-                      <v-img :src="avatarHaciendaUrl" alt="Avatar de Hacienda"></v-img>
-                    </v-avatar>
-                  </div>
-                </v-card-text>
-              </v-card>
-            </v-col>
-          </v-row>
-
-          <v-row>
-            <v-col cols="12">
-              <div class="mb-2 mt-4">
-                <v-icon class="mr-2">mdi-information</v-icon>
-                Mi Info
+            </div>
+            <div>
+              <AvatarForm
+                v-model="showAvatarDialog"
+                collection="Haciendas"
+                :entityId="mi_hacienda?.id"
+                :currentAvatarUrl="avatarHaciendaUrl"
+                :hasCurrentAvatar="!!mi_hacienda?.avatar"
+                @avatar-updated="handleAvatarUpdated"
+              />
+              <div class="flex items-center justify-center mt-0 relative">
+                <v-avatar size="192">
+                  <v-img :src="avatarHaciendaUrl" alt="Avatar de Hacienda"></v-img>
+                </v-avatar>
+                <v-btn
+                  icon
+                  size="small"
+                  color="green-lighten-2"
+                  class="absolute bottom-0 right-0"
+                  @click="showAvatarDialog = true"
+                >
+                  <v-icon>mdi-pencil</v-icon>
+                </v-btn>
               </div>
-              <ckeditor v-model="editedHacienda.info" :editor="editor" :config="editorConfig" />
-            </v-col>
-          </v-row>
+            </div>
+          </div>
+          <div class="mt-4">
+            <div class="mb-2">
+              <v-icon class="mr-2">mdi-information</v-icon>
+              Mi Info
+            </div>
+            <ckeditor v-model="editedHacienda.info" :editor="editor" :config="editorConfig" />
+          </div>
         </v-card-text>
         <v-card-actions>
-          <v-spacer></v-spacer>
+          <v-btn
+            size="small"
+            variant="flat"
+            rounded="lg"
+            prepend-icon="mdi-check"
+            color="green-lighten-3"
+            @click="saveHacienda"
+          >
+            Guardar Cambios de Perfil
+          </v-btn>
           <v-btn
             size="small"
             variant="flat"
@@ -124,17 +129,19 @@
             @click="closeEditDialog"
             >Cancelar</v-btn
           >
-          <v-btn
-            size="small"
-            variant="flat"
-            rounded="lg"
-            prepend-icon="mdi-check"
-            color="green-lighten-3"
-            @click="saveHacienda"
-            >Guardar</v-btn
-          >
         </v-card-actions>
       </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="showAvatarDialog" max-width="500px">
+      <AvatarForm
+        v-model="showAvatarDialog"
+        collection="Haciendas"
+        :entityId="mi_hacienda?.id"
+        :currentAvatarUrl="avatarHaciendaUrl"
+        :hasCurrentAvatar="!!mi_hacienda?.avatar"
+        @avatar-updated="handleAvatarUpdated"
+      />
     </v-dialog>
   </div>
 </template>
@@ -142,17 +149,16 @@
 <script setup>
 import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
-
 import { useHaciendaStore } from '@/stores/haciendaStore'
-
 import { editor, editorConfig } from '@/utils/ckeditorConfig'
+import AvatarForm from '@/components/forms/AvatarForm.vue'
 
 const haciendaStore = useHaciendaStore()
 const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
 
 const editDialog = ref(false)
+const showAvatarDialog = ref(false)
 const editedHacienda = ref(null)
-const avatarFile = ref(null) // Agregar ref para manejar el archivo del avatar
 
 const openEditDialog = () => {
   editedHacienda.value = mi_hacienda.value ? { ...mi_hacienda.value } : {}
@@ -169,15 +175,22 @@ const closeEditDialog = () => {
 
 const saveHacienda = async () => {
   if (editedHacienda.value) {
-    await haciendaStore.updateHacienda(editedHacienda.value)
+    const dataToUpdate = {
+      ...editedHacienda.value,
+      avatar: mi_hacienda.value.avatar
+    }
+    await haciendaStore.updateHacienda(dataToUpdate)
     closeEditDialog()
   }
 }
 
-const updateAvatar = async () => {
-  if (avatarFile.value) {
-    await haciendaStore.updateHaciendaAvatar(avatarFile.value)
-    avatarFile.value = null // Limpiar el archivo después de la actualización
+const handleAvatarUpdated = (updatedRecord) => {
+  haciendaStore.$patch({ mi_hacienda: updatedRecord })
+  if (editedHacienda.value) {
+    editedHacienda.value = {
+      ...editedHacienda.value,
+      avatar: updatedRecord.avatar
+    }
   }
 }
 

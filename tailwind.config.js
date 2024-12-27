@@ -1,19 +1,24 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: [],
-  purge: ['./index.html', './src/**/*.{vue,js,ts,jsx,tsx}'],
+  content: ['./index.html', './src/**/*.{vue,js,ts,jsx,tsx}'],
+  darkMode: 'class',
   theme: {
     extend: {
-      colors: {
-        background: 'var(--color-background)'
-      },
       fontFamily: {
-        sans: ['"Plus Jakarta Sans"', 'sans-serif']
+        sans: [
+          'Inter var',
+          'SF Pro Display',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'Segoe UI',
+          'Roboto',
+          'Helvetica Neue',
+          'Arial',
+          'sans-serif'
+        ]
       }
     }
   },
-  variants: {
-    extend: {}
-  },
-  plugins: []
+  plugins: [],
+  important: true
 }

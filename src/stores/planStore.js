@@ -3,10 +3,11 @@ import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
 import { useSnackbarStore } from './snackbarStore'
 import { useHaciendaStore } from './haciendaStore'
+import { loadFromLocalStorage, saveToLocalStorage } from '@/utils/localStorageUtils'
 
 export const usePlanStore = defineStore('plan', {
   state: () => ({
-    plans: null
+    plans: loadFromLocalStorage('plans') || null // Cargar desde localStorage
   }),
 
   getters: {
@@ -35,7 +36,8 @@ export const usePlanStore = defineStore('plan', {
           sort: 'precio'
         })
         this.plans = planssearch
-        console.log('plans:', this.plans)
+        saveToLocalStorage('plans', this.plans) // Sincronizar con localStorage
+        console.log('Planes actualizados en localStorage:', this.plans)
         return this.plans
       } catch (error) {
         handleError(error, 'Error fetching available plans')

@@ -121,36 +121,66 @@
       </v-container>
     </main>
 
-    <v-dialog v-model="dialogNuevaSiembra" max-width="500px">
+    <v-dialog v-model="dialogNuevaSiembra" persistent max-width="500px">
       <v-card>
-        <v-card-title>Nueva Siembra</v-card-title>
-        <v-card-text>
-          <v-form @submit.prevent="crearSiembra">
+        <v-form @submit.prevent="crearSiembra">
+          <v-card-title> <h2 class="text-xl font-bold mt-2">Nueva Siembra</h2> </v-card-title>
+          <v-card-text>
             <v-text-field
+              density="compact"
+              class="compact-form"
               v-model="nuevaSiembraData.nombre"
               label="Nombre (Ej: pitahaya, limon)"
               required
             ></v-text-field>
             <v-text-field
+              density="compact"
+              class="compact-form"
               v-model="nuevaSiembraData.tipo"
               label="Tipo (Ej: palora, sutil)"
               required
             ></v-text-field>
             <v-select
+              density="compact"
+              class="compact-form"
               v-model="nuevaSiembraData.estado"
               :items="estadoOptions"
               label="Estado"
               required
             ></v-select>
             <v-text-field
+              density="compact"
+              class="compact-form"
               v-model="nuevaSiembraData.fecha_inicio"
               label="Fecha de inicio"
               type="date"
               required
             ></v-text-field>
-            <v-btn type="submit" color="primary" block class="mt-4">Crear Siembra</v-btn>
-          </v-form>
-        </v-card-text>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+
+            <v-btn
+              size="small"
+              variant="flat"
+              rounded="lg"
+              prepend-icon="mdi-cancel"
+              color="red-lighten-3"
+              @click="dialogNuevaSiembra = false"
+            >
+              Cancelar
+            </v-btn>
+            <v-btn
+              type="submit"
+              size="small"
+              variant="flat"
+              rounded="lg"
+              prepend-icon="mdi-check"
+              color="green-lighten-3"
+              >Crear Siembra</v-btn
+            >
+          </v-card-actions>
+        </v-form>
       </v-card>
     </v-dialog>
   </v-container>
@@ -166,6 +196,7 @@ import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 import { handleError } from '@/utils/errorHandler'
 import placeholderSiembras from '@/assets/placeholder-siembras.png'
+import { useAvatarStore } from '@/stores/avatarStore'
 
 export default {
   name: 'SiembrasComponent',
@@ -175,6 +206,7 @@ export default {
     const haciendaStore = useHaciendaStore()
     const siembrasStore = useSiembrasStore()
     const snackbarStore = useSnackbarStore()
+    const avatarStore = useAvatarStore()
 
     const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
     const { siembras, loading, error } = storeToRefs(siembrasStore)
@@ -195,7 +227,7 @@ export default {
 
     onMounted(async () => {
       try {
-        await siembrasStore.fetchSiembras()
+        await siembrasStore.cargarSiembras()
       } catch (error) {
         snackbarStore.showError('Error al cargar las siembras')
       }
@@ -253,7 +285,9 @@ export default {
 
     const getPlaceholderImage = () => placeholderSiembras
 
-    const getSiembraAvatarUrl = siembrasStore.getSiembraAvatarUrl
+    const getSiembraAvatarUrl = (siembra) => {
+      return avatarStore.getAvatarUrl({ ...siembra, type: 'siembra' }, 'Siembras')
+    }
 
     return {
       mi_hacienda,

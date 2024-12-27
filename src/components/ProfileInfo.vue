@@ -33,12 +33,12 @@
       <v-icon class="mr-2">mdi-information</v-icon>
       <strong>Mi Info:</strong>
     </div>
-    <v-btn color="green-lighten-2" @click="openDialog" icon>
+    <v-btn color="green-lighten-2" @click="openDialog" icon size="x-small">
       <v-icon>mdi-pencil</v-icon>
     </v-btn>
   </div>
 
-  <div class="flex-1 rounded-lg border-2 p-4" v-html="user?.info || 'No disponible'"></div>
+  <div class="bg-dinamico flex-1 p-4" v-html="user?.info || 'No disponible'"></div>
 
   <!-- Diálogo para editar el perfil -->
   <v-dialog
@@ -93,22 +93,28 @@
               ></v-text-field>
             </div>
             <div>
-              <v-file-input
-                class="compact-form-2"
-                v-model="avatarFile"
-                rounded
-                variant="outlined"
-                color="green"
-                prepend-icon="mdi-camera"
-                label="Upload Avatar"
-                accept="image/*"
-                @change="handleAvatarUpload"
-                show-size
-              ></v-file-input>
-              <div class="flex items-center justify-center mt-0">
+              <AvatarForm
+                v-model="showAvatarDialog"
+                collection="users"
+                :entityId="user?.id"
+                :currentAvatarUrl="avatarUrl"
+                :hasCurrentAvatar="!!user?.avatar"
+                @avatar-updated="handleAvatarUpdated"
+              />
+              <div class="flex items-center justify-center mt-0 relative">
                 <v-avatar size="192">
                   <v-img :src="avatarUrl" alt="Avatar"></v-img>
                 </v-avatar>
+                <!-- Botón para abrir el diálogo de avatar -->
+                <v-btn
+                  icon
+                  size="small"
+                  color="green-lighten-2"
+                  class="absolute bottom-0 right-0"
+                  @click="showAvatarDialog = true"
+                >
+                  <v-icon>mdi-pencil</v-icon>
+                </v-btn>
               </div>
             </div>
           </div>
@@ -148,105 +154,60 @@
   </v-dialog>
 </template>
 
-<script>
-import { defineComponent, ref, computed } from 'vue'
+<script setup>
+import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useProfileStore } from '@/stores/profileStore'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 import { editor, editorConfig } from '@/utils/ckeditorConfig'
-import placeholderUser from '@/assets/placeholder-user.png'
-import { pb } from '@/utils/pocketbase'
+import AvatarForm from '@/components/forms/AvatarForm.vue'
 
-export default defineComponent({
-  name: 'ProfileInfo',
+const profileStore = useProfileStore()
+const snackbarStore = useSnackbarStore()
+const { user } = storeToRefs(profileStore)
 
-  data() {
-    return {
-      editor,
-      editorConfig
-    }
-  },
+const name = ref('')
+const lastname = ref('')
+const username = ref('')
+const email = ref('')
+const info = ref('')
+const isLoading = ref(false)
+const dialogOpen = ref(false)
+const showAvatarDialog = ref(false)
 
-  setup() {
-    const profileStore = useProfileStore()
-    const snackbarStore = useSnackbarStore()
-    const { user } = storeToRefs(profileStore)
+const userRole = computed(() => user.value?.role || '')
+const avatarUrl = computed(() => profileStore.avatarUrl)
 
-    const name = ref('')
-    const lastname = ref('')
-    const username = ref('')
-    const email = ref('')
-    const info = ref('')
-    const isLoading = ref(false)
-    const avatarFile = ref(null)
-
-    const userRole = computed(() => user.value?.role || '')
-    const avatarUrl = computed(() => {
-      return user.value?.avatar ? pb.getFileUrl(user.value, user.value.avatar) : placeholderUser
-    })
-
-    const dialogOpen = ref(false)
-
-    const openDialog = () => {
-      if (user.value) {
-        name.value = user.value.name
-        lastname.value = user.value.lastname
-        username.value = user.value.username
-        email.value = user.value.email
-        info.value = user.value.info
-      }
-      dialogOpen.value = true
-    }
-
-    const handleAvatarUpload = async () => {
-      if (avatarFile.value) {
-        snackbarStore.showLoading()
-        try {
-          await profileStore.updateAvatar(avatarFile.value)
-          snackbarStore.showSnackbar('Avatar updated successfully', 'success')
-        } catch (error) {
-          snackbarStore.showSnackbar('Failed to update avatar', 'error')
-        } finally {
-          snackbarStore.hideLoading()
-          avatarFile.value = null
-        }
-      }
-    }
-
-    const saveProfileChanges = async () => {
-      isLoading.value = true
-      try {
-        await profileStore.updateProfile({
-          name: name.value,
-          lastname: lastname.value,
-          username: username.value,
-          info: info.value
-        })
-        snackbarStore.showSnackbar('Profile updated successfully', 'success')
-        dialogOpen.value = false
-      } catch (error) {
-        snackbarStore.showSnackbar('Failed to update profile', 'error')
-      } finally {
-        isLoading.value = false
-      }
-    }
-
-    return {
-      user,
-      name,
-      lastname,
-      username,
-      email,
-      info,
-      userRole,
-      isLoading,
-      saveProfileChanges,
-      dialogOpen,
-      openDialog,
-      avatarUrl,
-      avatarFile,
-      handleAvatarUpload
-    }
+const openDialog = () => {
+  if (user.value) {
+    name.value = user.value.name
+    lastname.value = user.value.lastname
+    username.value = user.value.username
+    email.value = user.value.email
+    info.value = user.value.info
   }
-})
+  dialogOpen.value = true
+}
+
+const handleAvatarUpdated = (updatedRecord) => {
+  profileStore.setUser(updatedRecord)
+}
+
+const saveProfileChanges = async () => {
+  isLoading.value = true
+  try {
+    await profileStore.updateProfile({
+      name: name.value,
+      lastname: lastname.value,
+      username: username.value,
+      info: info.value
+    })
+    snackbarStore.showSnackbar('Profile updated successfully', 'success')
+    dialogOpen.value = false
+  } catch (error) {
+    snackbarStore.showSnackbar('Failed to update profile', 'error')
+  } finally {
+    isLoading.value = false
+  }
+}
 </script>

@@ -134,6 +134,7 @@
                   </template>
 
                   <template #[`item.siembra`]="{ item }">
+                    <v-avatar :image="CargaImagenSiembra(item.siembra)" size="30"></v-avatar>
                     {{ getSiembraNombre(item.siembra) }}
                   </template>
 
@@ -199,285 +200,16 @@
         </v-tabs-window>
       </v-container>
     </main>
-    <v-dialog v-model="dialogoCrear" max-width="900px">
-      <v-card>
-        <v-card-title>
-          <span class="text-h5">
-            {{ modoEdicion ? 'Editar' : 'Crear' }} {{ tipoZonaActual.nombre }}
-          </span>
-        </v-card-title>
-        <v-card-text class="pr-0 pb-0">
-          <v-form ref="form" v-model="formularioValido" lazy-validation>
-            <v-row class="items-start">
-              <v-col cols="6" class="flex flex-col justify-start">
-                <!-- Columna izquierda -->
-                <v-text-field
-                  v-model="zonaEditando.nombre"
-                  label="Nombre"
-                  variant="outlined"
-                  density="compact"
-                  class="compact-form"
-                  required
-                  :rules="[(v) => !!v || 'El nombre es requerido']"
-                ></v-text-field>
-                <v-row>
-                  <v-col>
-                    <v-text-field
-                      v-model.number="zonaEditando.area.area"
-                      label="Área"
-                      type="number"
-                      variant="outlined"
-                      density="compact"
-                      class="compact-form"
-                      :rules="[(v) => !!v || 'El área es requerida']"
-                    ></v-text-field>
-                  </v-col>
-                  <v-col>
-                    <v-select
-                      v-model="zonaEditando.area.unidad"
-                      variant="outlined"
-                      density="compact"
-                      class="compact-form"
-                      :items="['m²', 'ha', 'km²']"
-                      label="Unidad de área"
-                      :rules="[(v) => !!v || 'La unidad es requerida']"
-                    ></v-select>
-                  </v-col>
-                </v-row>
-                <v-select
-                  v-model="zonaEditando.siembra"
-                  variant="outlined"
-                  density="compact"
-                  class="compact-form"
-                  :items="siembrasActivas"
-                  item-title="nombreCompleto"
-                  item-value="id"
-                  label="Siembra"
-                ></v-select>
-                <v-text-field
-                  v-model="zonaEditando.gps"
-                  variant="outlined"
-                  density="compact"
-                  class="compact-form"
-                  label="GPS (Lat, Lng)"
-                  placeholder="Ej: {lat: 0, lng: 0}"
-                ></v-text-field>
-                <v-checkbox
-                  v-model="zonaEditando.contabilizable"
-                  variant="outlined"
-                  density="compact"
-                  class="compact-form"
-                  label="Contabilizable"
-                ></v-checkbox>
-              </v-col>
-              <v-col cols="6" class="flex flex-col justify-start py-0">
-                <!-- Columna derecha -->
-                <v-textarea
-                  variant="outlined"
-                  density="compact"
-                  class="compact-form"
-                  v-model="zonaEditando.info"
-                  label="Información adicional"
-                ></v-textarea>
-
-                <!-- AREA DE CARGAR EL AVATAR -->
-                <div>
-                  <v-row align="center">
-                    <v-col class="pb-0">
-                      <v-file-input
-                        v-model="avatarFile"
-                        rounded
-                        class="compact-form-2"
-                        variant="outlined"
-                        color="green"
-                        prepend-icon="mdi-camera"
-                        label="Upload Avatar"
-                        accept="image/*"
-                        @change="updateAvatar"
-                        show-size
-                      ></v-file-input>
-                    </v-col>
-                    <v-col class="py-0" v-if="zonaEditando.avatar">
-                      <v-btn
-                        icon
-                        variant="outlined"
-                        density="compact"
-                        size="small"
-                        @click="borrarAvatar"
-                        color="red"
-                      >
-                        <v-icon>mdi-delete</v-icon>
-                      </v-btn>
-                    </v-col>
-                  </v-row>
-                </div>
-                <!-- Show current avatar -->
-                <v-img
-                  v-if="zonaEditando.avatar"
-                  :src="getAvatarUrl(zonaEditando)"
-                  max-width="150"
-                  max-height="150"
-                  contain
-                  @click="abrirImagenGrande"
-                >
-                  <template v-slot:placeholder>
-                    <v-icon size="150" color="grey lighten-2">mdi-image-off</v-icon>
-                  </template>
-                </v-img>
-                <v-icon v-else size="150" color="grey lighten-2">mdi-image-off</v-icon>
-              </v-col>
-            </v-row>
-
-            <!-- Formulario de Métricas -->
-
-            <v-row class="mt-4">
-              <v-col class="py-0">
-                <h4 class="text-xl font-bold">MÉTRICAS</h4>
-
-                <div class="bg-dinamico rounded-lg px-3 border-4 py-2 my-3 ml-0 mr-4">
-                  <v-row>
-                    <!-- Iteramos sobre las métricas -->
-                    <v-col
-                      v-for="(metrica, key) in tipoZonaActual.metricas.metricas"
-                      :key="key"
-                      cols="6"
-                    >
-                      <!-- Campo para tipo 'number' -->
-                      <v-text-field
-                        v-if="metrica.tipo === 'number'"
-                        v-model.number="zonaEditando.metricas[key].valor"
-                        :label="metrica.descripcion"
-                        type="number"
-                        variant="outlined"
-                        density="compact"
-                      ></v-text-field>
-
-                      <!-- Campo para tipo 'checkbox' -->
-                      <div v-if="metrica.tipo === 'checkbox'" class="checkbox-group">
-                        <p class="text-xs">{{ metrica.descripcion }}</p>
-                        <div class="checkbox-container">
-                          <v-checkbox
-                            v-for="opcion in metrica.opciones"
-                            :key="opcion"
-                            v-model="zonaEditando.metricas[key].valor"
-                            :label="opcion"
-                            :value="opcion"
-                            density="compact"
-                            hide-details
-                            class="checkbox-item"
-                          ></v-checkbox>
-                        </div>
-                      </div>
-
-                      <!-- Campo para tipo 'select' -->
-                      <v-select
-                        v-if="metrica.tipo === 'select'"
-                        v-model="zonaEditando.metricas[key].valor"
-                        :items="metrica.opciones"
-                        :label="metrica.descripcion"
-                        variant="outlined"
-                        class="compact-form"
-                        density="compact"
-                      ></v-select>
-
-                      <!-- Campo para tipo 'boolean' -->
-                      <v-checkbox
-                        v-if="metrica.tipo === 'boolean'"
-                        v-model="zonaEditando.metricas[key].valor"
-                        :label="metrica.descripcion"
-                        class="compact-form"
-                      ></v-checkbox>
-                    </v-col>
-                  </v-row>
-                </div>
-              </v-col>
-            </v-row>
-
-            <!-- Formulario de BPA -->
-
-            <v-row class="mt-4">
-              <v-col class="py-0">
-                <h4 class="text-xl font-bold">SEGUIMIENTO BPA</h4>
-
-                <div
-                  class="bg-dinamico rounded-lg px-3 border-4 py-2 my-3 ml-0 mr-4"
-                  v-if="tipoZonaActual.datos_bpa && tipoZonaActual.datos_bpa.preguntas_bpa"
-                >
-                  <v-row>
-                    <v-col
-                      v-for="(pregunta, index) in tipoZonaActual.datos_bpa.preguntas_bpa"
-                      :key="index"
-                      cols="6"
-                    >
-                      <v-tooltip
-                        v-if="pregunta.descripcion"
-                        location="top"
-                        width="400"
-                        v-bind:text="pregunta.descripcion"
-                      >
-                        <template v-slot:activator="{ props }">
-                          <p v-bind="props" class="font-extrabold text-xs">
-                            {{ pregunta.pregunta }}
-                          </p>
-                        </template>
-                      </v-tooltip>
-
-                      <v-tooltip
-                        v-else
-                        location="top"
-                        width="400"
-                        text="La documentacion es OBLIGATORIA"
-                      >
-                        <template v-slot:activator="{ props }">
-                          <p v-bind="props" class="font-extrabold text-xs">
-                            {{ pregunta.pregunta }}
-                          </p>
-                        </template>
-                      </v-tooltip>
-
-                      <v-radio-group
-                        inline
-                        v-model="zonaEditando.datos_bpa[index].respuesta"
-                        class="mt-2 compact-form"
-                      >
-                        <v-radio
-                          v-for="(opcion, opcionIndex) in pregunta.opciones"
-                          :key="`${index}-${opcionIndex}`"
-                          :label="opcion"
-                          :value="opcion"
-                        ></v-radio>
-                      </v-radio-group>
-                    </v-col>
-                  </v-row>
-                </div>
-              </v-col>
-            </v-row>
-          </v-form>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn
-            size="small"
-            variant="flat"
-            rounded="lg"
-            prepend-icon="mdi-cancel"
-            color="red-lighten-3"
-            @click="cerrarDialogo"
-            >Cancelar</v-btn
-          >
-          <v-btn
-            size="small"
-            variant="flat"
-            rounded="lg"
-            prepend-icon="mdi-check"
-            color="green-lighten-3"
-            @click="guardarZona"
-            :disabled="!formularioValido"
-          >
-            Guardar
-          </v-btn>
-        </v-card-actions>
-      </v-card>
+    <v-dialog v-model="dialogoCrear" persistent max-width="1000px ">
+      <ZonaForm
+        :modo-edicion="modoEdicion"
+        :zona-inicial="zonaEditando"
+        :tipo-zona-actual="tipoZonaActual"
+        :from-siembra-workspace="false"
+        :siembras-activas="siembrasActivas"
+        @close="cerrarDialogo"
+        @saved="onZonaSaved"
+      />
     </v-dialog>
     <!-- Diálogo para mostrar la imagen en grande -->
     <v-dialog v-model="dialogoImagenGrande" max-width="800px">
@@ -497,20 +229,23 @@ import { useHaciendaStore } from '@/stores/haciendaStore'
 import { useSiembrasStore } from '@/stores/siembrasStore'
 import { storeToRefs } from 'pinia'
 import { useSnackbarStore } from '@/stores/snackbarStore'
+import { useAvatarStore } from '@/stores/avatarStore'
 
-import { pb } from '@/utils/pocketbase'
+import ZonaForm from '@/components/forms/ZonaForm.vue'
 
 const zonasStore = useZonasStore()
 const siembrasStore = useSiembrasStore()
 const snackbarStore = useSnackbarStore()
 const profileStore = useProfileStore()
 const haciendaStore = useHaciendaStore()
+const avatarStore = useAvatarStore()
 
 const { user } = storeToRefs(profileStore)
 const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
 
 const userRole = computed(() => user.value.role)
 const avatarUrl = computed(() => profileStore.avatarUrl)
+//const getSiembraAvatarUrl = siembrasStore.getSiembraAvatarUrl
 
 // Computed para obtener el promedio de bpa_estado
 const promedioBpaEstado = computed(() => zonasStore.promedioBpaEstado)
@@ -523,7 +258,8 @@ const colorBpaEstado = computed(() => {
 })
 
 const { zonas, tiposZonas } = storeToRefs(zonasStore)
-const { cargarZonas, cargarTiposZonas, crearZona, eliminarZona } = zonasStore
+const { cargarZonas, cargarTiposZonas, eliminarZona } = zonasStore
+/*const { cargarZonas, cargarTiposZonas, crearZona, eliminarZona } = zonasStore*/
 const { siembras } = storeToRefs(siembrasStore)
 
 const dialogoCrear = ref(false)
@@ -539,8 +275,8 @@ const zonaEditando = ref({
   datos_bpa: [],
   metricas: {} // Añadimos este campo
 })
-const formularioValido = ref(true)
-const form = ref(null)
+/*const formularioValido = ref(true)
+const form = ref(null)*/
 const expanded = ref([])
 
 const siembrasActivas = computed(() => {
@@ -576,27 +312,13 @@ const getSiembraNombre = (siembraId) => {
 
 const tipoZonaActual = ref({})
 
-const updateAvatar = async () => {
-  if (avatarFile.value) {
-    if (zonaEditando.value.id) {
-      await zonasStore.updateZonaAvatar(zonaEditando.value.id, avatarFile.value)
-      // Actualizar zonaEditando después de la carga
-      zonaEditando.value = { ...zonasStore.zonas.find((z) => z.id === zonaEditando.value.id) }
-      avatarFile.value = null // Limpiar el archivo después de la actualización
-    }
-  }
-}
-
 const getAvatarUrl = (zona) => {
-  if (zona.avatar) {
-    return pb.getFileUrl(zona, zona.avatar)
-  }
-  return null // This will activate the placeholder
+  return avatarStore.getAvatarUrl({ ...zona, type: 'zona' }, 'zonas')
 }
 
 onMounted(async () => {
   try {
-    await Promise.all([cargarTiposZonas(), cargarZonas(), siembrasStore.fetchSiembras()])
+    await Promise.all([cargarTiposZonas(), cargarZonas(), siembrasStore.cargarSiembras()])
 
     // Set initial tab value to the first tipoZona id if available
     if (tiposZonas.value.length > 0) {
@@ -611,6 +333,18 @@ onMounted(async () => {
 const abrirDialogoCrear = (tipoZona) => {
   modoEdicion.value = false
   tipoZonaActual.value = tipoZona
+
+  // Inicializar métricas correctamente
+  const metricasInicializadas = {}
+  if (tipoZona?.metricas?.metricas) {
+    Object.entries(tipoZona.metricas.metricas).forEach(([key, value]) => {
+      metricasInicializadas[key] = {
+        ...value,
+        valor: getDefaultMetricaValue(value.tipo)
+      }
+    })
+  }
+
   zonaEditando.value = {
     nombre: '',
     area: { area: null, unidad: '' },
@@ -618,41 +352,45 @@ const abrirDialogoCrear = (tipoZona) => {
     tipo: tipoZona.id,
     hacienda: mi_hacienda.value?.id,
     siembra: null,
-    datos_bpa: (tipoZona.datos_bpa?.preguntas_bpa || []).map(() => ({ respuesta: null })),
-    metricas: Object.fromEntries(
-      Object.entries(tipoZona.metricas?.metricas || {}).map(([key, value]) => [
-        key,
-        {
-          ...value,
-          valor:
-            value.tipo === 'checkbox'
-              ? []
-              : value.tipo === 'number'
-                ? 0
-                : value.tipo === 'select'
-                  ? null
-                  : value.tipo === 'boolean'
-                    ? false
-                    : null
-        } // Inicializamos 'valor' según el tipo de métrica
-      ])
-    )
+    contabilizable: true,
+    datos_bpa: tipoZona.datos_bpa?.preguntas_bpa?.map(() => ({ respuesta: null })) || [],
+    metricas: metricasInicializadas
   }
 
-  console.log('Abrir dialogo - tipoZonaActual.metricas:', zonaEditando.value.metricas)
   dialogoCrear.value = true
+}
+
+const CargaImagenSiembra = (siembraId) => {
+  const siembra = siembras.value.find((s) => s.id === siembraId)
+  if (!siembra) return null
+  return avatarStore.getAvatarUrl({ ...siembra, type: 'siembra' }, 'Siembras')
+}
+
+function getDefaultMetricaValue(tipo) {
+  switch (tipo) {
+    case 'checkbox':
+      return []
+    case 'number':
+      return 0
+    case 'boolean':
+      return false
+    case 'select':
+      return null
+    default:
+      return null
+  }
 }
 
 const editarZona = (zona) => {
   modoEdicion.value = true
   tipoZonaActual.value = tiposZonas.value.find((tipo) => tipo.id === zona.tipo)
+
   zonaEditando.value = {
     ...zona,
     datos_bpa: zona.datos_bpa || [],
-    metricas: {
-      ...zona.metricas
-    }
+    metricas: zona.metricas || {}
   }
+
   console.log('metricas cargadas para edición:', zonaEditando.value.metricas)
   dialogoCrear.value = true
 }
@@ -661,28 +399,6 @@ const cerrarDialogo = () => {
   dialogoCrear.value = false
   // form.value.reset()
   avatarFile.value = null // Limpiar el archivo después de la actualización
-}
-
-const guardarZona = async () => {
-  if (form.value.validate()) {
-    try {
-      const zonaToSave = { ...zonaEditando.value }
-
-      if (modoEdicion.value) {
-        await zonasStore.updateZona(zonaToSave.id, zonaToSave)
-      } else {
-        const nuevaZona = await crearZona(zonaToSave)
-        if (avatarFile.value) {
-          await zonasStore.updateZonaAvatar(nuevaZona.id, avatarFile.value[0])
-        }
-      }
-
-      cerrarDialogo()
-      await zonasStore.cargarZonas() // Recargar las zonas después de guardar
-    } catch (error) {
-      snackbarStore.showError('Error al guardar la zona')
-    }
-  }
 }
 
 const confirmarEliminarZona = (zona) => {
@@ -697,23 +413,6 @@ const avatarFile = ref(null) // Agregar ref para manejar el archivo del avatar
 
 const dialogoImagenGrande = ref(false)
 
-const abrirImagenGrande = () => {
-  dialogoImagenGrande.value = true
-}
-
-const borrarAvatar = async () => {
-  if (zonaEditando.value.avatar) {
-    try {
-      await zonasStore.updateZonaAvatar(zonaEditando.value.id, '')
-      zonaEditando.value.avatar = null
-      snackbarStore.showSnackbar('Avatar borrado exitosamente')
-    } catch (error) {
-      console.error('Error al borrar el avatar:', error)
-      snackbarStore.showError('Error al borrar el avatar')
-    }
-  }
-}
-
 // Usar watch para observar cambios en zonas
 watch(
   () => zonasStore.zonas,
@@ -724,6 +423,12 @@ watch(
     }
   }
 )
+
+const onZonaSaved = async () => {
+  dialogoCrear.value = false
+  await cargarZonas() // Recargar zonas para reflejar los cambios
+  snackbarStore.showSnackbar('Zona guardada exitosamente', 'success')
+}
 </script>
 
 <style scoped>

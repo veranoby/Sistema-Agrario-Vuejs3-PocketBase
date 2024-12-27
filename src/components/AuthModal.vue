@@ -2,9 +2,10 @@
   <v-dialog
     v-model="dialogModel"
     max-width="600px"
-    persistent
+    :persistent="false"
     transition="dialog-bottom-transition"
     scrollable
+    @click:outside="closeDialog"
   >
     <v-card>
       <v-tabs v-model="tab" fixed-tabs>
@@ -230,10 +231,10 @@
   </v-dialog>
 </template>
 
-<script>
+<script setup>
 //import { ref, computed, watch } from 'vue'
 import { ref, computed } from 'vue'
-import { useAuthStore } from '../stores/authStore'
+import { useAuthStore } from '@/stores/authStore'
 
 import { useValidationStore } from '../stores/validationStore'
 
@@ -242,217 +243,183 @@ import loginLogo from '../assets/login-logo.png'
 import registerLogo from '../assets/register-logo.png'
 import { useVuelidate } from '@vuelidate/core'
 import { required, email, minLength, sameAs } from '@vuelidate/validators'
+import { useSyncStore } from '@/stores/syncStore'
 
-export default {
-  props: {
-    isOpen: Boolean,
-    initialTab: {
-      type: String,
-      default: 'login'
-    }
-  },
-
-  methods: {
-    closeModalAndNavigate() {
-      this.dialogModel = false
-      this.$router.push({ name: 'EmailConfirmation' })
-    },
-
-    handleLogin() {
-      this.authStore.login(this.loginForm).then((success) => {
-        if (success) {
-          this.dialogModel = false
-          this.snackbarStore.showMessage('Login successful', 'success')
-        } else {
-          this.snackbarStore.showMessage('Login failed', 'error')
-        }
-      })
-    }
-  },
-
-  emits: ['update:isOpen', 'loginSuccess'],
-  setup(props, { emit }) {
-    const authStore = useAuthStore()
-    const validationStore = useValidationStore()
-    const snackbarStore = useSnackbarStore()
-    const tab = ref(props.initialTab)
-    const visible = ref(false)
-    const usernameAvailable = ref(true)
-    const emailAvailable = ref(true)
-    const haciendaAvailable = ref(true)
-
-    const dialogModel = computed({
-      get: () => props.isOpen,
-      set: (value) => emit('update:isOpen', value)
-    })
-
-    const loginForm = ref({
-      usernameOrEmail: '',
-      password: '',
-      rememberMe: false
-    })
-
-    const registerForm = ref({
-      username: '',
-      email: '',
-      firstname: '',
-      lastname: '',
-      password: '',
-      passwordConfirm: '',
-      hacienda: ''
-    })
-
-    const rules = {
-      username: {
-        required,
-        minLength: minLength(3)
-      },
-      email: {
-        required,
-        email
-      },
-      firstname: { required },
-      lastname: { required },
-      hacienda: { required },
-      password: { required, minLength: minLength(8) },
-      passwordConfirm: {
-        required,
-        sameAsPassword: sameAs(computed(() => registerForm.value.password))
-      }
-    }
-
-    const v$ = useVuelidate(rules, registerForm)
-
-    const formValid = computed(() => {
-      return (
-        !v$.value.$invalid &&
-        usernameAvailable.value &&
-        emailAvailable.value &&
-        haciendaAvailable.value
-      )
-    })
-
-    const checkUsername = async () => {
-      if (registerForm.value.username.length >= 3) {
-        try {
-          usernameAvailable.value = await validationStore.checkUsernameTaken(
-            registerForm.value.username
-          )
-
-          console.log('pedido responde', usernameAvailable.value)
-        } catch (error) {
-          //   console.error('Error checking username:', error)
-          usernameAvailable.value = false
-        }
-      } else {
-        usernameAvailable.value = true
-      }
-    }
-    const checkEmail = async () => {
-      if (registerForm.value.email) {
-        try {
-          emailAvailable.value = await validationStore.checkEmailTaken(registerForm.value.email)
-          console.log('checking Email availability:', registerForm.value.email)
-        } catch (error) {
-          console.log('Error checking email:', error)
-          emailAvailable.value = false
-        }
-      } else {
-        emailAvailable.value = true
-      }
-    }
-
-    const checkHacienda = async () => {
-      if (registerForm.value.hacienda) {
-        try {
-          haciendaAvailable.value = await validationStore.checkHaciendaTaken(
-            registerForm.value.hacienda
-          )
-          console.log('checking Hacienda availability:', registerForm.value.hacienda)
-        } catch (error) {
-          console.error('Error checking hacienda:', error)
-          haciendaAvailable.value = false
-        }
-      } else {
-        haciendaAvailable.value = true
-      }
-    }
-
-    const login = async () => {
-      if (!loginForm.value.usernameOrEmail || !loginForm.value.password) {
-        snackbarStore.showSnackbar('Please fill in all fields', 'error')
-        return
-      }
-
-      try {
-        const success = await authStore.login(
-          loginForm.value.usernameOrEmail,
-          loginForm.value.password,
-          loginForm.value.rememberMe
-        )
-
-        if (success) {
-          emit('loginSuccess')
-          console.log('emit loginSuccess', success)
-          dialogModel.value = false
-        }
-      } catch (error) {
-        //   console.error('Login error from authmodal:', error)
-        console.log('Login error from authmodal:', error)
-      }
-    }
-
-    const register = async () => {
-      const isValid = await v$.value.$validate()
-      if (!isValid) {
-        snackbarStore.showSnackbar('Please correct the errors in the form', 'error')
-        return
-      }
-
-      try {
-        const registrationData = {
-          username: registerForm.value.username,
-          email: registerForm.value.email,
-          firstname: registerForm.value.firstname,
-          lastname: registerForm.value.lastname,
-          password: registerForm.value.password,
-          hacienda: registerForm.value.hacienda
-        }
-
-        await authStore.register(registrationData, 'administrador')
-
-        //     await authStore.register({ ...registerForm.value }, 'administrador', 1)
-
-        // Clear the form and close the dialog only if registration was successful
-        //   Object.keys(registerForm.value).forEach((key) => (registerForm.value[key] = ''))
-        //   dialogModel.value = false
-      } catch (error) {
-        console.log('Registration error from Authmodal:', error.message)
-      }
-    }
-
-    return {
-      tab,
-      dialogModel,
-      loginForm,
-      registerForm,
-      login,
-      register,
-      loginLogo,
-      registerLogo,
-      authStore,
-      visible,
-
-      v$,
-      formValid,
-
-      usernameAvailable,
-      emailAvailable,
-      haciendaAvailable,
-      checkHacienda,
-      checkUsername,
-      checkEmail
-    }
+const props = defineProps({
+  isOpen: Boolean,
+  initialTab: {
+    type: String,
+    default: 'login'
   }
+})
+
+const emit = defineEmits(['update:isOpen', 'loginSuccess', 'HandleDrawer'])
+
+const authStore = useAuthStore()
+const validationStore = useValidationStore()
+const snackbarStore = useSnackbarStore()
+const tab = ref(props.initialTab)
+const visible = ref(false)
+const usernameAvailable = ref(true)
+const emailAvailable = ref(true)
+const haciendaAvailable = ref(true)
+const syncStore = useSyncStore()
+
+const dialogModel = computed({
+  get: () => props.isOpen,
+  set: (value) => emit('update:isOpen', value)
+})
+
+const loginForm = ref({
+  usernameOrEmail: '',
+  password: '',
+  rememberMe: false
+})
+
+const registerForm = ref({
+  username: '',
+  email: '',
+  firstname: '',
+  lastname: '',
+  password: '',
+  passwordConfirm: '',
+  hacienda: ''
+})
+
+const rules = {
+  username: {
+    required,
+    minLength: minLength(3)
+  },
+  email: {
+    required,
+    email
+  },
+  firstname: { required },
+  lastname: { required },
+  hacienda: { required },
+  password: { required, minLength: minLength(8) },
+  passwordConfirm: {
+    required,
+    sameAsPassword: sameAs(computed(() => registerForm.value.password))
+  }
+}
+
+const v$ = useVuelidate(rules, registerForm)
+
+const formValid = computed(() => {
+  return (
+    !v$.value.$invalid && usernameAvailable.value && emailAvailable.value && haciendaAvailable.value
+  )
+})
+
+const checkUsername = async () => {
+  if (registerForm.value.username.length >= 3) {
+    try {
+      usernameAvailable.value = await validationStore.checkUsernameTaken(
+        registerForm.value.username
+      )
+
+      console.log('pedido responde', usernameAvailable.value)
+    } catch (error) {
+      //   console.error('Error checking username:', error)
+      usernameAvailable.value = false
+    }
+  } else {
+    usernameAvailable.value = true
+  }
+}
+const checkEmail = async () => {
+  if (registerForm.value.email) {
+    try {
+      emailAvailable.value = await validationStore.checkEmailTaken(registerForm.value.email)
+      console.log('checking Email availability:', registerForm.value.email)
+    } catch (error) {
+      console.log('Error checking email:', error)
+      emailAvailable.value = false
+    }
+  } else {
+    emailAvailable.value = true
+  }
+}
+
+const checkHacienda = async () => {
+  if (registerForm.value.hacienda) {
+    try {
+      haciendaAvailable.value = await validationStore.checkHaciendaTaken(
+        registerForm.value.hacienda
+      )
+      console.log('checking Hacienda availability:', registerForm.value.hacienda)
+    } catch (error) {
+      console.error('Error checking hacienda:', error)
+      haciendaAvailable.value = false
+    }
+  } else {
+    haciendaAvailable.value = true
+  }
+}
+
+const login = async () => {
+  if (!loginForm.value.usernameOrEmail || !loginForm.value.password) {
+    snackbarStore.showSnackbar('Please fill in all fields', 'error')
+    return
+  }
+
+  try {
+    if (!syncStore.isOnline) {
+      useSnackbarStore().showError('Se requiere conexión a internet para iniciar sesión')
+      return
+    }
+
+    const success = await authStore.login(
+      loginForm.value.usernameOrEmail,
+      loginForm.value.password,
+      loginForm.value.rememberMe
+    )
+    if (success) {
+      emit('loginSuccess')
+      console.log('emit loginSuccess', success)
+      dialogModel.value = false
+      console.log('HandleDrawer', success)
+
+      emit('HandleDrawer', true)
+    }
+  } catch (error) {
+    console.log('Login error from authmodal:', error)
+  }
+}
+
+const register = async () => {
+  const isValid = await v$.value.$validate()
+  if (!isValid) {
+    snackbarStore.showSnackbar('Please correct the errors in the form', 'error')
+    return
+  }
+
+  try {
+    const registrationData = {
+      username: registerForm.value.username,
+      email: registerForm.value.email,
+      firstname: registerForm.value.firstname,
+      lastname: registerForm.value.lastname,
+      password: registerForm.value.password,
+      hacienda: registerForm.value.hacienda
+    }
+
+    await authStore.register(registrationData, 'administrador')
+
+    //     await authStore.register({ ...registerForm.value }, 'administrador', 1)
+
+    // Clear the form and close the dialog only if registration was successful
+    //   Object.keys(registerForm.value).forEach((key) => (registerForm.value[key] = ''))
+    //   dialogModel.value = false
+  } catch (error) {
+    console.log('Registration error from Authmodal:', error.message)
+  }
+}
+
+const closeDialog = () => {
+  dialogModel.value = false
+  emit('update:isOpen', false)
 }
 </script>
