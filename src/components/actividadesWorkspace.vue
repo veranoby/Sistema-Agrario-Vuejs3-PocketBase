@@ -1,493 +1,619 @@
 <template>
   <v-container fluid class="flex flex-col min-h-screen pa-0" v-if="!isLoading">
     <!-- Header -->
-    <header class="bg-background shadow-sm">
-      <div class="profile-container">
-        <h3 class="profile-title">
-          <nav class="flex mb-3" aria-label="Breadcrumb">
-            <ol class="flex items-center space-x-2 bg-green-lighten-4 py-2 px-4 rounded-r-full">
-              <li>
-                <div class="flex items-center">
-                  <v-icon>mdi-clipboard-text</v-icon>
-                  <router-link
-                    to="/actividades"
-                    class="ml-3 text-sm font-medium text-gray-600 hover:text-gray-700"
-                    >ACTIVIDADES</router-link
+    <div class="grid grid-cols-4 gap-2 p-0 m-2">
+      <header class="col-span-4 bg-background shadow-sm p-0">
+        <div class="profile-container mt-0 ml-0 px-2 py-2">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <!-- Title and Chips Section -->
+            <div class="w-full sm:flex-grow">
+              <h3 class="profile-title">
+                <nav class="flex mb-3" aria-label="Breadcrumb">
+                  <ol
+                    class="flex items-center space-x-2 bg-green-lighten-4 py-2 px-4 rounded-r-full"
                   >
-                </div>
-              </li>
-              <li>
-                <div class="flex items-center">
-                  <v-icon>mdi-chevron-right</v-icon>
-                  <span class="ml-1 text-sm font-bold text-gray-600" aria-current="page">{{
-                    actividadInfo.nombre
-                  }}</span>
-                </div>
-              </li>
-              <li>
-                <div class="flex items-center">
-                  <v-icon>mdi-chevron-right</v-icon>
-                  <span class="ml-1 text-sm font-bold text-gray-700" aria-current="page">{{
-                    actividadInfo.tipo.nombre
-                  }}</span>
-                </div>
-              </li>
-            </ol>
-          </nav>
+                    <li>
+                      <div class="flex items-center">
+                        <v-icon>mdi-gesture-tap-button</v-icon>
+                        <router-link
+                          to="/actividades"
+                          class="ml-3 text-sm font-medium text-gray-600 hover:text-gray-700"
+                          >ACTIVIDADES</router-link
+                        >
+                      </div>
+                    </li>
+                    <li>
+                      <div class="flex items-center">
+                        <v-icon>mdi-chevron-right</v-icon>
+                        <span class="ml-1 text-sm font-bold text-gray-600" aria-current="page">{{
+                          actividadInfo.nombre
+                        }}</span>
+                      </div>
+                    </li>
+                  </ol>
+                </nav>
 
-          <v-chip variant="flat" size="x-small" color="green-lighten-3" class="mx-1" pill>
-            <v-avatar start> <v-img :src="avatarHaciendaUrl" alt="Avatar"></v-img> </v-avatar>
-            HACIENDA: {{ mi_hacienda.name }}
-          </v-chip>
+                <v-chip variant="flat" size="x-small" color="green-lighten-3" class="mx-1" pill>
+                  <v-avatar start> <v-img :src="avatarHaciendaUrl" alt="Avatar"></v-img> </v-avatar>
+                  HACIENDA: {{ mi_hacienda.name }}
+                </v-chip>
 
-          <v-chip variant="flat" size="x-small" color="grey-lighten-2" class="mx-1" pill>
-            <v-avatar start> <v-img :src="avatarUrl" alt="Avatar"></v-img> </v-avatar>
-            {{ userRole }}
-          </v-chip>
+                <v-chip variant="flat" size="x-small" color="grey-lighten-2" class="mx-1" pill>
+                  <v-avatar start> <v-img :src="avatarUrl" alt="Avatar"></v-img> </v-avatar>
+                  {{ userRole }}
+                </v-chip>
 
-          <v-chip :color="actividadInfo.activa ? 'success' : 'error'" size="x-small" variant="flat">
-            {{ actividadInfo.activa ? 'Activa' : 'Inactiva' }}
-          </v-chip>
-        </h3>
-        <div class="avatar-container">
-          <v-icon size="64" :color="getColorByTipo(actividadInfo.tipo.nombre)">
-            {{ getIconByTipo(actividadInfo.tipo.nombre) }}
-          </v-icon>
+                <v-chip :color="getStatusColor(actividadInfo.activa)" size="x-small" variant="flat">
+                  {{ getStatusMsg(actividadInfo.activa) }}
+                </v-chip>
+
+                <v-chip variant="flat" size="x-small" color="grey-lighten-2" class="mx-1" pill>
+                  {{ getActividadTipo(actividadInfo.tipo) }}
+                </v-chip>
+              </h3>
+            </div>
+
+            <!-- EXTRAS Section -->
+            <div class="w-full sm:w-auto z-10 text-center">
+              <!-- circular progress control-->
+              <h4
+                :class="{
+                  'text-red font-extrabold pt-0 pb-2 text-xs sm:text-sm':
+                    actividadInfo.bpa_estado < 40,
+                  'text-orange font-extrabold pt-0 pb-2 text-xs sm:text-sm':
+                    actividadInfo.bpa_estado >= 40 && actividadInfo.bpa_estado < 80,
+                  'text-green font-extrabold pt-0 pb-2 text-xs sm:text-sm':
+                    actividadInfo.bpa_estado >= 80
+                }"
+              >
+                Avance BPA:
+              </h4>
+              <!-- Título agregado -->
+              <v-progress-circular
+                :model-value="actividadInfo.bpa_estado"
+                :size="78"
+                :width="8"
+                :color="colorBpaEstado"
+              >
+                <template v-slot:default> {{ actividadInfo.bpa_estado }} % </template>
+              </v-progress-circular>
+            </div>
+          </div>
+
+          <div class="avatar-container">
+            <img :src="actividadAvatarUrl" alt="Avatar de Siembra" class="avatar-image" />
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+    </div>
 
     <v-row no-gutters>
-      <!-- Main Content -->
       <v-col cols="12" md="8" class="pa-4">
         <v-card class="actividad-info mb-4" elevation="2">
           <v-card-title class="headline d-flex justify-between align-center">
-            <div class="d-flex align-center">
-              <v-icon class="mr-2">mdi-information</v-icon>
-              <span>Información de la Actividad</span>
-            </div>
+            <span>Información de la Actividad</span>
+
+            <span>
+              <v-chip
+                v-for="(metrica, key) in actividadInfo.metricas"
+                :key="key"
+                variant="flat"
+                size="x-small"
+                color="green-lighten-3"
+                class="m-1 p-1"
+                pill
+              >
+                {{ key.toUpperCase() }}:{{ metrica.valor }}
+              </v-chip>
+            </span>
+
             <v-btn color="green-lighten-2" @click="openEditDialog" icon>
               <v-icon>mdi-pencil</v-icon>
             </v-btn>
           </v-card-title>
           <v-card-text>
-            <v-row>
-              <v-col cols="12" md="6">
-                <p><strong>Nombre:</strong> {{ actividadInfo.nombre }}</p>
-                <p><strong>Tipo:</strong> {{ actividadInfo.tipo.nombre }}</p>
-                <p><strong>Estado:</strong> {{ actividadInfo.activa ? 'Activa' : 'Inactiva' }}</p>
-              </v-col>
-              <v-col cols="12" md="6">
-                <p><strong>Descripción:</strong></p>
-                <p>{{ actividadInfo.descripcion }}</p>
-              </v-col>
-            </v-row>
-            <v-row>
-              <v-col cols="12">
-                <p><strong>Métricas requeridas:</strong></p>
-                <v-chip-group>
-                  <v-chip v-for="metrica in actividadInfo.metricas_requeridas" :key="metrica">
-                    {{ metrica }}
-                  </v-chip>
-                </v-chip-group>
-              </v-col>
-            </v-row>
+            <div v-html="actividadInfo.descripcion || 'No disponible'"></div>
           </v-card-text>
         </v-card>
 
-        <!-- Bitácora -->
+        <!-- Bitácora 
         <v-card class="bitacora-section" elevation="2">
-          <v-card-title class="headline d-flex justify-space-between align-center">
-            Bitácora de la Actividad
-            <v-btn color="success" @click="openAddBitacoraDialog">
-              <v-icon left>mdi-plus</v-icon>
-              Agregar Entrada
-            </v-btn>
-          </v-card-title>
+          <v-card-title class="headline">Bitácora de la Actividad</v-card-title>
           <v-card-text>
-            <div class="d-flex flex-wrap align-center mb-4">
-              <v-select
-                v-model="itemsPerPage"
-                :items="[5, 10, 20]"
-                label="Elementos por página"
-                dense
-                outlined
-                hide-details
-                class="mr-4"
-                style="max-width: 150px"
-              ></v-select>
-              <v-chip-group v-model="selectedZonas" column multiple>
-                <v-chip v-for="zona in zonas" :key="zona.id" filter outlined>
-                  {{ zona.nombre }}
-                </v-chip>
-              </v-chip-group>
-            </div>
             <v-data-table
               :headers="bitacoraHeaders"
               :items="filteredBitacora"
               :items-per-page="itemsPerPage"
-              :footer-props="{
-                'items-per-page-options': [5, 10, 20],
-                'items-per-page-text': 'Elementos por página'
-              }"
               class="elevation-1"
             >
               <template #[`item.fecha`]="{ item }">
                 {{ formatDate(item.fecha) }}
               </template>
               <template #[`item.actions`]="{ item }">
-                <v-icon small class="mr-2" @click="editBitacoraItem(item)"> mdi-pencil </v-icon>
-                <v-icon small @click="deleteBitacoraItem(item)"> mdi-delete </v-icon>
+                <v-icon small @click="editBitacoraItem(item)">mdi-pencil</v-icon>
+                <v-icon small @click="deleteBitacoraItem(item)">mdi-delete</v-icon>
               </template>
             </v-data-table>
           </v-card-text>
-        </v-card>
+        </v-card> -->
       </v-col>
 
-      <!-- Sidebar -->
-      <v-col cols="12" md="4" class="pa-4">
-        <v-card class="zonas-section mb-4" elevation="2">
-          <v-card-title class="headline">Zonas Asociadas</v-card-title>
-          <v-card-text>
-            <v-list>
-              <v-list-item v-for="zona in actividadInfo.zonas" :key="zona.id">
-                <v-list-item-title>{{ zona.nombre }}</v-list-item-title>
-                <v-list-item-subtitle
-                  >{{ zona.area.area }} {{ zona.area.unidad }}</v-list-item-subtitle
-                >
-              </v-list-item>
-            </v-list>
-          </v-card-text>
-        </v-card>
+      <!-- SIDEBAR SIEMBRAS Y ZONAS -->
+      <v-col cols="4" md="4" class="pa-4">
+        <div>
+          <h4>Siembras Asociadas</h4>
+          <div class="flex flex-wrap">
+            <v-chip
+              v-for="siembraId in actividadInfo.siembra"
+              :key="siembraId"
+              :color="'green-lighten-3'"
+              class="m-1"
+            >
+              {{ getSiembraName(siembraId) }}
+            </v-chip>
+          </div>
+        </div>
 
-        <v-card class="recordatorio-section" elevation="2">
-          <v-card-title class="headline">Recordatorio</v-card-title>
-          <v-card-text v-if="actividadInfo.recordatorio">
-            <p>
-              <strong>Última ejecución:</strong>
-              {{ formatDate(actividadInfo.recordatorio.ultima_ejecucion) }}
-            </p>
-            <p>
-              <strong>Próximo recordatorio:</strong>
-              {{ formatDate(actividadInfo.recordatorio.proximo_recordatorio) }}
-            </p>
-            <p><strong>Frecuencia:</strong> {{ actividadInfo.recordatorio.frecuencia }}</p>
-            <p><strong>Estado:</strong> {{ actividadInfo.recordatorio.estado }}</p>
-          </v-card-text>
-          <v-card-text v-else>
-            <p>No hay recordatorio configurado para esta actividad.</p>
-          </v-card-text>
-        </v-card>
+        <div>
+          <h4>Zonas Asociadas</h4>
+          <div class="flex flex-wrap">
+            <v-chip
+              v-for="zonaId in actividadInfo.zonas"
+              :key="zonaId"
+              :color="'blue-lighten-3'"
+              class="m-1"
+            >
+              {{ getZonaName(zonaId) }}
+            </v-chip>
+          </div>
+        </div>
       </v-col>
     </v-row>
 
-    <!-- Dialogs -->
+    <!-- Dialogo de Edición de Actividad -->
+    <v-dialog v-model="editActividadDialog" persistent max-width="900px">
+      <v-form ref="editActividadForm">
+        <v-card>
+          <v-card-title class="headline">Editar Actividad</v-card-title>
+          <v-card-text>
+            <div class="grid grid-cols-2">
+              <div>
+                <v-text-field
+                  v-model="editedActividad.nombre"
+                  label="Nombre"
+                  class="compact-form"
+                  variant="outlined"
+                  density="compact"
+                ></v-text-field>
+                <v-checkbox
+                  v-model="editedActividad.activa"
+                  density="compact"
+                  class="compact-form"
+                  label="estado activo"
+                ></v-checkbox>
+              </div>
 
-    <!-- Editar Actividad -->
-    <v-dialog v-model="editActividadDialog" max-width="800px">
-      <v-card>
-        <v-card-title class="headline">Editar Actividad</v-card-title>
-        <v-card-text>
-          <v-form ref="editActividadForm">
-            <v-text-field v-model="editedActividad.nombre" label="Nombre"></v-text-field>
-            <v-select
-              v-model="editedActividad.tipo"
-              :items="tiposActividad"
-              item-text="nombre"
-              item-value="id"
-              label="Tipo"
-            ></v-select>
-            <v-textarea v-model="editedActividad.descripcion" label="Descripción"></v-textarea>
-            <v-switch v-model="editedActividad.activa" label="Activa"></v-switch>
-            <v-combobox
-              v-model="editedActividad.metricas_requeridas"
-              :items="metricasDisponibles"
-              label="Métricas requeridas"
-              multiple
-              chips
-            ></v-combobox>
-            <v-select
-              v-model="editedActividad.zonas"
-              :items="zonas"
-              item-text="nombre"
-              item-value="id"
-              label="Zonas"
-              multiple
-              chips
-            ></v-select>
-          </v-form>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn color="primary" text @click="saveActividadEdit">Guardar</v-btn>
-          <v-btn color="error" text @click="editActividadDialog = false">Cancelar</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+              <!-- Sección para métricas -->
+              <div class="siembra-info" v-if="tipoActividadActual?.metricas?.metricas">
+                <v-card-title class="headline d-flex justify-between">
+                  <h2 class="text-xl font-bold mt-2">Métricas</h2>
+                  <v-btn size="x-small" color="green-lighten-2" @click="openAddMetricaDialog" icon>
+                    <v-icon>mdi-plus</v-icon>
+                  </v-btn>
+                </v-card-title>
+                <v-card-text>
+                  <div class="grid grid-cols-2 gap-0">
+                    <div v-for="(metrica, key) in editedActividad.metricas" :key="key" cols="6">
+                      <!-- Select para tipo "select" -->
+                      <v-select
+                        v-if="metrica.tipo === 'select'"
+                        v-model="metrica.valor"
+                        :label="key"
+                        :items="metrica.opciones"
+                        variant="outlined"
+                        density="compact"
+                        class="compact-form"
+                      >
+                        <template v-slot:append>
+                          <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
+                        </template>
+                      </v-select>
+                      <!-- Input number para tipo "text" -->
+                      <v-text-field
+                        v-else-if="metrica.tipo === 'text'"
+                        v-model.number="metrica.valor"
+                        :label="key"
+                        density="compact"
+                        variant="outlined"
+                        class="compact-form"
+                      >
+                        <template v-slot:append>
+                          <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
+                        </template>
+                      </v-text-field>
+                      <!-- Input number para tipo "number" -->
+                      <v-text-field
+                        v-else-if="metrica.tipo === 'number'"
+                        v-model.number="metrica.valor"
+                        :label="key"
+                        type="number"
+                        density="compact"
+                        variant="outlined"
+                        class="compact-form"
+                      >
+                        <template v-slot:append>
+                          <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
+                        </template>
+                      </v-text-field>
+                      <!-- Input number para tipo "boolean" -->
+                      <v-checkbox
+                        v-else-if="metrica.tipo === 'boolean'"
+                        v-model.number="metrica.valor"
+                        :label="key"
+                        density="compact"
+                        class="compact-form"
+                      >
+                        <template v-slot:append>
+                          <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
+                        </template></v-checkbox
+                      >
+                      <!-- Input number para tipo "checkbox" -->
+                      <v-checkbox
+                        v-else-if="metrica.tipo === 'checkbox'"
+                        v-model.number="metrica.valor"
+                        :label="key"
+                        density="compact"
+                        class="compact-form"
+                      >
+                        <template v-slot:append>
+                          <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
+                        </template></v-checkbox
+                      >
+                    </div>
+                  </div>
+                </v-card-text>
+              </div>
+            </div>
 
-    <!-- Agregar Bitácora -->
-    <v-dialog v-model="addBitacoraDialog" max-width="600px">
-      <v-card>
-        <v-card-title class="headline">Agregar a Bitácora</v-card-title>
-        <v-card-text>
-          <v-form ref="addBitacoraForm">
-            <v-text-field v-model="newBitacora.fecha" label="Fecha" type="date"></v-text-field>
-            <v-select
-              v-model="newBitacora.zona"
-              :items="actividadInfo.zonas"
-              item-text="nombre"
-              item-value="id"
-              label="Zona"
-            ></v-select>
-            <v-textarea v-model="newBitacora.descripcion" label="Descripción"></v-textarea>
-            <v-select
-              v-model="newBitacora.responsable"
-              :items="usuarios"
-              item-text="name"
-              item-value="id"
-              label="Responsable"
-            ></v-select>
-            <v-select
-              v-model="newBitacora.estado"
-              :items="estadosBitacora"
-              label="Estado"
-            ></v-select>
-            <v-textarea v-model="newBitacora.notas" label="Notas"></v-textarea>
-          </v-form>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn color="primary" text @click="saveBitacoraEntry">Guardar</v-btn>
-          <v-btn color="error" text @click="addBitacoraDialog = false">Cancelar</v-btn>
-        </v-card-actions>
-      </v-card>
+            <!-- Diálogo para agregar métrica personalizada -->
+            <v-dialog v-model="addMetricaDialog" persistent max-width="300px">
+              <v-card>
+                <v-card-title class="headline">Agregar Métrica </v-card-title>
+                <v-card-text class="m-1 p-0 pl-2">
+                  <v-text-field
+                    density="compact"
+                    variant="outlined"
+                    class="compact-form"
+                    v-model="newMetrica.titulo"
+                    label="Título"
+                  />
+                  <v-textarea
+                    density="compact"
+                    variant="outlined"
+                    class="compact-form"
+                    v-model="newMetrica.descripcion"
+                    label="Descripción"
+                  />
+                  <v-select
+                    density="compact"
+                    variant="outlined"
+                    class="compact-form"
+                    v-model="newMetrica.tipo"
+                    :items="['checkbox', 'number', 'text']"
+                    label="Tipo"
+                  />
+                </v-card-text>
+                <v-card-actions>
+                  <v-btn
+                    size="small"
+                    variant="flat"
+                    rounded="lg"
+                    prepend-icon="mdi-cancel"
+                    color="red-lighten-3"
+                    @click="addMetricaDialog = false"
+                    >Cancelar</v-btn
+                  >
+                  <v-btn
+                    size="small"
+                    variant="flat"
+                    rounded="lg"
+                    prepend-icon="mdi-check"
+                    color="green-lighten-3"
+                    @click="addMetrica"
+                    >Agregar</v-btn
+                  >
+                </v-card-actions>
+              </v-card>
+            </v-dialog>
+
+            <!-- Información Adicional -->
+            <div class="mt-2">
+              <div class="mb-2">
+                <v-icon class="mr-2">mdi-information</v-icon>
+                Detalles
+              </div>
+              <ckeditor
+                v-model="editedActividad.descripcion"
+                :editor="editor"
+                :config="editorConfig"
+              />
+            </div>
+
+            <!-- Formulario de Seguimiento BPA -->
+
+            <div class="siembra-info mt-4">
+              <v-card-title class="headline">
+                <h2 class="text-xl font-bold mt-2">Seguimiento BPA</h2>
+              </v-card-title>
+              <v-card-text>
+                <div class="grid grid-cols-3 gap-2">
+                  <div v-for="(pregunta, index) in getBpaPreguntas" :key="index">
+                    <span class="text-xs font-black text-justify">
+                      {{ pregunta.pregunta }}
+                      <v-tooltip
+                        width="300"
+                        v-if="pregunta.descripcion"
+                        activator="parent"
+                        location="top"
+                        density="compact"
+                        variant="outlined"
+                        class="text-xs text-justify"
+                      >
+                        {{ pregunta.descripcion }}</v-tooltip
+                      >
+                    </span>
+
+                    <v-radio-group
+                      v-if="editedActividad.datos_bpa && editedActividad.datos_bpa[index]"
+                      v-model="editedActividad.datos_bpa[index].respuesta"
+                      class="mt-2"
+                    >
+                      <v-radio
+                        v-for="(opcion, opcionIndex) in pregunta.opciones"
+                        :key="`${index}-${opcionIndex}`"
+                        :label="opcion"
+                        :value="opcion"
+                        class="compact-form"
+                        density="compact"
+                      ></v-radio>
+                    </v-radio-group>
+                  </div>
+                </div>
+              </v-card-text>
+            </div>
+
+            <!-- Componente para editar el avatar -->
+            <AvatarForm
+              v-model="showAvatarDialog"
+              collection="actividades"
+              :entityId="editedActividad.id"
+              :currentAvatarUrl="editedActividad.avatarUrl"
+              :hasCurrentAvatar="!!editedActividad.avatar"
+              @avatar-updated="handleAvatarUpdated"
+            />
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn
+              size="small"
+              variant="flat"
+              rounded="lg"
+              prepend-icon="mdi-cancel"
+              color="red-lighten-3"
+              @click="editActividadDialog = false"
+              >Cancelar</v-btn
+            >
+            <v-btn
+              size="small"
+              variant="flat"
+              rounded="lg"
+              prepend-icon="mdi-check"
+              color="green-lighten-3"
+              @click="saveActividad"
+              >Guardar</v-btn
+            >
+          </v-card-actions>
+        </v-card>
+      </v-form>
     </v-dialog>
   </v-container>
-  <v-progress-circular v-else indeterminate color="primary"></v-progress-circular>
 </template>
 
-<script>
+<script setup>
 import { ref, computed, onMounted } from 'vue'
+
 import { useRoute } from 'vue-router'
 import { useActividadesStore } from '@/stores/actividadesStore'
-import { useBitacoraStore } from '@/stores/bitacoraStore'
-import { useProfileStore } from '@/stores/profileStore'
-import { useHaciendaStore } from '@/stores/haciendaStore'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 import { handleError } from '@/utils/errorHandler'
+import { useProfileStore } from '@/stores/profileStore'
+import { useAvatarStore } from '@/stores/avatarStore'
 import { storeToRefs } from 'pinia'
+import { useHaciendaStore } from '@/stores/haciendaStore'
+import AvatarForm from '@/components/forms/AvatarForm.vue'
+import { editor, editorConfig } from '@/utils/ckeditorConfig'
+import { useSiembrasStore } from '@/stores/siembrasStore'
+import { useZonasStore } from '@/stores/zonasStore'
 
-export default {
-  name: 'ActividadWorkspace',
-  setup() {
-    const route = useRoute()
-    const actividadesStore = useActividadesStore()
-    const bitacoraStore = useBitacoraStore()
-    const profileStore = useProfileStore()
-    const haciendaStore = useHaciendaStore()
-    const snackbarStore = useSnackbarStore()
+const route = useRoute()
+const actividadesStore = useActividadesStore()
+const snackbarStore = useSnackbarStore()
+const avatarStore = useAvatarStore()
+const profileStore = useProfileStore()
+const haciendaStore = useHaciendaStore()
+const siembrasStore = useSiembrasStore()
+const zonasStore = useZonasStore()
 
-    const actividadId = ref(route.params.id)
-    const actividadInfo = ref({})
-    const bitacora = ref([])
+const actividadId = ref(route.params.id)
+const actividadInfo = ref({})
+const editActividadDialog = ref(false)
+const addMetricaDialog = ref(false)
+const editedActividad = ref({
+  metricas: {}
+})
+const newMetrica = ref({
+  titulo: '',
+  descripcion: '',
+  tipo: ''
+})
 
-    const { user } = storeToRefs(profileStore)
-    const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
+const showAvatarDialog = ref(false)
 
-    const userRole = computed(() => user.value?.role || '')
-    const avatarUrl = computed(() => profileStore.avatarUrl)
+const isLoading = ref(true)
 
-    const isLoading = ref(true)
-    const itemsPerPage = ref(10)
-    const selectedZonas = ref([])
+const { user } = storeToRefs(profileStore)
+const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
+const { tiposActividades } = storeToRefs(actividadesStore)
 
-    const editActividadDialog = ref(false)
-    const editedActividad = ref({})
+const userRole = computed(() => user.value?.role || '')
 
-    const addBitacoraDialog = ref(false)
-    const newBitacora = ref({
-      fecha: new Date().toISOString().split('T')[0],
-      zona: '',
-      descripcion: '',
-      responsable: '',
-      estado: 'planificada',
-      notas: ''
-    })
+// Computed para determinar el color basado en el promedio
+const colorBpaEstado = computed(() => {
+  if (actividadInfo.value.bpa_estado < 40) return 'red'
+  if (actividadInfo.value.bpa_estado < 80) return 'orange'
+  return 'green'
+})
 
-    const zonas = computed(() => actividadInfo.value.zonas || [])
-    const usuarios = ref([]) // This should be populated with users from the hacienda
-    const estadosBitacora = ['planificada', 'en_progreso', 'completada', 'cancelada']
-    const metricasDisponibles = ref([]) // This should be populated with available metrics
+const avatarUrl = computed(() => profileStore.avatarUrl)
 
-    const tiposActividad = ref([])
+const actividadAvatarUrl = computed(() => {
+  return avatarStore.getAvatarUrl({ ...actividadInfo.value, type: 'actividad' }, 'actividad')
+})
 
-    const bitacoraHeaders = [
-      { text: 'Fecha', value: 'fecha' },
-      { text: 'Zona', value: 'zona.nombre' },
-      { text: 'Descripción', value: 'descripcion' },
-      { text: 'Responsable', value: 'responsable.name' },
-      { text: 'Estado', value: 'estado' },
-      { text: 'Acciones', value: 'actions', sortable: false }
-    ]
+const tipoActividadActual = computed(() => {
+  return tiposActividades.value.find((tipo) => tipo.id === actividadInfo.value.tipo)
+})
 
-    const filteredBitacora = computed(() => {
-      if (selectedZonas.value.length === 0) return bitacora.value
-      return bitacora.value.filter((entry) => selectedZonas.value.includes(entry.zona.id))
-    })
+const getBpaPreguntas = computed(() => {
+  const tipoActividadFiltrar = actividadesStore.tiposActividades.find(
+    (t) => t.id === editedActividad.value.tipo
+  )
 
-    onMounted(async () => {
-      try {
-        isLoading.value = true
-        await fetchActividadInfo()
-        await fetchBitacora()
-        await fetchTiposActividad()
-        await fetchUsuarios()
-        await fetchMetricasDisponibles()
-      } catch (error) {
-        handleError(error, 'Error al cargar la información de la actividad')
-      } finally {
-        isLoading.value = false
-      }
-    })
+  console.log('getBpaPreguntas-mostrar tipoActividadFiltrar:', tipoActividadFiltrar)
+  return tipoActividadFiltrar?.datos_bpa?.preguntas_bpa || []
+})
 
-    const fetchActividadInfo = async () => {
-      actividadInfo.value = await actividadesStore.fetchActividadById(actividadId.value)
-    }
+const getStatusColor = (status) => {
+  const colors = {
+    true: 'blue',
+    false: 'orange'
+  }
+  return colors[status] || 'gray'
+}
+const getStatusMsg = (status) => {
+  const colors = {
+    true: 'ACTIVA',
+    false: 'DETENIDA'
+  }
+  return colors[status] || 'gray'
+}
 
-    const fetchBitacora = async () => {
-      bitacora.value = await bitacoraStore.fetchBitacoraByActividad(actividadId.value)
-    }
+/*
+const estadosBitacora = ['planificada', 'en_progreso', 'completada', 'cancelada']
 
-    const fetchTiposActividad = async () => {
-      tiposActividad.value = await actividadesStore.fetchTiposActividad()
-    }
+const bitacoraHeaders = [
+  { text: 'Fecha', value: 'fecha' },
+  { text: 'Actividad', value: 'actividad.nombre' },
+  { text: 'Zona', value: 'zona.nombre' },
+  { text: 'Responsable', value: 'responsable.name' },
+  { text: 'Estado', value: 'estado' },
+  { text: 'Acciones', value: 'actions', sortable: false }
+]
 
-    const fetchUsuarios = async () => {
-      usuarios.value = await profileStore.fetchUsuariosByHacienda(mi_hacienda.value.id)
-    }
+const filteredBitacora = computed(() => {
+  // Implementar lógica para filtrar la bitácora según la actividad
+  return [] // Placeholder
+})
+*/
+onMounted(async () => {
+  try {
+    await loadActividadInfo()
+  } catch (error) {
+    handleError(error, 'Error al cargar la información de la actividad')
+  } finally {
+    isLoading.value = false
+  }
+})
 
-    const fetchMetricasDisponibles = async () => {
-      metricasDisponibles.value = await actividadesStore.fetchMetricasDisponibles()
-    }
-
-    const openEditDialog = () => {
-      editedActividad.value = { ...actividadInfo.value }
-      editActividadDialog.value = true
-    }
-
-    const saveActividadEdit = async () => {
-      try {
-        await actividadesStore.updateActividad(editedActividad.value)
-        await fetchActividadInfo()
-        editActividadDialog.value = false
-        snackbarStore.showSnackbar('Actividad actualizada exitosamente')
-      } catch (error) {
-        handleError(error, 'Error al actualizar la actividad')
-      }
-    }
-
-    const openAddBitacoraDialog = () => {
-      newBitacora.value = {
-        fecha: new Date().toISOString().split('T')[0],
-        zona: '',
-        descripcion: '',
-        responsable: '',
-        estado: 'planificada',
-        notas: ''
-      }
-      addBitacoraDialog.value = true
-    }
-
-    const saveBitacoraEntry = async () => {
-      try {
-        await bitacoraStore.addBitacoraEntry({
-          ...newBitacora.value,
-          actividad: actividadId.value,
-          hacienda: mi_hacienda.value.id
-        })
-        await fetchBitacora()
-        addBitacoraDialog.value = false
-        snackbarStore.showSnackbar('Entrada de bitácora agregada exitosamente')
-      } catch (error) {
-        handleError(error, 'Error al agregar entrada de bitácora')
-      }
-    }
-
-    const editBitacoraItem = () => {
-      // Implement edit bitacora item functionality
-    }
-
-    const deleteBitacoraItem = async (item) => {
-      if (confirm('¿Está seguro de que desea eliminar esta entrada de bitácora?')) {
-        try {
-          await bitacoraStore.deleteBitacoraEntry(item.id)
-          await fetchBitacora()
-          snackbarStore.showSnackbar('Entrada de bitácora eliminada exitosamente')
-        } catch (error) {
-          handleError(error, 'Error al eliminar entrada de bitácora')
-        }
-      }
-    }
-
-    const formatDate = (date) => {
-      return new Date(date).toLocaleDateString()
-    }
-
-    const getIconByTipo = (tipo) => {
-      const iconos = {
-        Riego: 'mdi-water',
-        Fertilización: 'mdi-leaf',
-        Fumigación: 'mdi-spray',
-        Poda: 'mdi-content-cut',
-        Cosecha: 'mdi-basket',
-        Otro: 'mdi-cog'
-      }
-      return iconos[tipo] || 'mdi-cog'
-    }
-
-    const getColorByTipo = (tipo) => {
-      const colores = {
-        Riego: 'blue',
-        Fertilización: 'green',
-        Fumigación: 'red',
-        Poda: 'orange',
-        Cosecha: 'purple',
-        Otro: 'grey'
-      }
-      return colores[tipo] || 'grey'
-    }
-
-    return {
-      actividadInfo,
-      bitacora,
-      userRole,
-      avatarUrl,
-      mi_hacienda,
-      avatarHaciendaUrl,
-      isLoading,
-      itemsPerPage,
-      selectedZonas,
-      editActividadDialog,
-      editedActividad,
-      addBitacoraDialog,
-      newBitacora,
-      zonas,
-      usuarios,
-      estadosBitacora,
-      metricasDisponibles,
-      tiposActividad,
-      bitacoraHeaders,
-      filteredBitacora,
-      openEditDialog,
-      saveActividadEdit,
-      openAddBitacoraDialog,
-      saveBitacoraEntry,
-      editBitacoraItem,
-      deleteBitacoraItem,
-      formatDate,
-      getIconByTipo,
-      getColorByTipo
-    }
+async function loadActividadInfo() {
+  try {
+    const actividad = await actividadesStore.fetchActividadById(actividadId.value)
+    actividadInfo.value = actividad
+  } catch (error) {
+    handleError(error, 'Error al cargar la actividad')
   }
 }
+
+function openEditDialog() {
+  editedActividad.value = { ...actividadInfo.value }
+  editActividadDialog.value = true
+}
+
+function openAddMetricaDialog() {
+  addMetricaDialog.value = true
+}
+function addMetrica() {
+  if (newMetrica.value.titulo && newMetrica.value.tipo) {
+    // Reemplazar espacios en blanco por guiones bajos en el título
+    const sanitizedTitulo = newMetrica.value.titulo.replace(/\s+/g, '_')
+
+    editedActividad.value.metricas[sanitizedTitulo] = {
+      descripcion: newMetrica.value.descripcion,
+      tipo: newMetrica.value.tipo,
+      valor: null // Inicializar valor como null
+    }
+    newMetrica.value = { titulo: '', descripcion: '', tipo: '' } // Resetear
+    addMetricaDialog.value = false
+  }
+}
+
+function removeMetrica(index) {
+  delete editedActividad.value.metricas[index]
+}
+
+async function saveActividad() {
+  try {
+    // Calcular bpa_estado antes de guardar
+    editedActividad.value.bpa_estado = actividadesStore.calcularBpaEstado(
+      editedActividad.value.datos_bpa
+    )
+
+    await actividadesStore.updateActividad(editedActividad.value.id, editedActividad.value)
+    snackbarStore.showSnackbar('Actividad actualizada exitosamente', 'success')
+    editActividadDialog.value = false
+    await loadActividadInfo() // Reload the activity info
+  } catch (error) {
+    handleError(error, 'Error al guardar la actividad')
+  }
+}
+
+/*function formatDate(date) {
+  return new Date(date).toLocaleDateString()
+}*/
+
+// Function to get the activity type based on the activity ID
+const getActividadTipo = (tipoId) => {
+  const tipoActividad = actividadesStore.tiposActividades.find((tipo) => tipo.id === tipoId)
+  return tipoActividad ? tipoActividad.nombre.toUpperCase() : 'Desconocido' // Return 'Desconocido' if not found
+}
+
+function handleAvatarUpdated(updatedRecord) {
+  editedActividad.value.avatarUrl = updatedRecord.avatarUrl
+}
+
+// Función para obtener el nombre de la siembra por ID
+const getSiembraName = (id) => {
+  const siembra = siembrasStore.getSiembraById(id)
+  return siembra ? siembra.nombre + '-' + siembra.tipo : 'Siembra no encontrada'
+}
+
+// Función para obtener el nombre de la zona por ID
+const getZonaName = (id) => {
+  const zona = zonasStore.zonas.find((z) => z.id === id)
+  return zona ? zona.nombre : 'Zona no encontrada'
+}
 </script>
+
+<style scoped>
+/* Add any necessary styles here */
+</style>

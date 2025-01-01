@@ -133,12 +133,15 @@
             </div>
 
             <!-- Formulario de Métricas -->
-            <div class="siembra-info mt-4" v-if="tipoZonaActual?.metricas?.metricas">
-              <v-card-title class="headline">
+            <div class="siembra-info mt-4">
+              <v-card-title class="headline d-flex justify-between">
                 <h2 class="text-xl font-bold mt-2">Métricas</h2>
+                <v-btn size="x-small" color="green-lighten-2" @click="openAddMetricaDialog" icon>
+                  <v-icon>mdi-plus</v-icon>
+                </v-btn>
               </v-card-title>
               <v-card-text>
-                <div class="grid grid-cols-3 gap-0">
+                <div class="grid grid-cols-2 gap-0">
                   <div v-for="(metrica, key) in zonaLocal.metricas" :key="key" cols="6">
                     <!-- Select para tipo "select" -->
                     <v-select
@@ -149,7 +152,24 @@
                       variant="outlined"
                       density="compact"
                       class="compact-form"
-                    />
+                    >
+                      <template v-slot:append>
+                        <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
+                      </template>
+                    </v-select>
+                    <!-- Input number para tipo "text" -->
+                    <v-text-field
+                      v-else-if="metrica.tipo === 'text'"
+                      v-model.number="metrica.valor"
+                      :label="key"
+                      density="compact"
+                      variant="outlined"
+                      class="compact-form"
+                    >
+                      <template v-slot:append>
+                        <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
+                      </template>
+                    </v-text-field>
                     <!-- Input number para tipo "number" -->
                     <v-text-field
                       v-else-if="metrica.tipo === 'number'"
@@ -159,8 +179,35 @@
                       density="compact"
                       variant="outlined"
                       class="compact-form"
-                    />
-                    <!-- Otros tipos de métricas aquí -->
+                    >
+                      <template v-slot:append>
+                        <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
+                      </template>
+                    </v-text-field>
+                    <!-- Input number para tipo "checkbox" -->
+                    <v-checkbox
+                      v-else-if="metrica.tipo === 'checkbox'"
+                      v-model.number="metrica.valor"
+                      :label="key"
+                      density="compact"
+                      class="compact-form"
+                    >
+                      <template v-slot:append>
+                        <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
+                      </template></v-checkbox
+                    >
+                    <!-- Input number para tipo "boolean" -->
+                    <v-checkbox
+                      v-else-if="metrica.tipo === 'boolean'"
+                      v-model.number="metrica.valor"
+                      :label="key"
+                      density="compact"
+                      class="compact-form"
+                    >
+                      <template v-slot:append>
+                        <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
+                      </template></v-checkbox
+                    >
                   </div>
                 </div>
               </v-card-text>
@@ -248,6 +295,57 @@
       </v-card-actions>
     </v-form>
   </v-card>
+
+  <!-- Diálogo para agregar métrica personalizada -->
+  <v-dialog v-model="addMetricaDialog" persistent max-width="300px">
+    <v-card>
+      <v-card-title class="headline">Agregar Métrica </v-card-title>
+      <v-card-text class="m-1 p-0 pl-2">
+        <v-text-field
+          density="compact"
+          variant="outlined"
+          class="compact-form"
+          v-model="newMetrica.titulo"
+          label="Título"
+        />
+        <v-textarea
+          density="compact"
+          variant="outlined"
+          class="compact-form"
+          v-model="newMetrica.descripcion"
+          label="Descripción"
+        />
+        <v-select
+          density="compact"
+          variant="outlined"
+          class="compact-form"
+          v-model="newMetrica.tipo"
+          :items="['checkbox', 'number', 'text']"
+          label="Tipo"
+        />
+      </v-card-text>
+      <v-card-actions>
+        <v-btn
+          size="small"
+          variant="flat"
+          rounded="lg"
+          prepend-icon="mdi-cancel"
+          color="red-lighten-3"
+          @click="addMetricaDialog = false"
+          >Cancelar</v-btn
+        >
+        <v-btn
+          size="small"
+          variant="flat"
+          rounded="lg"
+          prepend-icon="mdi-check"
+          color="green-lighten-3"
+          @click="addMetrica"
+          >Agregar</v-btn
+        >
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script setup>
@@ -327,6 +425,13 @@ const initialState = {
   contabilizable: true,
   gps: ''
 }
+const newMetrica = ref({
+  titulo: '',
+  descripcion: '',
+  tipo: ''
+})
+
+const addMetricaDialog = ref(false)
 
 import placeholderZonas from '@/assets/placeholder-zonas.png'
 
@@ -360,13 +465,45 @@ const handleAvatarUpdated = (updatedRecord) => {
   console.log('verificando zonaLocal:', zonaLocal)
 }
 
+function openAddMetricaDialog() {
+  addMetricaDialog.value = true
+}
+function addMetrica() {
+  if (newMetrica.value.titulo && newMetrica.value.tipo) {
+    // Reemplazar espacios en blanco por guiones bajos en el título
+    const sanitizedTitulo = newMetrica.value.titulo.replace(/\s+/g, '_')
+
+    console.log('newMetrica:', newMetrica)
+
+    zonaLocal.metricas[sanitizedTitulo] = {
+      descripcion: newMetrica.value.descripcion,
+      tipo: newMetrica.value.tipo,
+      valor: null // Inicializar valor como null
+    }
+    console.log('zonaLocal:', zonaLocal.metricas)
+
+    newMetrica.value = { titulo: '', descripcion: '', tipo: '' } // Resetear
+    addMetricaDialog.value = false
+  } else {
+    console.error('Título y tipo son requeridos para agregar una métrica')
+  }
+}
+
+function removeMetrica(index) {
+  delete zonaLocal.metricas[index]
+}
+
 async function guardar() {
   if (form.value.validate()) {
     try {
       const zonaToSave = {
         ...zonaLocal,
+        nombre: zonaLocal.nombre.toUpperCase(),
+
         avatar: zonaLocal.avatar || null // Asegúrate de que el avatar se incluya correctamente
       }
+
+      console.log('guardar zonaLocal:', zonaLocal)
       let resultado
 
       if (props.modoEdicion) {

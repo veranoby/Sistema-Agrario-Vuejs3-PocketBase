@@ -50,24 +50,14 @@
 
     <main class="flex-1 py-2">
       <v-container>
-        <v-row v-if="loading">
-          <v-col cols="12" class="text-center">
-            <v-progress-circular indeterminate color="primary"></v-progress-circular>
-          </v-col>
-        </v-row>
-        <v-row v-else-if="error">
-          <v-col cols="12">
-            <v-alert type="error">{{ error }}</v-alert>
-          </v-col>
-        </v-row>
-        <v-row v-else>
-          <v-col v-if="Actividades.length === 0" cols="12" sm="6" md="4" lg="3">
+        <v-row>
+          <v-col v-if="actividades && actividades.length === 0" cols="12" sm="6" md="4" lg="3">
             <v-hover v-slot="{ isHovering, props }">
               <v-card
                 v-bind="props"
                 :elevation="isHovering ? 6 : 2"
                 :class="{ 'on-hover': isHovering }"
-                class="transition-shadow duration-300 ease-in-out"
+                class="zonas-section transition-shadow duration-300 ease-in-out"
               >
                 <v-card-text class="text-center">
                   <v-icon size="large" color="grey" class="mb-4">mdi-sprout</v-icon>
@@ -79,7 +69,7 @@
           </v-col>
 
           <v-col
-            v-for="Actividad in Actividades"
+            v-for="Actividad in actividades"
             :key="Actividad.id"
             cols="12"
             sm="6"
@@ -99,24 +89,30 @@
                   class="Actividad-image rounded-xl"
                 >
                   <div class="fill-height card-overlay rounded-lg">
-                    <v-card-title>
-                      <p class="text-white text-xl">{{ Actividad.nombre }}</p>
-                      <p class="text-white text-sm font-weight-bold mb-2 mt-0">
-                        {{ Actividad.tipo }}
+                    <v-card-title class="px-1">
+                      <p class="text-white text-sm">{{ Actividad.nombre }}</p>
+                      <p class="text-white text-xs font-weight-bold mb-2 mt-0">
+                        {{ getActividadTipo(Actividad.tipo) }}
                       </p>
-                      <div class="d-flex justify-space-between align-center mb-2">
-                        <span class="text-caption">{{ formatDate(Actividad.fecha_inicio) }}</span>
+                      <p class="text-caption flex flex-wrap">
                         <v-chip
-                          :color="getStatusColor(Actividad.estado)"
+                          :color="getStatusColor(Actividad.activa)"
                           size="x-small"
                           variant="flat"
                         >
-                          {{ Actividad.estado }}
+                          {{ getActividadEstado(Actividad.activa) }}
                         </v-chip>
-                      </div>
-                      <p class="text-caption text-white">
-                        <v-icon size="small" class="mr-1">mdi-map-marker</v-icon>
-                        {{ getZoneNames(Actividad) }}
+                      </p>
+                      <p class="text-caption flex flex-wrap">
+                        <span
+                          class="mx-0 mt-1 mb-0 p-0"
+                          v-for="siembraTemp in Actividad.siembra"
+                          :key="siembraTemp"
+                        >
+                          <v-chip outlined size="x-small" variant="flat">
+                            {{ getSiembraNombre(siembraTemp) }}
+                          </v-chip>
+                        </span>
                       </p>
                     </v-card-title>
                   </div>
@@ -128,45 +124,87 @@
       </v-container>
     </main>
 
-    <v-dialog v-model="dialogNuevaActividad" persistent max-width="500px">
+    <v-dialog
+      v-model="dialogNuevaActividad"
+      persistent
+      transition="dialog-bottom-transition"
+      scrollable
+      max-width="900px"
+    >
       <v-card>
         <v-form @submit.prevent="crearActividad">
-          <v-card-title> <h2 class="text-xl font-bold mt-2">Nueva Actividad</h2> </v-card-title>
+          <v-card-title>
+            <h2 class="text-xl font-bold mt-2">Nueva Actividad</h2>
+          </v-card-title>
           <v-card-text>
-            <v-text-field
-              density="compact"
-              class="compact-form"
-              v-model="nuevaActividadData.nombre"
-              label="Nombre (Ej: pitahaya, limon)"
-              required
-            ></v-text-field>
-            <v-text-field
-              density="compact"
-              class="compact-form"
-              v-model="nuevaActividadData.tipo"
-              label="Tipo (Ej: palora, sutil)"
-              required
-            ></v-text-field>
-            <v-select
-              density="compact"
-              class="compact-form"
-              v-model="nuevaActividadData.estado"
-              :items="estadoOptions"
-              label="Estado"
-              required
-            ></v-select>
-            <v-text-field
-              density="compact"
-              class="compact-form"
-              v-model="nuevaActividadData.fecha_inicio"
-              label="Fecha de inicio"
-              type="date"
-              required
-            ></v-text-field>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <v-select
+                  density="compact"
+                  prepend-icon="mdi-diameter"
+                  v-model="nuevaActividadData.tipo"
+                  :items="tiposActividades"
+                  item-title="nombre"
+                  item-value="id"
+                  label="Tipo de Actividad"
+                  required
+                ></v-select>
+              </div>
+
+              <div>
+                <v-text-field
+                  density="compact"
+                  v-model="nuevaActividadData.nombre"
+                  label="Nombre de la Actividad"
+                  prepend-icon="mdi-diameter"
+                  required
+                ></v-text-field>
+              </div>
+            </div>
+
+            <div class="mt-2">
+              <div class="mb-2">
+                <v-icon class="mr-2">mdi-sprout</v-icon>
+                Seleccionar Siembras (opcional)
+              </div>
+              <v-chip-group
+                density="compact"
+                column
+                multiple
+                v-model="nuevaActividadData.siembra"
+                label="Selecciona Siembras"
+              >
+                <v-chip
+                  v-for="siembra in siembras"
+                  filter
+                  color="green"
+                  variant="flat"
+                  size="small"
+                  :key="siembra.id"
+                  :text="`${siembra.nombre} ${siembra.tipo}`"
+                  :value="siembra.id"
+                  @click="cargarZonasPorSiembra"
+                  class="ma-1"
+                  :class="{ 'chip-selected': nuevaActividadData.siembra.includes(siembra.id) }"
+                >
+                </v-chip>
+              </v-chip-group>
+            </div>
+
+            <div class="mt-2">
+              <div class="mb-2">
+                <v-icon class="mr-2">mdi-information</v-icon>
+                Descripción
+              </div>
+              <ckeditor
+                v-model="nuevaActividadData.descripcion"
+                :editor="editor"
+                :config="editorConfig"
+              />
+            </div>
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-
             <v-btn
               size="small"
               variant="flat"
@@ -184,8 +222,9 @@
               rounded="lg"
               prepend-icon="mdi-check"
               color="green-lighten-3"
-              >Crear Actividad</v-btn
             >
+              Crear Actividad
+            </v-btn>
           </v-card-actions>
         </v-form>
       </v-card>
@@ -193,130 +232,188 @@
   </v-container>
 </template>
 
-<script>
+<script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { storeToRefs } from 'pinia'
 import { useProfileStore } from '@/stores/profileStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import { useActividadesStore } from '@/stores/actividadesStore'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 import { handleError } from '@/utils/errorHandler'
-import placeholderActividades from '@/assets/placeholder-actividades.png'
+import { storeToRefs } from 'pinia'
+import { editor, editorConfig } from '@/utils/ckeditorConfig'
+import { useSiembrasStore } from '@/stores/siembrasStore'
+import { useSyncStore } from '@/stores/syncStore'
 import { useAvatarStore } from '@/stores/avatarStore'
 
-export default {
-  name: 'ActividadesComponent',
-  setup() {
-    const router = useRouter()
-    const profileStore = useProfileStore()
-    const haciendaStore = useHaciendaStore()
-    const ActividadesStore = useActividadesStore()
-    const snackbarStore = useSnackbarStore()
-    const avatarStore = useAvatarStore()
+const router = useRouter()
+const profileStore = useProfileStore()
+const haciendaStore = useHaciendaStore()
+const ActividadesStore = useActividadesStore()
+const snackbarStore = useSnackbarStore()
+const siembrasStore = useSiembrasStore()
+const syncStore = useSyncStore()
+const avatarStore = useAvatarStore()
 
-    const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
-    const { Actividades, loading, error } = storeToRefs(ActividadesStore)
+const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
+const { actividades, tiposActividades } = storeToRefs(ActividadesStore)
 
-    const userRole = computed(() => profileStore.user.role)
-    const avatarUrl = computed(() => profileStore.avatarUrl)
+const { cargarActividades, cargarTiposActividades } = ActividadesStore
+const { siembras } = storeToRefs(siembrasStore)
 
-    const dialogNuevaActividad = ref(false)
-    const nuevaActividadData = ref({
-      nombre: '',
-      tipo: '',
-      estado: 'planificada',
-      fecha_inicio: new Date().toISOString().substr(0, 10),
-      hacienda: computed(() => mi_hacienda.value.id)
-    })
+const userRole = computed(() => profileStore.user.role)
+const avatarUrl = computed(() => profileStore.avatarUrl)
 
-    const estadoOptions = ['planificada', 'en_crecimiento', 'cosechada', 'finalizada']
+const getActividadAvatarUrl = (actividad) => {
+  return avatarStore.getAvatarUrl({ ...actividad, type: 'actividad' })
+}
 
-    onMounted(async () => {
-      try {
-        await ActividadesStore.cargarActividades()
-      } catch (error) {
-        snackbarStore.showError('Error al cargar las Actividades')
-      }
-    })
+const dialogNuevaActividad = ref(false)
+const nuevaActividadData = ref({
+  nombre: '',
+  tipo: null,
+  bpa_estado: 0,
+  datos_bpa: [],
+  metricas: {},
+  descripcion: '',
+  siembra: [],
+  activa: true
+})
+const zonasDisponibles = ref([])
 
-    const nuevaActividad = () => {
-      dialogNuevaActividad.value = true
-    }
-
-    const crearActividad = async () => {
-      try {
-        // Convertir nombre y tipo a mayúsculas antes de crear la Actividad
-        nuevaActividadData.value.nombre = nuevaActividadData.value.nombre.toUpperCase()
-        nuevaActividadData.value.tipo = nuevaActividadData.value.tipo.toUpperCase()
-
-        await ActividadesStore.createActividad(nuevaActividadData.value)
-        dialogNuevaActividad.value = false
-        snackbarStore.showSnackbar('Actividad creada exitosamente')
-        // Reiniciar datos del formulario
-        nuevaActividadData.value = {
-          nombre: '',
-          tipo: '',
-          estado: 'planificada',
-          fecha_inicio: new Date().toISOString().substr(0, 10),
-          hacienda: mi_hacienda.value.id
-        }
-        // Actualizar lista de Actividades
-        await ActividadesStore.fetchActividades()
-      } catch (error) {
-        handleError(error, 'Error al crear la Actividad')
-      }
-    }
-
-    const abrirActividad = (id) => {
-      router.push(`/Actividades/${id}`)
-    }
-
-    const getStatusColor = (status) => {
-      const colors = {
-        planificada: 'blue',
-        en_crecimiento: 'green',
-        cosechada: 'orange',
-        finalizada: 'gray'
-      }
-      return colors[status] || 'gray'
-    }
-
-    const formatDate = (date) => {
-      return new Date(date).toLocaleDateString()
-    }
-
-    const getZoneNames = (Actividad) => {
-      return Actividad.zonas?.map((zona) => zona.nombre).join(', ') || 'Sin zonas asignadas'
-    }
-
-    const getPlaceholderImage = () => placeholderActividades
-
-    const getActividadAvatarUrl = (Actividad) => {
-      return avatarStore.getAvatarUrl({ ...Actividad, type: 'Actividad' }, 'Actividades')
-    }
-
-    return {
-      mi_hacienda,
-      avatarHaciendaUrl,
-      userRole,
-      avatarUrl,
-      Actividades,
-      loading,
-      error,
-      dialogNuevaActividad,
-      nuevaActividadData,
-      estadoOptions,
-      nuevaActividad,
-      crearActividad,
-      abrirActividad,
-      getStatusColor,
-      formatDate,
-      getZoneNames,
-      getPlaceholderImage,
-      getActividadAvatarUrl
-    }
+onMounted(async () => {
+  try {
+    await Promise.all([cargarActividades(), cargarTiposActividades()])
+  } catch (error) {
+    snackbarStore.showError('Error al cargar las actividades')
   }
+  await siembrasStore.cargarSiembras()
+  siembras.value = siembrasStore.siembras
+})
+
+const nuevaActividad = () => {
+  dialogNuevaActividad.value = true
+}
+
+const getStatusColor = (status) => {
+  const colors = {
+    true: 'blue',
+    false: 'orange'
+  }
+  return colors[status] || 'gray'
+}
+
+function getDefaultMetricaValue(tipo) {
+  switch (tipo) {
+    case 'checkbox':
+      return []
+    case 'number':
+      return 0
+    case 'text':
+      return 'por determinar'
+
+    case 'boolean':
+      return false
+    case 'select':
+      return null
+    default:
+      return null
+  }
+}
+
+const crearActividad = async () => {
+  if (nuevaActividadData.value.nombre && nuevaActividadData.value.tipo) {
+    // Inicializar métricas correctamente
+    const metricasInicializadas = {}
+    const tipoActividadSeleccionado = ActividadesStore.tiposActividades.find(
+      (t) => t.id === nuevaActividadData.value.tipo
+    )
+
+    if (tipoActividadSeleccionado?.metricas?.metricas) {
+      Object.entries(tipoActividadSeleccionado.metricas.metricas).forEach(([key, value]) => {
+        metricasInicializadas[key] = {
+          ...value,
+          valor: getDefaultMetricaValue(value.tipo)
+        }
+      })
+    }
+
+    // Inicializar datos_bpa
+    const datosBpaInicializados =
+      tipoActividadSeleccionado?.datos_bpa?.preguntas_bpa?.map(() => ({
+        respuesta: null
+      })) || []
+
+    try {
+      nuevaActividadData.value.nombre = nuevaActividadData.value.nombre.toUpperCase()
+      const actividadToCreate = {
+        ...nuevaActividadData.value,
+        hacienda: mi_hacienda.value.id,
+        datos_bpa: datosBpaInicializados,
+        metricas: metricasInicializadas
+      }
+
+      if (!syncStore.isOnline) {
+        await syncStore.queueOperation({
+          type: 'create',
+          collection: 'actividades',
+          data: actividadToCreate
+        })
+        ActividadesStore.actividades.push(actividadToCreate)
+      } else {
+        await ActividadesStore.crearActividad(actividadToCreate)
+        snackbarStore.showSnackbar('Actividad creada exitosamente')
+      }
+
+      dialogNuevaActividad.value = false
+      nuevaActividadData.value = {
+        nombre: '',
+        tipo: null,
+        bpa_estado: 0,
+        datos_bpa: [],
+        metricas: {},
+        descripcion: '',
+        siembra: []
+      }
+      await ActividadesStore.cargarActividades()
+    } catch (error) {
+      handleError(error, 'Error al crear la Actividad')
+    }
+  } else {
+    snackbarStore.showError('Nombre y tipo son requeridos')
+  }
+}
+
+const abrirActividad = (id) => {
+  router.push(`/Actividades/${id}`)
+}
+
+const cargarZonasPorSiembra = async () => {
+  const selectedSiembras = nuevaActividadData.value.siembra
+  if (selectedSiembras.length > 0) {
+    zonasDisponibles.value = await ActividadesStore.cargarZonasPorSiembras(selectedSiembras)
+  } else {
+    zonasDisponibles.value = await ActividadesStore.cargarZonasPrecargadas()
+  }
+}
+
+// Function to get the activity type based on the activity ID
+const getActividadTipo = (tipoId) => {
+  const tipoActividad = ActividadesStore.tiposActividades.find((tipo) => tipo.id === tipoId)
+  return tipoActividad ? tipoActividad.nombre : 'Desconocido' // Return 'Desconocido' if not found
+}
+
+// Function to get the activity type based on the activity ID
+const getSiembraNombre = (tipoId) => {
+  const SiembraNombre = siembrasStore.siembras.find((tipo) => tipo.id === tipoId)
+  return SiembraNombre
+    ? SiembraNombre.nombre + '-' + SiembraNombre.tipo
+    : 'Sin siembras registradas' // Return 'Desconocido' if not found
+}
+
+// Function to get the activity status
+const getActividadEstado = (isActive) => {
+  return isActive ? 'activa' : 'detenida'
 }
 </script>
 

@@ -55,22 +55,32 @@
             <div>
               <v-text-field
                 class="compact-form"
+                type="text"
+                density="compact"
+                variant="outlined"
                 v-model="editedHacienda.name"
                 label="Nombre"
               ></v-text-field>
               <v-text-field
                 class="compact-form"
+                type="text"
+                density="compact"
+                variant="outlined"
                 v-model="editedHacienda.location"
                 label="Localización"
               ></v-text-field>
               <v-text-field
                 class="compact-form"
+                density="compact"
+                variant="outlined"
                 v-model="editedHacienda.gps.lat"
                 label="Latitud"
                 type="number"
               ></v-text-field>
               <v-text-field
                 class="compact-form"
+                variant="outlined"
+                density="compact"
                 v-model="editedHacienda.gps.lng"
                 label="Longitud"
                 type="number"
@@ -114,21 +124,21 @@
             size="small"
             variant="flat"
             rounded="lg"
-            prepend-icon="mdi-check"
-            color="green-lighten-3"
-            @click="saveHacienda"
-          >
-            Guardar Cambios de Perfil
-          </v-btn>
-          <v-btn
-            size="small"
-            variant="flat"
-            rounded="lg"
             prepend-icon="mdi-cancel"
             color="red-lighten-3"
             @click="closeEditDialog"
             >Cancelar</v-btn
           >
+          <v-btn
+            size="small"
+            variant="flat"
+            rounded="lg"
+            prepend-icon="mdi-check"
+            color="green-lighten-3"
+            @click="saveHacienda"
+          >
+            Guardar
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>

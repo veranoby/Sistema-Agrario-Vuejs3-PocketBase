@@ -84,7 +84,7 @@ actividades:
   descripcion: string
   recordatorio:  relation(recordatorios).
   zonas:  relation(zonas). multiple.
-  siembra:  relation(siembras).
+  siembra:  relation(siembras). multiple.
   activa: boolean
   metricas: json  # Define qué métricas se deben registrar para esta actividad
   bpa_estado: number (aqui se grabara el porcentaje de avance calculado del bpa para esta actividad)

@@ -127,17 +127,7 @@
           </div>
         </v-card-text>
         <v-card-actions>
-          <v-btn
-            size="small"
-            variant="flat"
-            rounded="lg"
-            prepend-icon="mdi-check"
-            color="green-lighten-3"
-            type="submit"
-            :loading="isLoading"
-          >
-            Guardar Cambios de Perfil
-          </v-btn>
+          <v-spacer></v-spacer>
           <v-btn
             size="small"
             variant="flat"
@@ -147,6 +137,17 @@
             @click="dialogOpen = false"
           >
             Cancelar
+          </v-btn>
+          <v-btn
+            size="small"
+            variant="flat"
+            rounded="lg"
+            prepend-icon="mdi-check"
+            color="green-lighten-3"
+            type="submit"
+            :loading="isLoading"
+          >
+            Guardar
           </v-btn>
         </v-card-actions>
       </v-form>

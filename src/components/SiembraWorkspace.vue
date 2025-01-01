@@ -98,16 +98,22 @@
             <div class="d-flex flex-wrap align-center mb-0">
               FILTRAR POR ZONAS:
               <v-chip-group v-model="selectedZonas" column multiple>
-                <v-chip v-for="zona in zonas" :key="zona.id" filter outlined size="small">
+                <v-chip v-for="zona in zonasfiltradas" :key="zona.id" filter outlined size="small">
                   {{ zona.nombre }}
                 </v-chip>
               </v-chip-group>
             </div>
             <div class="d-flex flex-wrap align-center mb-0">
               FILTRAR POR ACTIVIDAD:
-              <v-chip-group v-model="selectedZonas" column multiple>
-                <v-chip v-for="zona in zonas" :key="zona.id" filter outlined size="small">
-                  {{ zona.nombre }}
+              <v-chip-group v-model="selectedActividades" column multiple>
+                <v-chip
+                  v-for="actividad in filteredActividades"
+                  :key="actividad.id"
+                  filter
+                  outlined
+                  size="small"
+                >
+                  {{ actividad.nombre }}
                 </v-chip>
               </v-chip-group>
             </div>
@@ -163,7 +169,7 @@
             </v-chip>
 
             <v-chip variant="flat" size="x-small" color="green" class="mx-1" pill>
-              ÁREA OBJTIVO: {{ siembraInfo.area_total }} ha
+              ÁREA OBEJTIVO: {{ siembraInfo.area_total }} ha
             </v-chip>
 
             <!-- v-data-table de zonas-->
@@ -207,22 +213,25 @@
                   <v-card flat class="pa-4">
                     <v-row no-gutters>
                       <v-col cols="7" class="pr-4">
-                        <v-row no-gutters align="center" class="mb-2">
-                          <v-col cols="auto" class="mr-2">
-                            <v-icon>mdi-crosshairs-gps</v-icon>
-                          </v-col>
-                          <v-col v-if="item.gps">
-                            Lat: {{ item.gps.lat }}, Lng: {{ item.gps.lng }}
-                          </v-col>
-                        </v-row>
-                        <v-row no-gutters align="center">
-                          <v-col cols="auto" class="mr-2">
-                            <v-icon>mdi-information-outline</v-icon>
-                          </v-col>
-                          <v-col>
-                            {{ item.info || 'Sin información adicional' }}
-                          </v-col>
-                        </v-row>
+                        <p v-if="item.gps">
+                          <v-icon>mdi-crosshairs-gps</v-icon>
+
+                          Lat: {{ item.gps.lat }}, Lng: {{ item.gps.lng }}
+                        </p>
+                        <p class="ml-2 mr-0 p-0 text-xs" v-html="item.info || 'No disponible'"></p>
+
+                        <p>
+                          <v-chip
+                            v-for="(metrica, key) in item.metricas"
+                            :key="key"
+                            size="x-small"
+                            outlined
+                            class="m-1"
+                            pill
+                          >
+                            {{ key.toUpperCase() }}:{{ metrica.valor }}
+                          </v-chip>
+                        </p>
                       </v-col>
                       <v-col cols="5" class="d-flex justify-center align-center">
                         <v-img
@@ -461,6 +470,7 @@ import { editor, editorConfig } from '@/utils/ckeditorConfig'
 
 import AvatarForm from '@/components/forms/AvatarForm.vue'
 import { useAvatarStore } from '@/stores/avatarStore'
+import { useActividadesStore } from '@/stores/actividadesStore'
 
 const route = useRoute()
 const siembrasStore = useSiembrasStore()
@@ -470,12 +480,13 @@ const haciendaStore = useHaciendaStore()
 const snackbarStore = useSnackbarStore()
 const zonasStore = useZonasStore()
 const avatarStore = useAvatarStore()
+const actividadesStore = useActividadesStore()
 
 const siembraId = ref(route.params.id)
 const siembraInfo = ref({})
 const bitacora = ref([])
 
-const { zonas, tiposZonas, eliminarZona } = storeToRefs(zonasStore)
+const { zonas, tiposZonas } = storeToRefs(zonasStore)
 
 const { user } = storeToRefs(profileStore)
 const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
@@ -617,7 +628,14 @@ async function loadHacienda() {
 
 async function loadActividades() {
   try {
-    actividades.value = await siembrasStore.fetchActividadesByHaciendaId(mi_hacienda.value.id)
+    // Load all activities from the store
+    await actividadesStore.cargarActividades()
+
+    // Filter activities based on the current siembra's ID
+    const currentSiembraId = siembrasStore.currentSiembraId // Assuming you have a way to get the current siembra ID
+    actividades.value = actividadesStore.actividades.filter(
+      (actividad) => actividad.siembra === currentSiembraId
+    )
   } catch (error) {
     handleError(error, 'Error al cargar las actividades')
   }
@@ -781,8 +799,8 @@ function editZona(zona) {
 
   zonaEditando.value = {
     ...zona,
-    datos_bpa: zona.datos_bpa || [],
-    metricas: metricasInicializadas
+    datos_bpa: zona.datos_bpa || []
+    //   metricas: metricasInicializadas
   }
 
   addZonaDialog.value = true
@@ -791,7 +809,7 @@ function editZona(zona) {
 async function deleteZona(zona) {
   if (confirm('¿Está seguro de que desea eliminar esta zona?')) {
     try {
-      await eliminarZona(zona.id)
+      await zonasStore.eliminarZona(zona.id)
       //       zonas.value = zonas.value.filter((z) => z.id !== zona.id)
       snackbarStore.showSnackbar('Zona eliminada con éxito', 'success')
     } catch (error) {
@@ -848,6 +866,15 @@ const handleAvatarUpdated = (updatedRecord) => {
 }
 
 const showAvatarDialog = ref(false)
+
+const filteredActividades = computed(() => {
+  console.log('listado actividades en el filtro de actividades:', actividadesStore.actividades)
+
+  console.log('siembra id en el filtro de actividades:', siembraId.value)
+  return actividadesStore.actividades.filter(
+    (actividad) => actividad.siembra && actividad.siembra.includes(siembraId.value) // Check if current siembra ID is in the array
+  )
+})
 </script>
 
 <style scoped></style>

@@ -98,12 +98,16 @@
                   @click="abrirDialogoCrear(tipoZona)"
                 ></v-btn>
               </v-card-title>
+              <!--
+                                :items="getZonasPorTipo(tipoZona.id)"
+                  :search="search"
+
+              -->
               <v-card-text>
                 <v-data-table
                   :headers="headers"
-                  :items="getZonasPorTipo(tipoZona.id)"
-                  :search="search"
-                  :items-per-page="10"
+                  :items="filteredZonas(tipoZona.id)"
+                  :items-per-page="15"
                   :loading="zonasStore.loading"
                   class="elevation-1 tabla-compacta"
                   density="compact"
@@ -113,12 +117,24 @@
                   header-class="custom-header"
                 >
                   <template #top>
-                    <v-text-field
-                      v-model="search"
-                      label="Buscar"
-                      variant="outlined"
-                      class="mx-4 compact-form-2"
-                    ></v-text-field>
+                    <div class="flex space-x-4 m-0 p-0 pl-1 ml-1">
+                      <v-text-field
+                        prepend-inner-icon="mdi-map"
+                        clearable
+                        v-model="search.nombre"
+                        label="BUSCAR NOMBRE"
+                        variant="outlined"
+                        class="compact-form-2"
+                      ></v-text-field>
+                      <v-text-field
+                        clearable
+                        prepend-inner-icon="mdi-sprout"
+                        v-model="search.siembra"
+                        label="BUSCAR SIEMBRA"
+                        variant="outlined"
+                        class="compact-form-2"
+                      ></v-text-field>
+                    </div>
                   </template>
 
                   <template #[`item.bpa_estado`]="{ item }">
@@ -171,8 +187,23 @@
                                 <v-icon>mdi-information-outline</v-icon>
                               </v-col>
                               <v-col>
-                                {{ item.info || 'Sin información adicional' }}
+                                <p
+                                  class="ml-2 mr-0 p-0 text-xs"
+                                  v-html="item.info || 'No disponible'"
+                                ></p>
                               </v-col>
+                            </v-row>
+                            <v-row no-gutters align="center">
+                              <v-chip
+                                v-for="(metrica, key) in item.metricas"
+                                :key="key"
+                                size="x-small"
+                                outlined
+                                class="m-1"
+                                pill
+                              >
+                                {{ key.toUpperCase() }}:{{ metrica.valor }}
+                              </v-chip>
                             </v-row>
                           </v-col>
                           <v-col cols="5" class="d-flex justify-center align-center">
@@ -288,7 +319,10 @@ const siembrasActivas = computed(() => {
     }))
 })
 
-const search = ref('')
+const search = ref({
+  nombre: '',
+  siembra: ''
+})
 
 const headers = [
   { title: 'Nombre', align: 'start', key: 'nombre' },
@@ -300,14 +334,19 @@ const headers = [
 // Initialize tab with null or the first tipoZona id if available
 const tab = ref(null)
 
-const getZonasPorTipo = (tipoId) => {
-  return zonas.value.filter((zona) => zona && zona.tipo === tipoId)
-}
-
 const getSiembraNombre = (siembraId) => {
   if (!siembraId) return 'General'
   const siembra = siembras.value.find((s) => s.id === siembraId)
   return siembra ? `${siembra.nombre} ${siembra.tipo}` : 'Siembra no encontrada'
+}
+
+const getSiembraId = (siembraNombre) => {
+  const siembrasEncontradas = siembras.value.filter(
+    (s) =>
+      s.nombre.toUpperCase().includes(siembraNombre.toUpperCase()) ||
+      s.tipo.toUpperCase().includes(siembraNombre.toUpperCase())
+  )
+  return siembrasEncontradas.map((siembra) => siembra.id) // Devuelve un array de IDs
 }
 
 const tipoZonaActual = ref({})
@@ -428,6 +467,32 @@ const onZonaSaved = async () => {
   dialogoCrear.value = false
   await cargarZonas() // Recargar zonas para reflejar los cambios
   snackbarStore.showSnackbar('Zona guardada exitosamente', 'success')
+}
+
+/*
+const getZonasPorTipo = (tipoId) => {
+  return zonas.value.filter((zona) => zona && zona.tipo === tipoId)
+}
+*/
+
+const filteredZonas = (tipoId) => {
+  let zonastemp = zonas.value.filter((zona) => zona && zona.tipo === tipoId)
+
+  // Obtener los IDs de siembras que coinciden
+  const siembraIdsTemp = search.value.siembra ? getSiembraId(search.value.siembra) : []
+
+  return zonastemp.filter((zona) => {
+    const matchesNombre = search.value.nombre
+      ? zona.nombre.includes(search.value.nombre.toUpperCase())
+      : true // Si no hay búsqueda, siempre coincide
+
+    const matchesSiembra =
+      siembraIdsTemp.length > 0
+        ? siembraIdsTemp.includes(zona.siembra) // Verifica si el ID de la zona está en los IDs encontrados
+        : true // Si no hay búsqueda, siempre coincide
+
+    return matchesNombre && matchesSiembra
+  })
 }
 </script>
 

@@ -84,11 +84,11 @@ export const useZonasStore = defineStore('zonas', {
       const syncStore = useSyncStore()
 
       // Asegurarse de que las métricas estén en el formato correcto
-      if (zonaData.metricas) {
+      /*   if (zonaData.metricas) {
         zonaData.metricas = Object.fromEntries(
           Object.entries(zonaData.metricas).map(([key, value]) => [key, value.valor])
         )
-      }
+      }*/
 
       zonaData.bpa_estado = this.calcularBpaEstado(zonaData.datos_bpa)
 

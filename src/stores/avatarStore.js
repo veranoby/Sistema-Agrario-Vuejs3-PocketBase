@@ -8,6 +8,7 @@ import placeholderUser from '@/assets/placeholder-user.png'
 import placeholderHacienda from '@/assets/placeholder-hacienda.png'
 import placeholderZonas from '@/assets/placeholder-zonas.png'
 import placeholderSiembras from '@/assets/placeholder-siembras.png'
+import placeholderActividades from '@/assets/placeholder-actividades.png'
 
 export const useAvatarStore = defineStore('avatar', {
   state: () => ({
@@ -16,7 +17,8 @@ export const useAvatarStore = defineStore('avatar', {
       user: placeholderUser,
       hacienda: placeholderHacienda,
       zona: placeholderZonas,
-      siembra: placeholderSiembras
+      siembra: placeholderSiembras,
+      actividad: placeholderActividades
     }
   }),
 

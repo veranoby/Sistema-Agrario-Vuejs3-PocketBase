@@ -50,24 +50,14 @@
 
     <main class="flex-1 py-2">
       <v-container>
-        <v-row v-if="loading">
-          <v-col cols="12" class="text-center">
-            <v-progress-circular indeterminate color="primary"></v-progress-circular>
-          </v-col>
-        </v-row>
-        <v-row v-else-if="error">
-          <v-col cols="12">
-            <v-alert type="error">{{ error }}</v-alert>
-          </v-col>
-        </v-row>
-        <v-row v-else>
+        <v-row>
           <v-col v-if="siembras.length === 0" cols="12" sm="6" md="4" lg="3">
             <v-hover v-slot="{ isHovering, props }">
               <v-card
                 v-bind="props"
                 :elevation="isHovering ? 6 : 2"
                 :class="{ 'on-hover': isHovering }"
-                class="transition-shadow duration-300 ease-in-out"
+                class="zonas-section transition-shadow duration-300 ease-in-out"
               >
                 <v-card-text class="text-center">
                   <v-icon size="large" color="grey" class="mb-4">mdi-sprout</v-icon>
@@ -91,12 +81,8 @@
                   cover
                   class="siembra-image rounded-xl"
                 >
-                  <div class="fill-height card-overlay rounded-lg">
-                    <v-card-title>
-                      <p class="text-white text-xl">{{ siembra.nombre }}</p>
-                      <p class="text-white text-sm font-weight-bold mb-2 mt-0">
-                        {{ siembra.tipo }}
-                      </p>
+                  <div class="fill-height card-overlay rounded-lg p-2">
+                    <v-card-title class="px-1">
                       <div class="d-flex justify-space-between align-center mb-2">
                         <span class="text-caption">{{ formatDate(siembra.fecha_inicio) }}</span>
                         <v-chip
@@ -107,9 +93,19 @@
                           {{ siembra.estado }}
                         </v-chip>
                       </div>
-                      <p class="text-caption text-white">
-                        <v-icon size="small" class="mr-1">mdi-map-marker</v-icon>
-                        {{ getZoneNames(siembra) }}
+                      <span class="text-white text-xl whitespace-normal"
+                        >{{ siembra.nombre }} &nbsp;</span
+                      >
+                      <span class="text-white text-sm font-weight-bold mb-2 mt-0 whitespace-normal">
+                        {{ siembra.tipo }}
+                      </span>
+
+                      <p class="text-caption flex flex-wrap">
+                        <span v-for="(zona, index) in getZoneNames(siembra)" :key="index">
+                          <v-chip outlined size="x-small" variant="flat" class="m-0 p-1"
+                            >{{ zona }}
+                          </v-chip>
+                        </span>
                       </p>
                     </v-card-title>
                   </div>
@@ -186,130 +182,103 @@
   </v-container>
 </template>
 
-<script>
+<script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useProfileStore } from '@/stores/profileStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import { useSiembrasStore } from '@/stores/siembrasStore'
+import { useZonasStore } from '@/stores/zonasStore'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 import { handleError } from '@/utils/errorHandler'
-import placeholderSiembras from '@/assets/placeholder-siembras.png'
 import { useAvatarStore } from '@/stores/avatarStore'
 
-export default {
-  name: 'SiembrasComponent',
-  setup() {
-    const router = useRouter()
-    const profileStore = useProfileStore()
-    const haciendaStore = useHaciendaStore()
-    const siembrasStore = useSiembrasStore()
-    const snackbarStore = useSnackbarStore()
-    const avatarStore = useAvatarStore()
+const router = useRouter()
+const profileStore = useProfileStore()
+const haciendaStore = useHaciendaStore()
+const siembrasStore = useSiembrasStore()
+const zonasStore = useZonasStore()
+const snackbarStore = useSnackbarStore()
+const avatarStore = useAvatarStore()
 
-    const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
-    const { siembras, loading, error } = storeToRefs(siembrasStore)
+const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
+const { siembras } = storeToRefs(siembrasStore)
 
-    const userRole = computed(() => profileStore.user.role)
-    const avatarUrl = computed(() => profileStore.avatarUrl)
+const userRole = computed(() => profileStore.user.role)
+const avatarUrl = computed(() => profileStore.avatarUrl)
 
-    const dialogNuevaSiembra = ref(false)
-    const nuevaSiembraData = ref({
+const dialogNuevaSiembra = ref(false)
+const nuevaSiembraData = ref({
+  nombre: '',
+  tipo: '',
+  estado: 'planificada',
+  fecha_inicio: new Date().toISOString().substr(0, 10),
+  hacienda: computed(() => mi_hacienda.value.id)
+})
+
+const estadoOptions = ['planificada', 'en_crecimiento', 'cosechada', 'finalizada']
+
+onMounted(async () => {
+  try {
+    await Promise.all([siembrasStore.cargarSiembras(), zonasStore.cargarZonas()])
+  } catch (error) {
+    snackbarStore.showError('Error al cargar las siembras o zonas')
+  }
+})
+
+const nuevaSiembra = () => {
+  dialogNuevaSiembra.value = true
+}
+
+const crearSiembra = async () => {
+  try {
+    nuevaSiembraData.value.nombre = nuevaSiembraData.value.nombre.toUpperCase()
+    nuevaSiembraData.value.tipo = nuevaSiembraData.value.tipo.toUpperCase()
+
+    await siembrasStore.crearSiembra(nuevaSiembraData.value)
+    dialogNuevaSiembra.value = false
+    snackbarStore.showSnackbar('Siembra creada exitosamente')
+    nuevaSiembraData.value = {
       nombre: '',
       tipo: '',
       estado: 'planificada',
       fecha_inicio: new Date().toISOString().substr(0, 10),
-      hacienda: computed(() => mi_hacienda.value.id)
-    })
-
-    const estadoOptions = ['planificada', 'en_crecimiento', 'cosechada', 'finalizada']
-
-    onMounted(async () => {
-      try {
-        await siembrasStore.cargarSiembras()
-      } catch (error) {
-        snackbarStore.showError('Error al cargar las siembras')
-      }
-    })
-
-    const nuevaSiembra = () => {
-      dialogNuevaSiembra.value = true
+      hacienda: mi_hacienda.value.id
     }
-
-    const crearSiembra = async () => {
-      try {
-        // Convertir nombre y tipo a mayúsculas antes de crear la siembra
-        nuevaSiembraData.value.nombre = nuevaSiembraData.value.nombre.toUpperCase()
-        nuevaSiembraData.value.tipo = nuevaSiembraData.value.tipo.toUpperCase()
-
-        await siembrasStore.createSiembra(nuevaSiembraData.value)
-        dialogNuevaSiembra.value = false
-        snackbarStore.showSnackbar('Siembra creada exitosamente')
-        // Reiniciar datos del formulario
-        nuevaSiembraData.value = {
-          nombre: '',
-          tipo: '',
-          estado: 'planificada',
-          fecha_inicio: new Date().toISOString().substr(0, 10),
-          hacienda: mi_hacienda.value.id
-        }
-        // Actualizar lista de siembras
-        await siembrasStore.fetchSiembras()
-      } catch (error) {
-        handleError(error, 'Error al crear la siembra')
-      }
-    }
-
-    const abrirSiembra = (id) => {
-      router.push(`/siembras/${id}`)
-    }
-
-    const getStatusColor = (status) => {
-      const colors = {
-        planificada: 'blue',
-        en_crecimiento: 'green',
-        cosechada: 'orange',
-        finalizada: 'gray'
-      }
-      return colors[status] || 'gray'
-    }
-
-    const formatDate = (date) => {
-      return new Date(date).toLocaleDateString()
-    }
-
-    const getZoneNames = (siembra) => {
-      return siembra.zonas?.map((zona) => zona.nombre).join(', ') || 'Sin zonas asignadas'
-    }
-
-    const getPlaceholderImage = () => placeholderSiembras
-
-    const getSiembraAvatarUrl = (siembra) => {
-      return avatarStore.getAvatarUrl({ ...siembra, type: 'siembra' }, 'Siembras')
-    }
-
-    return {
-      mi_hacienda,
-      avatarHaciendaUrl,
-      userRole,
-      avatarUrl,
-      siembras,
-      loading,
-      error,
-      dialogNuevaSiembra,
-      nuevaSiembraData,
-      estadoOptions,
-      nuevaSiembra,
-      crearSiembra,
-      abrirSiembra,
-      getStatusColor,
-      formatDate,
-      getZoneNames,
-      getPlaceholderImage,
-      getSiembraAvatarUrl
-    }
+    // await siembrasStore.fetchSiembras()
+  } catch (error) {
+    handleError(error, 'Error al crear la siembra')
   }
+}
+
+const abrirSiembra = (id) => {
+  router.push(`/siembras/${id}`)
+}
+
+const getStatusColor = (status) => {
+  const colors = {
+    planificada: 'blue',
+    en_crecimiento: 'green',
+    cosechada: 'orange',
+    finalizada: 'gray'
+  }
+  return colors[status] || 'gray'
+}
+
+const formatDate = (date) => {
+  return new Date(date).toLocaleDateString()
+}
+
+const getZoneNames = (siembra) => {
+  const zonasFiltradas = zonasStore.zonas.filter((zona) => zona.siembra.includes(siembra.id))
+  return zonasFiltradas.length > 0
+    ? zonasFiltradas.map((zona) => zona.nombre)
+    : ['Sin zonas asignadas']
+}
+
+const getSiembraAvatarUrl = (siembra) => {
+  return avatarStore.getAvatarUrl({ ...siembra, type: 'siembra' }, 'Siembras')
 }
 </script>
 
