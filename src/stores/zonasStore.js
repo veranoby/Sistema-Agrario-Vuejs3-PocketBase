@@ -29,13 +29,19 @@ export const useZonasStore = defineStore('zonas', {
   actions: {
     async init() {
       const syncStore = useSyncStore()
+      this.loading = true
 
-      // Cargar tipos de zonas
-      await this.cargarTiposZonas()
+      try {
+        await this.cargarTiposZonas()
 
-      // Si está online, sincronizar con servidor
-      if (syncStore.isOnline) {
-        await this.syncWithServer()
+        // Si está online, sincronizar con servidor
+        if (syncStore.isOnline) {
+          await this.syncWithServer()
+        }
+      } catch (error) {
+        handleError(error, 'Error al inicializar zonas')
+      } finally {
+        this.loading = false
       }
     },
 
@@ -63,11 +69,9 @@ export const useZonasStore = defineStore('zonas', {
         this.zonas = records
         this.lastSync = Date.now()
 
-        console.log('Zonas actualizadas en localStorage:', this.zonas)
         // Guardar zonas en localStorage para uso offline
         syncStore.saveToLocalStorage('zonas', records)
       } catch (error) {
-        console.error('Error syncing zonas:', error)
         handleError(error, 'Error al sincronizar zonas')
       } finally {
         this.loading = false
@@ -229,6 +233,40 @@ export const useZonasStore = defineStore('zonas', {
       }
     },
 
+    async cargarZonasPorSiembras(siembraIds) {
+      // const zonasStore = useZonasStore()
+      this.loading = true
+
+      try {
+        // Usar directamente el store de zonas para obtener las zonas filtradas
+        return this.zonas.filter((zona) => siembraIds.includes(zona.siembra))
+      } catch (error) {
+        handleError(error, 'Error al cargar zonas por siembras')
+        return []
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async cargarZonasPrecargadas() {
+      // const zonasStore = useZonasStore()
+      this.loading = true
+
+      try {
+        // Filtrar zonas que no pertenecen a siembras
+        const zonasFiltradas = this.zonas.filter(
+          (zona) => !zona.siembra // Asegúrate de que la propiedad siembra esté configurada
+        )
+
+        return zonasFiltradas // Retornar las zonas precargadas
+      } catch (error) {
+        handleError(error, 'Error al cargar zonas precargadas')
+        return []
+      } finally {
+        this.loading = false
+      }
+    },
+
     async updateZonaAvatar(zonaId, avatarFile) {
       const snackbarStore = useSnackbarStore()
       snackbarStore.showLoading()
@@ -248,63 +286,6 @@ export const useZonasStore = defineStore('zonas', {
       } finally {
         snackbarStore.hideLoading()
       }
-    },
-
-    async fetchZona(id) {
-      try {
-        const zona = await pb.collection('zonas').getOne(id)
-        return zona
-      } catch (error) {
-        handleError(error, 'Error al obtener la zona')
-        throw error
-      }
     }
-
-    /*   async fetchZonasBySiembraId(siembraId) {
-      const syncStore = useSyncStore()
-      this.loading = true
-      this.error = null
-
-      try {
-        // Primero intentamos obtener las zonas del store local
-        if (this.zonas.length > 0) {
-          const zonasFiltered = this.zonas.filter((zona) => zona.siembra === siembraId)
-          console.log('zonas filtradas store:', zonasFiltered)
-          if (zonasFiltered.length > 0) {
-            return zonasFiltered
-          }
-        }
-
-        // Si no hay en el store, intentamos obtener de localStorage
-        const zonasLocal = syncStore.loadFromLocalStorage('zonas')
-        if (zonasLocal) {
-          const zonasFiltered = zonasLocal.filter((zona) => zona.siembra === siembraId)
-          //         this.zonas = zonasLocal // Actualizamos el store con todos los datos
-          console.log('zonas filtradas local:', zonasFiltered)
-
-          return zonasFiltered
-        }
-
-        // Si no hay datos locales y hay conexión, obtenemos del servidor
-        if (syncStore.isOnline) {
-          const records = await pb.collection('zonas').getFullList({
-            filter: `siembra="${siembraId}"`,
-            sort: 'nombre'
-          })
-          console.log('zonas filtradas online:', records)
-          // Aquí no guardamos en localStorage porque solo son zonas filtradas
-          return records
-        }
-
-        return [] // Si no hay datos y estamos offline, retornamos array vacío
-      } catch (error) {
-        console.error('Error fetching zonas:', error)
-        this.error = 'Error al cargar las zonas'
-        useSnackbarStore().showError('Error al cargar las zonas')
-        throw error
-      } finally {
-        this.loading = false
-      }
-    } */
   }
 })

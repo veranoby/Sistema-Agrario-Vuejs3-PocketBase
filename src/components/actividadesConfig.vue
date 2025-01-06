@@ -245,11 +245,14 @@ import { editor, editorConfig } from '@/utils/ckeditorConfig'
 import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useSyncStore } from '@/stores/syncStore'
 import { useAvatarStore } from '@/stores/avatarStore'
+import { useZonasStore } from '@/stores/zonasStore'
 
 const router = useRouter()
 const profileStore = useProfileStore()
 const haciendaStore = useHaciendaStore()
 const ActividadesStore = useActividadesStore()
+const ZonasStore = useZonasStore()
+
 const snackbarStore = useSnackbarStore()
 const siembrasStore = useSiembrasStore()
 const syncStore = useSyncStore()
@@ -265,7 +268,7 @@ const userRole = computed(() => profileStore.user.role)
 const avatarUrl = computed(() => profileStore.avatarUrl)
 
 const getActividadAvatarUrl = (actividad) => {
-  return avatarStore.getAvatarUrl({ ...actividad, type: 'actividad' })
+  return avatarStore.getAvatarUrl({ ...actividad, type: 'actividades' }, 'actividades')
 }
 
 const dialogNuevaActividad = ref(false)
@@ -391,9 +394,9 @@ const abrirActividad = (id) => {
 const cargarZonasPorSiembra = async () => {
   const selectedSiembras = nuevaActividadData.value.siembra
   if (selectedSiembras.length > 0) {
-    zonasDisponibles.value = await ActividadesStore.cargarZonasPorSiembras(selectedSiembras)
+    zonasDisponibles.value = await ZonasStore.cargarZonasPorSiembras(selectedSiembras)
   } else {
-    zonasDisponibles.value = await ActividadesStore.cargarZonasPrecargadas()
+    zonasDisponibles.value = await ZonasStore.cargarZonasPrecargadas()
   }
 }
 

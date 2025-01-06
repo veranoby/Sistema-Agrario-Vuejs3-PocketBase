@@ -68,15 +68,29 @@ export const useHaciendaStore = defineStore('hacienda', {
 
     async fetchHacienda(haciendaId) {
       const syncStore = useSyncStore()
+
+      this.loading = true
+
+      const mi_haciendaLocal = useSyncStore().loadFromLocalStorage('mi_hacienda')
+      if (mi_haciendaLocal) {
+        this.mi_hacienda = mi_haciendaLocal
+        this.baseImageUrl = syncStore.loadFromLocalStorage('baseImageUrl')
+
+        return this.mi_hacienda
+      }
+
       try {
-        this.mi_hacienda = await pb.collection('Haciendas').getOne(haciendaId)
-        this.baseImageUrl = pb.baseUrl + '/api/files'
+        if (syncStore.isOnline) {
+          this.mi_hacienda = await pb.collection('Haciendas').getOne(haciendaId)
+          this.baseImageUrl = pb.baseUrl + '/api/files'
 
-        console.log('baseImageUrl:', this.baseImageUrl)
-
-        // Usar syncStore en lugar de localStorage directamente
-        syncStore.saveToLocalStorage('mi_hacienda', this.mi_hacienda)
-        syncStore.saveToLocalStorage('baseImageUrl', this.baseImageUrl)
+          // Usar syncStore en lugar de localStorage directamente
+          syncStore.saveToLocalStorage('mi_hacienda', this.mi_hacienda)
+          syncStore.saveToLocalStorage('baseImageUrl', this.baseImageUrl)
+        } else {
+          this.mi_hacienda = syncStore.loadFromLocalStorage('mi_hacienda')
+          this.baseImageUrl = syncStore.loadFromLocalStorage('baseImageUrl')
+        }
       } catch (error) {
         handleError(error, 'Error loading hacienda information')
       }

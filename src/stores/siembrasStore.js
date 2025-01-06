@@ -3,9 +3,8 @@ import { pb } from '@/utils/pocketbase'
 import { useSnackbarStore } from './snackbarStore'
 import { handleError } from '@/utils/errorHandler'
 import { useSyncStore } from './syncStore'
-//import { localStorageManager } from '@/utils/localStorageUtils'
 import { useHaciendaStore } from './haciendaStore'
-import { useAvatarStore } from './avatarStore'
+//import { useAvatarStore } from './avatarStore'
 
 export const useSiembrasStore = defineStore('siembras', {
   state: () => ({
@@ -33,11 +32,15 @@ export const useSiembrasStore = defineStore('siembras', {
       const haciendaStore = useHaciendaStore()
       this.loading = true
 
+      const siembrasLocal = useSyncStore().loadFromLocalStorage('siembras')
+      if (siembrasLocal) {
+        this.siembras = siembrasLocal
+        return this.siembras
+      }
+
       try {
         if (syncStore.isOnline) {
           const records = await pb.collection('siembras').getFullList({
-            sort: '-created',
-            expand: 'zona,hacienda',
             filter: `hacienda="${haciendaStore.mi_hacienda?.id}"`
           })
           this.siembras = records
@@ -158,7 +161,7 @@ export const useSiembrasStore = defineStore('siembras', {
       }
     },
 
-    async fetchSiembraById(id) {
+    /*  async fetchSiembraById(id) {
       const syncStore = useSyncStore()
 
       this.loading = true
@@ -184,6 +187,16 @@ export const useSiembrasStore = defineStore('siembras', {
         throw error
       } finally {
         this.loading = false
+      }
+    } */
+
+    async fetchSiembraById(id) {
+      console.log('entrando a fetchSiembraById: id=', id)
+      const index = this.siembras.findIndex((s) => s.id === id)
+      if (index !== -1) {
+        return this.siembras[index] // Retorna la actividad encontrada
+      } else {
+        throw new Error('Actividad no encontrada') // Manejo de error si no se encuentra
       }
     }
   }

@@ -3,8 +3,8 @@ import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
 import { useSyncStore } from './syncStore'
 import { useHaciendaStore } from './haciendaStore'
-import { useZonasStore } from './zonasStore'
-import { useAvatarStore } from './avatarStore'
+//import { useZonasStore } from './zonasStore'
+//import { useAvatarStore } from './avatarStore'
 
 export const useActividadesStore = defineStore('actividades', {
   state: () => ({
@@ -12,7 +12,8 @@ export const useActividadesStore = defineStore('actividades', {
     tiposActividades: [],
     loading: false,
     error: null,
-    version: 1
+    version: 1,
+    lastSync: null
   }),
 
   getters: {
@@ -49,10 +50,23 @@ export const useActividadesStore = defineStore('actividades', {
       }
     },
 
+    async syncWithServer() {
+      // Sincronizar cambios pendientes
+      await this.cargarActividades() // Cargar zonas desde el servidor
+      // Aquí puedes agregar lógica para sincronizar cambios pendientes
+    },
+
     async cargarActividades() {
       this.loading = true
       const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore()
+
+      const actividadesLocal = useSyncStore().loadFromLocalStorage('actividades')
+      if (actividadesLocal) {
+        this.actividades = actividadesLocal
+        this.loading = false
+        return this.actividades
+      }
 
       try {
         if (syncStore.isOnline) {
@@ -61,7 +75,8 @@ export const useActividadesStore = defineStore('actividades', {
             filter: `hacienda="${haciendaStore.mi_hacienda?.id}"`
           })
           this.actividades = records
-          console.log('Mis Actividades:', records)
+          this.lastSync = Date.now()
+
           syncStore.saveToLocalStorage('actividades', records)
         } else {
           this.actividades = syncStore.loadFromLocalStorage('actividades') || []
@@ -212,41 +227,7 @@ export const useActividadesStore = defineStore('actividades', {
       }
     },
 
-    async cargarZonasPorSiembras(siembraIds) {
-      const zonasStore = useZonasStore()
-      this.loading = true
-
-      try {
-        // Usar directamente el store de zonas para obtener las zonas filtradas
-        return zonasStore.zonas.filter((zona) => siembraIds.includes(zona.siembra))
-      } catch (error) {
-        handleError(error, 'Error al cargar zonas por siembras')
-        return []
-      } finally {
-        this.loading = false
-      }
-    },
-
-    async cargarZonasPrecargadas() {
-      const zonasStore = useZonasStore()
-      this.loading = true
-
-      try {
-        // Filtrar zonas que no pertenecen a siembras
-        const zonasFiltradas = zonasStore.zonas.filter(
-          (zona) => !zona.siembra // Asegúrate de que la propiedad siembra esté configurada
-        )
-
-        return zonasFiltradas // Retornar las zonas precargadas
-      } catch (error) {
-        handleError(error, 'Error al cargar zonas precargadas')
-        return []
-      } finally {
-        this.loading = false
-      }
-    },
-
-    async fetchActividadById(id) {
+    /*async fetchActividadById(id) {
       const syncStore = useSyncStore()
 
       this.loading = true
@@ -256,7 +237,10 @@ export const useActividadesStore = defineStore('actividades', {
         })
 
         const avatarStore = useAvatarStore()
-        record.avatarUrl = avatarStore.getAvatarUrl({ ...record, type: 'actividad' }, 'actividad')
+        record.avatarUrl = avatarStore.getAvatarUrl(
+          { ...record, type: 'actividades' },
+          'actividades'
+        )
 
         const index = this.actividades.findIndex((s) => s.id === id)
         if (index !== -1) {
@@ -272,6 +256,16 @@ export const useActividadesStore = defineStore('actividades', {
         throw error
       } finally {
         this.loading = false
+      }
+    } */
+
+    async fetchActividadById(id) {
+      console.log('entrando a fetchActividadById: id=', id)
+      const index = this.actividades.findIndex((s) => s.id === id)
+      if (index !== -1) {
+        return this.actividades[index] // Retorna la actividad encontrada
+      } else {
+        throw new Error('Actividad no encontrada') // Manejo de error si no se encuentra
       }
     }
   }

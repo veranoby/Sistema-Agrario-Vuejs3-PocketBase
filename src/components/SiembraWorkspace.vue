@@ -439,7 +439,7 @@
       />
     </v-dialog>
 
-    <v-dialog v-model="showAvatarDialog" max-width="500px">
+    <!--   <v-dialog v-model="showAvatarDialog" max-width="500px">
       <AvatarForm
         v-model="showAvatarDialog"
         collection="Siembras"
@@ -448,7 +448,7 @@
         :hasCurrentAvatar="!!siembraInfo.avatar"
         @avatar-updated="handleAvatarUpdated"
       />
-    </v-dialog>
+    </v-dialog>-->
   </v-container>
   <v-progress-circular v-else indeterminate color="primary"></v-progress-circular>
 </template>

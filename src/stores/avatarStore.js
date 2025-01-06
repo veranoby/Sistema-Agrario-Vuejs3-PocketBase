@@ -18,14 +18,14 @@ export const useAvatarStore = defineStore('avatar', {
       hacienda: placeholderHacienda,
       zona: placeholderZonas,
       siembra: placeholderSiembras,
-      actividad: placeholderActividades
+      actividades: placeholderActividades
     }
   }),
 
   actions: {
     getAvatarUrl(entity, collectionId) {
       if (!entity || !entity.avatar) {
-        console.log('enviando placeholder:', entity.type)
+        // console.log('enviando placeholder:', entity.type)
         return this.defaultAvatars[entity.type] || this.defaultAvatars.user
       }
       //   console.log('enviando avatar:', entity.avatar)
