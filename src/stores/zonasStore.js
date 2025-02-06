@@ -15,6 +15,12 @@ export const useZonasStore = defineStore('zonas', {
     lastSync: null
   }),
 
+  persist: {
+    key: 'zonas',
+    storage: sessionStorage,
+    paths: ['zonas', 'tiposZonas']
+  },
+
   getters: {
     promedioBpaEstado() {
       const haciendaStore = useHaciendaStore()
@@ -23,6 +29,9 @@ export const useZonasStore = defineStore('zonas', {
       )
       const totalBpaEstado = zonasHacienda.reduce((acc, zona) => acc + (zona.bpa_estado || 0), 0)
       return zonasHacienda.length ? Math.round(totalBpaEstado / zonasHacienda.length) : 0
+    },
+    getZonaById: (state) => (id) => {
+      return state.zonas.find((z) => z.id === id)
     }
   },
 
@@ -34,10 +43,7 @@ export const useZonasStore = defineStore('zonas', {
       try {
         await this.cargarTiposZonas()
 
-        // Si está online, sincronizar con servidor
-        if (syncStore.isOnline) {
-          await this.syncWithServer()
-        }
+        await this.cargarZonas() // Cargar zonas desde el servidor
       } catch (error) {
         handleError(error, 'Error al inicializar zonas')
       } finally {
@@ -55,9 +61,8 @@ export const useZonasStore = defineStore('zonas', {
       const zonasLocal = syncStore.loadFromLocalStorage('zonas')
       if (zonasLocal) {
         this.zonas = zonasLocal
-        console.log('Cargado zonas desde localStorage:', this.zonas)
         this.loading = false
-        return
+        return this.zonas
       }
 
       try {
@@ -78,84 +83,93 @@ export const useZonasStore = defineStore('zonas', {
       }
     },
 
-    async syncWithServer() {
-      // Sincronizar cambios pendientes
-      await this.cargarZonas() // Cargar zonas desde el servidor
-      // Aquí puedes agregar lógica para sincronizar cambios pendientes
-    },
-
     async crearZona(zonaData) {
+      const snackbarStore = useSnackbarStore()
+      snackbarStore.showLoading()
       const syncStore = useSyncStore()
+      const haciendaStore = useHaciendaStore()
 
-      // Asegurarse de que las métricas estén en el formato correcto
-      /*   if (zonaData.metricas) {
-        zonaData.metricas = Object.fromEntries(
-          Object.entries(zonaData.metricas).map(([key, value]) => [key, value.valor])
-        )
-      }*/
-
-      zonaData.bpa_estado = this.calcularBpaEstado(zonaData.datos_bpa)
+      // Enriquecer datos con contexto de hacienda
+      const enrichedData = {
+        ...zonaData,
+        hacienda: haciendaStore.mi_hacienda?.id,
+        bpa_estado: this.calcularBpaEstado(zonaData.datos_bpa),
+        version: this.version
+      }
 
       if (!syncStore.isOnline) {
-        const tempId = `temp_${Date.now()}`
+        const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
         const tempZona = {
-          ...zonaData,
+          ...enrichedData,
           id: tempId,
           created: new Date().toISOString(),
           updated: new Date().toISOString(),
-          version: this.version
+          _isTemp: true
         }
 
         this.zonas.push(tempZona)
-        // Actualizar localStorage
-        syncStore.saveToLocalStorage('zonas', this.zonas)
 
         await syncStore.queueOperation({
           type: 'create',
           collection: 'zonas',
-          data: tempZona,
+          data: enrichedData,
           tempId
         })
+
+        snackbarStore.hideLoading()
+        syncStore.saveToLocalStorage('zonas', this.zonas)
 
         return tempZona
       }
 
+      // Online flow
       try {
-        const record = await pb.collection('zonas').create(zonaData)
+        const record = await pb.collection('zonas').create(enrichedData)
         this.zonas.push(record)
-        // Actualizar localStorage
         syncStore.saveToLocalStorage('zonas', this.zonas)
         return record
       } catch (error) {
         handleError(error, 'Error al crear zona')
         throw error
+      } finally {
+        snackbarStore.hideLoading()
       }
     },
 
     async updateZona(id, updateData) {
+      const snackbarStore = useSnackbarStore()
+      snackbarStore.showLoading()
+
       const syncStore = useSyncStore()
-      updateData.bpa_estado = this.calcularBpaEstado(updateData.datos_bpa)
+
+      const enrichedData = {
+        ...updateData,
+        bpa_estado: this.calcularBpaEstado(updateData.datos_bpa),
+        version: this.version
+      }
 
       if (!syncStore.isOnline) {
         const index = this.zonas.findIndex((z) => z.id === id)
         if (index !== -1) {
-          this.zonas[index] = { ...this.zonas[index], ...updateData }
-          // Actualizar localStorage
-          syncStore.saveToLocalStorage('zonas', this.zonas)
+          this.zonas[index] = { ...this.zonas[index], ...enrichedData }
         }
 
         await syncStore.queueOperation({
           type: 'update',
           collection: 'zonas',
           id,
-          data: updateData
+          data: enrichedData
         })
+
+        snackbarStore.hideLoading()
+        syncStore.saveToLocalStorage('zonas', this.zonas)
 
         return this.zonas[index]
       }
 
+      // Online flow
       try {
-        const record = await pb.collection('zonas').update(id, updateData)
+        const record = await pb.collection('zonas').update(id, enrichedData)
         const index = this.zonas.findIndex((z) => z.id === id)
         if (index !== -1) {
           this.zonas[index] = record
@@ -166,25 +180,29 @@ export const useZonasStore = defineStore('zonas', {
       } catch (error) {
         handleError(error, 'Error al actualizar zona')
         throw error
+      } finally {
+        snackbarStore.hideLoading()
       }
     },
 
     async eliminarZona(id) {
+      const snackbarStore = useSnackbarStore()
+      snackbarStore.showLoading()
       const syncStore = useSyncStore()
 
       if (!syncStore.isOnline) {
-        const index = this.zonas.findIndex((z) => z.id === id)
-        if (index !== -1) {
-          this.zonas.splice(index, 1)
-          syncStore.saveToLocalStorage('zonas', this.zonas)
-        }
+        this.zonas = this.zonas.filter((zona) => zona.id !== id)
 
         await syncStore.queueOperation({
-          type: 'deleteZona',
+          type: 'delete',
+          collection: 'zonas',
           id
         })
 
-        return
+        snackbarStore.hideLoading()
+        syncStore.saveToLocalStorage('zonas', this.zonas)
+
+        return true
       }
 
       try {
@@ -196,6 +214,8 @@ export const useZonasStore = defineStore('zonas', {
       } catch (error) {
         handleError(error, 'Error al eliminar zona')
         throw error
+      } finally {
+        snackbarStore.hideLoading()
       }
     },
 
@@ -216,7 +236,6 @@ export const useZonasStore = defineStore('zonas', {
       const tiposZonasLocal = useSyncStore().loadFromLocalStorage('tiposZonas')
       if (tiposZonasLocal) {
         this.tiposZonas = tiposZonasLocal
-        console.log('Cargado tiposZonas desde localStorage:', this.tiposZonas)
         return this.tiposZonas
       }
 
@@ -227,7 +246,6 @@ export const useZonasStore = defineStore('zonas', {
         this.tiposZonas = records
         // Guardar zonas en localStorage para uso offline
         useSyncStore().saveToLocalStorage('tiposZonas', records)
-        console.log('tiposZonas actualizadas:', this.tiposZonas)
       } catch (error) {
         handleError(error, 'Error al cargar tipos de zonas')
       }

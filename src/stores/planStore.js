@@ -9,6 +9,11 @@ export const usePlanStore = defineStore('plan', {
   state: () => ({
     plans: loadFromLocalStorage('plans') || null // Cargar desde localStorage
   }),
+  persist: {
+    key: 'plan',
+    storage: sessionStorage,
+    paths: ['plans']
+  },
 
   getters: {
     currentPlan: (state) => {

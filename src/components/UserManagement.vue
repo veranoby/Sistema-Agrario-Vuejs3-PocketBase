@@ -105,23 +105,11 @@
     >
       <v-card>
         <v-form @submit.prevent="createUser">
-          <v-card-title>
-            <div class="grid grid-cols-2 gap-1">
-              <p class="mt-4 mb-0">Crear Nuevo Usuario:</p>
-              <!-- campo role escondido -->
-              <v-text-field
-                append-inner-icon="mdi-alert-octagon"
-                class="compact-form"
-                bg-color="grey-lighten-1"
-                readonly
-                disabled
-                rounded
-                variant="outlined"
-                v-model="newUser.role"
-                label=""
-              ></v-text-field>
-            </div>
-          </v-card-title>
+          <v-toolbar color="success" dark>
+            <v-toolbar-title>Crear nuevo Usuario</v-toolbar-title>
+            <v-spacer></v-spacer>
+          </v-toolbar>
+
           <v-card-text>
             <div class="grid grid-cols-2 gap-1">
               <v-text-field
@@ -207,26 +195,34 @@
               </v-text-field>
             </div>
           </v-card-text>
+
+          <!-- campo role escondido -->
+
+          <v-text-field hidden v-model="newUser.role"></v-text-field>
+
           <v-card-actions>
-            <v-btn
-              size="small"
-              variant="flat"
-              rounded="lg"
-              prepend-icon="mdi-lock-reset"
-              color="red-lighten-3"
-              @click="createUserModalOpen = false"
-              >Cancelar</v-btn
-            >
+            <v-spacer></v-spacer>
+
             <v-btn
               type="submit"
-              color="green-lighten-2"
               size="small"
               variant="flat"
               rounded="lg"
               prepend-icon="mdi-check"
+              color="green-lighten-3"
               @click="createUser"
               :disabled="!formValid"
               >Crear Usuario</v-btn
+            >
+
+            <v-btn
+              size="small"
+              variant="flat"
+              rounded="lg"
+              prepend-icon="mdi-cancel"
+              color="red-lighten-3"
+              @click="createUserModalOpen = false"
+              >Cancelar</v-btn
             >
           </v-card-actions>
         </v-form>

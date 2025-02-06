@@ -19,95 +19,51 @@
       </div>
     </header>
     <main class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-8 p-6">
-      <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
-        <div class="flex flex-col space-y-1.5 p-6">
-          <h3 class="whitespace-nowrap text-2xl font-semibold leading-none tracking-tight">
-            Last Messages
-          </h3>
-        </div>
-        <div class="p-6">
-          <div class="space-y-4">
-            <div class="flex items-start gap-4">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                class="h-6 w-6"
-              >
-                <path
-                  d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"
-                ></path>
-                <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"></path>
-              </svg>
-              <div class="grid gap-1">
-                <div class="flex items-center gap-2">
-                  <div class="font-medium">Jane Doe</div>
-                  <div class="text-xs text-muted-foreground">2h ago</div>
-                </div>
-                <p>Hey there! Just wanted to check in and see how you're doing.</p>
-              </div>
-            </div>
-            <div class="flex items-start gap-4">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                class="h-6 w-6"
-              >
-                <path
-                  d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"
-                ></path>
-                <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"></path>
-              </svg>
-              <div class="grid gap-1">
-                <div class="flex items-center gap-2">
-                  <div class="font-medium">John Smith</div>
-                  <div class="text-xs text-muted-foreground">4h ago</div>
-                </div>
-                <p>Did you see the latest update? I think we should discuss it.</p>
-              </div>
-            </div>
-            <div class="flex items-start gap-4">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                class="h-6 w-6"
-              >
-                <path
-                  d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"
-                ></path>
-                <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"></path>
-              </svg>
-              <div class="grid gap-1">
-                <div class="flex items-center gap-2">
-                  <div class="font-medium">Sarah Lee</div>
-                  <div class="text-xs text-muted-foreground">6h ago</div>
-                </div>
-                <p>Sounds good, let's schedule a meeting to discuss the next steps.</p>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div class="bg-card text-card-foreground">
+        <v-btn
+          block
+          sm:inline-flex
+          size="small"
+          variant="flat"
+          rounded="lg"
+          color="#6380a247"
+          prepend-icon="mdi-plus"
+          @click="abrirNuevoRecordatorio"
+          class="min-w-[210px] m-2"
+        >
+          Nuevo recordatorio
+        </v-btn>
+
+        <!-- Panel de editar recordatorios -->
+        <RecordatorioForm
+          :model-value="dialog"
+          @update:modelValue="dialog = $event"
+          :recordatorio="recordatorioEdit"
+          :is-editing="editando"
+          @submit="handleFormSubmit"
+        />
+
+        <!-- Panel de Pendientes -->
+        <StatusPanel
+          title="Pendientes"
+          color="red"
+          :items="recordatoriosPendientes"
+          @update-status="recordatoriosStore.actualizarEstado"
+          @edit="editarRecordatorio"
+          @delete="recordatoriosStore.eliminarRecordatorio"
+        />
+        <br />
+        <!-- Panel En Progreso -->
+        <StatusPanel
+          title="En Progreso"
+          color="amber"
+          :items="recordatoriosEnProgreso"
+          @update-status="recordatoriosStore.actualizarEstado"
+          @edit="editarRecordatorio"
+          @delete="recordatoriosStore.eliminarRecordatorio"
+        />
       </div>
+
       <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
         <div class="flex flex-col space-y-1.5 p-6">
           <h3 class="whitespace-nowrap text-2xl font-semibold leading-none tracking-tight">
@@ -205,29 +161,110 @@
   </div>
 </template>
 
-<script>
-import { computed } from 'vue'
-
-import { useProfileStore } from '@/stores/profileStore'
-
-import { useHaciendaStore } from '@/stores/haciendaStore'
+<script setup>
+import { ref, computed, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
+import { useProfileStore } from '@/stores/profileStore'
+import { useHaciendaStore } from '@/stores/haciendaStore'
+import { useRecordatoriosStore } from '@/stores/recordatoriosStore'
+import StatusPanel from '@/components/StatusPanel.vue'
+import { useSiembrasStore } from '@/stores/siembrasStore'
+import { useActividadesStore } from '@/stores/actividadesStore'
+import { useZonasStore } from '@/stores/zonasStore'
+import RecordatorioForm from '@/components/forms/RecordatorioForm.vue'
+import { handleError } from '@/utils/errorHandler'
+import { useSnackbarStore } from '@/stores/snackbarStore'
 
-export default {
-  name: 'DashboardComponent',
-  setup() {
-    const profileStore = useProfileStore()
-    const haciendaStore = useHaciendaStore()
+// Stores
+const profileStore = useProfileStore()
+const haciendaStore = useHaciendaStore()
+const recordatoriosStore = useRecordatoriosStore()
+const siembrasStore = useSiembrasStore()
+const actividadesStore = useActividadesStore()
+const zonasStore = useZonasStore()
+const snackbarStore = useSnackbarStore()
 
-    const fullName = computed(() => profileStore.fullName)
-    // const haciendaName = computed(() => haciendaStore.mi_hacienda.name)
+// Estados del componente
+const dialog = ref(false)
+//const guardando = ref(false)
+const editando = ref(false)
+const recordatorioEdit = ref(crearRecordatorioVacio())
 
-    const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
+// Cargar datos iniciales
+onMounted(async () => {
+  await Promise.all([
+    recordatoriosStore.cargarRecordatorios(),
+    siembrasStore.cargarSiembras(),
+    actividadesStore.cargarActividades(),
+    zonasStore.cargarZonas()
+  ])
+})
 
-    const userRole = computed(() => profileStore.user.role)
-    const avatarUrl = computed(() => profileStore.avatarUrl)
+// Destructurar stores reactivos
+const { fullName, userRole, avatarUrl } = storeToRefs(profileStore)
+const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
 
-    return { fullName, userRole, avatarUrl, mi_hacienda, avatarHaciendaUrl }
+// Computed para recordatorios
+const recordatoriosPendientes = computed(() =>
+  recordatoriosStore.recordatorios.filter((r) => r.estado === 'pendiente')
+)
+
+const recordatoriosEnProgreso = computed(() =>
+  recordatoriosStore.recordatorios.filter((r) => r.estado === 'en_progreso')
+)
+
+// Métodos
+function crearRecordatorioVacio() {
+  return {
+    titulo: '',
+    descripcion: '',
+    fecha_recordatorio: new Date().toISOString().substr(0, 10),
+    prioridad: 'media',
+    estado: 'pendiente',
+    siembras: [],
+    actividades: [],
+    zonas: []
   }
+}
+
+async function editarRecordatorio(id) {
+  const recordatorio = recordatoriosStore.recordatorios.find((r) => r.id === id)
+  if (recordatorio) {
+    editando.value = true
+    recordatorioEdit.value = {
+      ...recordatorio,
+      siembras: recordatorio.siembras || [],
+      actividades: recordatorio.actividades || [],
+      zonas: recordatorio.zonas || []
+    }
+    dialog.value = true
+  }
+}
+
+async function handleFormSubmit(data) {
+  try {
+    if (editando.value) {
+      await recordatoriosStore.actualizarRecordatorio(data.id, {
+        ...data,
+        siembras: data.siembras || [],
+        zonas: data.zonas || [],
+        actividades: data.actividades || []
+      })
+      // Forzar actualización completa con expand
+      await recordatoriosStore.cargarRecordatorios()
+      dialog.value = false
+    } else {
+      await recordatoriosStore.crearRecordatorio(data)
+    }
+    snackbarStore.showSnackbar('Recordatorio guardado')
+  } catch (error) {
+    handleError(error, 'Error al guardar recordatorio')
+  }
+}
+
+function abrirNuevoRecordatorio() {
+  editando.value = false
+  recordatorioEdit.value = crearRecordatorioVacio()
+  dialog.value = true
 }
 </script>

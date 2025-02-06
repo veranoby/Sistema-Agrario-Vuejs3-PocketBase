@@ -21,7 +21,10 @@
       scrollable
     >
       <v-card>
-        <v-card-title>Cambiar Contraseña</v-card-title>
+        <v-toolbar color="success" dark>
+          <v-toolbar-title>Cambiar contraseña</v-toolbar-title>
+          <v-spacer></v-spacer>
+        </v-toolbar>
         <v-card-text>
           <v-form @submit.prevent="changePassword">
             <v-text-field

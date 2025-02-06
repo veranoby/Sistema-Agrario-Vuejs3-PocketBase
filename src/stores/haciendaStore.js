@@ -13,6 +13,12 @@ export const useHaciendaStore = defineStore('hacienda', {
     }
   },
 
+  persist: {
+    key: 'hacienda',
+    storage: sessionStorage,
+    paths: ['mi_hacienda']
+  },
+
   getters: {
     haciendaName: (state) => state.mi_hacienda?.name || '',
     avatarHaciendaUrl: (state) => {

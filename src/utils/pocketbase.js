@@ -79,7 +79,7 @@ actividades:
   created: datetime
   updated: datetime
   hacienda: relation(haciendas)
-  tipo: relation(tipos_actividades)
+  tipo_actividades: relation(tipos_actividades)
   nombre: string
   descripcion: string
   recordatorio:  relation(recordatorios).
@@ -117,5 +117,21 @@ programaciones:
   frecuencia_personalizada: string  # Para casos especiales, ej: "cada 3 días"
   estado: select(activo, pausado, finalizado)
   destinatarios: json  # Lista de IDs de usuarios a notificar
+
+
+  # Colección: 
+recordatorios:
+  id: string
+  created: datetime
+  updated: datetime
+  hacienda: relation(haciendas)
+  titulo: string
+  descripcion: string
+  fecha_recordatorio: datetime
+  estado: select(pendiente, en_progreso, completado)
+  prioridad: select(baja, media, alta)
+  siembra:  relation(siembras). multiple.
+  actividad: relation(actividades). pueden ser multiples
+  zona: relation(zonas). pueden ser multiples
 
   */

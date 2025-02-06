@@ -16,6 +16,12 @@ export const useProfileStore = defineStore('profile', {
     }
   },
 
+  persist: {
+    key: 'profile',
+    storage: sessionStorage,
+    paths: ['user']
+  },
+
   getters: {
     avatarUrl: (state) => {
       const avatarStore = useAvatarStore()

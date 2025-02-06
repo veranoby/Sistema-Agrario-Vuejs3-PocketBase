@@ -8,6 +8,9 @@ import { usePlanStore } from './planStore'
 import { useValidationStore } from './validationStore'
 import router from '@/router'
 import { useSyncStore } from './syncStore'
+import { useActividadesStore } from '@/stores/actividadesStore'
+import { useZonasStore } from '@/stores/zonasStore'
+import { useSiembrasStore } from '@/stores/siembrasStore'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -42,6 +45,9 @@ export const useAuthStore = defineStore('auth', {
       const profileStore = useProfileStore()
       const haciendaStore = useHaciendaStore()
       const planStore = usePlanStore()
+      const actividadesStore = useActividadesStore()
+      const zonasStore = useZonasStore()
+      const siembrasStore = useSiembrasStore()
 
       if (!syncStore.isOnline) {
         throw new Error('Se requiere conexión a internet para el primer inicio de sesión')
@@ -63,6 +69,9 @@ export const useAuthStore = defineStore('auth', {
 
           await planStore.fetchAvailablePlans()
           await haciendaStore.fetchHacienda(authData.record.hacienda)
+          await siembrasStore.cargarSiembras()
+          await zonasStore.init()
+          await actividadesStore.init()
 
           router.push('/dashboard') // Navigate to dashboard.vue
           if (rememberMe) {

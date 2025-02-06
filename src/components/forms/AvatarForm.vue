@@ -1,9 +1,10 @@
 <template>
   <v-dialog v-model="dialog" max-width="550px">
     <v-card>
-      <v-card-title>
-        <h2 class="text-xl font-bold mt-2">Editar Avatar</h2>
-      </v-card-title>
+      <v-toolbar color="success" dark>
+        <v-toolbar-title>Editar Avatar</v-toolbar-title>
+        <v-spacer></v-spacer>
+      </v-toolbar>
 
       <v-card-text>
         <v-container>

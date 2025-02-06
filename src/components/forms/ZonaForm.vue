@@ -299,7 +299,11 @@
   <!-- Diálogo para agregar métrica personalizada -->
   <v-dialog v-model="addMetricaDialog" persistent max-width="300px">
     <v-card>
-      <v-card-title class="headline">Agregar Métrica </v-card-title>
+      <v-toolbar color="success" dark>
+        <v-toolbar-title>Agregar Métrica</v-toolbar-title>
+        <v-spacer></v-spacer>
+      </v-toolbar>
+
       <v-card-text class="m-1 p-0 pl-2">
         <v-text-field
           density="compact"

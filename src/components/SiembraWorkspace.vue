@@ -85,7 +85,7 @@
           </v-card-text>
         </v-card>
 
-        <!-- Bitácora -->
+        <!-- Bitácora 
         <v-card class="bitacora-section" elevation="2">
           <v-card-title class="headline d-flex justify-space-between align-center">
             Bitácora de la Siembra
@@ -137,16 +137,18 @@
               </template>
             </v-data-table>
           </v-card-text>
-        </v-card>
+        </v-card> -->
       </v-col>
 
       <!-- Sidebar -->
       <v-col cols="12" md="4" class="px-0 py-4">
+        <!-- SECCION de zonas-->
+
         <v-card class="zonas-section mb-4" elevation="2">
-          <v-card-title class="headline d-flex justify-space-between align-center">
+          <v-card-title class="d-flex justify-space-between align-center">
             Zonas Registradas (Lotes)
-            <v-btn color="green-lighten-2" @click="openAddZonaDialog" icon>
-              <v-icon>mdi-plus</v-icon>
+            <v-btn size="x-small" color="green-lighten-2" @click="openAddZonaDialog" icon>
+              <v-icon class="mt-1">mdi-plus</v-icon>
             </v-btn>
           </v-card-title>
           <v-card-text class="px-2 py-0">
@@ -213,12 +215,18 @@
                   <v-card flat class="pa-4">
                     <v-row no-gutters>
                       <v-col cols="7" class="pr-4">
-                        <p v-if="item.gps">
-                          <v-icon>mdi-crosshairs-gps</v-icon>
+                        <p v-if="item.gps" class="ml-2 mr-0 p-0 text-xs">
+                          <v-icon>mdi-map-marker-radius</v-icon>
 
                           Lat: {{ item.gps.lat }}, Lng: {{ item.gps.lng }}
                         </p>
-                        <p class="ml-2 mr-0 p-0 text-xs" v-html="item.info || 'No disponible'"></p>
+                        <p v-else class="ml-2 mr-0 mb-2 p-0 text-xs">
+                          <v-icon>mdi-map-marker-radius</v-icon> No disponible
+                        </p>
+                        <p class="ml-2 mr-0 mb-2 p-0 text-xs">
+                          <v-icon>mdi-information-outline</v-icon
+                          ><label v-html="item.info || 'No disponible'"></label>
+                        </p>
 
                         <p>
                           <v-chip
@@ -229,7 +237,99 @@
                             class="m-1"
                             pill
                           >
-                            {{ key.toUpperCase() }}:{{ metrica.valor }}
+                            {{ key.replace(/_/g, ' ').toUpperCase() }}:{{ metrica.valor }}
+                          </v-chip>
+                        </p>
+                      </v-col>
+                      <v-col cols="5" class="d-flex justify-center align-center">
+                        <v-img
+                          v-if="item.avatar"
+                          :src="getAvatarUrl(item.id)"
+                          max-width="150"
+                          max-height="150"
+                          contain
+                        >
+                          <template v-slot:placeholder>
+                            <v-icon size="150" color="grey lighten-2">mdi-image-off</v-icon>
+                          </template>
+                        </v-img>
+                        <v-icon v-else size="150" color="grey lighten-2">mdi-image-off</v-icon>
+                      </v-col>
+                    </v-row>
+                  </v-card>
+                </td>
+              </template>
+            </v-data-table>
+
+            <!-- fin v-data table-->
+          </v-card-text>
+        </v-card>
+
+        <!-- SECCION de ACTIVIDADES-->
+
+        <v-card class="zonas-section mb-4" elevation="2">
+          <v-card-title class="d-flex justify-space-between align-center">
+            Actividades relacionadas
+            <v-btn size="x-small" color="green-lighten-2" @click="dialogNuevaActividad = true" icon>
+              <v-icon class="mt-1">mdi-plus</v-icon>
+            </v-btn>
+          </v-card-title>
+          <v-card-text class="px-2 py-0">
+            <!-- v-data-table de ACTIVIDADES-->
+
+            <v-data-table
+              :headers="headers_actividades"
+              :items="actividadesfiltradas"
+              class="elevation-1 tabla-compacta my-2 mx-0 py-0 px-0"
+              density="compact"
+              item-value="id"
+              show-expand
+              v-model:expanded="expanded"
+              header-class="custom-header"
+            >
+              <template #[`item.tipo`]="{ item }">
+                <span>{{ item.expand?.tipo_actividades?.nombre }}</span>
+              </template>
+
+              <template #[`item.bpa_estado`]="{ item }">
+                <span
+                  :class="{
+                    'text-red font-extrabold': item.bpa_estado < 40,
+                    'text-orange font-extrabold': item.bpa_estado >= 40 && item.bpa_estado < 80,
+                    'text-green font-extrabold': item.bpa_estado >= 80
+                  }"
+                >
+                  {{ item.bpa_estado }}%
+                </span>
+              </template>
+
+              <template #[`item.actions`]="{ item }">
+                <v-icon class="me-2" @click="editActividad(item)"> mdi-pencil </v-icon>
+                <v-icon @click="deleteActividad(item)"> mdi-delete </v-icon>
+              </template>
+
+              <template v-slot:bottom> </template>
+              <!-- eliminar el footer de la tabla-->
+
+              <template #expanded-row="{ columns, item }">
+                <td :colspan="columns.length">
+                  <v-card flat class="pa-4">
+                    <v-row no-gutters>
+                      <v-col cols="7" class="pr-4">
+                        <p class="ml-2 mr-0 mb-2 p-0 text-xs">
+                          <v-icon>mdi-information-outline</v-icon
+                          ><label v-html="item.descripcion || 'No disponible'"></label>
+                        </p>
+                        <p>
+                          <v-chip
+                            v-for="(metrica, key) in item.metricas"
+                            :key="key"
+                            size="x-small"
+                            outlined
+                            class="m-1"
+                            pill
+                          >
+                            {{ key.replace(/_/g, ' ').toUpperCase() }}:{{ metrica.valor }}
                           </v-chip>
                         </p>
                       </v-col>
@@ -271,10 +371,12 @@
       scrollable
     >
       <v-card>
+        <v-toolbar color="success" dark>
+          <v-toolbar-title>Editar Siembra</v-toolbar-title>
+          <v-spacer></v-spacer>
+        </v-toolbar>
+
         <v-form ref="editSiembraForm">
-          <v-card-title class="headline"
-            ><h2 class="text-xl font-bold mt-2">Editar Siembra</h2></v-card-title
-          >
           <v-card-text>
             <div class="grid grid-cols-2 gap-4">
               <div>
@@ -381,7 +483,11 @@
 
     <v-dialog v-model="addBitacoraDialog" max-width="600px">
       <v-card>
-        <v-card-title class="headline">Agregar a Bitácora</v-card-title>
+        <v-toolbar color="success" dark>
+          <v-toolbar-title>Agregar a Bitácora</v-toolbar-title>
+          <v-spacer></v-spacer>
+        </v-toolbar>
+
         <v-card-text>
           <v-form ref="addBitacoraForm">
             <v-text-field v-model="newBitacora.fecha" label="Fecha" type="date"></v-text-field>
@@ -439,23 +545,19 @@
       />
     </v-dialog>
 
-    <!--   <v-dialog v-model="showAvatarDialog" max-width="500px">
-      <AvatarForm
-        v-model="showAvatarDialog"
-        collection="Siembras"
-        :entityId="siembraInfo.id"
-        :currentAvatarUrl="siembraAvatarUrl"
-        :hasCurrentAvatar="!!siembraInfo.avatar"
-        @avatar-updated="handleAvatarUpdated"
-      />
-    </v-dialog>-->
+    <!-- ... V-dialog de crear actividades ... -->
+    <ActividadForm
+      v-model="dialogNuevaActividad"
+      :siembra-preseleccionada="siembraId"
+      @actividad-creada="loadActividades"
+    />
   </v-container>
   <v-progress-circular v-else indeterminate color="primary"></v-progress-circular>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useBitacoraStore } from '@/stores/bitacoraStore'
 import { useProfileStore } from '@/stores/profileStore'
@@ -472,7 +574,11 @@ import AvatarForm from '@/components/forms/AvatarForm.vue'
 import { useAvatarStore } from '@/stores/avatarStore'
 import { useActividadesStore } from '@/stores/actividadesStore'
 
+import ActividadForm from '@/components/forms/ActividadForm.vue'
+
 const route = useRoute()
+const router = useRouter()
+
 const siembrasStore = useSiembrasStore()
 const bitacoraStore = useBitacoraStore()
 const profileStore = useProfileStore()
@@ -485,6 +591,8 @@ const actividadesStore = useActividadesStore()
 const siembraId = ref(route.params.id)
 const siembraInfo = ref({})
 const bitacora = ref([])
+
+const dialogNuevaActividad = ref(false)
 
 const { zonas, tiposZonas } = storeToRefs(zonasStore)
 
@@ -499,7 +607,8 @@ const siembraAvatarUrl = computed(() => {
   return avatarStore.getAvatarUrl({ ...siembraInfo.value, type: 'siembra' }, 'Siembras')
 })
 
-const actividades = ref([])
+const { actividades } = storeToRefs(actividadesStore)
+
 const usuarios = ref([])
 
 const isLoading = ref(true)
@@ -514,6 +623,13 @@ const totalArea = computed(() => {
 const headers = [
   { title: 'Nombre', align: 'start', key: 'nombre' },
   { title: 'Área', align: 'center', key: 'area' },
+  { title: 'BPA', align: 'center', key: 'bpa_estado' },
+  { title: 'Acciones', key: 'actions', sortable: false, align: 'end' }
+]
+
+const headers_actividades = [
+  { title: 'Nombre', align: 'start', key: 'nombre' },
+  { title: 'Tipo', align: 'center', key: 'tipo' },
   { title: 'BPA', align: 'center', key: 'bpa_estado' },
   { title: 'Acciones', key: 'actions', sortable: false, align: 'end' }
 ]
@@ -590,9 +706,17 @@ const avatarFileZona = ref(null)
 const tipoZonaActual = ref(null)
 
 const zonasfiltradas = computed(() => {
-  console.log('Todas las zonas:', zonas.value) // Debug
-  console.log('SiembraId actual:', siembraId.value) // Debug
   return zonas.value?.filter((zona) => zona.siembra === siembraId.value) || []
+})
+
+const actividadesfiltradas = computed(() => {
+  if (!actividades.value || !siembraId.value) return []
+
+  return actividades.value.filter((actividad) => {
+    // Asegurarse de que actividad.siembra es un array
+    const siembras = Array.isArray(actividad.siembra) ? actividad.siembra : []
+    return siembras.includes(siembraId.value)
+  })
 })
 
 const cerrarDialogoZona = () => {
@@ -623,21 +747,6 @@ async function loadHacienda() {
     await haciendaStore.fetchHacienda(siembraInfo.value.hacienda)
   } catch (error) {
     handleError(error, 'Error al cargar la información de la hacienda')
-  }
-}
-
-async function loadActividades() {
-  try {
-    // Load all activities from the store
-    await actividadesStore.cargarActividades()
-
-    // Filter activities based on the current siembra's ID
-    const currentSiembraId = siembrasStore.currentSiembraId // Assuming you have a way to get the current siembra ID
-    actividades.value = actividadesStore.actividades.filter(
-      (actividad) => actividad.siembra === currentSiembraId
-    )
-  } catch (error) {
-    handleError(error, 'Error al cargar las actividades')
   }
 }
 
@@ -771,6 +880,11 @@ async function deleteBitacoraItem(item) {
   }
 }
 
+const editActividad = (item) => {
+  // Redirigir a la página de actividades con el ID de la actividad
+  router.push(`/Actividades/${item.id}`)
+}
+
 function editZona(zona) {
   modoEdicionZona.value = true
   const tipoZona = tiposZonas.value.find((tipo) => tipo.id === zona.tipo)
@@ -806,14 +920,34 @@ function editZona(zona) {
   addZonaDialog.value = true
 }
 
+async function loadActividades() {
+  try {
+    await actividadesStore.cargarActividades()
+  } catch (error) {
+    handleError(error, 'Error al cargar las actividades')
+  }
+}
+
 async function deleteZona(zona) {
-  if (confirm('¿Está seguro de que desea eliminar esta zona?')) {
+  if (confirm('¿Está seguro de que desea eliminar esta Zona de trabajo?')) {
     try {
       await zonasStore.eliminarZona(zona.id)
       //       zonas.value = zonas.value.filter((z) => z.id !== zona.id)
       snackbarStore.showSnackbar('Zona eliminada con éxito', 'success')
     } catch (error) {
       handleError(error, 'Error al eliminar zona')
+    }
+  }
+}
+
+async function deleteActividad(actividad) {
+  if (confirm('¿Está seguro de que desea eliminar esta Actividad?')) {
+    try {
+      await actividadesStore.deleteActividad(actividad.id)
+      //       zonas.value = zonas.value.filter((z) => z.id !== zona.id)
+      snackbarStore.showSnackbar('Actividad eliminada con éxito', 'success')
+    } catch (error) {
+      handleError(error, 'Error al eliminar Actividad')
     }
   }
 }
@@ -837,7 +971,7 @@ onMounted(async () => {
     await Promise.all([
       zonasStore.cargarZonas(),
       zonasStore.cargarTiposZonas(),
-      loadBitacora(),
+      //   loadBitacora(),
       loadActividades(),
       loadUsuarios(),
       loadHacienda()
@@ -866,15 +1000,6 @@ const handleAvatarUpdated = (updatedRecord) => {
 }
 
 const showAvatarDialog = ref(false)
-
-const filteredActividades = computed(() => {
-  console.log('listado actividades en el filtro de actividades:', actividadesStore.actividades)
-
-  console.log('siembra id en el filtro de actividades:', siembraId.value)
-  return actividadesStore.actividades.filter(
-    (actividad) => actividad.siembra && actividad.siembra.includes(siembraId.value) // Check if current siembra ID is in the array
-  )
-})
 </script>
 
 <style scoped></style>

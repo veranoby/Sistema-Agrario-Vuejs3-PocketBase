@@ -57,7 +57,8 @@ const navigationLinks = [
   { id: 1, to: '/dashboard', icon: 'mdi-view-dashboard', label: 'Dashboard' },
   { id: 2, to: '/siembras', icon: 'mdi-sprout', label: 'Siembras' },
   { id: 3, to: '/zonas', icon: 'mdi-map', label: 'Zonas' },
-  { id: 4, to: '/actividades', icon: 'mdi-gesture-tap-button', label: 'Actividades' }
+  { id: 4, to: '/actividades', icon: 'mdi-gesture-tap-button', label: 'Actividades' },
+  { id: 5, to: '/recordatorios', icon: 'mdi-alarm', label: 'Recordatorios' }
 ]
 
 const handleLoginSuccess = () => {

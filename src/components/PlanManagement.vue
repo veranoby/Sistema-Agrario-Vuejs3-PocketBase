@@ -23,9 +23,11 @@
     scrollable
   >
     <v-card elevation="3">
-      <v-card-title
-        ><h1 class="text-2xl font-bold text-center mt-2">Seleccione su Plan</h1></v-card-title
-      >
+      <v-toolbar color="success" dark>
+        <v-toolbar-title>Seleccione su Plan</v-toolbar-title>
+        <v-spacer></v-spacer>
+      </v-toolbar>
+
       <v-card-text>
         <v-radio-group class="" v-model="selectedPlan">
           <div class="grid grid-cols-3 gap-2">

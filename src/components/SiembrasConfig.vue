@@ -119,8 +119,12 @@
 
     <v-dialog v-model="dialogNuevaSiembra" persistent max-width="500px">
       <v-card>
+        <v-toolbar color="success" dark>
+          <v-toolbar-title>Nueva Siembra</v-toolbar-title>
+          <v-spacer></v-spacer>
+        </v-toolbar>
+
         <v-form @submit.prevent="crearSiembra">
-          <v-card-title> <h2 class="text-xl font-bold mt-2">Nueva Siembra</h2> </v-card-title>
           <v-card-text>
             <v-text-field
               density="compact"

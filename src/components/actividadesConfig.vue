@@ -33,7 +33,7 @@
                 rounded="lg"
                 color="green-lighten-2"
                 prepend-icon="mdi-plus"
-                @click="nuevaActividad"
+                @click="dialogNuevaActividad = true"
                 class="min-w-[210px]"
               >
                 Nueva Actividad
@@ -69,8 +69,8 @@
           </v-col>
 
           <v-col
-            v-for="Actividad in actividades"
-            :key="Actividad.id"
+            v-for="actividad in actividades"
+            :key="actividad.id"
             cols="12"
             sm="6"
             md="4"
@@ -80,33 +80,36 @@
               <v-card
                 v-bind="props"
                 :class="['Actividad-card', { 'card-hover': isHovering }]"
-                @click="abrirActividad(Actividad.id)"
+                @click="abrirActividad(actividad.id)"
               >
                 <v-img
-                  :src="getActividadAvatarUrl(Actividad)"
+                  :src="getActividadAvatarUrl(actividad)"
                   height="200px"
                   cover
                   class="Actividad-image rounded-xl"
                 >
                   <div class="fill-height card-overlay rounded-lg">
                     <v-card-title class="px-1">
-                      <p class="text-white text-sm">{{ Actividad.nombre }}</p>
+                      <p class="text-white text-sm">{{ actividad.nombre }}</p>
                       <p class="text-white text-xs font-weight-bold mb-2 mt-0">
-                        {{ getActividadTipo(Actividad.tipo) }}
+                        {{
+                          actividad.expand?.tipo_actividades?.nombre.toUpperCase() ||
+                          'Tipo no definido'
+                        }}
                       </p>
                       <p class="text-caption flex flex-wrap">
                         <v-chip
-                          :color="getStatusColor(Actividad.activa)"
+                          :color="getStatusColor(actividad.activa)"
                           size="x-small"
                           variant="flat"
                         >
-                          {{ getActividadEstado(Actividad.activa) }}
+                          {{ getActividadEstado(actividad.activa) }}
                         </v-chip>
                       </p>
                       <p class="text-caption flex flex-wrap">
                         <span
                           class="mx-0 mt-1 mb-0 p-0"
-                          v-for="siembraTemp in Actividad.siembra"
+                          v-for="siembraTemp in actividad.siembra"
                           :key="siembraTemp"
                         >
                           <v-chip outlined size="x-small" variant="flat">
@@ -124,111 +127,7 @@
       </v-container>
     </main>
 
-    <v-dialog
-      v-model="dialogNuevaActividad"
-      persistent
-      transition="dialog-bottom-transition"
-      scrollable
-      max-width="900px"
-    >
-      <v-card>
-        <v-form @submit.prevent="crearActividad">
-          <v-card-title>
-            <h2 class="text-xl font-bold mt-2">Nueva Actividad</h2>
-          </v-card-title>
-          <v-card-text>
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <v-select
-                  density="compact"
-                  prepend-icon="mdi-diameter"
-                  v-model="nuevaActividadData.tipo"
-                  :items="tiposActividades"
-                  item-title="nombre"
-                  item-value="id"
-                  label="Tipo de Actividad"
-                  required
-                ></v-select>
-              </div>
-
-              <div>
-                <v-text-field
-                  density="compact"
-                  v-model="nuevaActividadData.nombre"
-                  label="Nombre de la Actividad"
-                  prepend-icon="mdi-diameter"
-                  required
-                ></v-text-field>
-              </div>
-            </div>
-
-            <div class="mt-2">
-              <div class="mb-2">
-                <v-icon class="mr-2">mdi-sprout</v-icon>
-                Seleccionar Siembras (opcional)
-              </div>
-              <v-chip-group
-                density="compact"
-                column
-                multiple
-                v-model="nuevaActividadData.siembra"
-                label="Selecciona Siembras"
-              >
-                <v-chip
-                  v-for="siembra in siembras"
-                  filter
-                  color="green"
-                  variant="flat"
-                  size="small"
-                  :key="siembra.id"
-                  :text="`${siembra.nombre} ${siembra.tipo}`"
-                  :value="siembra.id"
-                  @click="cargarZonasPorSiembra"
-                  class="ma-1"
-                  :class="{ 'chip-selected': nuevaActividadData.siembra.includes(siembra.id) }"
-                >
-                </v-chip>
-              </v-chip-group>
-            </div>
-
-            <div class="mt-2">
-              <div class="mb-2">
-                <v-icon class="mr-2">mdi-information</v-icon>
-                Descripción
-              </div>
-              <ckeditor
-                v-model="nuevaActividadData.descripcion"
-                :editor="editor"
-                :config="editorConfig"
-              />
-            </div>
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn
-              size="small"
-              variant="flat"
-              rounded="lg"
-              prepend-icon="mdi-cancel"
-              color="red-lighten-3"
-              @click="dialogNuevaActividad = false"
-            >
-              Cancelar
-            </v-btn>
-            <v-btn
-              type="submit"
-              size="small"
-              variant="flat"
-              rounded="lg"
-              prepend-icon="mdi-check"
-              color="green-lighten-3"
-            >
-              Crear Actividad
-            </v-btn>
-          </v-card-actions>
-        </v-form>
-      </v-card>
-    </v-dialog>
+    <ActividadForm v-model="dialogNuevaActividad" @actividad-creada="onActividadCreada" />
   </v-container>
 </template>
 
@@ -246,6 +145,7 @@ import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useSyncStore } from '@/stores/syncStore'
 import { useAvatarStore } from '@/stores/avatarStore'
 import { useZonasStore } from '@/stores/zonasStore'
+import ActividadForm from '@/components/forms/ActividadForm.vue'
 
 const router = useRouter()
 const profileStore = useProfileStore()
@@ -274,7 +174,7 @@ const getActividadAvatarUrl = (actividad) => {
 const dialogNuevaActividad = ref(false)
 const nuevaActividadData = ref({
   nombre: '',
-  tipo: null,
+  tipo_actividades: null,
   bpa_estado: 0,
   datos_bpa: [],
   metricas: {},
@@ -294,8 +194,8 @@ onMounted(async () => {
   siembras.value = siembrasStore.siembras
 })
 
-const nuevaActividad = () => {
-  dialogNuevaActividad.value = true
+const onActividadCreada = async () => {
+  await ActividadesStore.cargarActividades()
 }
 
 const getStatusColor = (status) => {
@@ -325,11 +225,11 @@ function getDefaultMetricaValue(tipo) {
 }
 
 const crearActividad = async () => {
-  if (nuevaActividadData.value.nombre && nuevaActividadData.value.tipo) {
+  if (nuevaActividadData.value.nombre && nuevaActividadData.value.tipo_actividades) {
     // Inicializar métricas correctamente
     const metricasInicializadas = {}
     const tipoActividadSeleccionado = ActividadesStore.tiposActividades.find(
-      (t) => t.id === nuevaActividadData.value.tipo
+      (t) => t.id === nuevaActividadData.value.tipo_actividades
     )
 
     if (tipoActividadSeleccionado?.metricas?.metricas) {
@@ -371,7 +271,7 @@ const crearActividad = async () => {
       dialogNuevaActividad.value = false
       nuevaActividadData.value = {
         nombre: '',
-        tipo: null,
+        tipo_actividades: null,
         bpa_estado: 0,
         datos_bpa: [],
         metricas: {},
@@ -398,12 +298,6 @@ const cargarZonasPorSiembra = async () => {
   } else {
     zonasDisponibles.value = await ZonasStore.cargarZonasPrecargadas()
   }
-}
-
-// Function to get the activity type based on the activity ID
-const getActividadTipo = (tipoId) => {
-  const tipoActividad = ActividadesStore.tiposActividades.find((tipo) => tipo.id === tipoId)
-  return tipoActividad ? tipoActividad.nombre : 'Desconocido' // Return 'Desconocido' if not found
 }
 
 // Function to get the activity type based on the activity ID

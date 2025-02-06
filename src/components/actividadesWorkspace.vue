@@ -48,7 +48,7 @@
                 </v-chip>
 
                 <v-chip variant="flat" size="x-small" color="grey-lighten-2" class="mx-1" pill>
-                  {{ getActividadTipo(actividadInfo.tipo) }}
+                  TIPO:{{ getActividadTipo(actividadInfo.tipo_actividades) }}
                 </v-chip>
               </h3>
             </div>
@@ -103,7 +103,7 @@
                 class="m-1 p-1"
                 pill
               >
-                {{ key.toUpperCase() }}:{{ metrica.valor }}
+                {{ key.replace(/_/g, ' ').toUpperCase() }}:{{ metrica.valor }}
               </v-chip>
             </span>
 
@@ -142,7 +142,7 @@
       <v-col cols="4" md="4" class="p-0 pr-4">
         <div class="siembra-info mt-4 p-2">
           <v-card-title class="headline d-flex justify-between">
-            <h2 class="text-xl font-bold mt-2">Siembras y Zonas Asociadas</h2>
+            <h2 class="text-l font-bold mt-2">Siembras Asociadas</h2>
             <v-btn size="x-small" color="green-lighten-2" @click="openAddSiembrasZonas" icon>
               <v-icon>mdi-pencil</v-icon>
             </v-btn>
@@ -154,9 +154,29 @@
                 size="x-small"
                 :key="siembraId"
                 class="m-1 p-1"
-                :text="getSiembraName(siembraId)"
+                :text="siembrasStore.getSiembraById(siembraId)?.nombre.toUpperCase()"
                 pill
                 color="green-lighten-3"
+                variant="flat"
+              >
+              </v-chip>
+            </div>
+            <h2 class="text-l font-bold mt-2 mb-2">Otras Zonas Asociadas</h2>
+
+            <div class="flex flex-wrap">
+              <v-chip
+                v-for="zonasId in actividadInfo.zonas"
+                size="x-small"
+                :key="zonasId"
+                class="m-1 p-1"
+                :text="
+                  zonasStore.getZonaById(zonasId)?.nombre.toUpperCase() +
+                  '(' +
+                  getTipoZonasById(zonasStore.getZonaById(zonasId)?.tipo) +
+                  ')'
+                "
+                pill
+                color="blue-lighten-3"
                 variant="flat"
               >
               </v-chip>
@@ -170,7 +190,11 @@
     <v-dialog v-model="editActividadDialog" persistent max-width="900px">
       <v-form ref="editActividadForm">
         <v-card>
-          <v-card-title class="headline">Editar Actividad</v-card-title>
+          <v-toolbar color="success" dark>
+            <v-toolbar-title>Editar Actividad</v-toolbar-title>
+            <v-spacer></v-spacer>
+          </v-toolbar>
+
           <v-card-text>
             <div class="grid grid-cols-3">
               <div class="grid col-span-2 grid-cols-3">
@@ -212,7 +236,7 @@
                         <v-select
                           v-if="metrica.tipo === 'select'"
                           v-model="metrica.valor"
-                          :label="key"
+                          :label="key.replace(/_/g, ' ')"
                           :items="metrica.opciones"
                           variant="outlined"
                           density="compact"
@@ -226,7 +250,7 @@
                         <v-text-field
                           v-else-if="metrica.tipo === 'text'"
                           v-model.number="metrica.valor"
-                          :label="key"
+                          :label="key.replace(/_/g, ' ')"
                           density="compact"
                           variant="outlined"
                           class="compact-form"
@@ -239,7 +263,7 @@
                         <v-text-field
                           v-else-if="metrica.tipo === 'number'"
                           v-model.number="metrica.valor"
-                          :label="key"
+                          :label="key.replace(/_/g, ' ')"
                           type="number"
                           density="compact"
                           variant="outlined"
@@ -253,7 +277,7 @@
                         <v-checkbox
                           v-else-if="metrica.tipo === 'boolean'"
                           v-model.number="metrica.valor"
-                          :label="key"
+                          :label="key.replace(/_/g, ' ')"
                           density="compact"
                           class="compact-form"
                         >
@@ -265,7 +289,7 @@
                         <v-checkbox
                           v-else-if="metrica.tipo === 'checkbox'"
                           v-model.number="metrica.valor"
-                          :label="key"
+                          :label="key.replace(/_/g, ' ')"
                           density="compact"
                           class="compact-form"
                         >
@@ -309,7 +333,10 @@
             <!-- Diálogo para agregar métrica personalizada -->
             <v-dialog v-model="addMetricaDialog" persistent max-width="300px">
               <v-card>
-                <v-card-title class="headline">Agregar Métrica </v-card-title>
+                <v-toolbar color="success" dark>
+                  <v-toolbar-title>Agregar Métrica</v-toolbar-title>
+                  <v-spacer></v-spacer>
+                </v-toolbar>
                 <v-card-text class="m-1 p-0 pl-2">
                   <v-text-field
                     density="compact"
@@ -442,11 +469,13 @@
     <v-dialog v-model="dialogSiembrasZonas" persistent max-width="900px">
       <div class="grid grid-cols-2 gap-2 p-0 m-2 bg-white">
         <v-card>
-          <v-card-title>
-            <h2 class="text-xl font-bold mt-2">Siembras disponibles</h2>
-          </v-card-title>
+          <v-toolbar color="success" dark>
+            <v-toolbar-title>Siembras disponibles</v-toolbar-title>
+            <v-spacer></v-spacer>
+          </v-toolbar>
+
           <v-card-text class="siembra-info ml-4 mr-4">
-            <v-chip-group column color="blue-darken-4" multiple v-model="selectedSiembras">
+            <v-chip-group column color="green-darken-4" multiple v-model="selectedSiembras">
               <v-chip
                 v-for="siembra in siembras"
                 :key="siembra.id"
@@ -456,50 +485,27 @@
                 density="compact"
               ></v-chip>
             </v-chip-group>
-
-            <!--
-            <v-checkbox
-              color="indigo"
-              class="compact-form"
-              density="compact"
-              v-for="siembra in siembras"
-              :key="siembra.id"
-              v-model="selectedSiembras"
-              :value="siembra.id"
-              :label="`${siembra.nombre} - ${siembra.tipo}`"
-            ></v-checkbox>
-            -->
           </v-card-text>
         </v-card>
         <v-card>
-          <v-card-title>
-            <h2 class="text-xl font-bold mt-2">Zonas disponibles</h2>
-          </v-card-title>
+          <v-toolbar color="primary" dark>
+            <v-toolbar-title>Zonas disponibles</v-toolbar-title>
+            <v-spacer></v-spacer>
+          </v-toolbar>
+
           <v-card-text class="siembra-info ml-4 mr-4">
-            <v-chip-group color="green-darken-4" column multiple v-model="selectedZonas">
+            <v-chip-group color="blue-darken-4" column multiple v-model="selectedZonas">
               <v-chip
                 v-for="zona in filteredZonas"
                 :key="zona.id"
                 :text="`${zona.nombre}(${getTipoZonasById(zona.tipo)})`"
                 :value="zona.id"
                 filter
+                size="small"
                 density="compact"
                 pill
               ></v-chip>
             </v-chip-group>
-
-            <!--
-            <v-checkbox
-              color="success"
-              class="text-sm"
-              density="compact"
-              v-for="zona in filteredZonas"
-              :key="zona.id"
-              v-model="selectedZonas"
-              :value="zona.id"
-              :label="zona.nombre"
-            ></v-checkbox>
-             -->
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
@@ -529,7 +535,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, defineAsyncComponent } from 'vue'
 
 import { useRoute } from 'vue-router'
 import { useActividadesStore } from '@/stores/actividadesStore'
@@ -539,7 +545,10 @@ import { useAvatarStore } from '@/stores/avatarStore'
 import { storeToRefs } from 'pinia'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import AvatarForm from '@/components/forms/AvatarForm.vue'
+
 import { editor, editorConfig } from '@/utils/ckeditorConfig'
+import CKEditor from '@ckeditor/ckeditor5-vue'
+
 import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useZonasStore } from '@/stores/zonasStore'
 
@@ -596,15 +605,15 @@ const actividadAvatarUrl = computed(() => {
 })
 
 const tipoActividadActual = computed(() => {
-  return tiposActividades.value.find((tipo) => tipo.id === actividadInfo.value.tipo)
+  return tiposActividades.value.find((tipo) => tipo.id === actividadInfo.value.tipo_actividades)
 })
+
+const tipoActividadNombre = computed(() => actividadInfo.value.expand.tipo_actividades.nombre)
 
 const getBpaPreguntas = computed(() => {
   const tipoActividadFiltrar = actividadesStore.tiposActividades.find(
-    (t) => t.id === editedActividad.value.tipo
+    (t) => t.id === editedActividad.value.tipo_actividades
   )
-
-  console.log('getBpaPreguntas-mostrar tipoActividadFiltrar:', tipoActividadFiltrar)
   return tipoActividadFiltrar?.datos_bpa?.preguntas_bpa || []
 })
 
@@ -648,8 +657,6 @@ onMounted(async () => {
 
     await zonasStore.cargarZonas()
     await zonasStore.cargarTiposZonas() // Asegúrate de cargar los tipos de zonas
-    console.log('Zonas cargadas:', zonasStore.zonas)
-    console.log('Tipos de zonas cargados:', tiposZonas.value) // Verifica que se carguen correctamente
   } catch (error) {
     handleError(error, 'Error al cargar la información de la actividad')
   } finally {
@@ -701,10 +708,10 @@ async function saveActividad() {
 
     editedActividad.value.nombre = editedActividad.value.nombre.toUpperCase()
 
-    // Calcular bpa_estado antes de guardar
+    /* Calcular bpa_estado antes de guardar
     editedActividad.value.bpa_estado = actividadesStore.calcularBpaEstado(
       editedActividad.value.datos_bpa
-    )
+    )*/
 
     // Crear un nuevo objeto con solo los campos necesarios
     const actividadToUpdate = {
@@ -756,12 +763,13 @@ const getSiembraName = (id) => {
   return siembra ? siembra.nombre.toUpperCase() + '-' + siembra.tipo : 'Siembra no encontrada'
 }
 
-/*const getZonasBySiembraId = (siembraId) => {
-  // Filtrar las zonas que pertenecen a la siembra y a la actividad actual
-  return zonasStore.zonas.filter(
-    (zona) => zona.siembra === siembraId && actividadInfo.value.zonas.includes(zona.id)
-  )
-}*/
+const getZonaName = (id) => {
+  const zona = zonasStore.zonas.find((zona) => zona.id === id)
+
+  return zona
+    ? zona.nombre.toUpperCase() + '(' + getTipoZonasById(zona.tipo) + ')'
+    : 'Zona no encontrada'
+}
 
 const getTipoZonasById = (tiposZonasId) => {
   const tipoZona = tiposZonas.value.find((tipo) => tipo.id === tiposZonasId)
@@ -782,9 +790,21 @@ const openAddSiembrasZonas = () => {
   selectedZonas.value = actividadInfo.value.zonas || [] // Asignar zonas existentes
 }
 
-const saveSelection = () => {
+const saveSelection = async () => {
   actividadInfo.value.siembra = selectedSiembras.value // Guardar las siembras seleccionadas en la actividad
+  actividadInfo.value.zonas = selectedZonas.value // Guardar las siembras seleccionadas en la actividad
   dialogSiembrasZonas.value = false // Cerrar el diálogo
+
+  // Llama a updateActividad para guardar los cambios
+  try {
+    await actividadesStore.updateActividad(actividadId.value, {
+      siembra: actividadInfo.value.siembra,
+      zonas: actividadInfo.value.zonas
+    })
+    console.log('Actividad actualizada correctamente')
+  } catch (error) {
+    console.error('Error al actualizar la actividad:', error)
+  }
 }
 </script>
 

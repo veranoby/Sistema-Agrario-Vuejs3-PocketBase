@@ -1,101 +1,152 @@
 import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
 
+import { useZonasStore } from '@/stores/zonasStore'
+import { useActividadesStore } from '@/stores/actividadesStore'
+import { useSiembrasStore } from '@/stores/siembrasStore'
+import { useHaciendaStore } from '@/stores/haciendaStore'
+import { useSnackbarStore } from '@/stores/snackbarStore'
+import { useRecordatoriosStore } from '@/stores/recordatoriosStore'
+
 export class SyncQueue {
   constructor() {
     this.queue = []
     this.maxRetries = 3
     this.version = 1
     this.isProcessing = false
+    this.batchSize = 10
+    this.maxStorageSize = 5 * 1024 * 1024
   }
 
   async add(operation) {
-    this.queue.push({
-      ...operation,
+    const enrichedOperation = {
+      ...this.enrichOperation(operation),
       retryCount: 0,
       status: 'pending',
-      timestamp: Date.now()
-    })
-    await this.saveQueue()
+      timestamp: Date.now(),
+      priority: this.calculatePriority(operation.type)
+    }
+
+    this.queue.push(enrichedOperation)
+    return enrichedOperation.tempId
+  }
+
+  enrichOperation(operation) {
+    const haciendaStore = useHaciendaStore()
+    const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+
+    return {
+      ...operation,
+      data: {
+        ...operation.data,
+        hacienda: haciendaStore.mi_hacienda?.id,
+        version: this.version
+      },
+      tempId
+    }
+  }
+
+  calculatePriority(operation) {
+    // Priorizar operaciones críticas
+    const priorities = {
+      create: 2,
+      update: 1,
+      delete: 3,
+      createAvatar: 1,
+      updateAvatar: 1,
+      deleteAvatar: 1
+    }
+    return priorities[operation] || 0
   }
 
   async process() {
     if (this.isProcessing) return
     this.isProcessing = true
+    console.log('Iniciando proceso de queue...', this.queue)
 
     try {
-      while (this.queue.length > 0) {
-        const operation = this.queue[0]
-
-        if (operation.retryCount >= this.maxRetries) {
-          this.queue.shift()
-          continue
-        }
-
+      for (const operation of this.queue) {
         try {
-          await this.executeOperation(operation)
-          this.queue.shift()
+          console.log('Procesando operación:', operation)
+          const result = await this.processOperation(operation)
+
+          // Remover operación exitosa de la cola
+          this.queue = this.queue.filter((op) => op.tempId !== operation.tempId)
+
+          // Notificar al store correspondiente
+          //      await this.notifyStoreUpdate(operation, result)
+
+          console.log('Operación procesada exitosamente:', result)
         } catch (error) {
-          operation.retryCount++
-          operation.status = 'failed'
-          operation.lastError = error.message
-
-          handleError(error, 'Error al ejecutar la operación')
-
-          await new Promise((resolve) =>
-            setTimeout(resolve, 1000 * Math.pow(2, operation.retryCount))
-          )
+          console.error('Error procesando operación:', error)
+          operation.retryCount = (operation.retryCount || 0) + 1
+          if (operation.retryCount >= this.maxRetries) {
+            console.error('Máximo de reintentos alcanzado para operación:', operation)
+            this.queue = this.queue.filter((op) => op.tempId !== operation.tempId)
+          }
         }
       }
     } finally {
       this.isProcessing = false
-      await this.saveQueue()
+      console.log('Proceso de queue finalizado')
     }
   }
 
-  async syncPendingChanges() {
-    const pendingChanges = JSON.parse(localStorage.getItem('pendingChanges')) || []
-    for (const change of pendingChanges) {
-      try {
-        await this.executeOperation(change)
-      } catch (error) {
-        handleError(error, 'Error sincronizando cambios pendientes')
+  async processOperation(operation) {
+    const { type, collection, id, data, tempId } = operation
+    const store = this.getStoreForCollection(collection)
+
+    localStorage.removeItem(collection)
+    useSnackbarStore().showSnackbar('Procesando queue...' + collection)
+
+    try {
+      let result
+      switch (type) {
+        case 'create':
+          result = await pb.collection(collection).create(data)
+          // Actualizar referencias temporales
+          break
+        case 'update':
+          result = await pb.collection(collection).update(id, data)
+          break
+        case 'delete':
+          await pb.collection(collection).delete(id)
+          result = { id, deleted: true }
+          break
       }
+
+      // Notificar al store sobre el cambio
+      //  await store.init()
+      return result
+    } catch (error) {
+      console.error('Error executing operation:', error)
+      throw error
     }
-    localStorage.removeItem('pendingChanges')
   }
 
-  async executeOperation(operation) {
-    const { type, collection, id, data } = operation
-
-    // Verificar versión antes de ejecutar
-    if (data?.version && data.version !== this.version) {
-      await this.handleVersionConflict(operation)
-      throw new Error('Version mismatch')
+  /*
+ async updateTempReferences(collection, tempId, realId) {
+    const store = this.getStoreForCollection(collection)
+    if (store) {
+      // Eliminar el registro temporal y agregar el real
+      await store.removeLocalData(tempId)
     }
-
-    switch (type) {
-      case 'create':
-        return await pb.collection(collection).create(data)
-      case 'update':
-        return await pb.collection(collection).update(id, data)
-      case 'delete':
-        return await pb.collection(collection).delete(id)
-      case 'createAvatar':
-        return await pb.collection(collection).update(id, {
-          avatar: data.file
-        })
-      case 'updateAvatar':
-        return await pb.collection(collection).update(id, {
-          avatar: data.file
-        })
-      case 'deleteAvatar':
-        return await pb.collection(collection).update(id, {
-          avatar: null
-        })
-      default:
-        throw new Error(`Tipo de operación no soportada: ${type}`)
+  }
+  async notifyStoreUpdate(operation) {
+    const store = this.getStoreForCollection(operation.collection)
+    if (store) {
+        await store.init()
     }
+  }*/
+
+  getStoreForCollection(collection) {
+    const stores = {
+      zonas: useZonasStore(),
+      siembras: useSiembrasStore(),
+      actividades: useActividadesStore(),
+      recordatorios: useRecordatoriosStore()
+    }
+    return stores[collection]
   }
 
   async handleVersionConflict(operation) {
@@ -110,36 +161,5 @@ export class SyncQueue {
       serverData
     })
     localStorage.setItem('syncConflicts', JSON.stringify(conflicts))
-  }
-
-  async updateLocalData(collection, data) {
-    const localData = JSON.parse(localStorage.getItem(collection) || '[]')
-    const index = localData.findIndex((item) => item.id === data.id)
-
-    if (index !== -1) {
-      localData[index] = { ...localData[index], ...data }
-    } else {
-      localData.push(data)
-    }
-
-    localStorage.setItem(collection, JSON.stringify(localData))
-  }
-
-  async cleanOldData() {
-    // Eliminar operaciones completadas y antiguas
-    this.queue = this.queue.filter((item) => {
-      const isRecent = Date.now() - item.timestamp < 7 * 24 * 60 * 60 * 1000
-      return item.status !== 'completed' && isRecent
-    })
-
-    while (JSON.stringify(this.queue).length > this.maxStorageSize) {
-      this.queue.shift()
-    }
-
-    await this.saveQueue()
-  }
-
-  async saveQueue() {
-    localStorage.setItem('syncQueue', JSON.stringify(this.queue))
   }
 }

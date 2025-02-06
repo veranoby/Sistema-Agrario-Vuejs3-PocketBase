@@ -50,14 +50,14 @@
   >
     <v-card>
       <v-form @submit.prevent="saveProfileChanges">
-        <v-card-title>
-          <h2 class="text-xl font-bold mt-2">
-            Editar Perfil
-            <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1">
-              {{ userRole }}
-            </v-chip>
-          </h2>
-        </v-card-title>
+        <v-toolbar color="success" dark>
+          <v-toolbar-title>Editar Perfil</v-toolbar-title>
+          <v-spacer></v-spacer>
+          <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1">
+            {{ userRole }}
+          </v-chip>
+        </v-toolbar>
+
         <v-card-text>
           <div class="grid grid-cols-2 gap-4">
             <div>

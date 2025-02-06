@@ -1,69 +1,11 @@
-import {
-  ClassicEditor,
-  Autoformat,
-  Bold,
-  BlockQuote,
-  Italic,
-  Underline,
-  Essentials,
-  Heading,
-  Image,
-  ImageCaption,
-  ImageStyle,
-  ImageToolbar,
-  ImageUpload,
-  PictureEditing,
-  Indent,
-  Link,
-  List,
-  MediaEmbed,
-  Paragraph,
-  PasteFromOffice,
-  Table,
-  TableColumnResize,
-  TableToolbar,
-  TextTransformation,
-  Font,
-  FontColor,
-  FontFamily,
-  FontSize
-} from 'ckeditor5'
+import ClassicEditor from '@ckeditor/ckeditor5-build-classic'
 
-import 'ckeditor5/ckeditor5.css'
-import 'ckeditor5-premium-features/ckeditor5-premium-features.css'
+// No necesitas importar 'ckeditor5/ckeditor5.css'
+// Los estilos ya vienen incluidos en el build
 
 export const editor = ClassicEditor
 
 export const editorConfig = {
-  plugins: [
-    Autoformat,
-    BlockQuote,
-    Bold,
-    Essentials,
-    Heading,
-    Image,
-    ImageCaption,
-    ImageStyle,
-    ImageToolbar,
-    ImageUpload,
-    Indent,
-    Italic,
-    Link,
-    List,
-    MediaEmbed,
-    Paragraph,
-    PasteFromOffice,
-    PictureEditing,
-    Table,
-    TableColumnResize,
-    TableToolbar,
-    TextTransformation,
-    Underline,
-    Font,
-    FontColor,
-    FontFamily,
-    FontSize
-  ],
   toolbar: [
     'undo',
     'redo',
@@ -73,19 +15,15 @@ export const editorConfig = {
     'fontSize',
     'fontColor',
     '|',
-    {
-      label: 'Estilo',
-      icon: 'bold',
-      items: ['bold', 'italic', 'underline']
-    },
+    'bold',
+    'italic',
+    'underline',
     '|',
     'link',
     'insertTable',
-    /*'table',
-    'blockQuote',*/
     'tableColumn',
     'tableRow',
-    'mergeTableCells', // Añadido para solucionar el problema de la tabla
+    'mergeTableCells',
     '|',
     'uploadImage',
     'imageStyle:inline',

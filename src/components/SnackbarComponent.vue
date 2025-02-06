@@ -1,6 +1,6 @@
 <template>
   <v-snackbar
-    v-model="isVisible"
+    :model-value="isVisible"
     :color="color"
     :timeout="2000"
     multi-line
@@ -24,7 +24,10 @@ export default {
   setup() {
     const snackbarStore = useSnackbarStore()
 
-    const isVisible = computed(() => snackbarStore.show)
+    const isVisible = computed({
+      get: () => snackbarStore.show,
+      set: (val) => (val ? snackbarStore.showSnackbar() : snackbarStore.hideSnackbar())
+    })
     const message = computed(() => snackbarStore.message)
     const color = computed(() => snackbarStore.color)
 

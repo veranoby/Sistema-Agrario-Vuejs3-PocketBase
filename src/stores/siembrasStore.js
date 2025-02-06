@@ -9,12 +9,16 @@ import { useHaciendaStore } from './haciendaStore'
 export const useSiembrasStore = defineStore('siembras', {
   state: () => ({
     siembras: [],
-    zonas: [],
-    actividades: [],
     loading: false,
     error: null,
     version: 1
   }),
+
+  persist: {
+    key: 'siembras',
+    storage: sessionStorage,
+    paths: ['siembras']
+  },
 
   getters: {
     getSiembraById: (state) => (id) => {
@@ -160,35 +164,6 @@ export const useSiembrasStore = defineStore('siembras', {
         throw error
       }
     },
-
-    /*  async fetchSiembraById(id) {
-      const syncStore = useSyncStore()
-
-      this.loading = true
-      try {
-        const record = await pb.collection('siembras').getOne(id, {
-          expand: 'zona,hacienda'
-        })
-
-        const avatarStore = useAvatarStore()
-        record.avatarUrl = avatarStore.getAvatarUrl({ ...record, type: 'siembra' }, 'Siembras')
-
-        const index = this.siembras.findIndex((s) => s.id === id)
-        if (index !== -1) {
-          this.siembras[index] = record
-        } else {
-          this.siembras.push(record)
-        }
-
-        syncStore.saveToLocalStorage('siembras', this.siembras)
-        return record
-      } catch (error) {
-        handleError(error, 'Error al obtener la siembra')
-        throw error
-      } finally {
-        this.loading = false
-      }
-    } */
 
     async fetchSiembraById(id) {
       console.log('entrando a fetchSiembraById: id=', id)

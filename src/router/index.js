@@ -56,6 +56,11 @@ const routes = [
     path: '/actividades/:id',
     component: ActividadesWorkspace,
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/recordatorios',
+    component: () => import('@/components/Recordatorios.vue'),
+    meta: { requiresAuth: true }
   }
 ]
 

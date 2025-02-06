@@ -49,7 +49,10 @@
       scrollable
     >
       <v-card v-if="editedHacienda">
-        <v-card-title> <h2 class="text-xl font-bold mt-2">Editar Hacienda</h2></v-card-title>
+        <v-toolbar color="success" dark>
+          <v-toolbar-title>Editar Hacienda</v-toolbar-title>
+          <v-spacer></v-spacer>
+        </v-toolbar>
         <v-card-text>
           <div class="grid grid-cols-2 gap-4">
             <div>

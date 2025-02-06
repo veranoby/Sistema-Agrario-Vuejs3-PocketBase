@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import { pb } from '@/utils/pocketbase'
-import { handleError } from '@/utils/errorHandler'
 import { useSyncStore } from './syncStore'
+import { useSnackbarStore } from './snackbarStore'
+import { handleError } from '@/utils/errorHandler'
 import { useHaciendaStore } from './haciendaStore'
 //import { useZonasStore } from './zonasStore'
 //import { useAvatarStore } from './avatarStore'
@@ -15,6 +16,12 @@ export const useActividadesStore = defineStore('actividades', {
     version: 1,
     lastSync: null
   }),
+
+  persist: {
+    key: 'actividades',
+    storage: sessionStorage,
+    paths: ['actividades', 'tiposActividades']
+  },
 
   getters: {
     promedioBpaEstado() {
@@ -30,6 +37,12 @@ export const useActividadesStore = defineStore('actividades', {
         ? Math.round(totalBpaEstado / actividadesHacienda.length)
         : 0
     }
+
+    // Function to get the activity type based on the activity ID
+    /*  getActividadTipo: (state) => (tipoId) => {
+      const tipoActividad = state.tiposActividades.find((tipo) => tipo.id === tipoId)
+      return tipoActividad ? tipoActividad.nombre : 'Desconocido' // Return 'Desconocido' if not found
+    } */
   },
 
   actions: {
@@ -40,9 +53,7 @@ export const useActividadesStore = defineStore('actividades', {
       try {
         await this.cargarTiposActividades()
 
-        if (syncStore.isOnline) {
-          await this.syncWithServer()
-        }
+        await this.cargarActividades() // Cargar zonas desde el servidor
       } catch (error) {
         handleError(error, 'Error al inicializar actividades')
       } finally {
@@ -50,16 +61,11 @@ export const useActividadesStore = defineStore('actividades', {
       }
     },
 
-    async syncWithServer() {
-      // Sincronizar cambios pendientes
-      await this.cargarActividades() // Cargar zonas desde el servidor
-      // Aquí puedes agregar lógica para sincronizar cambios pendientes
-    },
-
     async cargarActividades() {
-      this.loading = true
       const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore()
+      this.error = null
+      this.loading = true
 
       const actividadesLocal = useSyncStore().loadFromLocalStorage('actividades')
       if (actividadesLocal) {
@@ -69,18 +75,15 @@ export const useActividadesStore = defineStore('actividades', {
       }
 
       try {
-        if (syncStore.isOnline) {
-          const records = await pb.collection('actividades').getFullList({
-            sort: 'nombre',
-            filter: `hacienda="${haciendaStore.mi_hacienda?.id}"`
-          })
-          this.actividades = records
-          this.lastSync = Date.now()
+        const records = await pb.collection('actividades').getFullList({
+          sort: 'nombre',
+          filter: `hacienda="${haciendaStore.mi_hacienda?.id}"`,
+          expand: 'tipo_actividades'
+        })
+        this.actividades = records
+        this.lastSync = Date.now()
 
-          syncStore.saveToLocalStorage('actividades', records)
-        } else {
-          this.actividades = syncStore.loadFromLocalStorage('actividades') || []
-        }
+        syncStore.saveToLocalStorage('actividades', records)
       } catch (error) {
         handleError(error, 'Error al cargar actividades')
       } finally {
@@ -89,67 +92,96 @@ export const useActividadesStore = defineStore('actividades', {
     },
 
     async crearActividad(actividadData) {
+      const snackbarStore = useSnackbarStore()
+      snackbarStore.showLoading()
       const syncStore = useSyncStore()
+      const haciendaStore = useHaciendaStore()
+
+      // Enriquecer datos con contexto de hacienda
+      const enrichedData = {
+        ...actividadData,
+        tipo_actividades: actividadData.tipo_actividades,
+        hacienda: haciendaStore.mi_hacienda?.id,
+        bpa_estado: this.calcularBpaEstado(actividadData.datos_bpa),
+        activa: true,
+        version: this.version
+      }
 
       if (!syncStore.isOnline) {
-        const tempId = `temp_${Date.now()}`
+        const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
         const tempActividad = {
-          ...actividadData,
+          ...enrichedData,
           id: tempId,
-          activa: true
+          created: new Date().toISOString(),
+          updated: new Date().toISOString(),
+          _isTemp: true
         }
 
         this.actividades.push(tempActividad)
-        syncStore.saveToLocalStorage('actividades', this.actividades)
 
         await syncStore.queueOperation({
           type: 'create',
           collection: 'actividades',
-          data: actividadData,
+          data: enrichedData,
           tempId
         })
+
+        snackbarStore.hideLoading()
+        syncStore.saveToLocalStorage('actividades', this.actividades)
 
         return tempActividad
       }
 
+      // Online flow
       try {
-        const actividadToCreate = {
-          ...actividadData,
-          hacienda: useHaciendaStore().mi_hacienda.id
-        }
-
-        const record = await pb.collection('actividades').create(actividadToCreate)
+        const record = await pb.collection('actividades').create(enrichedData)
         this.actividades.push(record)
         syncStore.saveToLocalStorage('actividades', this.actividades)
         return record
       } catch (error) {
         handleError(error, 'Error al crear actividad')
         throw error
+      } finally {
+        snackbarStore.hideLoading()
       }
     },
 
     async updateActividad(id, updateData) {
+      const snackbarStore = useSnackbarStore()
+      snackbarStore.showLoading()
       const syncStore = useSyncStore()
+
+      const enrichedData = {
+        ...updateData,
+        tipo_actividades: updateData.tipo_actividades,
+        bpa_estado: this.calcularBpaEstado(updateData.datos_bpa),
+        version: this.version
+      }
 
       if (!syncStore.isOnline) {
         const index = this.actividades.findIndex((a) => a.id === id)
         if (index !== -1) {
-          this.actividades[index] = { ...this.actividades[index], ...updateData }
-          syncStore.saveToLocalStorage('actividades', this.actividades)
+          this.actividades[index] = { ...this.actividades[index], ...enrichedData }
         }
 
         await syncStore.queueOperation({
           type: 'update',
           collection: 'actividades',
           id,
-          data: updateData
+          data: enrichedData
         })
+
+        snackbarStore.hideLoading()
+        syncStore.saveToLocalStorage('actividades', this.actividades)
 
         return this.actividades[index]
       }
 
+      // Online flow
       try {
-        const record = await pb.collection('actividades').update(id, updateData)
+        const record = await pb.collection('actividades').update(id, enrichedData, {
+          expand: 'tipo_actividades'
+        })
         const index = this.actividades.findIndex((a) => a.id === id)
         if (index !== -1) {
           this.actividades[index] = record
@@ -159,21 +191,26 @@ export const useActividadesStore = defineStore('actividades', {
       } catch (error) {
         handleError(error, 'Error al actualizar actividad')
         throw error
+      } finally {
+        snackbarStore.hideLoading()
       }
     },
 
     async deleteActividad(id) {
+      const snackbarStore = useSnackbarStore()
+      snackbarStore.showLoading()
       const syncStore = useSyncStore()
 
       if (!syncStore.isOnline) {
         this.actividades = this.actividades.filter((a) => a.id !== id)
-        syncStore.saveToLocalStorage('actividades', this.actividades)
 
         await syncStore.queueOperation({
           type: 'delete',
           collection: 'actividades',
           id
         })
+        snackbarStore.hideLoading()
+        syncStore.saveToLocalStorage('actividades', this.actividades)
 
         return true
       }
@@ -186,6 +223,8 @@ export const useActividadesStore = defineStore('actividades', {
       } catch (error) {
         handleError(error, 'Error al eliminar actividad')
         throw error
+      } finally {
+        snackbarStore.hideLoading()
       }
     },
 
@@ -227,40 +266,7 @@ export const useActividadesStore = defineStore('actividades', {
       }
     },
 
-    /*async fetchActividadById(id) {
-      const syncStore = useSyncStore()
-
-      this.loading = true
-      try {
-        const record = await pb.collection('actividades').getOne(id, {
-          expand: 'hacienda'
-        })
-
-        const avatarStore = useAvatarStore()
-        record.avatarUrl = avatarStore.getAvatarUrl(
-          { ...record, type: 'actividades' },
-          'actividades'
-        )
-
-        const index = this.actividades.findIndex((s) => s.id === id)
-        if (index !== -1) {
-          this.actividades[index] = record
-        } else {
-          this.actividades.push(record)
-        }
-
-        syncStore.saveToLocalStorage('actividades', this.actividades)
-        return record
-      } catch (error) {
-        handleError(error, 'Error al obtener la actividad')
-        throw error
-      } finally {
-        this.loading = false
-      }
-    } */
-
     async fetchActividadById(id) {
-      console.log('entrando a fetchActividadById: id=', id)
       const index = this.actividades.findIndex((s) => s.id === id)
       if (index !== -1) {
         return this.actividades[index] // Retorna la actividad encontrada

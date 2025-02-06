@@ -1,5 +1,7 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
+import piniaPersist from 'pinia-plugin-persistedstate'
+
 import App from './App.vue'
 import router from './router'
 import 'vuetify/styles'
@@ -23,7 +25,9 @@ import '@fontsource/plus-jakarta-sans/600.css'
 import '@fontsource/plus-jakarta-sans/700.css'
 import '@fontsource/plus-jakarta-sans/800.css'
 import { useVuelidate } from '@vuelidate/core'
-import { CkeditorPlugin } from '@ckeditor/ckeditor5-vue'
+
+import CKEditor from '@ckeditor/ckeditor5-vue'
+import ClassicEditor from '@ckeditor/ckeditor5-build-classic'
 
 const vuetify = createVuetify({
   components,
@@ -62,12 +66,13 @@ const vuetify = createVuetify({
 
 const app = createApp(App)
 const pinia = createPinia()
+pinia.use(piniaPersist)
 
 app.use(pinia)
 app.use(router)
 app.use(vuetify)
 app.use(useVuelidate)
-app.use(CkeditorPlugin)
+app.use(CKEditor)
 
 // Inicializar stores críticos antes de montar la app
 const initApp = async () => {
