@@ -20,7 +20,7 @@
             ></path>
             <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"></path>
           </svg>
-          <span class="sr-only">Agri-Tech Solutions</span>
+          <span class="sr-only">Agro Assist </span>
         </a>
       </header>
       <main class="flex-1">
@@ -33,7 +33,7 @@
                     Revolucionando la Agricultura con Soluciones SaaS Innovadoras
                   </h1>
                   <p class="max-w-[600px] text-muted-foreground md:text-xl">
-                    En Agri-Tech Solutions, nos dedicamos a empoderar a los agricultores y empresas
+                    En Agro Assist , nos dedicamos a empoderar a los agricultores y empresas
                     agrícolas con tecnología de vanguardia que impulsa la eficiencia, la
                     sostenibilidad y la rentabilidad.
                   </p>
@@ -119,7 +119,7 @@
               <div class="space-y-2">
                 <div class="inline-block rounded-lg bg-muted px-3 py-1 text-sm">Nuestro Equipo</div>
                 <h2 class="text-3xl font-bold tracking-tighter sm:text-5xl">
-                  Conoce a los Expertos detrás de Agri-Tech Solutions
+                  Conoce a los Expertos detrás de Agro Assist
                 </h2>
                 <p
                   class="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed"

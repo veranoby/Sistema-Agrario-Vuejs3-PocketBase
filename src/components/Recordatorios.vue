@@ -1,10 +1,10 @@
 <template>
   <v-container fluid class="pa-2">
     <RecordatorioForm
-      :model-value="dialog"
-      @update:modelValue="dialog = $event"
-      :recordatorio="recordatorioEdit"
-      :is-editing="editando"
+      :model-value="recordatoriosStore.dialog"
+      @update:modelValue="recordatoriosStore.dialog = $event"
+      :recordatorio="recordatoriosStore.recordatorioEdit"
+      :is-editing="recordatoriosStore.editando"
       @submit="handleFormSubmit"
     />
     <div class="grid gap-2 p-0 m-2">
@@ -38,9 +38,9 @@
                 size="small"
                 variant="flat"
                 rounded="lg"
-                color="green-lighten-2"
+                color="#6380a247"
                 prepend-icon="mdi-plus"
-                @click="abrirNuevoRecordatorio"
+                @click="recordatoriosStore.abrirNuevoRecordatorio"
                 class="min-w-[210px]"
               >
                 Nuevo recordatorio
@@ -61,9 +61,9 @@
       <StatusPanel
         title="Pendientes"
         color="red"
-        :items="recordatoriosPendientes"
+        :items="recordatoriosStore.recordatoriosPendientes()"
         @update-status="recordatoriosStore.actualizarEstado"
-        @edit="editarRecordatorio"
+        @edit="recordatoriosStore.editarRecordatorio"
         @delete="recordatoriosStore.eliminarRecordatorio"
       />
 
@@ -71,9 +71,9 @@
       <StatusPanel
         title="En Progreso"
         color="amber"
-        :items="recordatoriosEnProgreso"
+        :items="recordatoriosStore.recordatoriosEnProgreso()"
         @update-status="recordatoriosStore.actualizarEstado"
-        @edit="editarRecordatorio"
+        @edit="recordatoriosStore.editarRecordatorio"
         @delete="recordatoriosStore.eliminarRecordatorio"
       />
 
@@ -81,9 +81,9 @@
       <StatusPanel
         title="Completados"
         color="green"
-        :items="recordatoriosCompletados"
+        :items="recordatoriosStore.recordatoriosCompletados()"
         @update-status="recordatoriosStore.actualizarEstado"
-        @edit="editarRecordatorio"
+        @edit="recordatoriosStore.editarRecordatorio"
         @delete="recordatoriosStore.eliminarRecordatorio"
       />
     </div>
@@ -134,28 +134,6 @@ onMounted(async () => {
   ])
 })
 
-const recordatoriosPendientes = computed(() => {
-  //  console.log('leer recordatoriosStore.recordatorios:', recordatoriosStore.recordatorios)
-  let temp = recordatoriosStore.recordatorios.filter(
-    (recordatorio) => recordatorio.estado === 'pendiente'
-  )
-  return temp
-})
-
-const recordatoriosEnProgreso = computed(() => {
-  let temp = recordatoriosStore.recordatorios.filter(
-    (recordatorio) => recordatorio.estado === 'en_progreso'
-  )
-  return temp
-})
-
-const recordatoriosCompletados = computed(() => {
-  let temp = recordatoriosStore.recordatorios.filter(
-    (recordatorio) => recordatorio.estado === 'completado'
-  )
-  return temp
-})
-
 // Métodos
 function crearRecordatorioVacio() {
   return {
@@ -170,41 +148,15 @@ function crearRecordatorioVacio() {
   }
 }
 
-function abrirNuevoRecordatorio() {
-  editando.value = false
-  recordatorioEdit.value = crearRecordatorioVacio()
-  dialog.value = true
-}
-
-async function editarRecordatorio(id) {
-  const recordatorio = recordatoriosStore.recordatorios.find((r) => r.id === id)
-  if (recordatorio) {
-    editando.value = true
-    recordatorioEdit.value = {
-      ...recordatorio,
-      siembras: recordatorio.siembras || [],
-      actividades: recordatorio.actividades || [],
-      zonas: recordatorio.zonas || []
-    }
-    dialog.value = true
-  }
-}
-
 async function handleFormSubmit(data) {
   try {
-    if (editando.value) {
-      await recordatoriosStore.actualizarRecordatorio(data.id, {
-        ...data,
-        siembras: data.siembras || [],
-        zonas: data.zonas || [],
-        actividades: data.actividades || []
-      })
-      // Forzar actualización completa con expand
+    if (recordatoriosStore.editando) {
+      await recordatoriosStore.actualizarRecordatorio(data.id, data)
       await recordatoriosStore.cargarRecordatorios()
-      dialog.value = false
     } else {
       await recordatoriosStore.crearRecordatorio(data)
     }
+    recordatoriosStore.dialog = false
     snackbarStore.showSnackbar('Recordatorio guardado')
   } catch (error) {
     handleError(error, 'Error al guardar recordatorio')

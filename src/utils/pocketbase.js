@@ -84,7 +84,7 @@ actividades:
   descripcion: string
   recordatorio:  relation(recordatorios).
   zonas:  relation(zonas). multiple.
-  siembra:  relation(siembras). multiple.
+  siembras:  relation(siembras). multiple.
   activa: boolean
   metricas: json  # Define qué métricas se deben registrar para esta actividad
   bpa_estado: number (aqui se grabara el porcentaje de avance calculado del bpa para esta actividad)
@@ -97,26 +97,30 @@ bitacora:
   updated: datetime
   hacienda: relation(haciendas)
   fecha: date
-  actividad: relation(actividades)
+  actividades: relation(actividades)
   zona: relation(zonas). pueden ser multiples
   descripcion: string
-  responsable: relation(users)
+  users: relation(users) . para definir los responsables
   estado: select(planificada, en_progreso, completada, cancelada)
   metricas: json  # Almacena datos específicos de la actividad según metricas_requeridas
   notas: string
+  siembra:  relation(siembras). multiple.
+  programaciones:  relation(programaciones). 
 
 # Colección: 
 programaciones:
   id: string
   created: datetime
   updated: datetime
-  actividad: relation(actividades)
+   descripcion: string
+ hacienda: relation(haciendas)
+  siembras:  relation(siembras). multiple.
+actividades: relation(actividades)
   ultima_ejecucion: date
-  proximo_recordatorio: date
+  proxima_ejecucion: date
   frecuencia: select(diaria, semanal, quincenal, mensual, personalizada)
-  frecuencia_personalizada: string  # Para casos especiales, ej: "cada 3 días"
+  frecuencia_personalizada: json  # Para casos especiales, ej: "cada 3 días"
   estado: select(activo, pausado, finalizado)
-  destinatarios: json  # Lista de IDs de usuarios a notificar
 
 
   # Colección: 
@@ -130,8 +134,8 @@ recordatorios:
   fecha_recordatorio: datetime
   estado: select(pendiente, en_progreso, completado)
   prioridad: select(baja, media, alta)
-  siembra:  relation(siembras). multiple.
-  actividad: relation(actividades). pueden ser multiples
-  zona: relation(zonas). pueden ser multiples
+  siembras:  relation(siembras). multiple.
+  actividades: relation(actividades). pueden ser multiples
+  zonas: relation(zonas). pueden ser multiples
 
   */

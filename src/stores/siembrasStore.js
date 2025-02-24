@@ -25,6 +25,14 @@ export const useSiembrasStore = defineStore('siembras', {
       return state.siembras.find((siembra) => siembra.id === id)
     },
 
+    // Function to get the activity type based on the activity ID
+    getSiembraNombre: (state) => (id) => {
+      const SiembraNombre = state.siembras.find((tipo) => tipo.id === id)
+      return SiembraNombre
+        ? SiembraNombre.nombre + '-' + SiembraNombre.tipo
+        : 'Sin siembras registradas' // Return 'Desconocido' if not found
+    },
+
     activeSiembras: (state) => {
       return state.siembras.filter((siembra) => siembra.estado !== 'finalizada')
     }

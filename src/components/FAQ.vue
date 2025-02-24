@@ -1,9 +1,9 @@
 <template>
   <v-container>
     <div class="w-full max-w-4xl mx-auto py-12 md:py-16 px-4 md:px-6">
-      <h1 class="text-3xl font-bold mb-8 text-center">Preguntas Frecuentes</h1>
+      <h1 class="text-3xl font-bold mb-8 text-center">Preguntas Frecuentes - Agro Assist</h1>
 
-      <details class="w-full bg-white border border-blue-500 cursor-pointer mb-6">
+      <details class="w-full bg-white border border-lightgray cursor-pointer mb-3 p-3">
         <summary
           class="w-full bg-white text-dark flex justify-between px-4 py-3 text-lg font-medium after:content-['+']"
         >
@@ -35,7 +35,7 @@
         </div>
       </details>
 
-      <details class="w-full bg-white border border-blue-500 cursor-pointer mb-3">
+      <details class="w-full bg-white border border-lightgray cursor-pointer mb-3 p-3">
         <summary
           class="w-full bg-white text-dark flex justify-between px-4 py-3 text-lg font-medium after:content-['+']"
         >
@@ -72,7 +72,7 @@
         </div>
       </details>
 
-      <details class="w-full bg-white border border-blue-500 cursor-pointer mb-3">
+      <details class="w-full bg-white border border-lightgray cursor-pointer mb-3 p-3">
         <summary
           class="w-full bg-white text-dark flex justify-between px-4 py-3 text-lg font-medium after:content-['+']"
         >
@@ -106,7 +106,7 @@
         </div>
       </details>
 
-      <details class="w-full bg-white border border-blue-500 cursor-pointer mb-3">
+      <details class="w-full bg-white border border-lightgray cursor-pointer mb-3 p-3">
         <summary
           class="w-full bg-white text-dark flex justify-between px-4 py-3 text-lg font-medium after:content-['+']"
         >
@@ -137,6 +137,89 @@
             Nuestro equipo trabajará en estrecha colaboración con usted para desarrollar un plan de
             implementación a medida y garantizar una transición sin problemas a nuestra plataforma.
           </p>
+        </div>
+      </details>
+
+      <!-- Sección Ampliada: Gestión Operativa -->
+      <details class="w-full bg-white border border-lightgray cursor-pointer mb-3 p-3">
+        <summary class="w-full bg-white text-dark flex justify-between px-4 py-3 text-lg font-medium after:content-['+']">
+          Gestión de Actividades
+        </summary>
+        <div class="space-y-6">
+          <div>
+            <h3 class="text-lg font-bold">¿Cómo asigno siembras y zonas a una actividad?</h3>
+            <p class="text-sm text-muted-foreground mt-2">
+              Agro Assist permite crear y organizar siembras con detalles como tipo de cultivo, fechas de siembra y áreas asignadas. Para zonas:
+              <ul class="list-disc pl-6 mt-2">
+                <li>Registre zonas con coordenadas GPS y tipo de suelo</li>
+                <li>Asigne siembras a múltiples zonas</li>
+                <li>Genere informes de productividad por zona</li>
+              </ul>
+            </p>
+          </div>
+        </div>
+      </details>
+
+      <!-- Recordatorios y Notificaciones -->
+      <details class="w-full bg-white border border-lightgray cursor-pointer mb-3 p-3">
+        <summary class="w-full bg-white text-dark flex justify-between px-4 py-3 text-lg font-medium after:content-['+']">
+          Recordatorios
+        </summary>
+        <div class="space-y-6">
+          <div>
+            <h3 class="text-lg font-bold">¿Qué tipos de recordatorios existen?</h3>
+            <p class="text-sm text-muted-foreground mt-2">
+              El sistema maneja:
+              <ul class="list-disc pl-6">
+                <li>Recordatorios por fecha específica</li>
+                <li>Notificaciones de estado (pendiente/en progreso/completado)</li>
+                <li>Prioridades configurables (baja/media/alta)</li>
+                <li>Vinculación con actividades y siembras</li>
+              </ul>
+            </p>
+          </div>
+        </div>
+      </details>
+
+      <!-- Integraciones -->
+      <details class="w-full bg-white border border-lightgray cursor-pointer mb-3 p-3">
+        <summary class="w-full bg-white text-dark flex justify-between px-4 py-3 text-lg font-medium after:content-['+']">
+          Datos y Métricas
+        </summary>
+        <div class="space-y-6">
+          <div>
+            <h3 class="text-lg font-bold">¿Qué métricas puedo registrar?</h3>
+            <p class="text-sm text-muted-foreground mt-2">
+              El sistema permite:
+              <ul class="list-disc pl-6">
+                <li>Seguimiento de fechas clave</li>
+                <li>Registro de estados de actividad</li>
+                <li>Monitoreo de áreas asignadas</li>
+                <li>Seguimiento de progreso por siembra/zona</li>
+              </ul>
+            </p>
+          </div>
+        </div>
+      </details>
+
+      <!-- Soporte -->
+      <details class="w-full bg-white border border-lightgray cursor-pointer mb-3 p-3">
+        <summary class="w-full bg-white text-dark flex justify-between px-4 py-3 text-lg font-medium after:content-['+']">
+          Soporte Técnico
+        </summary>
+        <div class="space-y-6">
+          <div>
+            <h3 class="text-lg font-bold">¿Qué recursos de ayuda existen?</h3>
+            <p class="text-sm text-muted-foreground mt-2">
+              Ofrecemos:
+              <ul class="list-disc pl-6">
+                <li>Documentación técnica en la plataforma</li>
+                <li>Soporte por correo electrónico</li>
+                <li>Base de conocimiento con guías prácticas</li>
+                <li>Actualizaciones periódicas del sistema</li>
+              </ul>
+            </p>
+          </div>
         </div>
       </details>
     </div>

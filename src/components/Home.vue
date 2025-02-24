@@ -31,7 +31,7 @@
             <div class="flex flex-col justify-center space-y-4">
               <div class="space-y-2">
                 <h1 class="text-3xl font-bold tracking-tighter sm:text-5xl">
-                  Revoluciona tus operaciones agrícolas
+                  Bienvenido a Agro Assist
                 </h1>
                 <p
                   class="max-w-[600px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed"

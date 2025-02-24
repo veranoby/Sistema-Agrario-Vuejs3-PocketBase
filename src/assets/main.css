@@ -167,6 +167,12 @@ body {
   width: 130%;
 }
 
+.compact-chips {
+  transform: scale(0.9);
+  transform-origin: left;
+  font-weight: 700;
+}
+
 .checkbox-container {
   display: flex;
   flex-wrap: wrap;

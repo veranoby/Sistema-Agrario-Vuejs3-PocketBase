@@ -19,7 +19,8 @@ export const useAuthStore = defineStore('auth', {
     user: null,
     token: null,
     isLoggedIn: false,
-    rememberMe: null
+    rememberMe: null,
+    showLoginDialog: false
   }),
 
   actions: {

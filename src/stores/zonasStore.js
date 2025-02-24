@@ -69,7 +69,8 @@ export const useZonasStore = defineStore('zonas', {
         // Obtener solo las zonas de la hacienda actual
         const records = await pb.collection('zonas').getFullList({
           sort: 'nombre',
-          filter: `hacienda="${haciendaStore.mi_hacienda?.id}"`
+          filter: `hacienda="${haciendaStore.mi_hacienda?.id}"`,
+          expand: 'tipos_zonas'
         })
         this.zonas = records
         this.lastSync = Date.now()
@@ -124,7 +125,9 @@ export const useZonasStore = defineStore('zonas', {
 
       // Online flow
       try {
-        const record = await pb.collection('zonas').create(enrichedData)
+        const record = await pb.collection('zonas').create(enrichedData, {
+          expand: 'tipos_zonas'
+        })
         this.zonas.push(record)
         syncStore.saveToLocalStorage('zonas', this.zonas)
         return record
@@ -169,7 +172,9 @@ export const useZonasStore = defineStore('zonas', {
 
       // Online flow
       try {
-        const record = await pb.collection('zonas').update(id, enrichedData)
+        const record = await pb.collection('zonas').update(id, enrichedData, {
+          expand: 'tipos_zonas'
+        })
         const index = this.zonas.findIndex((z) => z.id === id)
         if (index !== -1) {
           this.zonas[index] = record
@@ -292,7 +297,9 @@ export const useZonasStore = defineStore('zonas', {
         const formData = new FormData()
         formData.append('avatar', avatarFile)
 
-        const updatedZona = await pb.collection('zonas').update(zonaId, formData)
+        const updatedZona = await pb.collection('zonas').update(zonaId, formData, {
+          expand: 'tipos_zonas'
+        })
         const index = this.zonas.findIndex((z) => z.id === updatedZona.id)
         if (index !== -1) {
           this.zonas[index] = updatedZona

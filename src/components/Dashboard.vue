@@ -28,7 +28,7 @@
           rounded="lg"
           color="#6380a247"
           prepend-icon="mdi-plus"
-          @click="abrirNuevoRecordatorio"
+          @click="recordatoriosStore.abrirNuevoRecordatorio"
           class="min-w-[210px] m-2"
         >
           Nuevo recordatorio
@@ -36,10 +36,10 @@
 
         <!-- Panel de editar recordatorios -->
         <RecordatorioForm
-          :model-value="dialog"
-          @update:modelValue="dialog = $event"
-          :recordatorio="recordatorioEdit"
-          :is-editing="editando"
+          :model-value="recordatoriosStore.dialog"
+          @update:modelValue="recordatoriosStore.dialog = $event"
+          :recordatorio="recordatoriosStore.recordatorioEdit"
+          :is-editing="recordatoriosStore.editando"
           @submit="handleFormSubmit"
         />
 
@@ -47,9 +47,9 @@
         <StatusPanel
           title="Pendientes"
           color="red"
-          :items="recordatoriosPendientes"
+          :items="recordatoriosStore.recordatoriosPendientes()"
           @update-status="recordatoriosStore.actualizarEstado"
-          @edit="editarRecordatorio"
+          @edit="recordatoriosStore.editarRecordatorio"
           @delete="recordatoriosStore.eliminarRecordatorio"
         />
         <br />
@@ -57,9 +57,9 @@
         <StatusPanel
           title="En Progreso"
           color="amber"
-          :items="recordatoriosEnProgreso"
+          :items="recordatoriosStore.recordatoriosEnProgreso()"
           @update-status="recordatoriosStore.actualizarEstado"
-          @edit="editarRecordatorio"
+          @edit="recordatoriosStore.editarRecordatorio"
           @delete="recordatoriosStore.eliminarRecordatorio"
         />
       </div>
@@ -167,13 +167,14 @@ import { storeToRefs } from 'pinia'
 import { useProfileStore } from '@/stores/profileStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import { useRecordatoriosStore } from '@/stores/recordatoriosStore'
-import StatusPanel from '@/components/StatusPanel.vue'
 import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useActividadesStore } from '@/stores/actividadesStore'
 import { useZonasStore } from '@/stores/zonasStore'
-import RecordatorioForm from '@/components/forms/RecordatorioForm.vue'
 import { handleError } from '@/utils/errorHandler'
 import { useSnackbarStore } from '@/stores/snackbarStore'
+
+import StatusPanel from '@/components/StatusPanel.vue'
+import RecordatorioForm from '@/components/forms/RecordatorioForm.vue'
 
 // Stores
 const profileStore = useProfileStore()
@@ -183,12 +184,6 @@ const siembrasStore = useSiembrasStore()
 const actividadesStore = useActividadesStore()
 const zonasStore = useZonasStore()
 const snackbarStore = useSnackbarStore()
-
-// Estados del componente
-const dialog = ref(false)
-//const guardando = ref(false)
-const editando = ref(false)
-const recordatorioEdit = ref(crearRecordatorioVacio())
 
 // Cargar datos iniciales
 onMounted(async () => {
@@ -204,67 +199,23 @@ onMounted(async () => {
 const { fullName, userRole, avatarUrl } = storeToRefs(profileStore)
 const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
 
-// Computed para recordatorios
-const recordatoriosPendientes = computed(() =>
-  recordatoriosStore.recordatorios.filter((r) => r.estado === 'pendiente')
-)
-
-const recordatoriosEnProgreso = computed(() =>
-  recordatoriosStore.recordatorios.filter((r) => r.estado === 'en_progreso')
-)
-
 // Métodos
-function crearRecordatorioVacio() {
-  return {
-    titulo: '',
-    descripcion: '',
-    fecha_recordatorio: new Date().toISOString().substr(0, 10),
-    prioridad: 'media',
-    estado: 'pendiente',
-    siembras: [],
-    actividades: [],
-    zonas: []
-  }
-}
-
-async function editarRecordatorio(id) {
-  const recordatorio = recordatoriosStore.recordatorios.find((r) => r.id === id)
-  if (recordatorio) {
-    editando.value = true
-    recordatorioEdit.value = {
-      ...recordatorio,
-      siembras: recordatorio.siembras || [],
-      actividades: recordatorio.actividades || [],
-      zonas: recordatorio.zonas || []
-    }
-    dialog.value = true
-  }
+function abrirNuevoRecordatorio() {
+  recordatoriosStore.abrirNuevoRecordatorio()
 }
 
 async function handleFormSubmit(data) {
   try {
-    if (editando.value) {
-      await recordatoriosStore.actualizarRecordatorio(data.id, {
-        ...data,
-        siembras: data.siembras || [],
-        zonas: data.zonas || [],
-        actividades: data.actividades || []
-      })
-      // Forzar actualización completa con expand
+    if (recordatoriosStore.editando) {
+      await recordatoriosStore.actualizarRecordatorio(data.id, data)
       await recordatoriosStore.cargarRecordatorios()
-      dialog.value = false
     } else {
       await recordatoriosStore.crearRecordatorio(data)
     }
+    recordatoriosStore.dialog = false
     snackbarStore.showSnackbar('Recordatorio guardado')
   } catch (error) {
     handleError(error, 'Error al guardar recordatorio')
   }
-}
-
-function abrirNuevoRecordatorio() {
-  editando.value = false
-  recordatorioEdit.value = crearRecordatorioVacio()
-  dialog.value = true
 }
 </script>

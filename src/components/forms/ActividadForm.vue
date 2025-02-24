@@ -47,14 +47,13 @@
               density="compact"
               column
               multiple
+              color="green-darken-4"
               v-model="nuevaActividadData.siembra"
               label="Selecciona Siembras"
             >
               <v-chip
                 v-for="siembra in siembras"
                 filter
-                color="green"
-                variant="flat"
                 size="small"
                 :key="siembra.id"
                 :text="`${siembra.nombre} ${siembra.tipo}`"
@@ -63,22 +62,33 @@
                 :class="{ 'chip-selected': nuevaActividadData.siembra.includes(siembra.id) }"
               >
               </v-chip>
+            </v-chip-group>
+          </div>
 
-              <!--
+          <div class="mt-2">
+            <div class="mb-2">
+              <v-icon class="mr-2">mdi-sprout</v-icon>
+              Seleccionar Zonas (opcional)
+            </div>
+            <v-chip-group
+              density="compact"
+              column
+              multiple
+              color="blue-darken-4"
+              v-model="nuevaActividadData.zonas"
+              label="Selecciona Siembras"
+            >
               <v-chip
-                v-for="siembra in siembras"
+                v-for="zona in filteredZonas"
+                :key="zona.id"
+                :text="`${zona.nombre}(${zonasStore.getZonaById(zona.id)?.expand?.tipos_zonas?.nombre.toUpperCase()})`"
+                :value="zona.id"
                 filter
-                color="green"
-                variant="flat"
                 size="small"
-                :key="siembra.id"
-                :text="`${siembra.nombre} ${siembra.tipo}`"
-                :value="siembra.id"
-                @click="cargarZonasPorSiembra"
-                class="ma-1"
-                :class="{ 'chip-selected': nuevaActividadData.siembra.includes(siembra.id) }"
+                density="compact"
+                pill
               >
-              </v-chip> -->
+              </v-chip>
             </v-chip-group>
           </div>
 
@@ -123,7 +133,7 @@
 </template>
 
 <script setup>
-import { ref, defineEmits, watch } from 'vue'
+import { ref, defineEmits, watch, onMounted, computed } from 'vue'
 import { useActividadesStore } from '@/stores/actividadesStore'
 import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useSnackbarStore } from '@/stores/snackbarStore'
@@ -133,6 +143,7 @@ import { editor, editorConfig } from '@/utils/ckeditorConfig'
 import { CKEditor } from '@ckeditor/ckeditor5-vue'
 import { useSyncStore } from '@/stores/syncStore'
 import { storeToRefs } from 'pinia'
+import { useZonasStore } from '@/stores/zonasStore'
 
 const props = defineProps({
   modelValue: {
@@ -167,6 +178,10 @@ const nuevaActividadData = ref({
   activa: true
 })
 
+const zonasStore = useZonasStore()
+
+const { zonas, tiposZonas } = storeToRefs(zonasStore)
+
 watch(
   () => props.modelValue,
   (newValue) => {
@@ -195,23 +210,12 @@ const resetForm = () => {
     activa: true
   }
 }
-/*
-const crearActividad = async () => {
-  if (nuevaActividadData.value.nombre && nuevaActividadData.value.tipo) {
-    try {
-      nuevaActividadData.value.nombre = nuevaActividadData.value.nombre.toUpperCase()
-      const actividad = await actividadesStore.crearActividad(nuevaActividadData.value)
-      snackbarStore.showSnackbar('Actividad creada exitosamente')
-      emit('actividad-creada', actividad)
-      cerrarDialog()
-    } catch (error) {
-      snackbarStore.showError('Error al crear la Actividad')
-    }
-  } else {
-    snackbarStore.showError('Nombre y tipo son requeridos')
-  }
-}
-*/
+
+const filteredZonas = computed(() => {
+  const zonastemp = zonas.value.filter((zona) => !zona.siembra) // Filtrar zonas sin siembra
+  return zonastemp
+})
+
 function getDefaultMetricaValue(tipo) {
   switch (tipo) {
     case 'checkbox':
@@ -293,4 +297,8 @@ const crearActividad = async () => {
     zonasDisponibles.value = await ZonasStore.cargarZonasPrecargadas()
   }
 }*/
+
+onMounted(async () => {
+  await actividadesStore.cargarTiposActividades({ expand: 'metricas,datos_bpa' })
+})
 </script>

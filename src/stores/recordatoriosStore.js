@@ -11,8 +11,42 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
     loading: false,
     error: null,
     version: 1,
-    lastSync: null
+    lastSync: null,
+    dialog: false,
+    editando: false,
+    recordatorioEdit: null
   }),
+
+  getters: {
+    recordatoriosPorActividad: (state) => (actividadId) => {
+      return (state.recordatorios || []).filter((r) => r.actividades?.includes(actividadId))
+    },
+
+    recordatoriosPendientes:
+      (state) =>
+      (actividadId = null) => {
+        const filtered = state.recordatorios.filter((r) => r.estado === 'pendiente')
+        return actividadId
+          ? filtered.filter((r) => r.actividades && r.actividades.includes(actividadId))
+          : filtered
+      },
+
+    recordatoriosEnProgreso:
+      (state) =>
+      (actividadId = null) => {
+        const filtered = state.recordatorios.filter((r) => r.estado === 'en_progreso')
+        return actividadId
+          ? filtered.filter((r) => r.actividades && r.actividades.includes(actividadId))
+          : filtered
+      },
+
+    recordatoriosCompletados:
+      (state) =>
+      (actividadId = null) => {
+        const filtered = state.recordatorios.filter((r) => r.estado === 'completado')
+        return actividadId ? filtered.filter((r) => r.actividades?.includes(actividadId)) : filtered
+      }
+  },
 
   persist: {
     key: 'recordatorios',
@@ -36,18 +70,18 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
       }
 
       try {
-        const result = await pb.collection('recordatorios').getFullList({
+        const records = await pb.collection('recordatorios').getFullList({
+          sort: '-created',
           filter: `hacienda="${haciendaStore.mi_hacienda?.id}"`,
-          sort: '-fecha_recordatorio',
-          expand: 'actividades'
+          expand: 'actividades.tipo_actividades,zonas.tipos_zonas'
         })
-        this.recordatorios = result
+        this.recordatorios = records
         this.lastSync = Date.now()
 
         // Guardar recordatorios en localStorage para uso offline
-        syncStore.saveToLocalStorage('recordatorios', result)
+        syncStore.saveToLocalStorage('recordatorios', records)
 
-        return result
+        return records
       } catch (error) {
         handleError(error, 'Error al cargar recordatorios')
       } finally {
@@ -100,7 +134,9 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
       }
 
       try {
-        const record = await pb.collection('recordatorios').create(enrichedData)
+        const record = await pb.collection('recordatorios').create(enrichedData, {
+          expand: 'actividades.tipo_actividades,zonas.tipos_zonas'
+        })
         this.recordatorios.push(record)
         syncStore.saveToLocalStorage('recordatorios', this.recordatorios)
         return record
@@ -141,18 +177,17 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
 
       // Online flow
       try {
-        // Actualizar con expand
-        const updatedRecordatorio = await pb.collection('recordatorios').update(id, enrichedData, {
-          expand: 'actividades'
+        const record = await pb.collection('recordatorios').update(id, enrichedData, {
+          expand: 'actividades.tipo_actividades,zonas.tipos_zonas'
         })
 
         const index = this.recordatorios.findIndex((r) => r.id === id)
         if (index !== -1) {
-          this.recordatorios[index] = updatedRecordatorio
+          this.recordatorios[index] = record
         }
 
         syncStore.saveToLocalStorage('recordatorios', this.recordatorios)
-        return updatedRecordatorio
+        return record
       } catch (error) {
         handleError(error, 'Error al actualizar recordatorio')
         throw error
@@ -209,20 +244,39 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
       } finally {
         snackbarStore.hideLoading()
       }
-    }
+    },
 
-    /*  async editarRecordatorio(id) {
+    crearRecordatorioVacio(actividadId = null) {
+      return {
+        titulo: '',
+        descripcion: '',
+        fecha_recordatorio: new Date().toISOString().substr(0, 10),
+        prioridad: 'media',
+        estado: 'pendiente',
+        siembras: [],
+        actividades: actividadId ? [actividadId] : [],
+        zonas: []
+      }
+    },
+
+    abrirNuevoRecordatorio(actividadId = null) {
+      this.editando = false
+      this.recordatorioEdit = this.crearRecordatorioVacio(actividadId)
+      this.dialog = true
+    },
+
+    async editarRecordatorio(id) {
       const recordatorio = this.recordatorios.find((r) => r.id === id)
       if (recordatorio) {
-        editando.value = true
-        recordatorioEdit.value = {
+        this.editando = true
+        this.recordatorioEdit = {
           ...recordatorio,
           siembras: recordatorio.siembras || [],
           actividades: recordatorio.actividades || [],
           zonas: recordatorio.zonas || []
         }
-        dialog.value = true
+        this.dialog = true
       }
-    } */
+    }
   }
 })

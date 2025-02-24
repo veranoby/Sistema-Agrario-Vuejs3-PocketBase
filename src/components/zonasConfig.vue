@@ -61,10 +61,10 @@
         <v-tabs
           v-model="tab"
           align-tabs="center"
-          bg-color="green-lighten-1"
-          color="black"
+          bg-color="#6380a247"
+          color="green-darken-2"
           height="60"
-          slider-color="black"
+          slider-color="green"
           stacked
           show-arrows
           class="rounded-lg"
@@ -86,7 +86,7 @@
             <v-card class="bg-dinamico">
               <v-card-title class="d-flex justify-space-between align-center">
                 <span
-                  class="hidden sm:inline text-sm truncate"
+                  class="hidden sm:inline text-sm truncate text-green-600"
                   style="max-width: 80%; white-space: normal"
                   v-html="tipoZona.descripcion || 'Sin descripcion disponible'"
                 ></span>
@@ -299,7 +299,7 @@ const zonaEditando = ref({
   nombre: '',
   area: { area: null, unidad: '' },
   info: '',
-  tipo: null,
+  tipos_zonas: null,
   hacienda: computed(() => mi_hacienda.value?.id),
   siembra: null,
   avatar: null,
@@ -388,7 +388,7 @@ const abrirDialogoCrear = (tipoZona) => {
     nombre: '',
     area: { area: null, unidad: '' },
     info: '',
-    tipo: tipoZona.id,
+    tipos_zonas: tipoZona.id,
     hacienda: mi_hacienda.value?.id,
     siembra: null,
     contabilizable: true,
@@ -422,7 +422,7 @@ function getDefaultMetricaValue(tipo) {
 
 const editarZona = (zona) => {
   modoEdicion.value = true
-  tipoZonaActual.value = tiposZonas.value.find((tipo) => tipo.id === zona.tipo)
+  tipoZonaActual.value = tiposZonas.value.find((tipo) => tipo.id === zona.tipos_zonas)
 
   zonaEditando.value = {
     ...zona,
@@ -476,7 +476,7 @@ const getZonasPorTipo = (tipoId) => {
 */
 
 const filteredZonas = (tipoId) => {
-  let zonastemp = zonas.value.filter((zona) => zona && zona.tipo === tipoId)
+  let zonastemp = zonas.value.filter((zona) => zona && zona.tipos_zonas === tipoId)
 
   // Obtener los IDs de siembras que coinciden
   const siembraIdsTemp = search.value.siembra ? getSiembraId(search.value.siembra) : []

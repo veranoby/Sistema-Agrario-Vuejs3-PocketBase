@@ -21,6 +21,7 @@
     "@vuelidate/validators": "^2.0.4",
     "axios": "^1.7.9",
     "ckeditor5": "^34.2.0",
+    "date-fns": "^4.1.0",
     "pinia": "^2.3.0",
     "pinia-plugin-persistedstate": "^4.2.0",
     "pocketbase": "^0.25.0",

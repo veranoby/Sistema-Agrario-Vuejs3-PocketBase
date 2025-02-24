@@ -13,6 +13,8 @@ import ZonasConfig from '@/components/zonasConfig.vue'
 
 import ActividadesConfig from '@/components/actividadesConfig.vue'
 import ActividadesWorkspace from '@/components/actividadesWorkspace.vue'
+import ProgramacionesList from '@/components/ProgramacionesList.vue'
+import Recordatorios from '@/components/Recordatorios.vue'
 
 const routes = [
   { path: '/', component: HomeComp },
@@ -57,9 +59,16 @@ const routes = [
     component: ActividadesWorkspace,
     meta: { requiresAuth: true }
   },
+
+  {
+    path: '/programaciones',
+    component: ProgramacionesList,
+    meta: { requiresAuth: true }
+  },
+
   {
     path: '/recordatorios',
-    component: () => import('@/components/Recordatorios.vue'),
+    component: Recordatorios,
     meta: { requiresAuth: true }
   }
 ]

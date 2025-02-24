@@ -31,7 +31,7 @@
                 size="small"
                 variant="flat"
                 rounded="lg"
-                color="green-lighten-2"
+                color="#6380a247"
                 prepend-icon="mdi-plus"
                 @click="nuevaSiembra"
                 class="min-w-[210px]"
@@ -102,7 +102,12 @@
 
                       <p class="text-caption flex flex-wrap">
                         <span v-for="(zona, index) in getZoneNames(siembra)" :key="index">
-                          <v-chip outlined size="x-small" variant="flat" class="m-0 p-1"
+                          <v-chip
+                            size="x-small"
+                            pill
+                            color="blue-lighten-3"
+                            variant="flat"
+                            class="m-0 compact-chips"
                             >{{ zona }}
                           </v-chip>
                         </span>
@@ -331,7 +336,7 @@ const getSiembraAvatarUrl = (siembra) => {
 .text-body-1,
 .text-body-2 {
   color: white !important;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+  /* text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);*/
 }
 
 .v-card__title .text-h6 {

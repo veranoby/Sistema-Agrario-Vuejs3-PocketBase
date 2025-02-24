@@ -114,6 +114,7 @@
                     @input="v$.username.$touch()"
                     density="compact"
                     @blur="checkUsername"
+                    prepend-inner-icon="mdi-account-circle-outline"
                   ></v-text-field>
                 </v-col>
                 <v-col cols="6">
@@ -129,6 +130,7 @@
                     density="compact"
                     @input="v$.email.$touch()"
                     @blur="checkEmail"
+                    prepend-inner-icon="mdi-email-outline"
                   ></v-text-field>
                 </v-col>
                 <v-col cols="6">
@@ -142,6 +144,7 @@
                     @input="v$.firstname.$touch()"
                     color="primary"
                     density="compact"
+                    prepend-inner-icon="mdi-card-account-details-outline"
                   ></v-text-field>
                 </v-col>
                 <v-col cols="6">
@@ -155,6 +158,7 @@
                     color="primary"
                     @input="v$.lastname.$touch()"
                     density="compact"
+                    prepend-inner-icon="mdi-card-account-details-outline"
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12">
@@ -169,6 +173,7 @@
                     @blur="checkHacienda"
                     @input="v$.hacienda.$touch()"
                     :color="haciendaAvailable ? 'primary' : 'error'"
+                    prepend-inner-icon="mdi-home-outline"
                   ></v-text-field>
                 </v-col>
                 <v-col cols="6">
@@ -200,7 +205,7 @@
                     :append-inner-icon="visible ? 'mdi-eye-off' : 'mdi-eye'"
                     :type="visible ? 'text' : 'password'"
                     density="compact"
-                    prepend-inner-icon="mdi-lock-outline"
+                    prepend-inner-icon="mdi-lock-check-outline"
                     @input="v$.passwordConfirm.$touch()"
                     @click:append-inner="visible = !visible"
                   ></v-text-field>

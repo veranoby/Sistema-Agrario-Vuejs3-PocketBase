@@ -31,7 +31,7 @@
                 size="small"
                 variant="flat"
                 rounded="lg"
-                color="green-lighten-2"
+                color="#6380a247"
                 prepend-icon="mdi-plus"
                 @click="dialogNuevaActividad = true"
                 class="min-w-[210px]"
@@ -90,14 +90,7 @@
                 >
                   <div class="fill-height card-overlay rounded-lg">
                     <v-card-title class="px-1">
-                      <p class="text-white text-sm">{{ actividad.nombre }}</p>
-                      <p class="text-white text-xs font-weight-bold mb-2 mt-0">
-                        {{
-                          actividad.expand?.tipo_actividades?.nombre.toUpperCase() ||
-                          'Tipo no definido'
-                        }}
-                      </p>
-                      <p class="text-caption flex flex-wrap">
+                      <p class="">
                         <v-chip
                           :color="getStatusColor(actividad.activa)"
                           size="x-small"
@@ -106,16 +99,44 @@
                           {{ getActividadEstado(actividad.activa) }}
                         </v-chip>
                       </p>
-                      <p class="text-caption flex flex-wrap">
-                        <span
-                          class="mx-0 mt-1 mb-0 p-0"
-                          v-for="siembraTemp in actividad.siembra"
-                          :key="siembraTemp"
+                      <p class="text-white text-sm">{{ actividad.nombre }}</p>
+                      <p class="text-white text-xs font-weight-bold mb-2 mt-0">
+                        {{ ActividadesStore.getActividadTipo(actividad.tipo_actividades) }}
+                      </p>
+
+                      <p
+                        class="flex flex-wrap"
+                        v-for="siembraTemp in actividad.siembras"
+                        :key="siembraTemp"
+                      >
+                        <v-chip
+                          outlined
+                          size="x-small"
+                          class="compact-chips"
+                          pill
+                          color="green-lighten-3"
+                          variant="flat"
                         >
-                          <v-chip outlined size="x-small" variant="flat">
-                            {{ getSiembraNombre(siembraTemp) }}
-                          </v-chip>
-                        </span>
+                          {{ siembrasStore.getSiembraNombre(siembraTemp) }}
+                        </v-chip>
+                      </p>
+                      <p class="flex flex-wrap" v-for="zonasId in actividad.zonas" :key="zonasId">
+                        <v-chip
+                          size="x-small"
+                          :key="zonasId"
+                          class="compact-chips"
+                          :text="
+                            zonasStore.getZonaById(zonasId)?.nombre.toUpperCase() +
+                            ' - ' +
+                            zonasStore
+                              .getZonaById(zonasId)
+                              ?.expand?.tipos_zonas?.nombre.toUpperCase()
+                          "
+                          pill
+                          color="blue-lighten-3"
+                          variant="flat"
+                        >
+                        </v-chip>
                       </p>
                     </v-card-title>
                   </div>
@@ -159,7 +180,7 @@ const syncStore = useSyncStore()
 const avatarStore = useAvatarStore()
 
 const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
-const { actividades, tiposActividades } = storeToRefs(ActividadesStore)
+const { actividades, tiposActividades, getActividadTipo } = storeToRefs(ActividadesStore)
 
 const { cargarActividades, cargarTiposActividades } = ActividadesStore
 const { siembras } = storeToRefs(siembrasStore)
@@ -179,7 +200,7 @@ const nuevaActividadData = ref({
   datos_bpa: [],
   metricas: {},
   descripcion: '',
-  siembra: [],
+  siembras: [],
   activa: true
 })
 const zonasDisponibles = ref([])
@@ -276,7 +297,7 @@ const crearActividad = async () => {
         datos_bpa: [],
         metricas: {},
         descripcion: '',
-        siembra: []
+        siembras: []
       }
       await ActividadesStore.cargarActividades()
     } catch (error) {
@@ -292,7 +313,7 @@ const abrirActividad = (id) => {
 }
 
 const cargarZonasPorSiembra = async () => {
-  const selectedSiembras = nuevaActividadData.value.siembra
+  const selectedSiembras = nuevaActividadData.value.siembras
   if (selectedSiembras.length > 0) {
     zonasDisponibles.value = await ZonasStore.cargarZonasPorSiembras(selectedSiembras)
   } else {
@@ -300,17 +321,22 @@ const cargarZonasPorSiembra = async () => {
   }
 }
 
-// Function to get the activity type based on the activity ID
+/* Function to get the activity type based on the activity ID
 const getSiembraNombre = (tipoId) => {
   const SiembraNombre = siembrasStore.siembras.find((tipo) => tipo.id === tipoId)
   return SiembraNombre
     ? SiembraNombre.nombre + '-' + SiembraNombre.tipo
     : 'Sin siembras registradas' // Return 'Desconocido' if not found
-}
+}*/
 
 // Function to get the activity status
 const getActividadEstado = (isActive) => {
   return isActive ? 'activa' : 'detenida'
+}
+
+const zonasStore = useZonasStore()
+const getZonaTipo = (zonaId) => {
+  return zonasStore.getZonaById(zonaId)?.expand?.tipos_zonas?.nombre || 'Sin tipo'
 }
 </script>
 
@@ -359,7 +385,7 @@ const getActividadEstado = (isActive) => {
 .text-body-1,
 .text-body-2 {
   color: white !important;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+  /* text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8); */
 }
 
 .v-card__title .text-h6 {

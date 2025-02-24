@@ -48,7 +48,7 @@
                 </v-chip>
 
                 <v-chip variant="flat" size="x-small" color="grey-lighten-2" class="mx-1" pill>
-                  TIPO:{{ getActividadTipo(actividadInfo.tipo_actividades) }}
+                  TIPO:{{ actividadesStore.getActividadTipo(actividadInfo.tipo_actividades) }}
                 </v-chip>
               </h3>
             </div>
@@ -88,33 +88,103 @@
     </div>
 
     <v-row no-gutters>
-      <v-col cols="12" md="8" class="pa-4">
-        <v-card class="actividad-info mb-4" elevation="2">
-          <v-card-title class="headline d-flex justify-between align-center">
-            <span>Información de la Actividad</span>
+      <v-col cols="12" md="9" class="pa-4 pt-2">
+        <v-row no-gutters>
+          <!-- Datos Actividad -->
+          <v-col cols="8" class="pr-2">
+            <v-card class="actividad-info mb-4" elevation="2">
+              <v-card-title class="headline d-flex flex-column">
+                <!-- Primera línea: Título y botón -->
+                <div class="d-flex justify-space-between align-center w-100">
+                  <span>Información de la Actividad</span>
+                  <v-btn color="green-lighten-2" @click="openEditDialog" icon>
+                    <v-icon>mdi-pencil</v-icon>
+                  </v-btn>
+                </div>
 
-            <span>
-              <v-chip
-                v-for="(metrica, key) in actividadInfo.metricas"
-                :key="key"
-                variant="flat"
-                size="x-small"
-                color="green-lighten-3"
-                class="m-1 p-1"
-                pill
-              >
-                {{ key.replace(/_/g, ' ').toUpperCase() }}:{{ metrica.valor }}
-              </v-chip>
-            </span>
+                <!-- Segunda línea: Chips -->
+                <div class="w-100 mt-2">
+                  <v-tooltip
+                    v-for="(metrica, key) in actividadInfo.metricas"
+                    :key="key"
+                    location="bottom"
+                  >
+                    <template v-slot:activator="{ props }">
+                      <v-chip
+                        v-bind="props"
+                        variant="flat"
+                        size="x-small"
+                        color="green-lighten-3"
+                        class="m-1 p-1"
+                        pill
+                      >
+                        {{ key.replace(/_/g, ' ').toUpperCase() }}:
+                        {{ formatMetricValue(metrica.valor) }}
+                      </v-chip>
+                    </template>
+                    <span>{{ metrica.descripcion }}</span>
+                  </v-tooltip>
+                </div>
+              </v-card-title>
+              <v-card-text>
+                <div v-html="actividadInfo.descripcion || 'No disponible'"></div>
+              </v-card-text> </v-card
+          ></v-col>
 
-            <v-btn color="green-lighten-2" @click="openEditDialog" icon>
-              <v-icon>mdi-pencil</v-icon>
-            </v-btn>
-          </v-card-title>
-          <v-card-text>
-            <div v-html="actividadInfo.descripcion || 'No disponible'"></div>
-          </v-card-text>
-        </v-card>
+          <!-- Siembras y Zonas -->
+          <v-col cols="4" class="pl-2">
+            <div class="siembra-info mt-0 p-0">
+              <v-card-title class="headline d-flex justify-between">
+                <h2 class="text-md font-bold mt-2">
+                  <span v-if="actividadInfo.siembras.length > 0">Siembras/Proyectos Asociados</span>
+                </h2>
+                <v-btn size="x-small" color="green-lighten-2" @click="openAddSiembrasZonas" icon>
+                  <v-icon>mdi-pencil</v-icon>
+                </v-btn>
+              </v-card-title>
+              <v-card-text>
+                <div class="flex flex-wrap">
+                  <v-chip
+                    v-for="siembraId in actividadInfo.siembras"
+                    size="x-small"
+                    :key="siembraId"
+                    class="m-1 p-1"
+                    :text="
+                      siembrasStore.getSiembraById(siembraId)?.nombre.toUpperCase() +
+                      ' ' +
+                      siembrasStore.getSiembraById(siembraId)?.tipo.toUpperCase()
+                    "
+                    pill
+                    color="green-lighten-3"
+                    variant="flat"
+                  >
+                  </v-chip>
+                </div>
+                <h2 v-if="actividadInfo.zonas.length > 0" class="text-l font-bold mt-2 mb-2">
+                  Otras Zonas Asociadas
+                </h2>
+
+                <div class="flex flex-wrap">
+                  <v-chip
+                    v-for="zonasId in actividadInfo.zonas"
+                    size="x-small"
+                    :key="zonasId"
+                    class="m-1 p-1"
+                    :text="
+                      zonasStore.getZonaById(zonasId)?.nombre.toUpperCase() +
+                      ' - ' +
+                      zonasStore.getZonaById(zonasId)?.expand?.tipos_zonas?.nombre.toUpperCase()
+                    "
+                    pill
+                    color="blue-lighten-3"
+                    variant="flat"
+                  >
+                  </v-chip>
+                </div>
+              </v-card-text>
+            </div>
+          </v-col>
+        </v-row>
 
         <!-- Bitácora 
         <v-card class="bitacora-section" elevation="2">
@@ -138,50 +208,53 @@
         </v-card> -->
       </v-col>
 
-      <!-- SIDEBAR SIEMBRAS Y ZONAS -->
-      <v-col cols="4" md="4" class="p-0 pr-4">
-        <div class="siembra-info mt-4 p-2">
+      <!-- SIDEBAR  -->
+      <v-col cols="3" md="3" class="p-0 pr-4">
+        <!-- RECORDATORIOS -->
+
+        <div class="siembra-info mt-2 p-2">
           <v-card-title class="headline d-flex justify-between">
-            <h2 class="text-l font-bold mt-2">Siembras Asociadas</h2>
-            <v-btn size="x-small" color="green-lighten-2" @click="openAddSiembrasZonas" icon>
-              <v-icon>mdi-pencil</v-icon>
+            <h2 class="text-md font-bold mt-2">Recordatorios</h2>
+            <v-btn
+              size="x-small"
+              color="green-lighten-2"
+              @click="recordatoriosStore.abrirNuevoRecordatorio(actividadId)"
+              icon
+              rounded="circle"
+              class="ml-auto"
+            >
+              <v-icon>mdi-plus</v-icon>
             </v-btn>
           </v-card-title>
-          <v-card-text>
-            <div class="flex flex-wrap">
-              <v-chip
-                v-for="siembraId in actividadInfo.siembra"
-                size="x-small"
-                :key="siembraId"
-                class="m-1 p-1"
-                :text="siembrasStore.getSiembraById(siembraId)?.nombre.toUpperCase()"
-                pill
-                color="green-lighten-3"
-                variant="flat"
-              >
-              </v-chip>
-            </div>
-            <h2 class="text-l font-bold mt-2 mb-2">Otras Zonas Asociadas</h2>
 
-            <div class="flex flex-wrap">
-              <v-chip
-                v-for="zonasId in actividadInfo.zonas"
-                size="x-small"
-                :key="zonasId"
-                class="m-1 p-1"
-                :text="
-                  zonasStore.getZonaById(zonasId)?.nombre.toUpperCase() +
-                  '(' +
-                  getTipoZonasById(zonasStore.getZonaById(zonasId)?.tipo) +
-                  ')'
-                "
-                pill
-                color="blue-lighten-3"
-                variant="flat"
-              >
-              </v-chip>
-            </div>
-          </v-card-text>
+          <!-- Panel de editar recordatorios -->
+          <RecordatorioForm
+            :model-value="recordatoriosStore.dialog"
+            @update:modelValue="recordatoriosStore.dialog = $event"
+            :recordatorio="recordatoriosStore.recordatorioEdit"
+            :is-editing="recordatoriosStore.editando"
+            @submit="handleFormSubmit"
+          />
+
+          <!-- Panel de Pendientes -->
+          <StatusPanel
+            title="Pendientes"
+            color="red"
+            :items="recordatoriosStore.recordatoriosPendientes(actividadId)"
+            @update-status="recordatoriosStore.actualizarEstado"
+            @edit="recordatoriosStore.editarRecordatorio"
+            @delete="recordatoriosStore.eliminarRecordatorio"
+          />
+          <br />
+          <!-- Panel En Progreso -->
+          <StatusPanel
+            title="En Progreso"
+            color="amber"
+            :items="recordatoriosStore.recordatoriosEnProgreso(actividadId)"
+            @update-status="recordatoriosStore.actualizarEstado"
+            @edit="recordatoriosStore.editarRecordatorio"
+            @delete="recordatoriosStore.eliminarRecordatorio"
+          />
         </div>
       </v-col>
     </v-row>
@@ -232,71 +305,98 @@
                   <v-card-text>
                     <div class="grid grid-cols-2 gap-0">
                       <div v-for="(metrica, key) in editedActividad.metricas" :key="key" cols="6">
-                        <!-- Select para tipo "select" -->
-                        <v-select
-                          v-if="metrica.tipo === 'select'"
-                          v-model="metrica.valor"
-                          :label="key.replace(/_/g, ' ')"
-                          :items="metrica.opciones"
-                          variant="outlined"
-                          density="compact"
-                          class="compact-form"
-                        >
-                          <template v-slot:append>
-                            <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
+                        <v-tooltip location="bottom">
+                          <template v-slot:activator="{ props }">
+                            <div v-bind="props">
+                              <!-- Select para tipo "select" -->
+                              <v-select
+                                v-if="metrica.tipo === 'select'"
+                                v-model="metrica.valor"
+                                :label="key.replace(/_/g, ' ')"
+                                :items="metrica.opciones"
+                                variant="outlined"
+                                density="compact"
+                                class="compact-form"
+                              >
+                                <template v-slot:append>
+                                  <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
+                                </template>
+                              </v-select>
+
+                              <!-- Input number para tipo "date" -->
+                              <v-text-field
+                                v-else-if="metrica.tipo === 'date'"
+                                v-model="metrica.valor"
+                                :label="key.replace(/_/g, ' ')"
+                                type="date"
+                                density="compact"
+                                variant="outlined"
+                                class="compact-form"
+                                :rules="[validateDate]"
+                              >
+                                <template v-slot:append>
+                                  <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
+                                </template>
+                              </v-text-field>
+
+                              <!-- Input number para tipo "text" -->
+                              <v-text-field
+                                v-else-if="metrica.tipo === 'text'"
+                                v-model.number="metrica.valor"
+                                :label="key.replace(/_/g, ' ')"
+                                density="compact"
+                                variant="outlined"
+                                class="compact-form"
+                              >
+                                <template v-slot:append>
+                                  <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
+                                </template>
+                              </v-text-field>
+
+                              <!-- Input number para tipo "number" -->
+                              <v-text-field
+                                v-else-if="metrica.tipo === 'number'"
+                                v-model.number="metrica.valor"
+                                :label="key.replace(/_/g, ' ')"
+                                type="number"
+                                density="compact"
+                                variant="outlined"
+                                class="compact-form"
+                              >
+                                <template v-slot:append>
+                                  <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
+                                </template>
+                              </v-text-field>
+
+                              <!-- Input number para tipo "boolean" -->
+                              <v-checkbox
+                                v-else-if="metrica.tipo === 'boolean'"
+                                v-model.number="metrica.valor"
+                                :label="key.replace(/_/g, ' ')"
+                                density="compact"
+                                class="compact-form"
+                              >
+                                <template v-slot:append>
+                                  <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
+                                </template>
+                              </v-checkbox>
+
+                              <!-- Input number para tipo "checkbox" -->
+                              <v-checkbox
+                                v-else-if="metrica.tipo === 'checkbox'"
+                                v-model.number="metrica.valor"
+                                :label="key.replace(/_/g, ' ')"
+                                density="compact"
+                                class="compact-form"
+                              >
+                                <template v-slot:append>
+                                  <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
+                                </template>
+                              </v-checkbox>
+                            </div>
                           </template>
-                        </v-select>
-                        <!-- Input number para tipo "text" -->
-                        <v-text-field
-                          v-else-if="metrica.tipo === 'text'"
-                          v-model.number="metrica.valor"
-                          :label="key.replace(/_/g, ' ')"
-                          density="compact"
-                          variant="outlined"
-                          class="compact-form"
-                        >
-                          <template v-slot:append>
-                            <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
-                          </template>
-                        </v-text-field>
-                        <!-- Input number para tipo "number" -->
-                        <v-text-field
-                          v-else-if="metrica.tipo === 'number'"
-                          v-model.number="metrica.valor"
-                          :label="key.replace(/_/g, ' ')"
-                          type="number"
-                          density="compact"
-                          variant="outlined"
-                          class="compact-form"
-                        >
-                          <template v-slot:append>
-                            <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
-                          </template>
-                        </v-text-field>
-                        <!-- Input number para tipo "boolean" -->
-                        <v-checkbox
-                          v-else-if="metrica.tipo === 'boolean'"
-                          v-model.number="metrica.valor"
-                          :label="key.replace(/_/g, ' ')"
-                          density="compact"
-                          class="compact-form"
-                        >
-                          <template v-slot:append>
-                            <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
-                          </template></v-checkbox
-                        >
-                        <!-- Input number para tipo "checkbox" -->
-                        <v-checkbox
-                          v-else-if="metrica.tipo === 'checkbox'"
-                          v-model.number="metrica.valor"
-                          :label="key.replace(/_/g, ' ')"
-                          density="compact"
-                          class="compact-form"
-                        >
-                          <template v-slot:append>
-                            <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
-                          </template></v-checkbox
-                        >
+                          <span>{{ metrica.descripcion }}</span>
+                        </v-tooltip>
                       </div>
                     </div>
                   </v-card-text>
@@ -469,12 +569,16 @@
     <v-dialog v-model="dialogSiembrasZonas" persistent max-width="900px">
       <div class="grid grid-cols-2 gap-2 p-0 m-2 bg-white">
         <v-card>
-          <v-toolbar color="success" dark>
-            <v-toolbar-title>Siembras disponibles</v-toolbar-title>
+          <v-toolbar color="success" dark density="compact">
+            <v-toolbar-title small
+              ><span class="text-sm"
+                ><v-icon class="mr-2">mdi-sprout</v-icon>Siembras/Proyectos</span
+              ></v-toolbar-title
+            >
             <v-spacer></v-spacer>
           </v-toolbar>
 
-          <v-card-text class="siembra-info ml-4 mr-4">
+          <v-card-text class="ml-4 mr-4">
             <v-chip-group column color="green-darken-4" multiple v-model="selectedSiembras">
               <v-chip
                 v-for="siembra in siembras"
@@ -488,17 +592,21 @@
           </v-card-text>
         </v-card>
         <v-card>
-          <v-toolbar color="primary" dark>
-            <v-toolbar-title>Zonas disponibles</v-toolbar-title>
+          <v-toolbar color="primary" dark density="compact">
+            <v-toolbar-title
+              ><span class="text-sm"
+                ><v-icon class="mr-2">mdi-map</v-icon>Zonas disponibles</span
+              ></v-toolbar-title
+            >
             <v-spacer></v-spacer>
           </v-toolbar>
 
-          <v-card-text class="siembra-info ml-4 mr-4">
+          <v-card-text class="ml-4 mr-4">
             <v-chip-group color="blue-darken-4" column multiple v-model="selectedZonas">
               <v-chip
                 v-for="zona in filteredZonas"
                 :key="zona.id"
-                :text="`${zona.nombre}(${getTipoZonasById(zona.tipo)})`"
+                :text="`${zona.nombre}(${zonasStore.getZonaById(zona.id)?.expand?.tipos_zonas?.nombre.toUpperCase()})`"
                 :value="zona.id"
                 filter
                 size="small"
@@ -535,7 +643,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, defineAsyncComponent } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 
 import { useRoute } from 'vue-router'
 import { useActividadesStore } from '@/stores/actividadesStore'
@@ -547,7 +655,12 @@ import { useHaciendaStore } from '@/stores/haciendaStore'
 import AvatarForm from '@/components/forms/AvatarForm.vue'
 
 import { editor, editorConfig } from '@/utils/ckeditorConfig'
-import CKEditor from '@ckeditor/ckeditor5-vue'
+
+//import CKEditor from '@ckeditor/ckeditor5-vue'
+
+import StatusPanel from '@/components/StatusPanel.vue'
+import RecordatorioForm from '@/components/forms/RecordatorioForm.vue'
+import { useRecordatoriosStore } from '@/stores/recordatoriosStore'
 
 import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useZonasStore } from '@/stores/zonasStore'
@@ -559,6 +672,7 @@ const profileStore = useProfileStore()
 const haciendaStore = useHaciendaStore()
 const siembrasStore = useSiembrasStore()
 const zonasStore = useZonasStore()
+const recordatoriosStore = useRecordatoriosStore()
 
 const actividadId = ref(route.params.id)
 const actividadInfo = ref({})
@@ -588,9 +702,6 @@ const { tiposActividades } = storeToRefs(actividadesStore)
 const { siembras } = storeToRefs(siembrasStore)
 const { zonas, tiposZonas } = storeToRefs(zonasStore)
 
-/*const siembras = computed(() => siembrasStore.siembras)
-const zonas = computed(() => zonasStore.zonas)*/
-
 const userRole = computed(() => user.value?.role || '')
 
 // Computed para determinar el color basado en el promedio
@@ -608,7 +719,7 @@ const tipoActividadActual = computed(() => {
   return tiposActividades.value.find((tipo) => tipo.id === actividadInfo.value.tipo_actividades)
 })
 
-const tipoActividadNombre = computed(() => actividadInfo.value.expand.tipo_actividades.nombre)
+//const tipoActividadNombre = computed(() => actividadInfo.value.expand.tipo_actividades.nombre)
 
 const getBpaPreguntas = computed(() => {
   const tipoActividadFiltrar = actividadesStore.tiposActividades.find(
@@ -649,14 +760,15 @@ const filteredBitacora = computed(() => {
   return [] // Placeholder
 })
 */
+
 onMounted(async () => {
   try {
     await loadActividadInfo()
     await actividadesStore.cargarTiposActividades()
     await siembrasStore.cargarSiembras()
-
     await zonasStore.cargarZonas()
     await zonasStore.cargarTiposZonas() // Asegúrate de cargar los tipos de zonas
+    await recordatoriosStore.cargarRecordatorios()
   } catch (error) {
     handleError(error, 'Error al cargar la información de la actividad')
   } finally {
@@ -664,13 +776,10 @@ onMounted(async () => {
   }
 })
 
-async function loadActividadInfo() {
-  try {
-    const actividad = await actividadesStore.fetchActividadById(actividadId.value)
-    actividadInfo.value = actividad
-  } catch (error) {
-    handleError(error, 'Error al cargar la actividad')
-  }
+const loadActividadInfo = async () => {
+  actividadInfo.value = await actividadesStore.fetchActividadById(actividadId.value, {
+    expand: 'tipo_actividades, zonas.tipos_zonas'
+  })
 }
 
 function openEditDialog() {
@@ -681,19 +790,45 @@ function openEditDialog() {
 function openAddMetricaDialog() {
   addMetricaDialog.value = true
 }
-function addMetrica() {
-  if (newMetrica.value.titulo && newMetrica.value.tipo) {
-    // Reemplazar espacios en blanco por guiones bajos en el título
-    const sanitizedTitulo = newMetrica.value.titulo.replace(/\s+/g, '_')
 
-    editedActividad.value.metricas[sanitizedTitulo] = {
+function addMetrica() {
+  if (!newMetrica.value.titulo || !newMetrica.value.descripcion || !newMetrica.value.tipo) {
+    snackbarStore.showError('Por favor complete todos los campos')
+    return
+  }
+
+  // Asegurarse que el valor inicial sea del tipo correcto
+  let valorInicial = ''
+  switch (newMetrica.value.tipo) {
+    case 'number':
+      valorInicial = 0
+      break
+    case 'text':
+      valorInicial = ''
+      break
+    case 'select':
+      valorInicial = []
+      break
+    default:
+      valorInicial = ''
+  }
+
+  // Crear la nueva métrica con el formato correcto
+  const metricaKey = newMetrica.value.titulo.toLowerCase().replace(/ /g, '_')
+  editedActividad.value.metricas = {
+    ...editedActividad.value.metricas,
+    [metricaKey]: {
       descripcion: newMetrica.value.descripcion,
       tipo: newMetrica.value.tipo,
-      valor: null // Inicializar valor como null
+      valor: valorInicial
     }
-    newMetrica.value = { titulo: '', descripcion: '', tipo: '' } // Resetear
-    addMetricaDialog.value = false
   }
+
+  // Cerrar el diálogo
+  addMetricaDialog.value = false
+
+  // Limpiar el formulario
+  newMetrica.value = { titulo: '', descripcion: '', tipo: '' }
 }
 
 function removeMetrica(index) {
@@ -707,11 +842,6 @@ async function saveActividad() {
     }
 
     editedActividad.value.nombre = editedActividad.value.nombre.toUpperCase()
-
-    /* Calcular bpa_estado antes de guardar
-    editedActividad.value.bpa_estado = actividadesStore.calcularBpaEstado(
-      editedActividad.value.datos_bpa
-    )*/
 
     // Crear un nuevo objeto con solo los campos necesarios
     const actividadToUpdate = {
@@ -736,14 +866,10 @@ async function saveActividad() {
   }
 }
 
-// Function to get the activity type based on the activity ID
+/* Function to get the activity type based on the activity ID
 const getActividadTipo = (tipoId) => {
   const tipoActividad = actividadesStore.tiposActividades.find((tipo) => tipo.id === tipoId)
-  return tipoActividad ? tipoActividad.nombre.toUpperCase() : 'Desconocido' // Return 'Desconocido' if not found
-}
-
-/*function handleAvatarUpdated(updatedRecord) {
-  editedActividad.value.avatarUrl = updatedRecord.avatarUrl
+  return tipoActividad ? tipoActividad.nombre.toUpperCase() : 'Desconocido'
 }*/
 
 const handleAvatarUpdated = (updatedRecord) => {
@@ -756,54 +882,56 @@ const handleAvatarUpdated = (updatedRecord) => {
   actividadInfo.value = { ...actividadInfo.value, ...updatedRecord }
 }
 
-// Función para obtener el nombre de la siembra por ID
-const getSiembraName = (id) => {
-  const siembra = siembrasStore.siembras.find((siembra) => siembra.id === id)
-
-  return siembra ? siembra.nombre.toUpperCase() + '-' + siembra.tipo : 'Siembra no encontrada'
-}
-
-const getZonaName = (id) => {
-  const zona = zonasStore.zonas.find((zona) => zona.id === id)
-
-  return zona
-    ? zona.nombre.toUpperCase() + '(' + getTipoZonasById(zona.tipo) + ')'
-    : 'Zona no encontrada'
-}
-
-const getTipoZonasById = (tiposZonasId) => {
-  const tipoZona = tiposZonas.value.find((tipo) => tipo.id === tiposZonasId)
-  return tipoZona ? tipoZona.nombre : 'Tipo de zona no encontrado' // Retorna el nombre o un mensaje si no se encuentra
-}
-
 const filteredZonas = computed(() => {
   const zonastemp = zonas.value.filter((zona) => !zona.siembra) // Filtrar zonas sin siembra
-  console.log('zonasStore.zonas:', zonasStore.zonas)
-  console.log('zonastemp:', zonastemp)
   return zonastemp
 })
 
 // Función para abrir el diálogo
 const openAddSiembrasZonas = () => {
   dialogSiembrasZonas.value = true
-  selectedSiembras.value = actividadInfo.value.siembra || [] // Asignar siembras existentes
+  selectedSiembras.value = actividadInfo.value.siembras || [] // Asignar siembras existentes
   selectedZonas.value = actividadInfo.value.zonas || [] // Asignar zonas existentes
 }
 
 const saveSelection = async () => {
-  actividadInfo.value.siembra = selectedSiembras.value // Guardar las siembras seleccionadas en la actividad
+  actividadInfo.value.siembras = selectedSiembras.value // Guardar las siembras seleccionadas en la actividad
   actividadInfo.value.zonas = selectedZonas.value // Guardar las siembras seleccionadas en la actividad
   dialogSiembrasZonas.value = false // Cerrar el diálogo
 
   // Llama a updateActividad para guardar los cambios
   try {
     await actividadesStore.updateActividad(actividadId.value, {
-      siembra: actividadInfo.value.siembra,
+      siembras: actividadInfo.value.siembra,
       zonas: actividadInfo.value.zonas
     })
     console.log('Actividad actualizada correctamente')
   } catch (error) {
     console.error('Error al actualizar la actividad:', error)
+  }
+}
+
+const validateDate = (value) => {
+  if (!value) return true
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/
+  return dateRegex.test(value) || 'Formato inválido (yyyy-MM-dd)'
+}
+
+const formatMetricValue = (value) => {
+  if (!value || value === null) return 'N/A'
+  return Array.isArray(value) ? value[0] : value
+}
+
+async function handleFormSubmit(data) {
+  try {
+    if (recordatoriosStore.editando) {
+      await recordatoriosStore.actualizarRecordatorio(data.id, data)
+    } else {
+      await recordatoriosStore.crearRecordatorio(data)
+    }
+    recordatoriosStore.dialog = false
+  } catch (error) {
+    handleError(error, 'Error al guardar recordatorio')
   }
 }
 </script>

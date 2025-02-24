@@ -1,6 +1,7 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import piniaPersist from 'pinia-plugin-persistedstate'
+import { format } from 'date-fns'
 
 import App from './App.vue'
 import router from './router'
@@ -73,6 +74,13 @@ app.use(router)
 app.use(vuetify)
 app.use(useVuelidate)
 app.use(CKEditor)
+
+app.config.globalProperties.$filters = {
+  formatDate(value) {
+    if (!value) return ''
+    return format(new Date(value), 'dd/MM/yyyy')
+  }
+}
 
 // Inicializar stores críticos antes de montar la app
 const initApp = async () => {

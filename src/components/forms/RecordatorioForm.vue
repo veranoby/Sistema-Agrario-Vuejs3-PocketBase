@@ -93,7 +93,7 @@
                 <v-chip
                   v-for="zona in filteredZonas"
                   :key="zona.id"
-                  :text="`${zona.nombre}(${getTipoZonasById(zona.tipo)})`"
+                  :text="`${zona.nombre} (${getTipoZonasById(zona.tipos_zonas)})`"
                   :value="zona.id"
                   filter
                   size="small"
@@ -111,17 +111,18 @@
             </v-toolbar>
 
             <v-card-text>
-              <v-chip-group color="blue-darken-3" column multiple v-model="formData.actividades">
+              <v-chip-group color="orange-darken-3" column multiple v-model="formData.actividades">
                 <v-chip
                   v-for="actividad in actividadesOptions"
                   :key="actividad.id"
-                  :text="`${actividad.nombre}`"
                   :value="actividad.id"
                   filter
                   size="small"
                   density="compact"
                   pill
-                ></v-chip>
+                >
+                  {{ actividad.nombre }}
+                </v-chip>
               </v-chip-group>
             </v-card-text>
           </v-card>

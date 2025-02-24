@@ -78,7 +78,7 @@
 
             <div class="flex">
               <v-select
-                v-model="zonaLocal.tipo"
+                v-model="zonaLocal.tipos_zonas"
                 class="compact-form"
                 :disabled="true"
                 :items="tiposZonas"
@@ -227,7 +227,7 @@
 
         <!-- Formulario de Seguimiento BPA -->
 
-        <div class="siembra-info mt-4" v-if="zonaLocal.tipo">
+        <div class="siembra-info mt-4" v-if="zonaLocal.tipos_zonas">
           <v-card-title class="headline">
             <h2 class="text-xl font-bold mt-2">Seguimiento BPA</h2>
           </v-card-title>
@@ -421,7 +421,7 @@ const initialState = {
   nombre: '',
   area: { area: null, unidad: 'ha' },
   info: '',
-  tipo: props.tipoZonaActual?.id,
+  tipos_zonas: props.tipoZonaActual?.id,
   hacienda: mi_hacienda.value?.id,
   siembra: props.siembraContext?.id || null,
   datos_bpa: [],
@@ -444,7 +444,7 @@ const zonaLocal = reactive({ ...initialState })
 
 // Computed properties
 const getBpaPreguntas = computed(() => {
-  const tipoZona = tiposZonas.value.find((t) => t.id === zonaLocal.tipo)
+  const tipoZona = tiposZonas.value.find((t) => t.id === zonaLocal.tipos_zonas)
   return tipoZona?.datos_bpa?.preguntas_bpa || []
 })
 
@@ -572,7 +572,7 @@ watch(
       // Modo creación - Inicializar con valores por defecto
       Object.assign(zonaLocal, {
         ...initialState,
-        tipo: props.tipoZonaActual?.id,
+        tipos_zonas: props.tipoZonaActual?.id,
         datos_bpa: initializeDatosBpa(props.tipoZonaActual),
         metricas: initializeMetricas(props.tipoZonaActual)
       })
@@ -586,7 +586,7 @@ watch(
   () => props.tipoZonaActual,
   (newTipoZona) => {
     if (newTipoZona && !props.modoEdicion) {
-      zonaLocal.tipo = newTipoZona.id
+      zonaLocal.tipos_zonas = newTipoZona.id
       zonaLocal.datos_bpa = initializeDatosBpa(newTipoZona)
       zonaLocal.metricas = initializeMetricas(newTipoZona)
     }

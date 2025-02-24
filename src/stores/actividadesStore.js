@@ -4,8 +4,6 @@ import { useSyncStore } from './syncStore'
 import { useSnackbarStore } from './snackbarStore'
 import { handleError } from '@/utils/errorHandler'
 import { useHaciendaStore } from './haciendaStore'
-//import { useZonasStore } from './zonasStore'
-//import { useAvatarStore } from './avatarStore'
 
 export const useActividadesStore = defineStore('actividades', {
   state: () => ({
@@ -36,13 +34,21 @@ export const useActividadesStore = defineStore('actividades', {
       return actividadesHacienda.length
         ? Math.round(totalBpaEstado / actividadesHacienda.length)
         : 0
-    }
+    },
 
-    // Function to get the activity type based on the activity ID
-    /*  getActividadTipo: (state) => (tipoId) => {
+    getActividadTipo: (state) => (tipoId) => {
       const tipoActividad = state.tiposActividades.find((tipo) => tipo.id === tipoId)
-      return tipoActividad ? tipoActividad.nombre : 'Desconocido' // Return 'Desconocido' if not found
-    } */
+      return tipoActividad ? tipoActividad.nombre : 'Desconocido'
+    },
+
+    getNombreActividad: (state) => (actividadId) => {
+      const actividad = state.actividades.find((a) => a.id === actividadId)
+      return actividad?.nombre || 'Actividad no encontrada'
+    },
+
+    getTiposActividades: (state) => {
+      return state.tiposActividades
+    }
   },
 
   actions: {
@@ -78,7 +84,7 @@ export const useActividadesStore = defineStore('actividades', {
         const records = await pb.collection('actividades').getFullList({
           sort: 'nombre',
           filter: `hacienda="${haciendaStore.mi_hacienda?.id}"`,
-          expand: 'tipo_actividades'
+          expand: 'tipo_actividades,siembras'
         })
         this.actividades = records
         this.lastSync = Date.now()
@@ -154,6 +160,7 @@ export const useActividadesStore = defineStore('actividades', {
       const enrichedData = {
         ...updateData,
         tipo_actividades: updateData.tipo_actividades,
+        metricas: updateData.metricas || {},
         bpa_estado: this.calcularBpaEstado(updateData.datos_bpa),
         version: this.version
       }
@@ -251,7 +258,8 @@ export const useActividadesStore = defineStore('actividades', {
 
       try {
         const records = await pb.collection('tipo_actividades').getFullList({
-          sort: 'nombre'
+          sort: 'nombre',
+          expand: 'metricas,datos_bpa'
         })
         this.tiposActividades = records.map((record) => ({
           id: record.id,

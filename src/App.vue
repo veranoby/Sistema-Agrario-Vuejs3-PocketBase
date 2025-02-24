@@ -18,6 +18,11 @@
       @HandleDrawer="handleLoginSuccess"
     />
 
+    <AuthModal
+      v-model:isOpen="authStore.showLoginDialog"
+      @update:isOpen="authStore.showLoginDialog = $event"
+    />
+
     <v-main>
       <router-view v-slot="{ Component }">
         <transition name="fade" mode="out-in">
@@ -54,11 +59,12 @@ const showHeader = computed(() => route.name !== 'login')
 const currentPage = computed(() => route.name?.toUpperCase() || '')
 
 const navigationLinks = [
-  { id: 1, to: '/dashboard', icon: 'mdi-view-dashboard', label: 'Dashboard' },
-  { id: 2, to: '/siembras', icon: 'mdi-sprout', label: 'Siembras' },
+  { id: 1, to: '/dashboard', icon: 'mdi-view-dashboard', label: 'D A S H B O A R D' },
+  { id: 2, to: '/siembras', icon: 'mdi-sprout', label: 'Siembras/Proyectos' },
   { id: 3, to: '/zonas', icon: 'mdi-map', label: 'Zonas' },
   { id: 4, to: '/actividades', icon: 'mdi-gesture-tap-button', label: 'Actividades' },
-  { id: 5, to: '/recordatorios', icon: 'mdi-alarm', label: 'Recordatorios' }
+  { id: 5, to: '/programaciones', icon: 'mdi-alarm-check', label: 'Programaciones' },
+  { id: 6, to: '/recordatorios', icon: 'mdi-alarm-light-outline', label: 'Recordatorios' }
 ]
 
 const handleLoginSuccess = () => {

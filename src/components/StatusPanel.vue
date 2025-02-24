@@ -1,11 +1,16 @@
 <template>
   <v-card density="compact" class="m-1 p-0 siembra-info">
     <v-toolbar density="compact" class="m-0 siembra-info">
-      <v-toolbar-title class="text-lg font-weight-bold m-0 ml-3">
+      <v-toolbar-title class="text-sm font-weight-bold m-0 ml-3">
         <!-- Icono de prioridad -->
-        <v-icon :color="color" class="ml-0" variant="outlined" :icon="statusIcon(color)"></v-icon>
-
-        Recordatorios {{ title }}
+        <v-icon
+          :color="color"
+          size="x-large"
+          variant="outlined"
+          :icon="statusIcon(color)"
+          class="mr-3 lm-1"
+        ></v-icon>
+        {{ title }}
       </v-toolbar-title>
 
       <v-chip :color="color" variant="outlined" class="m-0 mr-2" size="small">
@@ -60,13 +65,14 @@
                   <v-chip
                     v-for="siembraId in item.siembras"
                     :key="siembraId"
-                    color="green"
+                    color="green-lighten-3"
                     size="x-small"
-                    class="mr-1"
+                    class="compact-chips"
                     pill
                     variant="flat"
                   >
                     {{ siembrasStore.getSiembraById(siembraId)?.nombre }}
+                    {{ siembrasStore.getSiembraById(siembraId)?.tipo }}
                   </v-chip>
                   <br />
                 </template>
@@ -76,13 +82,13 @@
                   <v-chip
                     v-for="zonaId in item.zonas"
                     :key="zonaId"
-                    color="blue"
+                    color="blue-lighten-3"
                     size="x-small"
-                    class="mr-1"
+                    class="compact-chips"
                     pill
                     variant="flat"
                   >
-                    {{ zonasStore.getZonaById(zonaId)?.nombre || 'Zona no encontrada' }}
+                    {{ getZonaNombre(zonaId) }}
                   </v-chip>
                   <br />
                 </template>
@@ -92,9 +98,9 @@
                   <v-chip
                     v-for="actividad in item.expand.actividades"
                     :key="actividad.id"
-                    color="orange"
+                    color="orange-lighten-3"
                     size="x-small"
-                    class="mr-1"
+                    class="compact-chips"
                     pill
                     variant="flat"
                   >
@@ -225,9 +231,9 @@ const handleStatusClick = (item) => {
 
 const priorityIcon = (prioridad) => {
   const icons = {
-    alta: 'mdi-arrow-up-bold-box',
-    media: 'mdi-minus-box',
-    baja: 'mdi-arrow-down-bold-box'
+    alta: 'mdi-arrow-up-thin-circle-outline',
+    media: 'mdi-adjust',
+    baja: 'mdi-arrow-down-thin-circle-outline'
   }
   return icons[prioridad] || 'mdi-alert'
 }
@@ -235,10 +241,16 @@ const priorityIcon = (prioridad) => {
 const priorityColor = (prioridad) => {
   const colors = {
     alta: 'red',
-    media: '#bf620f',
+    media: '#ffc107',
     baja: '#0000007d'
   }
   return colors[prioridad] || 'grey'
+}
+
+const getZonaNombre = (zonaId) => {
+  const zona = zonasStore.getZonaById(zonaId)
+  if (!zona) return 'Zona no encontrada'
+  return `${zona.nombre} (${zona.expand?.tipos_zonas?.nombre || 'Sin tipo'})`
 }
 </script>
 

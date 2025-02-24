@@ -5,7 +5,7 @@
         <template v-slot:prepend>
           <v-icon :icon="link.icon"></v-icon>
         </template>
-        <v-list-item-title class="text-sm sm:text-base">{{ link.label }}</v-list-item-title>
+        <v-list-item-title class="text-xs">{{ link.label }}</v-list-item-title>
       </v-list-item>
     </v-list>
     <v-alert v-else type="error">
@@ -24,7 +24,7 @@
             <v-icon icon="mdi-account-circle"></v-icon>
           </template>
 
-          <v-list-item-title class="text-sm sm:text-base">Mi Info / Hacienda</v-list-item-title>
+          <v-list-item-title class="text-xs">P E R F I L / H A C I E N D A</v-list-item-title>
         </v-list-item>
 
         <v-list-item v-if="isLoggedIn" @click="handleLogout" link>
@@ -32,7 +32,7 @@
             <v-icon icon="mdi-logout"></v-icon>
           </template>
 
-          <v-list-item-title class="text-sm sm:text-base">Logout</v-list-item-title>
+          <v-list-item-title class="text-xs">L O G O U T</v-list-item-title>
         </v-list-item>
       </v-list>
     </div>
