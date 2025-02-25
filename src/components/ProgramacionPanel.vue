@@ -1,5 +1,5 @@
 <template>
-  <v-card class="mb-4">
+  <v-card class="mb-4 siembra-info">
     <v-card-text>
       <div class="flex items-center justify-between mb-2">
         <div>
@@ -57,27 +57,27 @@ const props = defineProps({
 
 const actividadesStore = useActividadesStore()
 
-const colorEstado = computed(() => {
-  const colors = {
-    activo: 'green',
-    pausado: 'orange',
-    finalizado: 'red'
-  }
-  return colors[props.programacion.estado] || 'gray'
-})
+const colorEstado = computed(
+  () =>
+    ({
+      activo: 'green',
+      pausado: 'orange',
+      finalizado: 'red'
+    })[props.programacion.estado] || 'gray'
+)
 
 const actividadTipo = computed(() => {
   const actividadId = props.programacion.actividades?.[0]
   if (!actividadId) return ''
-
-  const actividad = actividadesStore.actividades.find((a) => a.id === actividadId)
-  if (!actividad?.tipo_actividades?.length) return ''
-
-  const tipo = actividadesStore.tiposActividades.find((t) => t.id === actividad.tipo_actividades[0])
-  return tipo?.nombre || ''
+  return actividadesStore.getActividadTipo(actividadId) || ''
 })
 
 const formatFecha = (fecha) => {
-  return fecha ? new Date(fecha).toLocaleDateString() : 'No programado'
+  if (!fecha) return 'No programado'
+  return new Intl.DateTimeFormat('es-ES', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  }).format(new Date(fecha))
 }
 </script>

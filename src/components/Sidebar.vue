@@ -1,7 +1,13 @@
 <template>
   <v-sheet v-if="isLoggedIn" class="d-flex flex-column" style="height: 90vh">
     <v-list v-if="navigationLinks && navigationLinks.length > 0" lines="two">
-      <v-list-item v-for="link in navigationLinks" :key="link.id" :to="link.to" link>
+      <v-list-item
+        v-for="link in navigationLinks"
+        :key="link.id"
+        :to="link.to"
+        link
+        :class="{ 'active-link': isActive(link.to), 'vivid-hover': true }"
+      >
         <template v-slot:prepend>
           <v-icon :icon="link.icon"></v-icon>
         </template>
@@ -19,15 +25,20 @@
 
     <div class="flex flex-col">
       <v-list>
-        <v-list-item v-if="isLoggedIn" @click="$router.push('/profile')" link>
+        <v-list-item
+          v-if="isLoggedIn"
+          @click="$router.push('/profile')"
+          link
+          :class="{ 'active-link': isActive('/profile'), 'vivid-hover': true }"
+        >
           <template v-slot:prepend>
             <v-icon icon="mdi-account-circle"></v-icon>
           </template>
 
-          <v-list-item-title class="text-xs">P E R F I L / H A C I E N D A</v-list-item-title>
+          <v-list-item-title class="text-xs"> P E R F I L / H A C I E N D A </v-list-item-title>
         </v-list-item>
 
-        <v-list-item v-if="isLoggedIn" @click="handleLogout" link>
+        <v-list-item v-if="isLoggedIn" @click="handleLogout" link class="vivid-hover">
           <template v-slot:prepend>
             <v-icon icon="mdi-logout"></v-icon>
           </template>
@@ -42,6 +53,7 @@
 <script>
 import { computed, watch } from 'vue'
 import { useAuthStore } from '../stores/authStore'
+import { useRoute } from 'vue-router'
 
 export default {
   name: 'AppSidebar',
@@ -50,7 +62,12 @@ export default {
   },
   setup(props, { emit }) {
     const authStore = useAuthStore()
+    const route = useRoute()
     const isLoggedIn = computed(() => authStore.isLoggedIn)
+
+    const isActive = (linkPath) => {
+      return route.path.startsWith(linkPath)
+    }
 
     watch(isLoggedIn, (newValue) => {
       if (!newValue) {
@@ -63,7 +80,7 @@ export default {
       // Redirigir o realizar otras acciones necesarias
     }
 
-    return { isLoggedIn, handleLogout }
+    return { isLoggedIn, handleLogout, isActive }
   }
 }
 </script>
@@ -71,5 +88,26 @@ export default {
 <style scoped>
 .sidebar-wrapper {
   /* Add your sidebar styles here */
+}
+
+.active-link {
+  background-color: white !important;
+  color: black !important;
+  border-radius: 4px;
+  margin: 2px;
+}
+
+.active-link .v-icon {
+  color: black !important;
+}
+
+.vivid-hover:hover {
+  background-color: #4caf50 !important; /* Verde más intenso */
+  color: white !important;
+  transition: background-color 0.3s ease;
+}
+
+.vivid-hover:hover .v-icon {
+  color: white !important;
 }
 </style>

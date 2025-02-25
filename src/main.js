@@ -27,8 +27,8 @@ import '@fontsource/plus-jakarta-sans/700.css'
 import '@fontsource/plus-jakarta-sans/800.css'
 import { useVuelidate } from '@vuelidate/core'
 
-import CKEditor from '@ckeditor/ckeditor5-vue'
-import ClassicEditor from '@ckeditor/ckeditor5-build-classic'
+import { QuillEditor } from '@vueup/vue-quill'
+import '@vueup/vue-quill/dist/vue-quill.snow.css'
 
 const vuetify = createVuetify({
   components,
@@ -73,7 +73,7 @@ app.use(pinia)
 app.use(router)
 app.use(vuetify)
 app.use(useVuelidate)
-app.use(CKEditor)
+app.component('QuillEditor', QuillEditor)
 
 app.config.globalProperties.$filters = {
   formatDate(value) {

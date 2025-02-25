@@ -25,24 +25,22 @@ export const useActividadesStore = defineStore('actividades', {
     promedioBpaEstado() {
       const haciendaStore = useHaciendaStore()
       const actividadesHacienda = this.actividades.filter(
-        (actividad) => actividad.hacienda === haciendaStore.mi_hacienda?.id
+        (a) => a.hacienda === haciendaStore.mi_hacienda?.id
       )
-      const totalBpaEstado = actividadesHacienda.reduce(
-        (acc, actividad) => acc + (actividad.bpa_estado || 0),
-        0
-      )
-      return actividadesHacienda.length
-        ? Math.round(totalBpaEstado / actividadesHacienda.length)
-        : 0
+
+      if (!actividadesHacienda.length) return 0
+
+      const totalBpa = actividadesHacienda.reduce((acc, a) => acc + (a.bpa_estado || 0), 0)
+      return Math.round(totalBpa / actividadesHacienda.length)
     },
 
     getActividadTipo: (state) => (tipoId) => {
-      const tipoActividad = state.tiposActividades.find((tipo) => tipo.id === tipoId)
-      return tipoActividad ? tipoActividad.nombre : 'Desconocido'
+      const tipo = state.tiposActividades.find((t) => t.id === tipoId)
+      return tipo?.nombre || 'Desconocido'
     },
 
-    getNombreActividad: (state) => (actividadId) => {
-      const actividad = state.actividades.find((a) => a.id === actividadId)
+    getNombreActividad: (state) => (id) => {
+      const actividad = state.actividades.find((a) => a.id === id)
       return actividad?.nombre || 'Actividad no encontrada'
     },
 
@@ -103,11 +101,21 @@ export const useActividadesStore = defineStore('actividades', {
       const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore()
 
+      // Asegurarse de que siembras sea un array
+      const siembras = Array.isArray(actividadData.siembras)
+        ? actividadData.siembras
+        : actividadData.siembra
+          ? [actividadData.siembra]
+          : []
+
       // Enriquecer datos con contexto de hacienda
       const enrichedData = {
         ...actividadData,
+        nombre: actividadData.nombre.toUpperCase(),
+
         tipo_actividades: actividadData.tipo_actividades,
         hacienda: haciendaStore.mi_hacienda?.id,
+        siembras: siembras, // Usar el array de siembras
         bpa_estado: this.calcularBpaEstado(actividadData.datos_bpa),
         activa: true,
         version: this.version

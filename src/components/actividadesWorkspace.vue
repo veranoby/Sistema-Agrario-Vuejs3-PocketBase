@@ -490,11 +490,16 @@
                 <v-icon class="mr-2">mdi-information</v-icon>
                 Detalles
               </div>
-              <ckeditor
-                v-model="editedActividad.descripcion"
-                :editor="editor"
-                :config="editorConfig"
-              />
+              <div class="document-editor">
+                <div ref="toolbar"></div>
+                <QuillEditor
+                  v-model="editedActividad.descripcion"
+                  contentType="html"
+                  toolbar="essential"
+                  theme="snow"
+                  class="quill-editor"
+                />
+              </div>
             </div>
 
             <!-- Formulario de Seguimiento BPA -->
@@ -654,10 +659,6 @@ import { storeToRefs } from 'pinia'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import AvatarForm from '@/components/forms/AvatarForm.vue'
 
-import { editor, editorConfig } from '@/utils/ckeditorConfig'
-
-//import CKEditor from '@ckeditor/ckeditor5-vue'
-
 import StatusPanel from '@/components/StatusPanel.vue'
 import RecordatorioForm from '@/components/forms/RecordatorioForm.vue'
 import { useRecordatoriosStore } from '@/stores/recordatoriosStore'
@@ -791,30 +792,33 @@ function openAddMetricaDialog() {
   addMetricaDialog.value = true
 }
 
+// Optimizar manejo de métricas
+const metricasHandler = {
+  getInitialValue(tipo) {
+    const initialValues = {
+      number: 0,
+      text: '',
+      select: [],
+      checkbox: false
+    }
+    return initialValues[tipo] ?? ''
+  },
+
+  validateMetrica(metrica) {
+    return metrica.titulo && metrica.descripcion && metrica.tipo
+  }
+}
+
+// Optimizar addMetrica
 function addMetrica() {
-  if (!newMetrica.value.titulo || !newMetrica.value.descripcion || !newMetrica.value.tipo) {
+  if (!metricasHandler.validateMetrica(newMetrica.value)) {
     snackbarStore.showError('Por favor complete todos los campos')
     return
   }
 
-  // Asegurarse que el valor inicial sea del tipo correcto
-  let valorInicial = ''
-  switch (newMetrica.value.tipo) {
-    case 'number':
-      valorInicial = 0
-      break
-    case 'text':
-      valorInicial = ''
-      break
-    case 'select':
-      valorInicial = []
-      break
-    default:
-      valorInicial = ''
-  }
-
-  // Crear la nueva métrica con el formato correcto
   const metricaKey = newMetrica.value.titulo.toLowerCase().replace(/ /g, '_')
+  const valorInicial = metricasHandler.getInitialValue(newMetrica.value.tipo)
+
   editedActividad.value.metricas = {
     ...editedActividad.value.metricas,
     [metricaKey]: {
@@ -824,10 +828,7 @@ function addMetrica() {
     }
   }
 
-  // Cerrar el diálogo
   addMetricaDialog.value = false
-
-  // Limpiar el formulario
   newMetrica.value = { titulo: '', descripcion: '', tipo: '' }
 }
 
@@ -934,8 +935,30 @@ async function handleFormSubmit(data) {
     handleError(error, 'Error al guardar recordatorio')
   }
 }
+
+const onEditorReady = (editor) => {
+  // Insert the toolbar before the editable area
+  document
+    .querySelector('.document-editor')
+    .insertBefore(
+      editor.ui.view.toolbar.element,
+      document.querySelector('.document-editor .ck-editor__editable')
+    )
+}
 </script>
 
 <style scoped>
-/* Add any necessary styles here */
+.document-editor {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  padding: 1rem;
+}
+
+.document-editor .ck-editor__editable {
+  min-height: 200px;
+  max-height: 400px;
+  overflow-y: auto;
+  border: 0;
+  border-top: 1px solid #e2e8f0;
+}
 </style>

@@ -222,7 +222,13 @@
             <v-icon class="mr-2">mdi-information</v-icon>
             Mi Info
           </div>
-          <ckeditor v-model="zonaLocal.info" :editor="editor" :config="editorConfig" />
+          <QuillEditor
+            v-model="zonaLocal.info"
+            contentType="html"
+            toolbar="essential"
+            theme="snow"
+            class="quill-editor"
+          />
         </div>
 
         <!-- Formulario de Seguimiento BPA -->
@@ -357,11 +363,9 @@ import { ref, computed, watch, reactive } from 'vue'
 import { useZonasStore } from '@/stores/zonasStore'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 import { storeToRefs } from 'pinia'
-//import { pb } from '@/utils/pocketbase'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import { useAvatarStore } from '@/stores/avatarStore'
 import AvatarForm from '@/components/forms/AvatarForm.vue'
-import { editor, editorConfig } from '@/utils/ckeditorConfig'
 
 const showAvatarDialog = ref(false)
 

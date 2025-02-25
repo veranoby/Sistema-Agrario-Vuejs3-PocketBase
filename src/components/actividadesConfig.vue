@@ -24,7 +24,7 @@
             </div>
 
             <!-- Button Section -->
-            <div class="w-full sm:w-auto z-10">
+            <div class="w-full sm:w-auto z-10" v-if="siembrasStore.siembras.length > 0">
               <v-btn
                 block
                 sm:inline-flex
@@ -51,22 +51,9 @@
     <main class="flex-1 py-2">
       <v-container>
         <v-row>
-          <v-col v-if="actividades && actividades.length === 0" cols="12" sm="6" md="4" lg="3">
-            <v-hover v-slot="{ isHovering, props }">
-              <v-card
-                v-bind="props"
-                :elevation="isHovering ? 6 : 2"
-                :class="{ 'on-hover': isHovering }"
-                class="zonas-section transition-shadow duration-300 ease-in-out"
-              >
-                <v-card-text class="text-center">
-                  <v-icon size="large" color="grey" class="mb-4">mdi-sprout</v-icon>
-                  <p class="text-h6 font-weight-medium">No hay Actividades registradas aún</p>
-                  <p class="text-body-2 mt-2">Haga clic en "Nueva Actividad" para comenzar</p>
-                </v-card-text>
-              </v-card>
-            </v-hover>
-          </v-col>
+          <v-alert v-if="actividades && actividades.length === 0" type="info" class="mt-4">
+            No hay Actividades registradas
+          </v-alert>
 
           <v-col
             v-for="actividad in actividades"
@@ -153,7 +140,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useProfileStore } from '@/stores/profileStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
@@ -161,7 +148,6 @@ import { useActividadesStore } from '@/stores/actividadesStore'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 import { handleError } from '@/utils/errorHandler'
 import { storeToRefs } from 'pinia'
-import { editor, editorConfig } from '@/utils/ckeditorConfig'
 import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useSyncStore } from '@/stores/syncStore'
 import { useAvatarStore } from '@/stores/avatarStore'
@@ -321,14 +307,6 @@ const cargarZonasPorSiembra = async () => {
   }
 }
 
-/* Function to get the activity type based on the activity ID
-const getSiembraNombre = (tipoId) => {
-  const SiembraNombre = siembrasStore.siembras.find((tipo) => tipo.id === tipoId)
-  return SiembraNombre
-    ? SiembraNombre.nombre + '-' + SiembraNombre.tipo
-    : 'Sin siembras registradas' // Return 'Desconocido' if not found
-}*/
-
 // Function to get the activity status
 const getActividadEstado = (isActive) => {
   return isActive ? 'activa' : 'detenida'
@@ -337,6 +315,53 @@ const getActividadEstado = (isActive) => {
 const zonasStore = useZonasStore()
 const getZonaTipo = (zonaId) => {
   return zonasStore.getZonaById(zonaId)?.expand?.tipos_zonas?.nombre || 'Sin tipo'
+}
+
+// Optimizar computed properties
+const filteredActividades = computed(() => actividades.value?.filter((a) => !a._isTemp))
+
+// Optimizar método de formateo
+const formatMetricValue = (value) => {
+  if (Array.isArray(value)) return value.join(', ')
+  if (typeof value === 'boolean') return value ? 'Sí' : 'No'
+  return value?.toString() || 'N/A'
+}
+
+// Optimizar manejo de estado
+const actividadState = reactive({
+  loading: false,
+  error: null,
+  selectedActividad: null
+})
+
+// Usar composables para lógica reutilizable
+const useActividadActions = () => {
+  const handleEdit = (actividad) => {
+    actividadState.selectedActividad = { ...actividad }
+    editActividadDialog.value = true
+  }
+
+  const handleDelete = async (id) => {
+    try {
+      await actividadesStore.deleteActividad(id)
+      await loadActividades()
+    } catch (error) {
+      handleError(error, 'Error al eliminar actividad')
+    }
+  }
+
+  return { handleEdit, handleDelete }
+}
+
+const { handleEdit, handleDelete } = useActividadActions()
+
+const onEditorReady = (editor) => {
+  document
+    .querySelector('.document-editor')
+    .insertBefore(
+      editor.ui.view.toolbar.element,
+      document.querySelector('.document-editor .ck-editor__editable')
+    )
 }
 </script>
 
@@ -391,5 +416,19 @@ const getZonaTipo = (zonaId) => {
 .v-card__title .text-h6 {
   font-size: 1.25rem !important;
   line-height: 1.5 !important;
+}
+
+.document-editor {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  padding: 1rem;
+}
+
+.document-editor .ck-editor__editable {
+  min-height: 200px;
+  max-height: 400px;
+  overflow-y: auto;
+  border: 0;
+  border-top: 1px solid #e2e8f0;
 }
 </style>

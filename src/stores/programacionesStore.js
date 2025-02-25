@@ -75,12 +75,17 @@ export const useProgramacionesStore = defineStore('programaciones', {
     },
 
     enriquecerProgramacion(programacion) {
+      if (!programacion) return null
+
+      const proximaEjecucion = this.calcularProximaEjecucion(programacion)
+      const estadoVisual = this.obtenerEstadoVisual(programacion)
+
       return {
         ...programacion,
         actividades: programacion.actividades || [],
         siembras: programacion.siembras || [],
-        proximaEjecucion: this.calcularProximaEjecucion(programacion),
-        estadoVisual: this.obtenerEstadoVisual(programacion)
+        proximaEjecucion,
+        estadoVisual
       }
     },
 
@@ -107,15 +112,14 @@ export const useProgramacionesStore = defineStore('programaciones', {
     },
 
     calcularFrecuenciaPersonalizada(baseDate, config) {
-      const { tipo, cantidad } = config
-      const addFn = {
+      const addFunctions = {
         dias: addDays,
         semanas: addWeeks,
         meses: addMonths,
         años: addYears
-      }[tipo]
+      }
 
-      return addFn(baseDate, cantidad)
+      return addFunctions[config.tipo]?.(baseDate, config.cantidad) || addDays(baseDate, 1)
     },
 
     obtenerEstadoVisual(programacion) {

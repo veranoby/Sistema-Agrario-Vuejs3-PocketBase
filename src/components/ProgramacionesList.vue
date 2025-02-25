@@ -24,7 +24,7 @@
             </div>
 
             <!-- Button Section -->
-            <div class="w-full sm:w-auto z-10">
+            <div class="w-full sm:w-auto z-10" v-if="actividadesStore.actividades.length > 0">
               <v-btn
                 block
                 sm:inline-flex
@@ -96,7 +96,7 @@
           type="info"
           class="mt-4"
         >
-          No hay programaciones registradas
+          No hay Programaciones de actividades registradas
         </v-alert>
       </v-container>
     </main>
@@ -158,44 +158,22 @@ const groupedProgramaciones = computed(() => {
     actividades: {}
   }
 
-  programacionesPorHacienda.value.forEach((programacion) => {
-    const siembrasRelacionadas = programacion.siembras
-    const actividadesNames = programacion.actividades
-      .map((id) => actividadesStore.getNombreActividad(id))
-      .join(', ')
-
-    if (siembrasRelacionadas?.length > 0) {
-      siembrasRelacionadas.forEach((siembraId) => {
+  programacionesPorHacienda.value?.forEach((programacion) => {
+    if (programacion.siembras?.length > 0) {
+      programacion.siembras.forEach((siembraId) => {
         const nombreSiembra = siembrasStore.getSiembraNombre(siembraId)
-        if (!grupos.siembras[nombreSiembra]) {
-          grupos.siembras[nombreSiembra] = []
-        }
-        grupos.siembras[nombreSiembra].push(programacion)
+        ;(grupos.siembras[nombreSiembra] ??= []).push(programacion)
       })
     } else {
-      if (!grupos.actividades[actividadesNames]) {
-        grupos.actividades[actividadesNames] = []
-      }
-      grupos.actividades[actividadesNames].push(programacion)
+      const actividadesNames = programacion.actividades
+        .map(actividadesStore.getNombreActividad)
+        .join(', ')
+      ;(grupos.actividades[actividadesNames] ??= []).push(programacion)
     }
   })
 
   return grupos
 })
-
-const getEstadoColor = (estado) => {
-  const colors = {
-    activo: 'green',
-    pausado: 'orange',
-    finalizado: 'red'
-  }
-  return colors[estado] || 'gray'
-}
-
-const getNombreActividad = (actividadId) => {
-  const actividad = actividadesStore.actividades.find((a) => a.id === actividadId)
-  return actividad?.nombre || 'Actividad no encontrada'
-}
 
 const openNuevaProgramacion = () => {
   programacionEditando.value = null
@@ -214,14 +192,5 @@ const ejecutarProgramacion = async (id) => {
 const handleGuardado = () => {
   showForm.value = false
   programacionEditando.value = null
-}
-
-const getActividadTipo = (actividadId) => {
-  const actividad = actividadesStore.actividades.find((a) => a.id === actividadId)
-  if (actividad?.tipo_actividades?.length > 0) {
-    const tipo = tiposActividades.value.find((t) => t.id === actividad.tipo_actividades[0])
-    return tipo?.nombre || ''
-  }
-  return ''
 }
 </script>

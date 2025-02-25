@@ -48,7 +48,7 @@
               column
               multiple
               color="green-darken-4"
-              v-model="nuevaActividadData.siembra"
+              v-model="nuevaActividadData.siembras"
               label="Selecciona Siembras"
             >
               <v-chip
@@ -59,7 +59,7 @@
                 :text="`${siembra.nombre} ${siembra.tipo}`"
                 :value="siembra.id"
                 class="ma-1"
-                :class="{ 'chip-selected': nuevaActividadData.siembra.includes(siembra.id) }"
+                :class="{ 'chip-selected': nuevaActividadData.siembras.includes(siembra.id) }"
               >
               </v-chip>
             </v-chip-group>
@@ -97,10 +97,12 @@
               <v-icon class="mr-2">mdi-information</v-icon>
               Descripción
             </div>
-            <ckeditor
-              v-model="nuevaActividadData.descripcion"
-              :editor="editor"
-              :config="editorConfig"
+            <QuillEditor
+              v-model:content="nuevaActividadData.descripcion"
+              contentType="html"
+              toolbar="essential"
+              theme="snow"
+              class="quill-editor"
             />
           </div>
         </v-card-text>
@@ -139,8 +141,6 @@ import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 import { handleError } from '@/utils/errorHandler'
 
-import { editor, editorConfig } from '@/utils/ckeditorConfig'
-import { CKEditor } from '@ckeditor/ckeditor5-vue'
 import { useSyncStore } from '@/stores/syncStore'
 import { storeToRefs } from 'pinia'
 import { useZonasStore } from '@/stores/zonasStore'
@@ -174,7 +174,7 @@ const nuevaActividadData = ref({
   datos_bpa: [],
   metricas: {},
   descripcion: '',
-  siembra: props.siembraPreseleccionada ? [props.siembraPreseleccionada] : [],
+  siembras: props.siembraPreseleccionada ? [props.siembraPreseleccionada] : [],
   activa: true
 })
 
@@ -206,7 +206,7 @@ const resetForm = () => {
     datos_bpa: [],
     metricas: {},
     descripcion: '',
-    siembra: props.siembraPreseleccionada ? [props.siembraPreseleccionada] : [],
+    siembras: props.siembraPreseleccionada ? [props.siembraPreseleccionada] : [],
     activa: true
   }
 }
@@ -234,71 +234,86 @@ function getDefaultMetricaValue(tipo) {
   }
 }
 
+const initializeMetricas = (tipoActividad) => {
+  if (!tipoActividad?.metricas?.metricas) return {}
+
+  return Object.entries(tipoActividad.metricas.metricas).reduce(
+    (acc, [key, value]) => ({
+      ...acc,
+      [key]: {
+        ...value,
+        valor: getDefaultMetricaValue(value.tipo)
+      }
+    }),
+    {}
+  )
+}
+
 const crearActividad = async () => {
-  if (nuevaActividadData.value.nombre && nuevaActividadData.value.tipo_actividades) {
-    // Inicializar métricas correctamente
-    const metricasInicializadas = {}
-    const tipoActividadSeleccionado = actividadesStore.tiposActividades.find(
-      (t) => t.id === nuevaActividadData.value.tipo_actividades
-    )
-
-    if (tipoActividadSeleccionado?.metricas?.metricas) {
-      Object.entries(tipoActividadSeleccionado.metricas.metricas).forEach(([key, value]) => {
-        metricasInicializadas[key] = {
-          ...value,
-          valor: getDefaultMetricaValue(value.tipo)
-        }
-      })
-    }
-
-    // Inicializar datos_bpa
-    const datosBpaInicializados =
-      tipoActividadSeleccionado?.datos_bpa?.preguntas_bpa?.map(() => ({
-        respuesta: null
-      })) || []
-
-    try {
-      nuevaActividadData.value.nombre = nuevaActividadData.value.nombre.toUpperCase()
-      const actividadToCreate = {
-        ...nuevaActividadData.value,
-        datos_bpa: datosBpaInicializados,
-        metricas: metricasInicializadas
-      }
-
-      if (!syncStore.isOnline) {
-        const actividad = await syncStore.queueOperation({
-          type: 'create',
-          collection: 'actividades',
-          data: actividadToCreate
-        })
-        actividadesStore.actividades.push(actividadToCreate)
-        snackbarStore.showSnackbar('Actividad en espera para crearse')
-        emit('actividad-creada', actividad)
-      } else {
-        const actividad = await actividadesStore.crearActividad(actividadToCreate)
-        snackbarStore.showSnackbar('Actividad creada exitosamente')
-        emit('actividad-creada', actividad)
-      }
-
-      cerrarDialog()
-    } catch (error) {
-      handleError(error, 'Error al crear la Actividad')
-    }
-  } else {
+  if (!isFormValid()) {
     snackbarStore.showError('Nombre y tipo son requeridos')
+    return
+  }
+
+  try {
+    const actividadData = prepareActividadData()
+    const actividad = await handleActividadCreation(actividadData)
+
+    emit('actividad-creada', actividad)
+    cerrarDialog()
+  } catch (error) {
+    handleError(error, 'Error al crear la Actividad')
   }
 }
 
-/*const cargarZonasPorSiembra = async () => {
-  const selectedSiembras = nuevaActividadData.value.siembra
-  if (selectedSiembras.length > 0) {
-    zonasDisponibles.value = await ZonasStore.cargarZonasPorSiembras(selectedSiembras)
-  } else {
-    zonasDisponibles.value = await ZonasStore.cargarZonasPrecargadas()
+const isFormValid = () =>
+  nuevaActividadData.value.nombre && nuevaActividadData.value.tipo_actividades
+
+const prepareActividadData = () => {
+  // Convertir el campo siembra a siembras para mantener compatibilidad
+  const siembras = nuevaActividadData.value.siembras || []
+
+  // Obtener el tipo de actividad seleccionado
+  const tipoActividad = actividadesStore.tiposActividades.find(
+    (t) => t.id === nuevaActividadData.value.tipo_actividades
+  )
+
+  // Inicializar datos_bpa con respuestas predeterminadas
+  const datos_bpa = []
+  if (tipoActividad?.datos_bpa?.preguntas_bpa) {
+    tipoActividad.datos_bpa.preguntas_bpa.forEach((pregunta) => {
+      // Usar la primera opción como valor predeterminado o "No implementado" si no hay opciones
+      const respuestaPredeterminada = pregunta.opciones?.[0] || 'No implementado'
+      datos_bpa.push({ respuesta: respuestaPredeterminada })
+    })
   }
-}*/
+
+  return {
+    ...nuevaActividadData.value,
+    // Reemplazar siembra por siembras (array)
+    siembras: siembras,
+    datos_bpa: datos_bpa,
+    metricas: initializeMetricas(tipoActividad)
+  }
+}
+
+const handleActividadCreation = async (actividadData) => {
+  // Crear la actividad usando el store
+  return await actividadesStore.crearActividad(actividadData)
+}
+
+const onEditorReady = (editor) => {
+  document
+    .querySelector('.document-editor')
+    .insertBefore(
+      editor.ui.view.toolbar.element,
+      document.querySelector('.document-editor .ck-editor__editable')
+    )
+}
 
 onMounted(async () => {
   await actividadesStore.cargarTiposActividades({ expand: 'metricas,datos_bpa' })
 })
 </script>
+
+<style scoped></style>

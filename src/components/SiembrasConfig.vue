@@ -51,22 +51,9 @@
     <main class="flex-1 py-2">
       <v-container>
         <v-row>
-          <v-col v-if="siembras.length === 0" cols="12" sm="6" md="4" lg="3">
-            <v-hover v-slot="{ isHovering, props }">
-              <v-card
-                v-bind="props"
-                :elevation="isHovering ? 6 : 2"
-                :class="{ 'on-hover': isHovering }"
-                class="zonas-section transition-shadow duration-300 ease-in-out"
-              >
-                <v-card-text class="text-center">
-                  <v-icon size="large" color="grey" class="mb-4">mdi-sprout</v-icon>
-                  <p class="text-h6 font-weight-medium">No hay siembras registradas aún</p>
-                  <p class="text-body-2 mt-2">Haga clic en "Nueva Siembra" para comenzar</p>
-                </v-card-text>
-              </v-card>
-            </v-hover>
-          </v-col>
+          <v-alert v-if="siembras.length === 0" type="info" class="mt-4">
+            No hay Siembras o Programas registrados
+          </v-alert>
 
           <v-col v-for="siembra in siembras" :key="siembra.id" cols="12" sm="6" md="4" lg="3">
             <v-hover v-slot="{ isHovering, props }">

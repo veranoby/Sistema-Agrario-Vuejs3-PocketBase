@@ -5,6 +5,7 @@ import { handleError } from '@/utils/errorHandler'
 import { useSyncStore } from './syncStore'
 import { useHaciendaStore } from './haciendaStore'
 //import { useAvatarStore } from './avatarStore'
+import { computed } from 'vue'
 
 export const useSiembrasStore = defineStore('siembras', {
   state: () => ({
@@ -27,15 +28,16 @@ export const useSiembrasStore = defineStore('siembras', {
 
     // Function to get the activity type based on the activity ID
     getSiembraNombre: (state) => (id) => {
-      const SiembraNombre = state.siembras.find((tipo) => tipo.id === id)
-      return SiembraNombre
-        ? SiembraNombre.nombre + '-' + SiembraNombre.tipo
-        : 'Sin siembras registradas' // Return 'Desconocido' if not found
+      const siembra = state.siembras.find((s) => s.id === id)
+      return siembra ? `${siembra.nombre}-${siembra.tipo}` : 'Sin siembras registradas'
     },
 
     activeSiembras: (state) => {
       return state.siembras.filter((siembra) => siembra.estado !== 'finalizada')
-    }
+    },
+
+    activeSiembrasWithMemo: (state) =>
+      computed(() => state.siembras.filter((s) => s.estado !== 'finalizada'))
   },
 
   actions: {
@@ -44,24 +46,28 @@ export const useSiembrasStore = defineStore('siembras', {
       const haciendaStore = useHaciendaStore()
       this.loading = true
 
-      const siembrasLocal = useSyncStore().loadFromLocalStorage('siembras')
-      if (siembrasLocal) {
-        this.siembras = siembrasLocal
-        return this.siembras
-      }
-
       try {
-        if (syncStore.isOnline) {
-          const records = await pb.collection('siembras').getFullList({
-            filter: `hacienda="${haciendaStore.mi_hacienda?.id}"`
-          })
-          this.siembras = records
-          syncStore.saveToLocalStorage('siembras', records)
-        } else {
-          this.siembras = syncStore.loadFromLocalStorage('siembras') || []
+        const siembrasLocal = syncStore.loadFromLocalStorage('siembras')
+        if (siembrasLocal?.length) {
+          this.siembras = siembrasLocal
+          this.loading = false
+          return this.siembras
         }
+
+        if (!syncStore.isOnline) {
+          this.siembras = []
+          return []
+        }
+
+        const records = await pb.collection('siembras').getFullList({
+          filter: `hacienda="${haciendaStore.mi_hacienda?.id}"`
+        })
+        this.siembras = records
+        syncStore.saveToLocalStorage('siembras', records)
+        return records
       } catch (error) {
         handleError(error, 'Error al cargar siembras')
+        return []
       } finally {
         this.loading = false
       }

@@ -31,7 +31,7 @@
       </router-view>
     </v-main>
 
-    <Snackbar />
+    <SnackbarComponent />
   </v-app>
 </template>
 
@@ -44,11 +44,14 @@ import Header from './components/Header.vue'
 import Sidebar from './components/Sidebar.vue'
 import AuthModal from './components/AuthModal.vue'
 
-import Snackbar from '@/components/SnackbarComponent.vue'
+import SnackbarComponent from '@/components/SnackbarComponent.vue'
+import { useSyncStore } from '@/stores/syncStore'
+
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
+const syncStore = useSyncStore()
 
 const drawer = ref(true)
 const showAuthModal = ref(false)
@@ -90,14 +93,18 @@ watch(isLoggedIn, (newValue) => {
   }
 })
 
-onMounted(() => {
+onMounted(async () => {
   const savedCredentials = localStorage.getItem('rememberMe')
   if (savedCredentials) {
     const { usernameOrEmail, password } = JSON.parse(savedCredentials)
-    authStore.login(usernameOrEmail, password).catch(() => {
+    await authStore.login(usernameOrEmail, password).catch(() => {
       localStorage.removeItem('rememberMe')
       localStorage.removeItem('token')
     })
+  }
+
+  if (authStore.isLoggedIn && !syncStore.initialized) {
+    await syncStore.init()
   }
 })
 

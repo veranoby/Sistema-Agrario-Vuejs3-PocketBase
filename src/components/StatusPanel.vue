@@ -3,19 +3,17 @@
     <v-toolbar density="compact" class="m-0 siembra-info">
       <v-toolbar-title class="text-sm font-weight-bold m-0 ml-3">
         <!-- Icono de prioridad -->
+        <v-chip :color="color" variant="flat" class="m-0 mr-2" size="large">
+          {{ items.length }}
+        </v-chip>
+        {{ title }}
         <v-icon
           :color="color"
-          size="x-large"
           variant="outlined"
           :icon="statusIcon(color)"
           class="mr-3 lm-1"
         ></v-icon>
-        {{ title }}
       </v-toolbar-title>
-
-      <v-chip :color="color" variant="outlined" class="m-0 mr-2" size="small">
-        {{ items.length }}
-      </v-chip>
     </v-toolbar>
 
     <!--  <v-card-title

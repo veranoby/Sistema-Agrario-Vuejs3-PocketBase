@@ -119,7 +119,12 @@
               <v-icon class="mr-2">mdi-information</v-icon>
               Mi Info
             </div>
-            <ckeditor v-model="editedHacienda.info" :editor="editor" :config="editorConfig" />
+            <QuillEditor
+              v-model="editedHacienda.info"
+              toolbar="essential"
+              theme="snow"
+              class="quill-editor"
+            />
           </div>
         </v-card-text>
         <v-card-actions>
@@ -163,7 +168,6 @@
 import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useHaciendaStore } from '@/stores/haciendaStore'
-import { editor, editorConfig } from '@/utils/ckeditorConfig'
 import AvatarForm from '@/components/forms/AvatarForm.vue'
 
 const haciendaStore = useHaciendaStore()

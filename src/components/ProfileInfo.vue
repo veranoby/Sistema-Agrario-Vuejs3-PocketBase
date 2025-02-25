@@ -123,7 +123,13 @@
               <v-icon class="mr-2">mdi-information</v-icon>
               Mi Info
             </div>
-            <ckeditor v-model="info" :editor="editor" :config="editorConfig" />
+            <QuillEditor
+              v-model="info"
+              contentType="html"
+              toolbar="essential"
+              theme="snow"
+              class="quill-editor"
+            />
           </div>
         </v-card-text>
         <v-card-actions>
@@ -160,7 +166,6 @@ import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useProfileStore } from '@/stores/profileStore'
 import { useSnackbarStore } from '@/stores/snackbarStore'
-import { editor, editorConfig } from '@/utils/ckeditorConfig'
 import AvatarForm from '@/components/forms/AvatarForm.vue'
 
 const profileStore = useProfileStore()

@@ -451,7 +451,13 @@
                 <v-icon class="mr-2">mdi-information</v-icon>
                 Mi Info
               </div>
-              <ckeditor v-model="editedSiembra.info" :editor="editor" :config="editorConfig" />
+              <QuillEditor
+                v-model="editedSiembra.info"
+                contentType="html"
+                toolbar="essential"
+                theme="snow"
+                class="quill-editor"
+              />
             </div>
           </v-card-text>
           <v-card-actions>
@@ -568,7 +574,6 @@ import { storeToRefs } from 'pinia'
 
 import { useZonasStore } from '@/stores/zonasStore'
 import ZonaForm from '@/components/forms/ZonaForm.vue'
-import { editor, editorConfig } from '@/utils/ckeditorConfig'
 
 import AvatarForm from '@/components/forms/AvatarForm.vue'
 import { useAvatarStore } from '@/stores/avatarStore'
@@ -714,7 +719,7 @@ const actividadesfiltradas = computed(() => {
 
   return actividades.value.filter((actividad) => {
     // Asegurarse de que actividad.siembra es un array
-    const siembras = Array.isArray(actividad.siembra) ? actividad.siembra : []
+    const siembras = Array.isArray(actividad.siembras) ? actividad.siembras : []
     return siembras.includes(siembraId.value)
   })
 })
