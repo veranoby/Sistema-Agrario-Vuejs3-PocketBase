@@ -493,7 +493,7 @@
               <div class="document-editor">
                 <div ref="toolbar"></div>
                 <QuillEditor
-                  v-model="editedActividad.descripcion"
+                  v-model:content="editedActividad.descripcion"
                   contentType="html"
                   toolbar="essential"
                   theme="snow"

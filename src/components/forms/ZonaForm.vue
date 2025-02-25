@@ -223,7 +223,7 @@
             Mi Info
           </div>
           <QuillEditor
-            v-model="zonaLocal.info"
+            v-model:content="zonaLocal.info"
             contentType="html"
             toolbar="essential"
             theme="snow"

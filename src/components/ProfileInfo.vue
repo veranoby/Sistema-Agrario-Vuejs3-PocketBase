@@ -124,8 +124,8 @@
               Mi Info
             </div>
             <QuillEditor
-              v-model="info"
               contentType="html"
+              v-model:content="info"
               toolbar="essential"
               theme="snow"
               class="quill-editor"

@@ -452,7 +452,7 @@
                 Mi Info
               </div>
               <QuillEditor
-                v-model="editedSiembra.info"
+                v-model:content="editedSiembra.info"
                 contentType="html"
                 toolbar="essential"
                 theme="snow"

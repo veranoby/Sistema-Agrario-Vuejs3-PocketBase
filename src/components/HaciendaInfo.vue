@@ -120,7 +120,8 @@
               Mi Info
             </div>
             <QuillEditor
-              v-model="editedHacienda.info"
+              contentType="html"
+              v-model:content="editedHacienda.info"
               toolbar="essential"
               theme="snow"
               class="quill-editor"
