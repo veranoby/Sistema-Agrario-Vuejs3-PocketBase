@@ -38,7 +38,10 @@
     </v-btn>
   </div>
 
-  <div class="bg-dinamico flex-1 p-4" v-html="user?.info || 'No disponible'"></div>
+  <div
+    class="bg-dinamico flex-1 p-4 rich-text-content"
+    v-html="user?.info || 'No disponible'"
+  ></div>
 
   <!-- Diálogo para editar el perfil -->
   <v-dialog

@@ -36,7 +36,7 @@
         </v-btn>
       </div>
       <div
-        class="bg-dinamico border-1 p-4 mt-2 mb-4"
+        class="bg-dinamico border-1 p-4 mt-2 mb-4 rich-text-content"
         v-html="mi_hacienda?.info || 'No disponible'"
       ></div>
     </div>

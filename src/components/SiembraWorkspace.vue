@@ -77,7 +77,7 @@
             <v-row>
               <v-col cols="12">
                 <div
-                  class="flex-1 rounded-lg border-2 p-4 mt-2 mb-4"
+                  class="flex-1 rounded-lg border-2 p-4 mt-2 mb-4 rich-text-content"
                   v-html="siembraInfo.info || 'No disponible'"
                 ></div>
               </v-col>
@@ -224,8 +224,10 @@
                           <v-icon>mdi-map-marker-radius</v-icon> No disponible
                         </p>
                         <p class="ml-2 mr-0 mb-2 p-0 text-xs">
-                          <v-icon>mdi-information-outline</v-icon
-                          ><label v-html="item.info || 'No disponible'"></label>
+                          <v-icon>mdi-information-outline</v-icon> INFORMACION:<label
+                            class="rich-text-content"
+                            v-html="item.info || 'No disponible'"
+                          ></label>
                         </p>
 
                         <p>
@@ -317,8 +319,10 @@
                     <v-row no-gutters>
                       <v-col cols="7" class="pr-4">
                         <p class="ml-2 mr-0 mb-2 p-0 text-xs">
-                          <v-icon>mdi-information-outline</v-icon
-                          ><label v-html="item.descripcion || 'No disponible'"></label>
+                          <v-icon>mdi-information-outline</v-icon> INFORMACION:<label
+                            class="rich-text-content"
+                            v-html="item.descripcion || 'No disponible'"
+                          ></label>
                         </p>
                         <p>
                           <v-chip

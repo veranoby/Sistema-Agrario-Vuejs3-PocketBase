@@ -127,7 +127,10 @@
                 </div>
               </v-card-title>
               <v-card-text>
-                <div v-html="actividadInfo.descripcion || 'No disponible'"></div>
+                <div
+                  class="rich-text-content"
+                  v-html="actividadInfo.descripcion || 'No disponible'"
+                ></div>
               </v-card-text> </v-card
           ></v-col>
 
