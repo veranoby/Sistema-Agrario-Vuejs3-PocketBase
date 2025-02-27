@@ -212,6 +212,13 @@ body {
   background-color: var(--fondo_claro_tabla) !important ;
 }
 
+.siembra-header {
+  border-radius: 8px !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  border-color: var(--fondo_claro) !important ;
+  background-color: #4caf504d !important ;
+}
+
 /*Arreglos a Vuetify */
 
 .v-expand-transition {

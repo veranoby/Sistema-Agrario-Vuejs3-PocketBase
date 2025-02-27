@@ -16,10 +16,10 @@
 
       <v-card-text class="pa-4">
         <v-form @submit.prevent="guardarProgramacion">
-          <v-row>
-            <v-col cols="12">
-              <p class="text-gray-600">
-                <v-icon>mdi-gesture-tap-button</v-icon> Actividades de Siembras
+          <v-row class="pr-6">
+            <v-col cols="12 siembra-info m-3  p-4">
+              <p class="text-gray-600 text-bold">
+                <v-icon>mdi-gesture-tap-button</v-icon> ACTIVIDADES DE SIEMBRA/PROYECTOS
               </p>
               <v-chip-group
                 color="blue-darken-4"
@@ -30,18 +30,16 @@
                 <v-chip
                   v-for="actividad in filteredActividadesSiebra"
                   :key="actividad.id"
-                  :text="`${actividad.nombre} (${siembrasStore.getSiembraNombre(actividad.siembras[0])})`"
+                  :text="`${actividad.nombre} (${actividad.siembras?.map((siembraId) => siembrasStore.getSiembraNombre(siembraId)).join(', ') || 'Sin siembras'})`"
                   :value="actividad.id"
                   filter
                   density="compact"
                   pill
                 ></v-chip>
               </v-chip-group>
-            </v-col>
 
-            <v-col cols="12">
-              <p class="text-gray-600">
-                <v-icon>mdi-gesture-tap-button</v-icon> Actividades adicionales
+              <p class="text-gray-600 text-bold mt-4">
+                <v-icon>mdi-gesture-tap-button</v-icon> ACTIVIDADES ADICIONALES
               </p>
               <v-chip-group
                 prepend-icon="mdi-gesture-tap-button"
@@ -62,36 +60,58 @@
               </v-chip-group>
             </v-col>
 
-            <v-col cols="12">
-              <v-text-field
-                density="compact"
-                prepend-icon="mdi-text-box"
-                v-model="form.descripcion"
-                label="Descripción"
-                :rules="[required]"
-                required
-              ></v-text-field>
-            </v-col>
-
-            <v-col cols="12" md="6">
+            <v-col cols="12" md="8">
               <v-select
                 v-model="form.frecuencia"
                 :items="frecuencias"
                 label="Frecuencia"
                 :rules="[required]"
+                density="compact"
                 required
                 prepend-icon="mdi-calendar-sync"
                 @update:modelValue="handleFrecuenciaChange"
               ></v-select>
+
+              <v-text-field
+                density="compact"
+                prepend-icon="mdi-text-box"
+                v-model="form.descripcion"
+                label="Nombre/Descripción"
+                :rules="[required]"
+                required
+              ></v-text-field>
+
+              <v-select
+                v-model="form.estado"
+                :items="estados"
+                label="Estado"
+                :rules="[required]"
+                density="compact"
+                required
+                prepend-icon="mdi-state-machine"
+              ></v-select>
             </v-col>
 
-            <v-col v-if="form.frecuencia === 'personalizada'" cols="12" md="6">
+            <v-col v-if="form.frecuencia === 'fecha_especifica'" cols="12" md="4">
+              <v-text-field
+                v-model="frecuenciaPersonalizada.fecha"
+                label="Fecha de ejecución"
+                type="date"
+                :min="new Date().toISOString().split('T')[0]"
+                density="compact"
+                required
+                prepend-icon="mdi-calendar"
+              ></v-text-field>
+            </v-col>
+
+            <v-col v-else-if="form.frecuencia === 'personalizada'" cols="12" md="4">
               <v-card variant="outlined" class="pa-4">
                 <v-select
                   v-model="frecuenciaPersonalizada.tipo"
                   :items="['dias', 'semanas', 'meses', 'años']"
                   label="Tipo de frecuencia"
                   required
+                  density="compact"
                   prepend-icon="mdi-calendar-cursor"
                 ></v-select>
 
@@ -100,6 +120,7 @@
                   label="Cada cuánto"
                   type="number"
                   min="1"
+                  density="compact"
                   required
                   prepend-icon="mdi-numeric"
                 ></v-text-field>
@@ -118,6 +139,7 @@
                   v-if="frecuenciaPersonalizada.tipo === 'meses'"
                   v-model="frecuenciaPersonalizada.diasMes"
                   label="Días del mes (separados por coma)"
+                  density="compact"
                   prepend-icon="mdi-calendar-month"
                 ></v-text-field>
 
@@ -125,22 +147,12 @@
                   v-model="frecuenciaPersonalizada.exclusiones"
                   :items="['feriados', 'fines_de_semana']"
                   label="Exclusiones"
+                  density="compact"
                   multiple
                   chips
                   prepend-icon="mdi-calendar-remove"
                 ></v-select>
               </v-card>
-            </v-col>
-
-            <v-col cols="12">
-              <v-select
-                v-model="form.estado"
-                :items="estados"
-                label="Estado"
-                :rules="[required]"
-                required
-                prepend-icon="mdi-state-machine"
-              ></v-select>
             </v-col>
           </v-row>
 
@@ -180,7 +192,8 @@ import { useSiembrasStore } from '@/stores/siembrasStore'
 
 const props = defineProps({
   modelValue: Boolean,
-  programacionActual: Object
+  programacionActual: Object,
+  actividadPredefinida: String
 })
 
 const emit = defineEmits(['update:modelValue', 'guardado'])
@@ -206,7 +219,7 @@ const filteredActividadesSiebra = computed(() => {
 
 const form = ref({
   descripcion: '',
-  actividadesSeleccionadas: [],
+  actividadesSeleccionadas: props.actividadPredefinida ? [props.actividadPredefinida] : [],
   frecuencia: 'diaria',
   frecuencia_personalizada: null,
   estado: 'activo'
@@ -217,7 +230,8 @@ const frecuenciaPersonalizada = ref({
   cantidad: 1,
   diasSemana: [],
   diasMes: [],
-  exclusiones: []
+  exclusiones: [],
+  fecha: ''
 })
 
 const frecuencias = [
@@ -225,6 +239,7 @@ const frecuencias = [
   { title: 'Semanal', value: 'semanal' },
   { title: 'Quincenal', value: 'quincenal' },
   { title: 'Mensual', value: 'mensual' },
+  { title: 'Fecha Específica', value: 'fecha_especifica' },
   { title: 'Personalizada', value: 'personalizada' }
 ]
 
@@ -267,9 +282,20 @@ watch(
           diasMes: Array.isArray(form.value.frecuencia_personalizada.diasMes)
             ? form.value.frecuencia_personalizada.diasMes
             : [form.value.frecuencia_personalizada.diasMes] || [],
-          exclusiones: form.value.frecuencia_personalizada.exclusiones || []
+          exclusiones: form.value.frecuencia_personalizada.exclusiones || [],
+          fecha: form.value.frecuencia_personalizada.fecha || ''
         }
       }
+    }
+  },
+  { immediate: true }
+)
+
+watch(
+  () => props.actividadPredefinida,
+  (val) => {
+    if (val) {
+      form.value.actividadesSeleccionadas = [val]
     }
   },
   { immediate: true }
@@ -304,7 +330,22 @@ const resetForm = () => ({
   estado: 'activo'
 })
 
+const validarFrecuencia = () => {
+  if (form.value.frecuencia === 'fecha_especifica' && !frecuenciaPersonalizada.value.fecha) {
+    return 'Debe seleccionar una fecha'
+  }
+  if (form.value.frecuencia === 'personalizada' && !frecuenciaPersonalizada.value.cantidad) {
+    return 'Debe especificar la cantidad'
+  }
+  return true
+}
+
 const guardarProgramacion = async () => {
+  const validacion = validarFrecuencia()
+  if (validacion !== true) {
+    alert(validacion)
+    return
+  }
   try {
     const data = {
       ...form.value,
@@ -317,7 +358,9 @@ const guardarProgramacion = async () => {
               diasMes: frecuenciaPersonalizada.value.diasMes,
               exclusiones: frecuenciaPersonalizada.value.exclusiones
             })
-          : null
+          : form.value.frecuencia === 'fecha_especifica'
+            ? JSON.stringify({ fecha: frecuenciaPersonalizada.value.fecha })
+            : null
     }
 
     if (esEdicion.value) {
@@ -380,4 +423,12 @@ watch(
   },
   { immediate: true, deep: true }
 )
+
+// Agregar regla de validación en el formulario
+const fechaEspecificaValida = (value) => {
+  if (form.value.frecuencia === 'fecha_especifica') {
+    return new Date(value) > new Date() || 'La fecha debe ser futura'
+  }
+  return true
+}
 </script>

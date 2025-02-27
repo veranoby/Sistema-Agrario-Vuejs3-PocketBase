@@ -186,6 +186,35 @@
                 </div>
               </v-card-text>
             </div>
+
+            <!-- SECCION PROGRAMACIONES -->
+            <div class="siembra-info mt-0 p-0">
+              <v-card-title class="headline d-flex justify-between">
+                <h2 class="text-md font-bold mt-2">
+                  <span>Programaciones</span>
+                </h2>
+                <v-btn
+                  size="x-small"
+                  color="green-lighten-2"
+                  @click="abrirNuevaProgramacion"
+                  icon
+                  rounded="circle"
+                  class="ml-auto"
+                >
+                  <v-icon>mdi-plus</v-icon>
+                </v-btn>
+              </v-card-title>
+
+              <v-card-text>
+                <ProgramacionPanel
+                  v-for="programacion in programacionesActividad"
+                  :key="programacion.id"
+                  :programacion="programacion"
+                  @ejecutar="ejecutarProgramacion"
+                  @editar="editarProgramacion"
+                />
+              </v-card-text>
+            </div>
           </v-col>
         </v-row>
 
@@ -647,6 +676,13 @@
         </v-card>
       </div>
     </v-dialog>
+
+    <ProgramacionForm
+      v-model="mostrarFormProgramacion"
+      :programacionActual="programacionEdit"
+      :actividadPredefinida="actividadId"
+      @guardado="cargarProgramaciones"
+    />
   </v-container>
 </template>
 
@@ -668,6 +704,9 @@ import { useRecordatoriosStore } from '@/stores/recordatoriosStore'
 
 import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useZonasStore } from '@/stores/zonasStore'
+import { useProgramacionesStore } from '@/stores/programacionesStore'
+import ProgramacionPanel from '@/components/ProgramacionPanel.vue'
+import ProgramacionForm from '@/components/forms/ProgramacionForm.vue'
 
 const route = useRoute()
 const actividadesStore = useActividadesStore()
@@ -677,6 +716,7 @@ const haciendaStore = useHaciendaStore()
 const siembrasStore = useSiembrasStore()
 const zonasStore = useZonasStore()
 const recordatoriosStore = useRecordatoriosStore()
+const programacionesStore = useProgramacionesStore()
 
 const actividadId = ref(route.params.id)
 const actividadInfo = ref({})
@@ -696,6 +736,8 @@ const dialogSiembrasZonas = ref(false)
 const selectedSiembras = ref([])
 const selectedZonas = ref([])
 const showAvatarDialog = ref(false)
+const mostrarFormProgramacion = ref(false)
+const programacionEdit = ref(null)
 
 const isLoading = ref(true)
 
@@ -773,6 +815,7 @@ onMounted(async () => {
     await zonasStore.cargarZonas()
     await zonasStore.cargarTiposZonas() // Asegúrate de cargar los tipos de zonas
     await recordatoriosStore.cargarRecordatorios()
+    await programacionesStore.cargarProgramaciones()
   } catch (error) {
     handleError(error, 'Error al cargar la información de la actividad')
   } finally {
@@ -947,6 +990,29 @@ const onEditorReady = (editor) => {
       editor.ui.view.toolbar.element,
       document.querySelector('.document-editor .ck-editor__editable')
     )
+}
+
+const programacionesActividad = computed(() => {
+  return programacionesStore.programaciones.filter((p) => p.actividades.includes(actividadId.value))
+})
+
+const abrirNuevaProgramacion = () => {
+  programacionEdit.value = null
+  mostrarFormProgramacion.value = true
+}
+
+const editarProgramacion = (programacion) => {
+  programacionEdit.value = programacion
+  mostrarFormProgramacion.value = true
+}
+
+const ejecutarProgramacion = async (id) => {
+  await programacionesStore.ejecutarProgramacion(id)
+  await cargarProgramaciones()
+}
+
+const cargarProgramaciones = async () => {
+  await programacionesStore.cargarProgramaciones()
 }
 </script>
 

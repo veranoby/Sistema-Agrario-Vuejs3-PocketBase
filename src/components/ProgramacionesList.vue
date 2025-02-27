@@ -52,12 +52,13 @@
       <v-container>
         <!-- Grupo por Siembras -->
         <div
+          class="siembra-info"
           v-for="(grupo, nombreSiembra) in groupedProgramaciones.siembras"
           :key="'siembra-' + nombreSiembra"
         >
-          <v-card-title class="text-h6 mb-4 bg-green-lighten-5">
+          <v-card-title class="font-bold text-sm mb-4 siembra-header">
             <v-icon left>mdi-sprout</v-icon>
-            Siembra: {{ nombreSiembra }}
+            Siembra/Proyecto: {{ nombreSiembra }}
           </v-card-title>
 
           <ProgramacionPanel
@@ -71,10 +72,11 @@
 
         <!-- Grupo por Actividades sin Siembra -->
         <div
+          class="siembra-info"
           v-for="(grupo, nombreActividad) in groupedProgramaciones.actividades"
           :key="'actividad-' + nombreActividad"
         >
-          <v-card-title class="text-h6 mb-4 bg-blue-lighten-5">
+          <v-card-title class="font-bold text-sm mb-4 siembra-info">
             <v-icon left>mdi-tools</v-icon>
             Actividad: {{ nombreActividad }}
           </v-card-title>

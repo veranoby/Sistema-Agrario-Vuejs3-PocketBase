@@ -1,6 +1,14 @@
 import { defineStore } from 'pinia'
 import { pb } from '@/utils/pocketbase'
-import { addDays, addWeeks, addMonths, addYears, isBefore, differenceInDays } from 'date-fns'
+import {
+  addDays,
+  addWeeks,
+  addMonths,
+  addYears,
+  isBefore,
+  differenceInDays,
+  differenceInMonths
+} from 'date-fns'
 import { useSyncStore } from './syncStore'
 import { handleError } from '@/utils/errorHandler'
 import { useHaciendaStore } from './haciendaStore'
@@ -79,17 +87,23 @@ export const useProgramacionesStore = defineStore('programaciones', {
 
       const proximaEjecucion = this.calcularProximaEjecucion(programacion)
       const estadoVisual = this.obtenerEstadoVisual(programacion)
+      const ejecucionesPendientes = this.calcularEjecucionesPendientes(programacion)
 
       return {
         ...programacion,
         actividades: programacion.actividades || [],
         siembras: programacion.siembras || [],
         proximaEjecucion,
-        estadoVisual
+        estadoVisual,
+        ejecucionesPendientes
       }
     },
 
     calcularProximaEjecucion(programacion) {
+      if (programacion.frecuencia === 'fecha_especifica') {
+        return new Date(programacion.frecuencia_personalizada?.fecha)
+      }
+
       if (!programacion.ultima_ejecucion) return new Date(programacion.created)
 
       const baseDate = new Date(programacion.ultima_ejecucion)
@@ -124,11 +138,50 @@ export const useProgramacionesStore = defineStore('programaciones', {
 
     obtenerEstadoVisual(programacion) {
       const hoy = new Date()
-      const diff = differenceInDays(programacion.proxima_ejecucion, hoy)
+      const fechaTarget =
+        programacion.frecuencia === 'fecha_especifica'
+          ? new Date(programacion.frecuencia_personalizada?.fecha)
+          : new Date(programacion.proxima_ejecucion)
 
-      if (isBefore(programacion.proxima_ejecucion, hoy)) return 'vencida'
+      if (isBefore(fechaTarget, hoy)) return 'vencida'
+
+      const diff = differenceInDays(fechaTarget, hoy)
       if (diff <= 3) return 'proxima'
       return 'al-dia'
+    },
+
+    calcularEjecucionesPendientes(programacion) {
+      if (!programacion.ultima_ejecucion) return 1
+
+      const hoy = new Date()
+      const ultimaEjecucion = new Date(programacion.ultima_ejecucion)
+
+      if (programacion.frecuencia === 'fecha_especifica') {
+        const fechaEspecifica = new Date(programacion.frecuencia_personalizada?.fecha)
+        return fechaEspecifica < hoy ? 1 : 0
+      }
+
+      const diasDesdeUltima = differenceInDays(hoy, ultimaEjecucion)
+
+      switch (programacion.frecuencia) {
+        case 'diaria':
+          return diasDesdeUltima
+        case 'semanal':
+          return Math.floor(diasDesdeUltima / 7)
+        case 'quincenal':
+          return Math.floor(diasDesdeUltima / 15)
+        case 'mensual':
+          return differenceInMonths(hoy, ultimaEjecucion)
+        case 'personalizada':
+          const config = programacion.frecuencia_personalizada
+          if (config.tipo === 'dias') return Math.floor(diasDesdeUltima / config.cantidad)
+          if (config.tipo === 'semanas') return Math.floor(diasDesdeUltima / (7 * config.cantidad))
+          if (config.tipo === 'meses')
+            return differenceInMonths(hoy, ultimaEjecucion) / config.cantidad
+          return 0
+        default:
+          return 0
+      }
     },
 
     async crearProgramacion(nuevaProgramacion) {
@@ -137,13 +190,13 @@ export const useProgramacionesStore = defineStore('programaciones', {
       const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore()
 
-      // Enriquecer datos con contexto de hacienda y relaciones
+      // Enriquecer datos con siembras relacionadas
       const enrichedData = {
         ...nuevaProgramacion,
         hacienda: haciendaStore.mi_hacienda?.id,
         version: this.version,
         actividades: nuevaProgramacion.actividadesSeleccionadas,
-        siembras: this.obtenerSiembrasRelacionadas(nuevaProgramacion.actividadesSeleccionadas)
+        siembras: await this.obtenerSiembrasRelacionadas(nuevaProgramacion.actividadesSeleccionadas)
       }
 
       if (!syncStore.isOnline) {
@@ -193,7 +246,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
       const siembrasStore = useSiembrasStore()
       const siembras = new Set()
 
-      actividadesIds.forEach(async (id) => {
+      for (const id of actividadesIds) {
         try {
           const actividad = await actividadesStore.fetchActividadById(id)
           if (actividad?.siembras) {
@@ -202,7 +255,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
         } catch (error) {
           console.error(`Error cargando actividad ${id}:`, error)
         }
-      })
+      }
 
       return Array.from(siembras)
     },
@@ -210,7 +263,6 @@ export const useProgramacionesStore = defineStore('programaciones', {
     async actualizarProgramacion(id, datosActualizados) {
       const snackbarStore = useSnackbarStore()
       snackbarStore.showLoading()
-
       const syncStore = useSyncStore()
 
       const enrichedData = {

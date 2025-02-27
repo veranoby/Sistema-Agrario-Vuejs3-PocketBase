@@ -66,7 +66,7 @@
                   <v-checkbox
                     class="compact-form"
                     v-model="loginForm.rememberMe"
-                    label="Remember me"
+                    label="RECORDARME"
                   ></v-checkbox
                 ></v-col>
                 <v-col
@@ -76,7 +76,7 @@
                     href="#"
                     rel="noopener noreferrer"
                     target="_blank"
-                    ><strong class="compact-form">Olvido su contraseña?</strong></a
+                    ><strong class="compact-form">OLVIDO SU CONTRASEÑA?</strong></a
                   >
                 </v-col>
               </v-row>
