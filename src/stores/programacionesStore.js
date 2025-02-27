@@ -45,6 +45,38 @@ export const useProgramacionesStore = defineStore('programaciones', {
         grouped[p.actividad].push(p)
       })
       return grouped
+    },
+
+    programacionesParaHoy: (state) => {
+      const hoy = new Date()
+      const hoyNormalizado = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate())
+
+      return state.programaciones.filter((p) => {
+        const fechaEjecucion =
+          p.frecuencia === 'fecha_especifica'
+            ? new Date(p.frecuencia_personalizada?.fecha)
+            : new Date(p.proxima_ejecucion)
+
+        const fechaEjecucionNormalizada = new Date(
+          fechaEjecucion.getFullYear(),
+          fechaEjecucion.getMonth(),
+          fechaEjecucion.getDate()
+        )
+
+        return fechaEjecucionNormalizada.getTime() === hoyNormalizado.getTime()
+      })
+    },
+
+    programacionesPendientes: (state) => {
+      const hoy = new Date()
+      return state.programaciones.filter((p) => {
+        const fechaEjecucion =
+          p.frecuencia === 'fecha_especifica'
+            ? new Date(p.frecuencia_personalizada?.fecha)
+            : new Date(p.proxima_ejecucion)
+
+        return isBefore(fechaEjecucion, hoy)
+      })
     }
   },
 

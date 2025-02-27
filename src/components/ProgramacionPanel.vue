@@ -1,5 +1,5 @@
 <template>
-  <v-card class="mb-4 bg-transparent">
+  <v-card class="mb-4" :class="{ 'border-2 border-red': debeEjecutarHoy }">
     <v-card-text class="pt-0">
       <div class="flex items-center justify-between mb-2">
         <div>
@@ -11,6 +11,10 @@
           </div>
         </div>
         <div class="justify-items-end">
+          <v-chip v-if="debeEjecutarHoy" color="red" variant="elevated" small class="ml-2">
+            <v-icon small>mdi-alert</v-icon>
+            Ejecutar hoy
+          </v-chip>
           <v-chip v-if="esUrgente" color="red" small class="ml-2">
             <v-icon small>mdi-alert</v-icon>
             {{ ejecucionesPendientes }} pendiente(s)
@@ -42,7 +46,16 @@
           <v-icon small>mdi-counter</v-icon>
           Ejecuciones: {{ programacion.ejecuciones_count || 0 }}
         </div>
-        <div class="grid justify-items-end">
+        <div class="grid justify-items-end gap-2">
+          <v-btn
+            v-if="ejecucionesPendientes > 1"
+            size="small"
+            color="orange"
+            @click="ejecutarEnBloque"
+          >
+            <v-icon left>mdi-play-multiple</v-icon>
+            Ejecutar {{ ejecucionesPendientes }} pendientes
+          </v-btn>
           <v-btn size="small" :color="colorEstado" @click="$emit('ejecutar', programacion.id)">
             <v-icon left>mdi-play</v-icon>
             Ejecutar
@@ -56,7 +69,8 @@
 <script setup>
 import { defineProps, computed } from 'vue'
 import { useActividadesStore } from '@/stores/actividadesStore'
-import { differenceInDays, differenceInMonths } from 'date-fns'
+import { differenceInDays, differenceInMonths, isBefore } from 'date-fns'
+import { useProgramacionesStore } from '@/stores/programacionesStore'
 
 const props = defineProps({
   programacion: {
@@ -66,6 +80,7 @@ const props = defineProps({
 })
 
 const actividadesStore = useActividadesStore()
+const programacionesStore = useProgramacionesStore()
 
 const colorEstado = computed(
   () =>
@@ -129,4 +144,57 @@ const ejecucionesPendientes = computed(() => {
 })
 
 const esUrgente = computed(() => ejecucionesPendientes.value > 0)
+
+const hoy = new Date()
+const debeEjecutarHoy = computed(() => {
+  // Si es fecha específica, comparar directamente con hoy
+  if (props.programacion.frecuencia === 'fecha_especifica') {
+    // Asegurarnos de que la fecha existe y es válida
+    const fechaStr = props.programacion.frecuencia_personalizada?.fecha
+    if (!fechaStr) return false
+
+    // Parsear la fecha usando UTC para evitar problemas de zona horaria
+    const [year, month, day] = fechaStr.split('-').map(Number)
+    const fechaEspecifica = new Date(year, month - 1, day) // month es 0-based en JS
+
+    const hoyNormalizado = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate())
+    const fechaEspecificaNormalizada = new Date(
+      fechaEspecifica.getFullYear(),
+      fechaEspecifica.getMonth(),
+      fechaEspecifica.getDate()
+    )
+
+    return fechaEspecificaNormalizada.getTime() === hoyNormalizado.getTime()
+  }
+
+  // Para otras frecuencias, usar la próxima ejecución
+  const proximaEjecucion = new Date(props.programacion.proxima_ejecucion)
+  const hoyNormalizado = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate())
+  const proximaEjecucionNormalizada = new Date(
+    proximaEjecucion.getFullYear(),
+    proximaEjecucion.getMonth(),
+    proximaEjecucion.getDate()
+  )
+
+  return proximaEjecucionNormalizada.getTime() === hoyNormalizado.getTime()
+})
+
+const esPendiente = computed(() => {
+  const fechaEjecucion =
+    props.programacion.frecuencia === 'fecha_especifica'
+      ? new Date(props.programacion.frecuencia_personalizada?.fecha)
+      : new Date(props.programacion.proxima_ejecucion)
+
+  return isBefore(fechaEjecucion, hoy)
+})
+
+const ejecutarEnBloque = async () => {
+  try {
+    for (let i = 0; i < ejecucionesPendientes.value; i++) {
+      await programacionesStore.ejecutarProgramacion(props.programacion.id)
+    }
+  } catch (error) {
+    console.error('Error ejecutando en bloque:', error)
+  }
+}
 </script>
