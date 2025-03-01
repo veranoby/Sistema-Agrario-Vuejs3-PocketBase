@@ -17,17 +17,19 @@
                         <v-icon>mdi-gesture-tap-button</v-icon>
                         <router-link
                           to="/actividades"
-                          class="ml-3 text-sm font-medium text-gray-600 hover:text-gray-700"
-                          >ACTIVIDADES</router-link
+                          class="ml-3 text-sm font-extrabold hover:text-gray-700"
+                          >MIS ACTIVIDADES</router-link
                         >
                       </div>
                     </li>
                     <li>
                       <div class="flex items-center">
                         <v-icon>mdi-chevron-right</v-icon>
-                        <span class="ml-1 text-sm font-bold text-gray-600" aria-current="page">{{
-                          actividadInfo.nombre
-                        }}</span>
+                        <span
+                          class="ml-1 text-sm font-extrabold text-gray-600"
+                          aria-current="page"
+                          >{{ actividadInfo.nombre }}</span
+                        >
                       </div>
                     </li>
                   </ol>
@@ -88,10 +90,10 @@
     </div>
 
     <v-row no-gutters>
-      <v-col cols="12" md="9" class="pa-4 pt-2">
+      <v-col cols="9" class="pa-4 pt-2">
         <v-row no-gutters>
           <!-- Datos Actividad -->
-          <v-col cols="8" class="pr-2">
+          <v-col cols="6" class="pr-2">
             <v-card class="actividad-info mb-4" elevation="2">
               <v-card-title class="headline d-flex flex-column">
                 <!-- Primera línea: Título y botón -->
@@ -131,62 +133,66 @@
                   class="rich-text-content"
                   v-html="actividadInfo.descripcion || 'No disponible'"
                 ></div>
-              </v-card-text> </v-card
-          ></v-col>
-
-          <!-- Siembras y Zonas -->
-          <v-col cols="4" class="pl-2">
-            <div class="siembra-info mt-0 p-0">
-              <v-card-title class="headline d-flex justify-between">
-                <h2 class="text-md font-bold mt-2">
-                  <span v-if="actividadInfo.siembras.length > 0">Siembras/Proyectos Asociados</span>
-                </h2>
-                <v-btn size="x-small" color="green-lighten-2" @click="openAddSiembrasZonas" icon>
-                  <v-icon>mdi-pencil</v-icon>
-                </v-btn>
-              </v-card-title>
-              <v-card-text>
-                <div class="flex flex-wrap">
-                  <v-chip
-                    v-for="siembraId in actividadInfo.siembras"
-                    size="x-small"
-                    :key="siembraId"
-                    class="m-1 p-1"
-                    :text="
-                      siembrasStore.getSiembraById(siembraId)?.nombre.toUpperCase() +
-                      ' ' +
-                      siembrasStore.getSiembraById(siembraId)?.tipo.toUpperCase()
-                    "
-                    pill
-                    color="green-lighten-3"
-                    variant="flat"
-                  >
-                  </v-chip>
-                </div>
-                <h2 v-if="actividadInfo.zonas.length > 0" class="text-l font-bold mt-2 mb-2">
-                  Otras Zonas Asociadas
-                </h2>
-
-                <div class="flex flex-wrap">
-                  <v-chip
-                    v-for="zonasId in actividadInfo.zonas"
-                    size="x-small"
-                    :key="zonasId"
-                    class="m-1 p-1"
-                    :text="
-                      zonasStore.getZonaById(zonasId)?.nombre.toUpperCase() +
-                      ' - ' +
-                      zonasStore.getZonaById(zonasId)?.expand?.tipos_zonas?.nombre.toUpperCase()
-                    "
-                    pill
-                    color="blue-lighten-3"
-                    variant="flat"
-                  >
-                  </v-chip>
-                </div>
               </v-card-text>
-            </div>
 
+              <!-- Siembras y Zonas -->
+
+              <div class="siembra-info m-4 p-0">
+                <v-card-title class="headline d-flex justify-between">
+                  <h2 class="text-md font-bold mt-2">
+                    <span v-if="actividadInfo.siembras.length > 0"
+                      >Siembras/Proyectos Asociados</span
+                    >
+                  </h2>
+                  <v-btn size="x-small" color="green-lighten-2" @click="openAddSiembrasZonas" icon>
+                    <v-icon>mdi-pencil</v-icon>
+                  </v-btn>
+                </v-card-title>
+                <v-card-text>
+                  <div class="flex flex-wrap">
+                    <v-chip
+                      v-for="siembraId in actividadInfo.siembras"
+                      size="x-small"
+                      :key="siembraId"
+                      class="m-1 p-1"
+                      :text="
+                        siembrasStore.getSiembraById(siembraId)?.nombre.toUpperCase() +
+                        ' ' +
+                        siembrasStore.getSiembraById(siembraId)?.tipo.toUpperCase()
+                      "
+                      pill
+                      color="green-lighten-3"
+                      variant="flat"
+                    >
+                    </v-chip>
+                  </div>
+                  <h2 v-if="actividadInfo.zonas.length > 0" class="text-l font-bold mt-2 mb-2">
+                    Otras Zonas Asociadas
+                  </h2>
+
+                  <div class="flex flex-wrap">
+                    <v-chip
+                      v-for="zonasId in actividadInfo.zonas"
+                      size="x-small"
+                      :key="zonasId"
+                      class="m-1 p-1"
+                      :text="
+                        zonasStore.getZonaById(zonasId)?.nombre.toUpperCase() +
+                        ' - ' +
+                        zonasStore.getZonaById(zonasId)?.expand?.tipos_zonas?.nombre.toUpperCase()
+                      "
+                      pill
+                      color="blue-lighten-3"
+                      variant="flat"
+                    >
+                    </v-chip>
+                  </div>
+                </v-card-text>
+              </div>
+            </v-card>
+          </v-col>
+
+          <v-col cols="6" class="pl-2">
             <!-- SECCION PROGRAMACIONES -->
             <div class="siembra-info mt-0 p-0">
               <v-card-title class="headline d-flex justify-between">
@@ -241,7 +247,7 @@
       </v-col>
 
       <!-- SIDEBAR  -->
-      <v-col cols="3" md="3" class="p-0 pr-4">
+      <v-col cols="3" class="p-0 pr-4">
         <!-- RECORDATORIOS -->
 
         <div class="siembra-info mt-2 p-2">

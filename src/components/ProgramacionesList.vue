@@ -58,7 +58,15 @@
         >
           <v-card-title class="font-bold text-sm mb-4 siembra-header">
             <v-icon left>mdi-sprout</v-icon>
-            Siembra/Proyecto: {{ nombreSiembra }}
+            <router-link
+              :to="{
+                name: 'Ver Siembra/Proyecto',
+                params: { id: grupo[0].siembras[0] }
+              }"
+              class="text-inherit hover:text-primary"
+            >
+              Siembra/Proyecto: {{ nombreSiembra }}
+            </router-link>
           </v-card-title>
 
           <ProgramacionPanel
@@ -78,7 +86,12 @@
         >
           <v-card-title class="font-bold text-sm mb-4 siembra-info">
             <v-icon left>mdi-tools</v-icon>
-            Actividad: {{ nombreActividad }}
+            <router-link
+              :to="{ name: 'Ver Actividad', params: { id: grupo[0].actividades[0] } }"
+              class="text-inherit hover:text-primary"
+            >
+              Actividad: {{ nombreActividad }}
+            </router-link>
           </v-card-title>
 
           <ProgramacionPanel

@@ -1,65 +1,111 @@
 <template>
-  <v-card class="mb-4" :class="{ 'border-2 border-red': debeEjecutarHoy }">
-    <v-card-text class="pt-0">
-      <div class="flex items-center justify-between mb-2">
-        <div>
-          <h3 class="text-md font-bold">
-            {{ programacion.descripcion }}
-          </h3>
-          <div class="text-sm text-gray-600">
-            {{ actividadTipo }}
-          </div>
+  <v-card class="mb-4 bg-transparent" :class="{ 'border-2 border-red': debeEjecutarHoy }">
+    <v-card-text class="p-2">
+      <!-- Fila principal con descripción y botones -->
+      <div class="flex min-w-0">
+        <!-- Estado y alertas -->
+        <div class="flex min-w-0">
+          <v-tooltip location="top">
+            <template v-slot:activator="{ props }">
+              <v-icon
+                v-bind="props"
+                :color="colorEstado"
+                size="x-small"
+                class="cursor-help"
+                icon="mdi-circle"
+              />
+            </template>
+            <span class="capitalize">{{ programacion.estado }}</span>
+          </v-tooltip>
+
+          <!-- Chip de pendientes -->
+          <v-tooltip location="top">
+            <template v-slot:activator="{ props }">
+              <v-chip
+                v-bind="props"
+                v-if="esUrgente"
+                color="red"
+                size="x-small"
+                variant="flat"
+                class="ml-2"
+              >
+                <v-icon small>mdi-alert</v-icon>
+                {{ ejecucionesPendientes }}
+              </v-chip>
+            </template>
+            <span>{{ ejecucionesPendientes }} pendiente(s)</span>
+          </v-tooltip>
+
+          <!-- Descripción con truncate -->
+          <span class="ml-2 truncate">{{ programacion.descripcion }}</span>
+
+          <v-btn
+            size="small"
+            variant="text"
+            color="grey-darken-1"
+            icon="mdi-pencil"
+            density="comfortable"
+            @click="$emit('editar', programacion)"
+          />
         </div>
-        <div class="justify-items-end">
-          <v-chip v-if="debeEjecutarHoy" color="red" variant="elevated" small class="ml-2">
+
+        <!-- Botones de ejecución -->
+        <div class="flex items-center gap-2 ml-auto">
+          <v-chip v-if="debeEjecutarHoy" color="red" variant="elevated" size="small">
             <v-icon small>mdi-alert</v-icon>
             Ejecutar hoy
           </v-chip>
-          <v-chip v-if="esUrgente" color="red" small class="ml-2">
-            <v-icon small>mdi-alert</v-icon>
-            {{ ejecucionesPendientes }} pendiente(s)
-          </v-chip>
-          <v-chip :color="colorEstado" small class="ml-2">
-            {{ programacion.estado }}
-          </v-chip>
-          <v-btn
-            class="ml-2"
-            size="x-small"
-            icon="mdi-pencil"
-            @click="$emit('editar', programacion)"
-          >
-          </v-btn>
-        </div>
-      </div>
-      <v-divider class="my-2"></v-divider>
 
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-2 text-sm">
-        <div>
-          <v-icon small>mdi-calendar-clock</v-icon>
-          Última ejecución: {{ formatFecha(programacion.ultima_ejecucion) }}
-        </div>
-        <div>
-          <v-icon small>mdi-calendar-arrow-right</v-icon>
-          Próxima ejecución: {{ formatFecha(programacion.proxima_ejecucion) }}
-        </div>
-        <div>
-          <v-icon small>mdi-counter</v-icon>
-          Ejecuciones: {{ programacion.ejecuciones_count || 0 }}
-        </div>
-        <div class="grid justify-items-end gap-2">
           <v-btn
             v-if="ejecucionesPendientes > 1"
             size="small"
+            variant="flat"
             color="orange"
+            density="comfortable"
             @click="ejecutarEnBloque"
+            class="transition-all duration-300 ease-in-out rounded-pill overflow-hidden"
+            :style="{ width: isHoveredMultiple ? '120px' : '36px' }"
+            @mouseenter="isHoveredMultiple = true"
+            @mouseleave="isHoveredMultiple = false"
           >
-            <v-icon left>mdi-play-multiple</v-icon>
-            Ejecutar {{ ejecucionesPendientes }} pendientes
+            <v-icon size="small" :class="{ 'mr-2': isHoveredMultiple }">mdi-play-multiple</v-icon>
+            <span v-show="isHoveredMultiple" class="transition-opacity duration-3000">
+              {{ ejecucionesPendientes }}
+            </span>
           </v-btn>
-          <v-btn size="small" :color="colorEstado" @click="$emit('ejecutar', programacion.id)">
-            <v-icon left>mdi-play</v-icon>
-            Ejecutar
+
+          <v-btn
+            size="small"
+            variant="flat"
+            color="green"
+            density="comfortable"
+            @click="$emit('ejecutar', programacion.id)"
+            class="transition-all duration-300 ease-in-out rounded-pill overflow-hidden"
+            :style="{ width: isHoveredSingle ? '100px' : '36px' }"
+            @mouseenter="isHoveredSingle = true"
+            @mouseleave="isHoveredSingle = false"
+          >
+            <v-icon size="small" :class="{ 'mr-2': isHoveredSingle }">mdi-play</v-icon>
+            <span v-show="isHoveredSingle" class="transition-opacity duration-3000">
+              Ejecutar
+            </span>
           </v-btn>
+        </div>
+      </div>
+
+      <!-- Fila de información adicional -->
+      <div class="flex gap-4 mt-2 text-xs text-gray-600">
+        <div class="flex items-center gap-1">
+          <v-icon size="small" color="gray">mdi-folder-outline</v-icon>
+          <span class="capitalize">{{ actividadTipo }}</span>
+        </div>
+        <div class="flex items-center gap-1">
+          <v-icon size="small" color="gray">mdi-calendar-clock</v-icon>
+          <span>Última: {{ formatFecha(programacion.ultima_ejecucion) }}</span>
+        </div>
+        <div class="flex items-center gap-1">
+          <v-icon size="small" color="gray">mdi-calendar-arrow-right</v-icon>
+          <span>Próxima: {{ formatFecha(programacion.proxima_ejecucion) }}</span>
         </div>
       </div>
     </v-card-text>
@@ -67,7 +113,7 @@
 </template>
 
 <script setup>
-import { defineProps, computed } from 'vue'
+import { defineProps, computed, ref } from 'vue'
 import { useActividadesStore } from '@/stores/actividadesStore'
 import { differenceInDays, differenceInMonths, isBefore } from 'date-fns'
 import { useProgramacionesStore } from '@/stores/programacionesStore'
@@ -102,7 +148,7 @@ const actividadTipo = computed(() => {
 })
 
 const formatFecha = (fecha) => {
-  if (!fecha) return 'No programado'
+  if (!fecha) return 'N/A'
   return new Intl.DateTimeFormat('es-ES', {
     day: '2-digit',
     month: '2-digit',
@@ -187,6 +233,9 @@ const esPendiente = computed(() => {
 
   return isBefore(fechaEjecucion, hoy)
 })
+
+const isHoveredMultiple = ref(false)
+const isHoveredSingle = ref(false)
 
 const ejecutarEnBloque = async () => {
   try {

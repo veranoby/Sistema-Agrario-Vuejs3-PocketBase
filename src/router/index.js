@@ -32,43 +32,51 @@ const routes = [
   {
     path: '/dashboard',
     component: () => import('@/components/Dashboard.vue'),
+    name: 'Dashboard de Inicio',
     meta: { requiresAuth: true }
   },
   {
     path: '/siembras',
     component: SiembrasConfig,
+    name: 'Gestion de Siembras y Proyectos',
     meta: { requiresAuth: true }
   },
   {
     path: '/siembras/:id',
     component: SiembraWorkspace,
+    name: 'Ver Siembra/Proyecto',
     meta: { requiresAuth: true }
   },
   {
     path: '/zonas',
     component: ZonasConfig,
+    name: 'Gestion de Zonas de trabajo',
     meta: { requiresAuth: true }
   },
   {
     path: '/actividades',
     component: ActividadesConfig,
+    name: 'Gestion de Actividades',
     meta: { requiresAuth: true }
   },
   {
     path: '/actividades/:id',
     component: ActividadesWorkspace,
+    name: 'Ver Actividad',
     meta: { requiresAuth: true }
   },
 
   {
     path: '/programaciones',
     component: ProgramacionesList,
+    name: 'Gestion de Programas de Actividades',
     meta: { requiresAuth: true }
   },
 
   {
     path: '/recordatorios',
     component: Recordatorios,
+    name: 'Gestion de Recordatorios y Emergencias',
     meta: { requiresAuth: true }
   }
 ]

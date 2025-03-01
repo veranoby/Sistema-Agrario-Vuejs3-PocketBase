@@ -12,22 +12,21 @@
                   <v-icon>mdi-sprout</v-icon>
                   <router-link
                     to="/siembras"
-                    class="ml-3 text-sm font-medium text-gray-600 hover:text-gray-700"
-                    >SIEMBRAS</router-link
+                    class="ml-3 text-sm font-extrabold hover:text-gray-700"
+                    >MIS SIEMBRAS/PROYECTOS</router-link
                   >
                 </div>
               </li>
               <li>
                 <div class="flex items-center">
                   <v-icon>mdi-chevron-right</v-icon>
-                  <span class="ml-1 text-sm font-bold text-gray-600" aria-current="page">{{
+                  <span class="ml-1 text-sm font-extrabold text-gray-600" aria-current="page">{{
                     siembraInfo.nombre
                   }}</span>
                 </div>
               </li>
               <li>
                 <div class="flex items-center">
-                  <v-icon>mdi-chevron-right</v-icon>
                   <span class="ml-1 text-sm font-bold text-gray-700" aria-current="page">{{
                     siembraInfo.tipo
                   }}</span>
@@ -211,8 +210,8 @@
               <!-- eliminar el footer de la tabla-->
 
               <template #expanded-row="{ columns, item }">
-                <td :colspan="columns.length">
-                  <v-card flat class="pa-4">
+                <td :colspan="columns.length" class="border-2 border-b-gray-400">
+                  <v-card flat class="p-2 bg-transparent">
                     <v-row no-gutters>
                       <v-col cols="7" class="pr-4">
                         <p v-if="item.gps" class="ml-2 mr-0 p-0 text-xs">
@@ -314,8 +313,8 @@
               <!-- eliminar el footer de la tabla-->
 
               <template #expanded-row="{ columns, item }">
-                <td :colspan="columns.length">
-                  <v-card flat class="pa-4">
+                <td :colspan="columns.length" class="border-2 border-b-gray-400">
+                  <v-card flat class="p-2 bg-transparent">
                     <v-row no-gutters>
                       <v-col cols="7" class="pr-4">
                         <p class="ml-2 mr-0 mb-2 p-0 text-xs">
