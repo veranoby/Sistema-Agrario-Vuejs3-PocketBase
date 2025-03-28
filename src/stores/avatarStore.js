@@ -37,13 +37,21 @@ export const useAvatarStore = defineStore('avatar', {
       const snackbarStore = useSnackbarStore()
       const syncStore = useSyncStore()
 
+      // Verificar tamaño máximo del archivo (5MB)
+      const MAX_FILE_SIZE = 5 * 1024 * 1024
+      if (avatarFile && avatarFile.size > MAX_FILE_SIZE) {
+        snackbarStore.showSnackbar('El archivo no debe superar 5MB', 'error')
+        return
+      }
+
       if (!syncStore.isOnline) {
         await syncStore.queueOperation({
           type: avatarFile ? 'updateAvatar' : 'createAvatar',
           collection,
-          id,
+          id: syncStore.generateTempId(), // Usar el nuevo formato de ID
           file: avatarFile
         })
+        snackbarStore.showSnackbar('Cambio de avatar en cola para sincronización', 'info')
         return
       }
 
@@ -78,8 +86,9 @@ export const useAvatarStore = defineStore('avatar', {
         await syncStore.queueOperation({
           type: 'deleteAvatar',
           collection,
-          id
+          id: syncStore.generateTempId() // Usar el nuevo formato de ID
         })
+        snackbarStore.showSnackbar('Eliminación de avatar en cola para sincronización', 'info')
         return
       }
 

@@ -993,7 +993,7 @@ onMounted(async () => {
 
 const onZonaSaved = async () => {
   addZonaDialog.value = false
-  await loadBitacora()
+  // await loadBitacora()
   snackbarStore.showSnackbar('Zona guardada exitosamente', 'success')
 }
 

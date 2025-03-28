@@ -50,7 +50,9 @@
                 </v-chip>
 
                 <v-chip variant="flat" size="x-small" color="grey-lighten-2" class="mx-1" pill>
-                  TIPO:{{ actividadesStore.getActividadTipo(actividadInfo.tipo_actividades) }}
+                  TIPO:{{
+                    actividadesStore.getActividadTipo(actividadInfo.tipo_actividades).toUpperCase()
+                  }}
                 </v-chip>
               </h3>
             </div>
@@ -105,7 +107,7 @@
                 </div>
 
                 <!-- Segunda línea: Chips -->
-                <div class="w-100 mt-2">
+                <div class="w-100 mt-2 flex flex-wrap gap-1">
                   <v-tooltip
                     v-for="(metrica, key) in actividadInfo.metricas"
                     :key="key"
@@ -113,11 +115,10 @@
                   >
                     <template v-slot:activator="{ props }">
                       <v-chip
-                        v-bind="props"
                         variant="flat"
                         size="x-small"
                         color="green-lighten-3"
-                        class="m-1 p-1"
+                        class="m-0 p-1"
                         pill
                       >
                         {{ key.replace(/_/g, ' ').toUpperCase() }}:
@@ -166,7 +167,10 @@
                     >
                     </v-chip>
                   </div>
-                  <h2 v-if="actividadInfo.zonas.length > 0" class="text-l font-bold mt-2 mb-2">
+                  <h2
+                    v-if="actividadInfo.zonas & (actividadInfo.zonas.length > 0)"
+                    class="text-l font-bold mt-2 mb-2"
+                  >
                     Otras Zonas Asociadas
                   </h2>
 
@@ -377,9 +381,9 @@
                                 </template>
                               </v-text-field>
 
-                              <!-- Input number para tipo "text" -->
+                              <!-- Input number para tipo "string" -->
                               <v-text-field
-                                v-else-if="metrica.tipo === 'text'"
+                                v-else-if="metrica.tipo === 'string'"
                                 v-model.number="metrica.valor"
                                 :label="key.replace(/_/g, ' ')"
                                 density="compact"
@@ -495,7 +499,7 @@
                     variant="outlined"
                     class="compact-form"
                     v-model="newMetrica.tipo"
-                    :items="['checkbox', 'number', 'text']"
+                    :items="['checkbox', 'number', 'string']"
                     label="Tipo"
                   />
                 </v-card-text>
@@ -570,7 +574,7 @@
                       class="mt-2"
                     >
                       <v-radio
-                        v-for="(opcion, opcionIndex) in pregunta.opciones"
+                        v-for="(opcion, opcionIndex) in pregunta.opciones || []"
                         :key="`${index}-${opcionIndex}`"
                         :label="opcion"
                         :value="opcion"
@@ -687,7 +691,7 @@
       v-model="mostrarFormProgramacion"
       :programacionActual="programacionEdit"
       :actividadPredefinida="actividadId"
-      @guardado="cargarProgramaciones"
+      @guardado="handleGuardado"
     />
   </v-container>
 </template>
@@ -713,6 +717,7 @@ import { useZonasStore } from '@/stores/zonasStore'
 import { useProgramacionesStore } from '@/stores/programacionesStore'
 import ProgramacionPanel from '@/components/ProgramacionPanel.vue'
 import ProgramacionForm from '@/components/forms/ProgramacionForm.vue'
+import { useSnackbarStore } from '@/stores/snackbarStore'
 
 const route = useRoute()
 const actividadesStore = useActividadesStore()
@@ -723,6 +728,7 @@ const siembrasStore = useSiembrasStore()
 const zonasStore = useZonasStore()
 const recordatoriosStore = useRecordatoriosStore()
 const programacionesStore = useProgramacionesStore()
+const snackbarStore = useSnackbarStore()
 
 const actividadId = ref(route.params.id)
 const actividadInfo = ref({})
@@ -830,9 +836,40 @@ onMounted(async () => {
 })
 
 const loadActividadInfo = async () => {
-  actividadInfo.value = await actividadesStore.fetchActividadById(actividadId.value, {
-    expand: 'tipo_actividades, zonas.tipos_zonas'
-  })
+  try {
+    actividadInfo.value = await actividadesStore.fetchActividadById(actividadId.value, {
+      expand: 'tipo_actividades, zonas.tipos_zonas'
+    })
+
+    // Inicializar datos_bpa si no existe
+    if (!actividadInfo.value.datos_bpa) {
+      actividadInfo.value.datos_bpa = []
+    }
+
+    // Inicializar métricas si no existe
+    if (!actividadInfo.value.metricas) {
+      actividadInfo.value.metricas = {}
+    }
+  } catch (error) {
+    console.error('Error cargando actividad:', error)
+    // Fallback para modo offline
+    const actividadLocal = actividadesStore.actividades.find((a) => a.id === actividadId.value)
+    if (actividadLocal) {
+      actividadInfo.value = { ...actividadLocal }
+
+      // Asegurar que datos_bpa existe
+      if (!actividadInfo.value.datos_bpa) {
+        actividadInfo.value.datos_bpa = []
+      }
+
+      // Asegurar que métricas existe
+      if (!actividadInfo.value.metricas) {
+        actividadInfo.value.metricas = {}
+      }
+    } else {
+      snackbarStore.showError('No se pudo cargar la actividad')
+    }
+  }
 }
 
 function openEditDialog() {
@@ -949,13 +986,13 @@ const openAddSiembrasZonas = () => {
 
 const saveSelection = async () => {
   actividadInfo.value.siembras = selectedSiembras.value // Guardar las siembras seleccionadas en la actividad
-  actividadInfo.value.zonas = selectedZonas.value // Guardar las siembras seleccionadas en la actividad
+  actividadInfo.value.zonas = selectedZonas.value // Guardar las zonas seleccionadas en la actividad
   dialogSiembrasZonas.value = false // Cerrar el diálogo
 
   // Llama a updateActividad para guardar los cambios
   try {
     await actividadesStore.updateActividad(actividadId.value, {
-      siembras: actividadInfo.value.siembra,
+      siembras: actividadInfo.value.siembras,
       zonas: actividadInfo.value.zonas
     })
     console.log('Actividad actualizada correctamente')
@@ -1019,6 +1056,12 @@ const ejecutarProgramacion = async (id) => {
 
 const cargarProgramaciones = async () => {
   await programacionesStore.cargarProgramaciones()
+}
+
+const handleGuardado = async () => {
+  mostrarFormProgramacion.value = false
+  programacionEdit.value = null
+  await cargarProgramaciones()
 }
 </script>
 

@@ -81,6 +81,16 @@ export const useProgramacionesStore = defineStore('programaciones', {
   },
 
   actions: {
+    async init() {
+      try {
+        await this.cargarProgramaciones()
+        return true
+      } catch (error) {
+        handleError(error, 'Error al inicializar programaciones')
+        return false
+      }
+    },
+
     async cargarProgramaciones() {
       const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore()
@@ -222,48 +232,98 @@ export const useProgramacionesStore = defineStore('programaciones', {
       const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore()
 
-      // Enriquecer datos con siembras relacionadas
+      // Establecer fecha actual como referencia
+      const fechaActual = new Date().toISOString()
+
+      // Calcular próxima ejecución antes de enriquecer datos
+      let proximaEjecucion
+      try {
+        if (nuevaProgramacion.frecuencia === 'fecha_especifica' && 
+            nuevaProgramacion.frecuencia_personalizada) {
+          // Si es una fecha específica, usar esa fecha
+          const fechaEspecifica = JSON.parse(nuevaProgramacion.frecuencia_personalizada).fecha
+          proximaEjecucion = fechaEspecifica ? new Date(fechaEspecifica).toISOString() : fechaActual
+        } else if (nuevaProgramacion.frecuencia === 'personalizada' && 
+                  nuevaProgramacion.frecuencia_personalizada) {
+          // Si es personalizada, calcular basado en la configuración
+          const config = JSON.parse(nuevaProgramacion.frecuencia_personalizada)
+          const addFunctions = {
+            dias: addDays,
+            semanas: addWeeks,
+            meses: addMonths,
+            años: addYears
+          }
+          proximaEjecucion = addFunctions[config.tipo]?.(new Date(), config.cantidad).toISOString() || fechaActual
+        } else {
+          // Para frecuencias estándar
+          switch (nuevaProgramacion.frecuencia) {
+            case 'diaria':
+              proximaEjecucion = addDays(new Date(), 1).toISOString()
+              break
+            case 'semanal':
+              proximaEjecucion = addWeeks(new Date(), 1).toISOString()
+              break
+            case 'quincenal':
+              proximaEjecucion = addDays(new Date(), 15).toISOString()
+              break
+            case 'mensual':
+              proximaEjecucion = addMonths(new Date(), 1).toISOString()
+              break
+            default:
+              proximaEjecucion = fechaActual
+          }
+        }
+      } catch (error) {
+        console.error('Error calculando próxima ejecución:', error)
+        proximaEjecucion = fechaActual
+      }
+
+      // Enriquecer datos con contexto de hacienda
       const enrichedData = {
         ...nuevaProgramacion,
         hacienda: haciendaStore.mi_hacienda?.id,
         version: this.version,
+        ultima_ejecucion: null,
         actividades: nuevaProgramacion.actividadesSeleccionadas,
-        siembras: await this.obtenerSiembrasRelacionadas(nuevaProgramacion.actividadesSeleccionadas)
+        siembras: await this.obtenerSiembrasRelacionadas(
+          nuevaProgramacion.actividadesSeleccionadas
+        ),
+        proxima_ejecucion: proximaEjecucion,
+        created: fechaActual
       }
 
       if (!syncStore.isOnline) {
-        const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        // Usar la función unificada para generar ID temporal
+        const tempId = syncStore.generateTempId()
+
         const tempProgramacion = {
           ...enrichedData,
           id: tempId,
-          created: new Date().toISOString(),
-          updated: new Date().toISOString(),
-          _isTemp: true
+          created: fechaActual,
+          updated: fechaActual,
+          _isTemp: true // Marcar como temporal para mejor seguimiento
         }
 
-        this.programaciones.push(this.enriquecerProgramacion(tempProgramacion))
+        this.programaciones.unshift(tempProgramacion)
+        syncStore.saveToLocalStorage('programaciones', this.programaciones)
 
         await syncStore.queueOperation({
           type: 'create',
           collection: 'programaciones',
-          data: this.enriquecerProgramacion(enrichedData),
+          data: enrichedData,
           tempId
         })
 
         snackbarStore.hideLoading()
-        syncStore.saveToLocalStorage('programaciones', this.programaciones)
-
         return tempProgramacion
       }
 
-      // Online flow
       try {
-        const record = await pb.collection('programaciones').create(
-          this.enriquecerProgramacion(enrichedData, {
-            expand: 'actividad,siembras'
-          })
-        )
-        this.programaciones.push(this.enriquecerProgramacion(record))
+        const record = await pb.collection('programaciones').create(enrichedData, {
+          expand: 'actividad,siembras'
+        })
+        this.programaciones.push(record)
+        syncStore.saveToLocalStorage('programaciones', this.programaciones)
         return record
       } catch (error) {
         handleError(error, 'Error al crear programación')
@@ -297,17 +357,36 @@ export const useProgramacionesStore = defineStore('programaciones', {
       snackbarStore.showLoading()
       const syncStore = useSyncStore()
 
-      const enrichedData = {
+      // Verificar que el ID existe
+      if (!id) {
+        snackbarStore.hideLoading()
+        throw new Error('ID de programación no proporcionado para actualización')
+      }
+
+      const programacion = this.programaciones.find((p) => p.id === id)
+      if (!programacion) {
+        snackbarStore.hideLoading()
+        throw new Error(`No se encontró programación con ID: ${id}`)
+      }
+
+      // Calcular la próxima ejecución basada en los datos actualizados
+      const dataToUpdate = {
         ...datosActualizados,
-        version: this.version
+        actividades: datosActualizados.actividades || programacion?.actividades || [],
+        siembras: datosActualizados.siembras || programacion?.siembras || [],
+        proxima_ejecucion: this.calcularProximaEjecucion({
+          ...programacion,
+          ...datosActualizados
+        })
       }
 
       if (!syncStore.isOnline) {
-        const index = this.programaciones.findIndex((z) => z.id === id)
+        const index = this.programaciones.findIndex((p) => p.id === id)
         if (index !== -1) {
           this.programaciones[index] = {
             ...this.programaciones[index],
-            ...this.enriquecerProgramacion(enrichedData)
+            ...dataToUpdate,
+            updated: new Date().toISOString()
           }
         }
 
@@ -315,26 +394,23 @@ export const useProgramacionesStore = defineStore('programaciones', {
           type: 'update',
           collection: 'programaciones',
           id,
-          data: this.enriquecerProgramacion(enrichedData)
+          data: dataToUpdate
         })
 
         snackbarStore.hideLoading()
         syncStore.saveToLocalStorage('programaciones', this.programaciones)
-
         return this.programaciones[index]
       }
 
-      // Online flow
       try {
-        const record = await pb.collection('programaciones').update(id, enrichedData, {
+        const record = await pb.collection('programaciones').update(id, dataToUpdate, {
           expand: 'actividad,siembras'
         })
         const index = this.programaciones.findIndex((p) => p.id === id)
         if (index !== -1) {
-          this.programaciones[index] = this.enriquecerProgramacion(record)
-          // Actualizar localStorage
-          syncStore.saveToLocalStorage('programaciones', this.programaciones)
+          this.programaciones[index] = record
         }
+        syncStore.saveToLocalStorage('programaciones', this.programaciones)
         return record
       } catch (error) {
         handleError(error, 'Error al actualizar programación')
@@ -349,29 +425,39 @@ export const useProgramacionesStore = defineStore('programaciones', {
       snackbarStore.showLoading()
       const syncStore = useSyncStore()
 
+      // Verificar que el ID existe
+      if (!id) {
+        snackbarStore.hideLoading()
+        throw new Error('ID de programación no proporcionado para eliminación')
+      }
+
       if (!syncStore.isOnline) {
-        this.programaciones = this.programaciones.filter((programacion) => programacion.id !== id)
+        // Verificar si la programación existe antes de eliminarla
+        const programacionExiste = this.programaciones.some((p) => p.id === id)
+        if (!programacionExiste) {
+          snackbarStore.hideLoading()
+          throw new Error(`No se encontró programación con ID: ${id}`)
+        }
+
+        this.programaciones = this.programaciones.filter((p) => p.id !== id)
 
         await syncStore.queueOperation({
           type: 'delete',
           collection: 'programaciones',
           id
         })
-
         snackbarStore.hideLoading()
         syncStore.saveToLocalStorage('programaciones', this.programaciones)
-
         return true
       }
 
       try {
         await pb.collection('programaciones').delete(id)
-        this.programaciones = this.programaciones.filter((programacion) => programacion.id !== id)
+        this.programaciones = this.programaciones.filter((p) => p.id !== id)
         syncStore.saveToLocalStorage('programaciones', this.programaciones)
-
         return true
       } catch (error) {
-        handleError(error, 'Error al eliminar programacion')
+        handleError(error, 'Error al eliminar programación')
         throw error
       } finally {
         snackbarStore.hideLoading()
@@ -414,6 +500,40 @@ export const useProgramacionesStore = defineStore('programaciones', {
         handleError(error, 'Error al ejecutar programación')
         throw error
       }
+    },
+
+    // Método para actualizar un elemento local
+    updateLocalItem(tempId, newItem) {
+      return useSyncStore().updateLocalItem(
+        'programaciones',
+        tempId,
+        newItem,
+        this.programaciones,
+        {
+          referenceFields: ['programacion', 'programaciones'],
+          executionFields: ['proxima_ejecucion']
+        }
+      )
+    },
+
+    // Método para actualizar referencias
+    updateReferencesToItem(tempId, realId) {
+      return useSyncStore().updateReferencesToItem(
+        'programaciones',
+        tempId,
+        realId,
+        this.programaciones,
+        ['programacion', 'programaciones']
+      )
+    },
+
+    // Método para eliminar un elemento local
+    removeLocalItem(id) {
+      return useSyncStore().removeLocalItem(
+        'programaciones',
+        id,
+        this.programaciones
+      )
     }
   }
 })

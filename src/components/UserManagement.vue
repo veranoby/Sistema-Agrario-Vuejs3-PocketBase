@@ -1,9 +1,11 @@
 <template>
-  <div class="bg-dinamico border-1 px-4 py-4 shadow-md hover:shadow-xl">
+  <div class="bg-dinamico border-1 m-5 mt-0 px-4 py-4 shadow-md hover:shadow-xl">
     <h2 class="text-xl font-bold mb-4">Mis Usuarios</h2>
 
     <div class="mb-6">
-      <h3 class="text-l font-semibold mb-2">Auditores</h3>
+      <h3 class="text-l font-semibold mb-2">
+        <v-icon color="success" class="mr-2">mdi-account-hard-hat-outline</v-icon> Auditores
+      </h3>
       <div v-if="auditores.length === 0" class="text-xs">No hay auditores registrados.</div>
       <ul v-else>
         <li
@@ -50,7 +52,9 @@
     </div>
 
     <div class="mb-6">
-      <h3 class="text-l font-semibold mb-2">Operadores</h3>
+      <h3 class="text-l font-semibold mb-2">
+        <v-icon color="success" class="mr-2">mdi-account-cowboy-hat-outline</v-icon> Operadores
+      </h3>
       <div v-if="operadores.length === 0" class="text-xs">No hay operadores registrados.</div>
       <ul v-else>
         <li
@@ -330,11 +334,11 @@ export default {
     }
 
     const canAddAuditor = computed(() => {
-      return auditores.value.length < currentPlan.value.auditores
+      return auditores.value.length < currentPlan.value?.auditores || 0
     })
 
     const canAddOperador = computed(() => {
-      return operadores.value.length < currentPlan.value.operadores
+      return operadores.value.length < currentPlan.value?.operadores || 0
     })
 
     const fetchHaciendaUsers = async () => {
@@ -343,7 +347,7 @@ export default {
         auditores.value = users.filter((user) => user.role === 'auditor')
         operadores.value = users.filter((user) => user.role === 'operador')
       } catch (error) {
-        console.error('Error al cargar los usuarios:', error)
+        handleError(error, 'Error recopilando usuarios..')
       }
     }
 
@@ -422,8 +426,9 @@ export default {
       }
     }
 
-    onMounted(() => {
-      fetchHaciendaUsers()
+    onMounted(async () => {
+      await fetchHaciendaUsers()
+      await planStore.fetchAvailablePlans()
     })
 
     return {

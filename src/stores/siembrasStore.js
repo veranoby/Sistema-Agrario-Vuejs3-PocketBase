@@ -41,6 +41,16 @@ export const useSiembrasStore = defineStore('siembras', {
   },
 
   actions: {
+    async init() {
+      try {
+        await this.cargarSiembras()
+        return true
+      } catch (error) {
+        handleError(error, 'Error al inicializar siembras')
+        return false
+      }
+    },
+
     async cargarSiembras() {
       const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore()
@@ -75,14 +85,27 @@ export const useSiembrasStore = defineStore('siembras', {
 
     async crearSiembra(siembraData) {
       const syncStore = useSyncStore()
+      const haciendaStore = useHaciendaStore()
+      const snackbarStore = useSnackbarStore()
+      snackbarStore.showLoading()
+
+      // Enriquecer datos con contexto de hacienda
+      const enrichedData = {
+        ...siembraData,
+        hacienda: haciendaStore.mi_hacienda?.id,
+        version: this.version
+      }
 
       if (!syncStore.isOnline) {
-        const tempId = `temp_${Date.now()}`
+        // Usar la función unificada para generar ID temporal
+        const tempId = syncStore.generateTempId()
+
         const tempSiembra = {
-          ...siembraData,
+          ...enrichedData,
           id: tempId,
           created: new Date().toISOString(),
-          updated: new Date().toISOString()
+          updated: new Date().toISOString(),
+          _isTemp: true // Marcar como temporal para mejor seguimiento
         }
 
         this.siembras.unshift(tempSiembra)
@@ -91,15 +114,16 @@ export const useSiembrasStore = defineStore('siembras', {
         await syncStore.queueOperation({
           type: 'create',
           collection: 'siembras',
-          data: siembraData,
+          data: enrichedData,
           tempId
         })
 
+        snackbarStore.hideLoading()
         return tempSiembra
       }
 
       try {
-        const record = await pb.collection('siembras').create(siembraData)
+        const record = await pb.collection('siembras').create(enrichedData)
         this.siembras.unshift(record)
         syncStore.saveToLocalStorage('siembras', this.siembras)
         useSnackbarStore().showSnackbar('Siembra creada exitosamente')
@@ -107,13 +131,28 @@ export const useSiembrasStore = defineStore('siembras', {
       } catch (error) {
         handleError(error, 'Error al crear la siembra')
         throw error
+      } finally {
+        snackbarStore.hideLoading()
       }
     },
 
     async updateSiembra(id, updateData) {
       const syncStore = useSyncStore()
+      const snackbarStore = useSnackbarStore()
+      snackbarStore.showLoading()
+
+      // Verificar que el ID existe
+      if (!id) {
+        snackbarStore.hideLoading()
+        throw new Error('ID de siembra no proporcionado para actualización')
+      }
 
       const siembra = this.getSiembraById(id)
+      if (!siembra) {
+        snackbarStore.hideLoading()
+        throw new Error(`No se encontró siembra con ID: ${id}`)
+      }
+
       const dataToUpdate = {
         ...updateData,
         avatar: updateData.avatar || siembra?.avatar
@@ -122,10 +161,15 @@ export const useSiembrasStore = defineStore('siembras', {
       if (!syncStore.isOnline) {
         const index = this.siembras.findIndex((s) => s.id === id)
         if (index !== -1) {
-          this.siembras[index] = { ...this.siembras[index], ...dataToUpdate }
+          this.siembras[index] = {
+            ...this.siembras[index],
+            ...dataToUpdate,
+            updated: new Date().toISOString()
+          }
           syncStore.saveToLocalStorage('siembras', this.siembras)
         }
 
+        // Generar un tempId para la operación de actualización
         await syncStore.queueOperation({
           type: 'update',
           collection: 'siembras',
@@ -133,6 +177,7 @@ export const useSiembrasStore = defineStore('siembras', {
           data: dataToUpdate
         })
 
+        snackbarStore.hideLoading()
         return this.siembras[index]
       }
 
@@ -140,7 +185,7 @@ export const useSiembrasStore = defineStore('siembras', {
         const record = await pb.collection('siembras').update(id, dataToUpdate)
         const index = this.siembras.findIndex((s) => s.id === id)
         if (index !== -1) {
-          this.siembras[index] = { ...this.siembras[index], ...record }
+          this.siembras[index] = record
         }
         syncStore.saveToLocalStorage('siembras', this.siembras)
         useSnackbarStore().showSnackbar('Siembra actualizada exitosamente')
@@ -148,11 +193,21 @@ export const useSiembrasStore = defineStore('siembras', {
       } catch (error) {
         handleError(error, 'Error al actualizar la siembra')
         throw error
+      } finally {
+        snackbarStore.hideLoading()
       }
     },
 
     async eliminarSiembra(id) {
       const syncStore = useSyncStore()
+      const snackbarStore = useSnackbarStore()
+      snackbarStore.showLoading()
+
+      // Verificar que el ID existe
+      if (!id) {
+        snackbarStore.hideLoading()
+        throw new Error('ID de siembra no proporcionado para eliminación')
+      }
 
       if (!syncStore.isOnline) {
         this.siembras = this.siembras.filter((s) => s.id !== id)
@@ -164,6 +219,7 @@ export const useSiembrasStore = defineStore('siembras', {
           id
         })
 
+        snackbarStore.hideLoading()
         return true
       }
 
@@ -176,6 +232,8 @@ export const useSiembrasStore = defineStore('siembras', {
       } catch (error) {
         handleError(error, 'Error al eliminar la siembra')
         throw error
+      } finally {
+        snackbarStore.hideLoading()
       }
     },
 
@@ -187,6 +245,21 @@ export const useSiembrasStore = defineStore('siembras', {
       } else {
         throw new Error('Actividad no encontrada') // Manejo de error si no se encuentra
       }
+    },
+
+    // Método para actualizar un elemento local
+    updateLocalItem(tempId, newItem) {
+      return useSyncStore().updateLocalItem('siembras', tempId, newItem, this.siembras)
+    },
+
+    // Método para actualizar referencias
+    updateReferencesToItem(tempId, realId) {
+      return useSyncStore().updateReferencesToItem('siembras', tempId, realId, this.siembras)
+    },
+
+    // Método para eliminar un elemento local
+    removeLocalItem(id) {
+      return useSyncStore().removeLocalItem('siembras', id, this.siembras)
     }
   }
 })

@@ -4,62 +4,49 @@ import { handleError } from '@/utils/errorHandler'
 import { useSnackbarStore } from './snackbarStore'
 
 export const useValidationStore = defineStore('validation', {
+  state: () => ({
+    validationCache: new Map()
+  }),
+
   actions: {
-    async checkFieldTaken(field, value, collection = 'users') {
-      const snackbarStore = useSnackbarStore()
+    async checkFieldsTaken(fields) {
+      const results = {}
 
       try {
-        const result = await pb.collection(collection).getList(1, 1, {
-          filter: `${field} = "${value}"`
+        // Agrupar campos por colección
+        const collections = new Map()
+        fields.forEach((field) => {
+          if (!collections.has(field.collection)) {
+            collections.set(field.collection, [])
+          }
+          collections.get(field.collection).push(field)
         })
 
-        if (result.totalItems > 0) {
-          // Return true if the field is taken
+        // Procesar cada colección
+        for (const [collection, fields] of collections.entries()) {
+          const filters = fields
+            .map((field) => `${field.field} = "${field.value.replace(/"/g, '\\"')}"`)
+            .join(' || ')
 
-          snackbarStore.showSnackbar(field + ' ya está en uso!', 'error')
-          return false
-        } else {
-          //   snackbarStore.showSnackbar(field + '  está disponible!', 'success')
-          return true
+          const result = await pb.collection(collection).getList(1, 1, {
+            filter: filters
+          })
+
+          // Procesar resultados
+          fields.forEach((field) => {
+            const isTaken = result.items.some((item) => item[field.field] === field.value)
+            results[field.field] = !isTaken
+          })
         }
+
+        return results
       } catch (error) {
-        handleError(error, `Error checking ${field}`)
-        return true // Assume it's taken if there's an error
+        handleError(error, 'Error checking fields')
+        return fields.reduce((acc, field) => {
+          acc[field.field] = false
+          return acc
+        }, {})
       }
-    },
-
-    async checkUsernameTaken(username) {
-      return this.checkFieldTaken('username', username)
-    },
-
-    async checkEmailTaken(email) {
-      return this.checkFieldTaken('email', email)
-    },
-
-    async checkHaciendaTaken(hacienda) {
-      return this.checkFieldTaken('name', hacienda.toUpperCase(), 'HaciendaLabel')
-    },
-
-    handleRegistrationError(error) {
-      let errorMessage
-
-      if (error.data && error.data.data) {
-        const errors = error.data.data
-        if (errors.username) {
-          errorMessage = 'Username error: ' + errors.username.message
-        } else if (errors.email) {
-          errorMessage = 'Email error: ' + errors.email.message
-        } else if (errors.name && errors.name.code === 'validation_invalid_string') {
-          errorMessage =
-            'Esta hacienda ya está registrada. No se puede crear otro administrador para la misma hacienda.'
-        } else {
-          errorMessage = 'Registration error: ' + (error.message || 'Unknown error')
-        }
-      } else {
-        errorMessage = 'Registration error: ' + (error.message || 'Unknown error')
-      }
-
-      handleError(new Error(errorMessage), 'Registration error')
     }
   }
 })

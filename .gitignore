@@ -17,6 +17,15 @@ dist-ssr
 pocketbase/data/
 pocketbase
 pocketbase/
+
+./pocketbase
+./pocketbase/*
+./pocketbase/data/*
+
+/pocketbase/data/
+/pocketbase
+/pocketbase/
+
 coverage
 *.local
 

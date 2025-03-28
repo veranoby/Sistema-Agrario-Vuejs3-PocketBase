@@ -60,18 +60,17 @@
       <v-container class="rounded-lg border-2 py-0 px-0">
         <v-tabs
           v-model="tab"
-          align-tabs="center"
           bg-color="#6380a247"
-          color="green-darken-2"
-          height="60"
           slider-color="green"
           stacked
           show-arrows
-          class="rounded-lg"
+          density="compact"
+          selected-class="bg-green-lighten-1"
+          center-active
         >
           <v-tab v-for="tipoZona in tiposZonas" :key="tipoZona.id" :value="tipoZona.id">
             <v-icon>{{ tipoZona.icon }}</v-icon>
-            <span class="text-xxs truncate" style="max-width: 160px; white-space: normal">{{
+            <span class="text-xxs" style="max-width: 160px; white-space: normal">{{
               tipoZona.nombre
             }}</span>
           </v-tab>

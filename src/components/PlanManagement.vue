@@ -1,9 +1,9 @@
 <template>
-  <div class="flex flex-col border-1 px-4 py-4 bg-dinamico">
+  <div class="flex flex-col border-1 m-5 px-6 pb-0 pt-4 bg-dinamico shadow-md hover:shadow-xl">
     <div class="flex items-center justify-between mb-4">
       <h2 class="text-l font-bold">Plan Actual</h2>
-      <v-chip :color="getPlanColor" variant="tonal" size="small" class="ml-4">
-        {{ currentPlan.nombre }}
+      <v-chip :color="getPlanColor" variant="flat" size="small">
+        {{ currentPlan.nombre.toUpperCase() }}
         <v-tooltip class="text-sm font-bold" activator="parent" location="bottom">
           PLAN: Auditores {{ currentPlan.auditores }} / Operadores {{ currentPlan.operadores }}
         </v-tooltip>
@@ -22,53 +22,56 @@
     transition="dialog-bottom-transition"
     scrollable
   >
-    <v-card elevation="3">
+    <v-card elevation="3" class="plan-dialog">
       <v-toolbar color="success" dark>
         <v-toolbar-title>Seleccione su Plan</v-toolbar-title>
         <v-spacer></v-spacer>
       </v-toolbar>
 
-      <v-card-text>
-        <v-radio-group class="" v-model="selectedPlan">
-          <div class="grid grid-cols-3 gap-2">
-            <div v-for="plan in availablePlans" :key="plan.id">
-              <v-hover
-                ><template v-slot:default="{ isHovering, props }">
-                  <v-card
-                    class="p-4 m-2 rounded-lg shadow-md overflow-hidden border-2 flex flex-col"
-                    v-bind="props"
-                    :color="isHovering ? 'green-lighten-2' : undefined"
+      <v-card-text class="plan-content">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div v-for="plan in availablePlans" :key="plan.id" @click="selectedPlan = plan.id">
+            <v-hover v-slot="{ isHovering, props }">
+              <v-card
+                class="plan-card p-6 rounded-lg shadow-md transition-all duration-300 cursor-pointer"
+                :class="{
+                  'plan-card-hover': isHovering,
+                  'plan-card-selected': selectedPlan === plan.id
+                }"
+                v-bind="props"
+                :elevation="isHovering ? 6 : 2"
+              >
+                <div class="text-center">
+                  <h2 class="plan-name text-2xl font-bold mb-4">
+                    {{ plan.nombre }}
+                  </h2>
+                  <p class="plan-price text-4xl font-bold mb-6 text-success">${{ plan.precio }}</p>
+                  <ul class="plan-features space-y-3 mb-6">
+                    <li class="flex items-center text-sm">
+                      <v-icon color="success" class="mr-2">mdi-account-hard-hat-outline</v-icon>
+                      Auditores: {{ plan.auditores }}
+                    </li>
+                    <li class="flex items-center text-sm">
+                      <v-icon color="success" class="mr-2">mdi-account-cowboy-hat-outline</v-icon>
+                      Operadores: {{ plan.operadores }}
+                    </li>
+                  </ul>
+                  <v-icon
+                    v-if="selectedPlan === plan.id"
+                    color="success"
+                    size="large"
+                    class="check-icon"
                   >
-                    <h2 class="text-xl text-align-center font-semibold mb-2">
-                      {{ plan.nombre }}
-                    </h2>
-                    <p class="text-4xl text-align-center font-bold mb-6">${{ plan.precio }}</p>
-                    <ul class="space-y-2">
-                      <li class="flex items-center text-sm">
-                        <v-icon color="green-lighten-2" aria-hidden="false"> mdi-account </v-icon>
-                        Auditores: {{ plan.auditores }}
-                      </li>
-                      <li class="flex items-center text-sm">
-                        <v-icon aria-hidden="false" color="green-lighten-2"> mdi-account </v-icon>
-                        Operadores: {{ plan.operadores }}
-                      </li>
-                    </ul>
-                    <br />
-                    <v-radio
-                      class="compact-form text-xs font-bold"
-                      :key="plan.id"
-                      :label="`Seleccionar`"
-                      :value="plan.id"
-                    ></v-radio>
-                  </v-card>
-                </template>
-              </v-hover>
-            </div>
+                    mdi-check-circle
+                  </v-icon>
+                </div>
+              </v-card>
+            </v-hover>
           </div>
-        </v-radio-group>
+        </div>
       </v-card-text>
 
-      <v-card-actions>
+      <v-card-actions class="plan-actions">
         <v-btn
           size="small"
           variant="flat"
@@ -76,8 +79,9 @@
           prepend-icon="mdi-cancel"
           color="red-lighten-3"
           @click="changePlanModalOpen = false"
-          >Cancelar</v-btn
         >
+          Cancelar
+        </v-btn>
         <v-btn
           size="small"
           variant="flat"
@@ -85,8 +89,9 @@
           prepend-icon="mdi-check"
           color="green-lighten-3"
           @click="changePlan"
-          >Confirmar</v-btn
         >
+          Confirmar
+        </v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -113,13 +118,13 @@ export default {
     const getPlanColor = computed(() => {
       switch (currentPlan.value.nombre.toLowerCase()) {
         case 'gratis':
-          return 'grey-lighten-2'
+          return 'grey'
         case 'basico':
-          return 'blue-lighten-2'
+          return 'teal-lighten-3'
         case 'premium':
-          return 'purple-lighten-2'
+          return 'purple-lighten-3'
         default:
-          return 'grey-lighten-2'
+          return 'grey-lighten-3'
       }
     })
 
@@ -160,3 +165,58 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.plan-dialog {
+  border-radius: 12px;
+}
+
+.plan-content {
+  padding: 24px;
+}
+
+.plan-card {
+  border: 2px solid #e0e0e0;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.plan-card-hover {
+  transform: translateY(-5px);
+  border-color: #4caf50;
+}
+
+.plan-card-selected {
+  border: 2px solid #4caf50;
+  background-color: #f5faf5;
+  box-shadow:
+    0 4px 6px -1px rgba(76, 175, 80, 0.1),
+    0 2px 4px -1px rgba(76, 175, 80, 0.06);
+}
+
+.check-icon {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: white;
+  border-radius: 50%;
+  padding: 4px;
+}
+
+.plan-name {
+  color: #2c3e50;
+}
+
+.plan-price {
+  color: #4caf50;
+}
+
+.plan-features {
+  color: #546e7a;
+}
+
+.plan-actions {
+  padding: 16px 24px;
+  border-top: 1px solid #e0e0e0;
+}
+</style>

@@ -157,9 +157,9 @@
                         <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
                       </template>
                     </v-select>
-                    <!-- Input number para tipo "text" -->
+                    <!-- Input number para tipo "string" -->
                     <v-text-field
-                      v-else-if="metrica.tipo === 'text'"
+                      v-else-if="metrica.tipo === 'string'"
                       v-model.number="metrica.valor"
                       :label="key"
                       density="compact"

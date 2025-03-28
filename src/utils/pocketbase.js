@@ -15,6 +15,8 @@ Haciendas:
   info: string
   plan: select(basico, estandar, premium)  # Define el número de usuarios permitidos
   avatar: file
+  metricas: json (metrica_X": {"tipo": "boolean/checkbox/select/number","descripcion": "xyz?"})
+
 
 # Colección: 
 tipos_zonas:

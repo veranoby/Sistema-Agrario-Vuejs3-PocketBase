@@ -48,12 +48,6 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/zonas',
-    component: ZonasConfig,
-    name: 'Gestion de Zonas de trabajo',
-    meta: { requiresAuth: true }
-  },
-  {
     path: '/actividades',
     component: ActividadesConfig,
     name: 'Gestion de Actividades',
@@ -72,7 +66,12 @@ const routes = [
     name: 'Gestion de Programas de Actividades',
     meta: { requiresAuth: true }
   },
-
+  {
+    path: '/zonas',
+    component: ZonasConfig,
+    name: 'Gestion de Zonas de trabajo',
+    meta: { requiresAuth: true }
+  },
   {
     path: '/recordatorios',
     component: Recordatorios,

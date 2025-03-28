@@ -11,6 +11,15 @@
     Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
+.ql-editor {
+  font-family:
+    'Inter',
+    'Plus Jakarta Sans',
+    -apple-system,
+    BlinkMacSystemFont !important;
+  font-size: inherit !important;
+}
+
 /* Tema claro por defecto */
 :root {
   --color-background: #ffffff;

@@ -28,6 +28,8 @@ export const useProfileStore = defineStore('profile', {
       return avatarStore.getAvatarUrl({ ...state.user, type: 'user' }, 'users')
     },
 
+    userRole: (state) => (state.user ? state.user.role : ''),
+
     fullName: (state) => (state.user ? `${state.user.name} ${state.user.lastname}` : '')
   },
 
@@ -67,16 +69,27 @@ export const useProfileStore = defineStore('profile', {
     },
 
     async updateProfile(profileData) {
-      if (!this.user) {
-        throw new Error('No hay usuario autenticado para actualizar el perfil.')
+      const snackbarStore = useSnackbarStore()
+      snackbarStore.showLoading()
+      const syncStore = useSyncStore()
+
+      // Verificar que el usuario existe
+      if (!this.user || !this.user.id) {
+        snackbarStore.hideLoading()
+        throw new Error('No hay usuario autenticado para actualizar')
       }
 
-      const syncStore = useSyncStore()
       if (!syncStore.isOnline) {
         // Actualizar localmente
-        this.user = { ...this.user, ...profileData }
+        this.user = { 
+          ...this.user, 
+          ...profileData,
+          updated: new Date().toISOString()
+        }
+        
+        // Guardar en localStorage
         syncStore.saveToLocalStorage('user', this.user)
-
+        
         // Encolar para sincronización
         await syncStore.queueOperation({
           type: 'updateProfile',
@@ -84,19 +97,19 @@ export const useProfileStore = defineStore('profile', {
           id: this.user.id,
           data: profileData
         })
+        
+        snackbarStore.hideLoading()
         return this.user
       }
 
-      const snackbarStore = useSnackbarStore()
-      snackbarStore.showLoading()
-
       try {
         const updatedUser = await pb.collection('users').update(this.user.id, profileData)
-        this.setUser(updatedUser)
-        snackbarStore.showSnackbar('Profile updated successfully', 'success')
+        this.user = updatedUser
+        syncStore.saveToLocalStorage('user', this.user)
+        snackbarStore.showSnackbar('Perfil actualizado con éxito', 'success')
         return updatedUser
       } catch (error) {
-        handleError(error, 'Failed to update profile')
+        handleError(error, 'Error al actualizar el perfil')
         throw error
       } finally {
         snackbarStore.hideLoading()
@@ -119,6 +132,40 @@ export const useProfileStore = defineStore('profile', {
       if (userData) {
         this.setUser(userData)
       }
+    },
+
+    // Método para actualizar un elemento local
+    updateLocalItem(tempId, newItem) {
+      return useSyncStore().updateLocalItem(
+        'profile',
+        tempId,
+        newItem,
+        this.user,
+        {
+          referenceFields: ['perfil', 'usuario'],
+          sensitiveFields: ['email', 'password']
+        }
+      )
+    },
+
+    // Método para actualizar referencias
+    updateReferencesToItem(tempId, realId) {
+      return useSyncStore().updateReferencesToItem(
+        'profile',
+        tempId,
+        realId,
+        this.user,
+        ['perfil', 'usuario']
+      )
+    },
+
+    // Método para eliminar un elemento local
+    removeLocalItem(id) {
+      return useSyncStore().removeLocalItem(
+        'profile',
+        id,
+        this.user
+      )
     }
   }
 })

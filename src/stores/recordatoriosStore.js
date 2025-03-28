@@ -55,6 +55,16 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
   },
 
   actions: {
+    async init() {
+      try {
+        await this.cargarRecordatorios()
+        return true
+      } catch (error) {
+        handleError(error, 'Error al inicializar recordatorios')
+        return false
+      }
+    },
+
     async cargarRecordatorios() {
       const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore()
@@ -109,7 +119,7 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
       }
 
       if (!syncStore.isOnline) {
-        const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        const tempId = syncStore.generateTempId()
         const tempRecordatorio = {
           ...enrichedData,
           id: tempId,
@@ -118,7 +128,8 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
           updated: new Date().toISOString()
         }
 
-        this.recordatorios.push(tempRecordatorio)
+        this.recordatorios.unshift(tempRecordatorio)
+        syncStore.saveToLocalStorage('recordatorios', this.recordatorios)
 
         await syncStore.queueOperation({
           type: 'create',
@@ -127,8 +138,6 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
           tempId
         })
         snackbarStore.hideLoading()
-
-        syncStore.saveToLocalStorage('recordatorios', this.recordatorios)
 
         return tempRecordatorio
       }
@@ -153,15 +162,34 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
       snackbarStore.showLoading()
       const syncStore = useSyncStore()
 
+      // Verificar que el ID existe
+      if (!id) {
+        snackbarStore.hideLoading()
+        throw new Error('ID de recordatorio no proporcionado para actualización')
+      }
+
+      const recordatorio = this.recordatorios.find((r) => r.id === id)
+      if (!recordatorio) {
+        snackbarStore.hideLoading()
+        throw new Error(`No se encontró recordatorio con ID: ${id}`)
+      }
+
       const enrichedData = {
         ...newData,
+        actividades: newData.actividades || recordatorio?.actividades || [],
+        zonas: newData.zonas || recordatorio?.zonas || [],
+        siembras: newData.siembras || recordatorio?.siembras || [],
         version: this.version
       }
 
       if (!syncStore.isOnline) {
         const index = this.recordatorios.findIndex((r) => r.id === id)
         if (index !== -1) {
-          this.recordatorios[index] = { ...this.recordatorios[index], ...enrichedData }
+          this.recordatorios[index] = {
+            ...this.recordatorios[index],
+            ...enrichedData,
+            updated: new Date().toISOString()
+          }
         }
 
         await syncStore.queueOperation({
@@ -170,6 +198,7 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
           id,
           data: enrichedData
         })
+
         snackbarStore.hideLoading()
         syncStore.saveToLocalStorage('recordatorios', this.recordatorios)
         return this.recordatorios[index]
@@ -185,7 +214,6 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
         if (index !== -1) {
           this.recordatorios[index] = record
         }
-
         syncStore.saveToLocalStorage('recordatorios', this.recordatorios)
         return record
       } catch (error) {
@@ -197,38 +225,46 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
     },
 
     async eliminarRecordatorio(id) {
-      if (confirm('¿Estás seguro de eliminar este recordatorio?')) {
-        const snackbarStore = useSnackbarStore()
-        snackbarStore.showLoading()
-        const syncStore = useSyncStore()
+      const snackbarStore = useSnackbarStore()
+      snackbarStore.showLoading()
+      const syncStore = useSyncStore()
 
-        if (!syncStore.isOnline) {
-          this.recordatorios = this.recordatorios.filter((recordatorio) => recordatorio.id !== id)
+      // Verificar que el ID existe
+      if (!id) {
+        snackbarStore.hideLoading()
+        throw new Error('ID de recordatorio no proporcionado para eliminación')
+      }
 
-          await syncStore.queueOperation({
-            type: 'delete',
-            collection: 'recordatorios',
-            id
-          })
-
+      if (!syncStore.isOnline) {
+        // Verificar si el recordatorio existe antes de eliminarlo
+        const recordatorioExiste = this.recordatorios.some(r => r.id === id)
+        if (!recordatorioExiste) {
           snackbarStore.hideLoading()
-          syncStore.saveToLocalStorage('recordatorios', this.recordatorios)
-
-          return true
+          throw new Error(`No se encontró recordatorio con ID: ${id}`)
         }
 
-        try {
-          await pb.collection('recordatorios').delete(id)
-          this.recordatorios = this.recordatorios.filter((recordatorio) => recordatorio.id !== id)
-          syncStore.saveToLocalStorage('recordatorios', this.recordatorios)
+        this.recordatorios = this.recordatorios.filter((r) => r.id !== id)
 
-          return true
-        } catch (error) {
-          handleError(error, 'Error al eliminar recordatorio')
-          throw error
-        } finally {
-          snackbarStore.hideLoading()
-        }
+        await syncStore.queueOperation({
+          type: 'delete',
+          collection: 'recordatorios',
+          id
+        })
+        snackbarStore.hideLoading()
+        syncStore.saveToLocalStorage('recordatorios', this.recordatorios)
+        return true
+      }
+
+      try {
+        await pb.collection('recordatorios').delete(id)
+        this.recordatorios = this.recordatorios.filter((r) => r.id !== id)
+        syncStore.saveToLocalStorage('recordatorios', this.recordatorios)
+        return true
+      } catch (error) {
+        handleError(error, 'Error al eliminar recordatorio')
+        throw error
+      } finally {
+        snackbarStore.hideLoading()
       }
     },
 
@@ -265,18 +301,43 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
       this.dialog = true
     },
 
-    async editarRecordatorio(id) {
+    editarRecordatorio(id) {
       const recordatorio = this.recordatorios.find((r) => r.id === id)
       if (recordatorio) {
-        this.editando = true
-        this.recordatorioEdit = {
-          ...recordatorio,
-          siembras: recordatorio.siembras || [],
-          actividades: recordatorio.actividades || [],
-          zonas: recordatorio.zonas || []
-        }
+        this.recordatorioEdit = { ...recordatorio }
         this.dialog = true
+        this.editando = true
       }
+    },
+
+    updateLocalItem(tempId, newItem) {
+      return useSyncStore().updateLocalItem(
+        'recordatorios',
+        tempId,
+        newItem,
+        this.recordatorios,
+        {
+          referenceFields: ['recordatorio', 'recordatorios']
+        }
+      )
+    },
+
+    updateReferencesToItem(tempId, realId) {
+      return useSyncStore().updateReferencesToItem(
+        'recordatorios',
+        tempId,
+        realId,
+        this.recordatorios,
+        ['recordatorio', 'recordatorios']
+      )
+    },
+
+    removeLocalItem(id) {
+      return useSyncStore().removeLocalItem(
+        'recordatorios',
+        id,
+        this.recordatorios
+      )
     }
   }
 })

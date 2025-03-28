@@ -37,7 +37,6 @@ export const useZonasStore = defineStore('zonas', {
 
   actions: {
     async init() {
-      const syncStore = useSyncStore()
       this.loading = true
 
       try {
@@ -85,21 +84,23 @@ export const useZonasStore = defineStore('zonas', {
     },
 
     async crearZona(zonaData) {
-      const snackbarStore = useSnackbarStore()
-      snackbarStore.showLoading()
       const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore()
+      const snackbarStore = useSnackbarStore()
+      snackbarStore.showLoading()
 
       // Enriquecer datos con contexto de hacienda
       const enrichedData = {
         ...zonaData,
         hacienda: haciendaStore.mi_hacienda?.id,
-        bpa_estado: this.calcularBpaEstado(zonaData.datos_bpa),
-        version: this.version
+        version: this.version,
+        bpa_estado: this.calcularBpaEstado(zonaData.datos_bpa || [])
       }
 
       if (!syncStore.isOnline) {
-        const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        // Usar la función unificada para generar ID temporal
+        const tempId = syncStore.generateTempId()
+
         const tempZona = {
           ...enrichedData,
           id: tempId,
@@ -108,7 +109,8 @@ export const useZonasStore = defineStore('zonas', {
           _isTemp: true
         }
 
-        this.zonas.push(tempZona)
+        this.zonas.unshift(tempZona)
+        syncStore.saveToLocalStorage('zonas', this.zonas)
 
         await syncStore.queueOperation({
           type: 'create',
@@ -118,8 +120,6 @@ export const useZonasStore = defineStore('zonas', {
         })
 
         snackbarStore.hideLoading()
-        syncStore.saveToLocalStorage('zonas', this.zonas)
-
         return tempZona
       }
 
@@ -142,31 +142,39 @@ export const useZonasStore = defineStore('zonas', {
     async updateZona(id, updateData) {
       const snackbarStore = useSnackbarStore()
       snackbarStore.showLoading()
-
       const syncStore = useSyncStore()
 
+      const zona = this.getZonaById(id)
       const enrichedData = {
         ...updateData,
         bpa_estado: this.calcularBpaEstado(updateData.datos_bpa),
+        datos_bpa: updateData.datos_bpa || zona?.datos_bpa || [],
+        metricas: updateData.metricas || zona?.metricas || {},
         version: this.version
       }
 
       if (!syncStore.isOnline) {
         const index = this.zonas.findIndex((z) => z.id === id)
         if (index !== -1) {
-          this.zonas[index] = { ...this.zonas[index], ...enrichedData }
+          this.zonas[index] = {
+            ...this.zonas[index],
+            ...enrichedData,
+            updated: new Date().toISOString()
+          }
         }
 
+        // Usar la función unificada para generar ID temporal
+        const tempId = syncStore.generateTempId()
         await syncStore.queueOperation({
           type: 'update',
           collection: 'zonas',
           id,
-          data: enrichedData
+          data: enrichedData,
+          tempId
         })
 
         snackbarStore.hideLoading()
         syncStore.saveToLocalStorage('zonas', this.zonas)
-
         return this.zonas[index]
       }
 
@@ -178,9 +186,8 @@ export const useZonasStore = defineStore('zonas', {
         const index = this.zonas.findIndex((z) => z.id === id)
         if (index !== -1) {
           this.zonas[index] = record
-          // Actualizar localStorage
-          syncStore.saveToLocalStorage('zonas', this.zonas)
         }
+        syncStore.saveToLocalStorage('zonas', this.zonas)
         return record
       } catch (error) {
         handleError(error, 'Error al actualizar zona')
@@ -195,26 +202,36 @@ export const useZonasStore = defineStore('zonas', {
       snackbarStore.showLoading()
       const syncStore = useSyncStore()
 
+      // Verificar que el ID existe
+      if (!id) {
+        snackbarStore.hideLoading()
+        throw new Error('ID de zona no proporcionado para eliminación')
+      }
+
       if (!syncStore.isOnline) {
-        this.zonas = this.zonas.filter((zona) => zona.id !== id)
+        // Verificar si la zona existe antes de eliminarla
+        const zonaExiste = this.zonas.some((z) => z.id === id)
+        if (!zonaExiste) {
+          snackbarStore.hideLoading()
+          throw new Error(`No se encontró zona con ID: ${id}`)
+        }
+
+        this.zonas = this.zonas.filter((z) => z.id !== id)
 
         await syncStore.queueOperation({
           type: 'delete',
           collection: 'zonas',
           id
         })
-
         snackbarStore.hideLoading()
         syncStore.saveToLocalStorage('zonas', this.zonas)
-
         return true
       }
 
       try {
         await pb.collection('zonas').delete(id)
-        this.zonas = this.zonas.filter((zona) => zona.id !== id)
+        this.zonas = this.zonas.filter((z) => z.id !== id)
         syncStore.saveToLocalStorage('zonas', this.zonas)
-
         return true
       } catch (error) {
         handleError(error, 'Error al eliminar zona')
@@ -228,7 +245,18 @@ export const useZonasStore = defineStore('zonas', {
       if (!datosBpa || datosBpa.length === 0) return 0
 
       const puntosObtenidos = datosBpa.reduce((acc, pregunta) => {
-        if (pregunta.respuesta === 'Cumplido' || pregunta.respuesta === 'Disponible')
+        if (
+          pregunta.respuesta === 'Implementado' ||
+          pregunta.respuesta === 'Implementados' ||
+          pregunta.respuesta === 'Implementadas' ||
+          pregunta.respuesta === 'Implementada' ||
+          pregunta.respuesta === 'Disponibles' ||
+          pregunta.respuesta === 'Realizado' ||
+          pregunta.respuesta === 'Utilizadas' ||
+          pregunta.respuesta === 'Realizados' ||
+          pregunta.respuesta === 'Cumplido' ||
+          pregunta.respuesta === 'Disponible'
+        )
           return acc + 100
         if (pregunta.respuesta === 'En proceso') return acc + 50
         return acc
@@ -311,6 +339,24 @@ export const useZonasStore = defineStore('zonas', {
       } finally {
         snackbarStore.hideLoading()
       }
+    },
+
+    updateLocalItem(tempId, newItem) {
+      return useSyncStore().updateLocalItem('zonas', tempId, newItem, this.zonas, {
+        referenceFields: ['zona', 'zonas'],
+        metricFields: ['metricas']
+      })
+    },
+
+    updateReferencesToItem(tempId, realId) {
+      return useSyncStore().updateReferencesToItem('zonas', tempId, realId, this.zonas, [
+        'zona',
+        'zonas'
+      ])
+    },
+
+    removeLocalItem(id) {
+      return useSyncStore().removeLocalItem('zonas', id, this.zonas)
     }
   }
 })

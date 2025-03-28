@@ -30,36 +30,51 @@ export const useHaciendaStore = defineStore('hacienda', {
   actions: {
     async updateHacienda(haciendaData) {
       const syncStore = useSyncStore()
+      const snackbarStore = useSnackbarStore()
+
+      // Verificar que la hacienda existe
+      if (!this.mi_hacienda || !this.mi_hacienda.id) {
+        throw new Error('No hay hacienda seleccionada para actualizar')
+      }
 
       const dataToUpdate = { ...haciendaData }
       if (!dataToUpdate.avatar && this.mi_hacienda.avatar) {
         dataToUpdate.avatar = this.mi_hacienda.avatar
       }
 
+      // Convertir el nombre a mayúsculas si está presente
+      if (dataToUpdate.name) {
+        dataToUpdate.name = dataToUpdate.name.toUpperCase()
+      }
+
       if (!syncStore.isOnline) {
-        console.log('No hay conexión a Internet. Agregando a cola de sincronización.')
+        // Actualizar localmente
+        this.mi_hacienda = { 
+          ...this.mi_hacienda, 
+          ...dataToUpdate,
+          updated: new Date().toISOString()
+        }
+        
+        // Guardar en localStorage
+        syncStore.saveToLocalStorage('mi_hacienda', this.mi_hacienda)
+        
+        // Encolar para sincronización
         await syncStore.queueOperation({
           type: 'update',
           collection: 'Haciendas',
           id: this.mi_hacienda.id,
           data: dataToUpdate
         })
-        this.mi_hacienda = { ...this.mi_hacienda, ...dataToUpdate }
-        return
+        
+        return this.mi_hacienda
       }
 
-      const snackbarStore = useSnackbarStore()
       snackbarStore.showLoading()
 
       try {
-        // Convertir el nombre a mayúsculas si está presente
-        if (haciendaData.name) {
-          haciendaData.name = haciendaData.name.toUpperCase()
-        }
-
         const updatedHacienda = await pb
           .collection('Haciendas')
-          .update(this.mi_hacienda.id, haciendaData)
+          .update(this.mi_hacienda.id, dataToUpdate)
         this.mi_hacienda = updatedHacienda
         syncStore.saveToLocalStorage('mi_hacienda', this.mi_hacienda)
         snackbarStore.showSnackbar('Hacienda actualizada con éxito', 'success')
@@ -67,6 +82,7 @@ export const useHaciendaStore = defineStore('hacienda', {
         return updatedHacienda
       } catch (error) {
         handleError(error, 'Error al actualizar la hacienda')
+        throw error
       } finally {
         snackbarStore.hideLoading()
       }
@@ -122,31 +138,45 @@ export const useHaciendaStore = defineStore('hacienda', {
       const syncStore = useSyncStore()
       snackbarStore.showLoading()
 
+      // Verificar que el ID existe
+      if (!userId) {
+        snackbarStore.hideLoading()
+        throw new Error('ID de usuario no proporcionado para eliminación')
+      }
+
       try {
         if (!syncStore.isOnline) {
+          // Verificar si el usuario existe antes de eliminarlo
+          const users = syncStore.loadFromLocalStorage(`hacienda_users_${this.mi_hacienda.id}`) || []
+          const userExiste = users.some(user => user.id === userId)
+          if (!userExiste) {
+            snackbarStore.hideLoading()
+            throw new Error(`No se encontró usuario con ID: ${userId}`)
+          }
+
           await syncStore.queueOperation({
             type: 'delete',
             collection: 'users',
             id: userId
           })
           // Actualizar UI inmediatamente
-          const users =
-            syncStore.loadFromLocalStorage(`hacienda_users_${this.mi_hacienda.id}`) || []
           const updatedUsers = users.filter((user) => user.id !== userId)
           syncStore.saveToLocalStorage(`hacienda_users_${this.mi_hacienda.id}`, updatedUsers)
-          return
+          snackbarStore.hideLoading()
+          return true
         }
 
         await pb.collection('users').delete(userId)
         // Actualizar localStorage después de eliminar
-        console.log('Actualizando localStorage después de eliminar usuario')
         const users = syncStore.loadFromLocalStorage(`hacienda_users_${this.mi_hacienda.id}`) || []
         const updatedUsers = users.filter((user) => user.id !== userId)
         syncStore.saveToLocalStorage(`hacienda_users_${this.mi_hacienda.id}`, updatedUsers)
 
         snackbarStore.showSnackbar('Usuario eliminado con éxito', 'success')
+        return true
       } catch (error) {
         handleError(error, 'Error al eliminar usuario')
+        throw error
       } finally {
         snackbarStore.hideLoading()
       }
@@ -158,26 +188,137 @@ export const useHaciendaStore = defineStore('hacienda', {
       snackbarStore.showLoading()
 
       try {
+        // Validar nombre de hacienda
+        if (!haciendaName || haciendaName.length < 3) {
+          throw new Error('El nombre de la hacienda debe tener al menos 3 caracteres')
+        }
+
+        // Crear métricas predeterminadas
+        const metricasDefault = {
+          area_total: {
+            tipo: 'text',
+            valor: 'Por determinar',
+            descripcion: 'Área total en hectáreas'
+          },
+          propietario: {
+            tipo: 'text',
+            valor: 'Por determinar',
+            descripcion: 'Nombre del propietario'
+          },
+          administrador: {
+            tipo: 'text',
+            valor: 'Por determinar',
+            descripcion: 'Nombre del administrador'
+          },
+          certificaciones: {
+            tipo: 'text',
+            valor: 'Por determinar',
+            descripcion: 'Certificaciones de la hacienda'
+          }
+        }
+
         const haciendaData = {
           name: haciendaName.toUpperCase(), // Convertir a mayúsculas
           location: '',
           info: '',
-          plan: haciendaPlan
+          plan: haciendaPlan,
+          metricas: metricasDefault, // Agregar métricas predeterminadas
+          gps: { lat: null, lng: null }
         }
+
         const newHacienda = await pb.collection('Haciendas').create(haciendaData)
-        // Guardar nueva hacienda en localStorage
         syncStore.saveToLocalStorage('mi_hacienda', newHacienda)
-        console.log('Nueva hacienda guardada en localStorage:', newHacienda)
-        snackbarStore.showSnackbar('Hacienda created successfully', 'success')
-        console.log('Guardando nueva hacienda en localStorage')
+        snackbarStore.showSnackbar('Hacienda creada exitosamente', 'success')
         return newHacienda
       } catch (error) {
-        handleError(error, 'Failed to create hacienda')
+        handleError(error, 'Error al crear la hacienda')
+        throw error
       } finally {
         snackbarStore.hideLoading()
       }
-    }
+    },
 
-    // ... otros métodos ...
+    // Método para agregar una métrica personalizada
+    async addMetrica(key, metricaData) {
+      if (!this.mi_hacienda) return
+
+      const haciendaData = { ...this.mi_hacienda }
+      if (!haciendaData.metricas) haciendaData.metricas = {}
+
+      haciendaData.metricas[key] = {
+        tipo: metricaData.tipo,
+        valor: this.getDefaultMetricaValue(metricaData.tipo),
+        descripcion: metricaData.descripcion
+      }
+
+      return this.updateHacienda(haciendaData)
+    },
+
+    // Método para eliminar una métrica
+    async removeMetrica(key) {
+      if (!this.mi_hacienda || !this.mi_hacienda.metricas) return
+
+      const haciendaData = { ...this.mi_hacienda }
+      const metricas = { ...haciendaData.metricas }
+
+      delete metricas[key]
+      haciendaData.metricas = metricas
+
+      return this.updateHacienda(haciendaData)
+    },
+
+    // Obtener valor predeterminado según el tipo de métrica
+    getDefaultMetricaValue(tipo) {
+      switch (tipo) {
+        case 'checkbox':
+          return []
+        case 'number':
+          return 0
+        case 'text':
+          return 'Por determinar'
+        case 'boolean':
+          return false
+        case 'select':
+          return null
+        case 'date':
+          return new Date().toISOString().split('T')[0]
+        default:
+          return null
+      }
+    },
+
+    // Método para actualizar un elemento local con un ID temporal a un elemento con ID real de PocketBase
+    updateLocalItem(tempId, newItem) {
+      return useSyncStore().updateLocalItem(
+        'haciendas',
+        tempId,
+        newItem,
+        this.mi_hacienda,
+        {
+          referenceFields: ['hacienda'],
+          geoFields: ['ubicacion']
+        }
+      )
+    },
+
+    // Método para actualizar referencias a un ID temporal en otros elementos
+    updateReferencesToItem(tempId, realId) {
+      return useSyncStore().updateReferencesToItem(
+        'haciendas',
+        tempId,
+        realId,
+        this.mi_hacienda,
+        ['hacienda']
+      )
+    },
+
+    // Método para eliminar un elemento local
+    removeLocalItem(id) {
+      return useSyncStore().removeLocalItem(
+        'haciendas',
+        id,
+        this.mi_hacienda
+      )
+    }
   }
 })

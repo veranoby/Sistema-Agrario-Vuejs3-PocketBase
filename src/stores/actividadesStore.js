@@ -101,6 +101,9 @@ export const useActividadesStore = defineStore('actividades', {
       const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore()
 
+      // Usar la función unificada para generar ID temporal
+      const tempId = syncStore.generateTempId()
+
       // Asegurarse de que siembras sea un array
       const siembras = Array.isArray(actividadData.siembras)
         ? actividadData.siembras
@@ -112,17 +115,18 @@ export const useActividadesStore = defineStore('actividades', {
       const enrichedData = {
         ...actividadData,
         nombre: actividadData.nombre.toUpperCase(),
-
         tipo_actividades: actividadData.tipo_actividades,
         hacienda: haciendaStore.mi_hacienda?.id,
-        siembras: siembras, // Usar el array de siembras
+        siembras: siembras,
+        zonas: actividadData.zonas || [],
         bpa_estado: this.calcularBpaEstado(actividadData.datos_bpa),
         activa: true,
-        version: this.version
+        version: this.version,
+        datos_bpa: actividadData.datos_bpa || [],
+        metricas: actividadData.metricas || {}
       }
 
       if (!syncStore.isOnline) {
-        const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
         const tempActividad = {
           ...enrichedData,
           id: tempId,
@@ -131,7 +135,8 @@ export const useActividadesStore = defineStore('actividades', {
           _isTemp: true
         }
 
-        this.actividades.push(tempActividad)
+        this.actividades.unshift(tempActividad)
+        syncStore.saveToLocalStorage('actividades', this.actividades)
 
         await syncStore.queueOperation({
           type: 'create',
@@ -141,8 +146,6 @@ export const useActividadesStore = defineStore('actividades', {
         })
 
         snackbarStore.hideLoading()
-        syncStore.saveToLocalStorage('actividades', this.actividades)
-
         return tempActividad
       }
 
@@ -165,31 +168,56 @@ export const useActividadesStore = defineStore('actividades', {
       snackbarStore.showLoading()
       const syncStore = useSyncStore()
 
+      // Verificar que el ID existe
+      if (!id) {
+        snackbarStore.hideLoading()
+        throw new Error('ID de actividad no proporcionado para actualización')
+      }
+
+      // Obtener la actividad actual para preservar datos importantes
+      const actividad = this.actividades.find((a) => a.id === id)
+      if (!actividad) {
+        snackbarStore.hideLoading()
+        throw new Error(`No se encontró actividad con ID: ${id}`)
+      }
+
       const enrichedData = {
         ...updateData,
-        tipo_actividades: updateData.tipo_actividades,
-        metricas: updateData.metricas || {},
-        bpa_estado: this.calcularBpaEstado(updateData.datos_bpa),
+        tipo_actividades: updateData.tipo_actividades || actividad?.tipo_actividades,
+        metricas: updateData.metricas || actividad?.metricas || {},
+        datos_bpa: updateData.datos_bpa || actividad?.datos_bpa || [],
+        siembras: Array.isArray(updateData.siembras)
+          ? updateData.siembras
+          : actividad?.siembras || [],
+        zonas: Array.isArray(updateData.zonas) ? updateData.zonas : actividad?.zonas || [],
+        bpa_estado: this.calcularBpaEstado(updateData.datos_bpa || actividad?.datos_bpa || []),
         version: this.version
       }
 
       if (!syncStore.isOnline) {
         const index = this.actividades.findIndex((a) => a.id === id)
         if (index !== -1) {
-          this.actividades[index] = { ...this.actividades[index], ...enrichedData }
+          // Actualizar localmente
+          this.actividades[index] = {
+            ...this.actividades[index],
+            ...enrichedData,
+            updated: new Date().toISOString()
+          }
+
+          // Encolar la operación
+          await syncStore.queueOperation({
+            type: 'update',
+            collection: 'actividades',
+            id: id, // Usar el ID original (puede ser real o temporal)
+            data: enrichedData
+          })
+
+          syncStore.saveToLocalStorage('actividades', this.actividades)
+          snackbarStore.hideLoading()
+          return this.actividades[index]
         }
-
-        await syncStore.queueOperation({
-          type: 'update',
-          collection: 'actividades',
-          id,
-          data: enrichedData
-        })
-
         snackbarStore.hideLoading()
-        syncStore.saveToLocalStorage('actividades', this.actividades)
-
-        return this.actividades[index]
+        throw new Error('Actividad no encontrada')
       }
 
       // Online flow
@@ -216,7 +244,20 @@ export const useActividadesStore = defineStore('actividades', {
       snackbarStore.showLoading()
       const syncStore = useSyncStore()
 
+      // Verificar que el ID existe
+      if (!id) {
+        snackbarStore.hideLoading()
+        throw new Error('ID de actividad no proporcionado para eliminación')
+      }
+
       if (!syncStore.isOnline) {
+        // Verificar si la actividad existe antes de eliminarla
+        const actividadExiste = this.actividades.some((a) => a.id === id)
+        if (!actividadExiste) {
+          snackbarStore.hideLoading()
+          throw new Error(`No se encontró actividad con ID: ${id}`)
+        }
+
         this.actividades = this.actividades.filter((a) => a.id !== id)
 
         await syncStore.queueOperation({
@@ -243,12 +284,98 @@ export const useActividadesStore = defineStore('actividades', {
       }
     },
 
+    async fetchActividadById(id, options = {}) {
+      if (!id) {
+        throw new Error('ID de actividad no proporcionado')
+      }
+
+      try {
+        // Primero buscar en el store local
+        const index = this.actividades.findIndex((s) => s.id === id)
+
+        if (index !== -1) {
+          const actividad = this.actividades[index]
+
+          // Asegurar que todas las propiedades necesarias existan
+          const actividadCompleta = {
+            ...actividad,
+            datos_bpa: actividad.datos_bpa || [],
+            metricas: actividad.metricas || {},
+            siembras: actividad.siembras || [],
+            zonas: actividad.zonas || [],
+            expand: actividad.expand || {}
+          }
+
+          return actividadCompleta
+        }
+
+        // Si estamos online y no se encontró en el store, intentar buscar en el servidor
+        const syncStore = useSyncStore()
+        if (syncStore.isOnline) {
+          const record = await pb.collection('actividades').getOne(id, options)
+
+          // Actualizar el store con la información obtenida
+          const actividadIndex = this.actividades.findIndex((a) => a.id === id)
+          if (actividadIndex !== -1) {
+            this.actividades[actividadIndex] = record
+          } else {
+            this.actividades.push(record)
+          }
+
+          // Guardar en localStorage
+          syncStore.saveToLocalStorage('actividades', this.actividades)
+
+          return record
+        }
+
+        throw new Error('Actividad no encontrada')
+      } catch (error) {
+        console.error('Error al obtener actividad:', error)
+        throw new Error('Actividad no encontrada')
+      }
+    },
+
+    // Método para actualizar un elemento local
+    updateLocalItem(tempId, newItem) {
+      return useSyncStore().updateLocalItem('actividades', tempId, newItem, this.actividades, {
+        referenceFields: ['actividad', 'actividades'],
+        bpaFields: ['datos_bpa']
+      })
+    },
+
+    // Método para actualizar referencias
+    updateReferencesToItem(tempId, realId) {
+      return useSyncStore().updateReferencesToItem(
+        'actividades',
+        tempId,
+        realId,
+        this.actividades,
+        ['actividad', 'actividades']
+      )
+    },
+
+    // Método para eliminar un elemento local
+    removeLocalItem(id) {
+      return useSyncStore().removeLocalItem('actividades', id, this.actividades)
+    },
+
     // Nuevo método para calcular bpa_estado
     calcularBpaEstado(datosBpa) {
       if (!datosBpa || datosBpa.length === 0) return 0
 
       const puntosObtenidos = datosBpa.reduce((acc, pregunta) => {
-        if (pregunta.respuesta === 'Cumplido' || pregunta.respuesta === 'Disponible')
+        if (
+          pregunta.respuesta === 'Implementado' ||
+          pregunta.respuesta === 'Implementados' ||
+          pregunta.respuesta === 'Implementadas' ||
+          pregunta.respuesta === 'Implementada' ||
+          pregunta.respuesta === 'Disponibles' ||
+          pregunta.respuesta === 'Realizado' ||
+          pregunta.respuesta === 'Utilizadas' ||
+          pregunta.respuesta === 'Realizados' ||
+          pregunta.respuesta === 'Cumplido' ||
+          pregunta.respuesta === 'Disponible'
+        )
           return acc + 100
         if (pregunta.respuesta === 'En proceso') return acc + 50
         return acc
@@ -279,15 +406,6 @@ export const useActividadesStore = defineStore('actividades', {
         useSyncStore().saveToLocalStorage('tiposActividades', this.tiposActividades)
       } catch (error) {
         handleError(error, 'Error al cargar tipos de actividades')
-      }
-    },
-
-    async fetchActividadById(id) {
-      const index = this.actividades.findIndex((s) => s.id === id)
-      if (index !== -1) {
-        return this.actividades[index] // Retorna la actividad encontrada
-      } else {
-        throw new Error('Actividad no encontrada') // Manejo de error si no se encuentra
       }
     }
   }

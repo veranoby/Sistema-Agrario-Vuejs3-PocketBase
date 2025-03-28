@@ -1,24 +1,15 @@
 <template>
   <div class="flex flex-col min-h-screen">
     <main class="">
-      <div class="grid grid-cols-4 gap-4 p-2 m-2 mt-0">
-        <div class="col-span-4 p-2 m-0 pt-0">
+      <div class="grid grid-cols-4 gap-2">
+        <div class="col-span-3">
           <ProfileInfo />
           <PasswordChange />
+          <HaciendaInfo v-if="isHaciendaAdmin" />
         </div>
-      </div>
-
-      <div v-if="isHaciendaAdmin">
-        <div class="grid grid-cols-4 gap-2 p-2 m-2">
-          <div class="col-span-3 p-2">
-            <HaciendaInfo />
-            <!-- Placeholder for UserManagement component (if user is admin) -->
-          </div>
-          <div class="mt-2">
-            <PlanManagement />
-            <br />
-            <UserManagement />
-          </div>
+        <div class="" v-if="isHaciendaAdmin">
+          <PlanManagement />
+          <UserManagement />
         </div>
       </div>
     </main>

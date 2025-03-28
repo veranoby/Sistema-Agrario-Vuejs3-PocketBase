@@ -1,5 +1,5 @@
 <template>
-  <div class="mt-4">
+  <div class="m-6">
     <v-btn
       min-width="210"
       size="small"
@@ -28,33 +28,36 @@
         <v-card-text>
           <v-form @submit.prevent="changePassword">
             <v-text-field
-              class="compact-form"
+              class=""
               v-model="oldPassword"
               label="Contraseña actual"
               variant="outlined"
               type="password"
               density="compact"
               :error-messages="errors.oldPassword"
+              prepend-icon="mdi-lock-outline"
             ></v-text-field>
 
             <v-text-field
-              class="compact-form"
+              class=""
               v-model="newPassword"
               label="Nueva contraseña"
               variant="outlined"
               type="password"
               density="compact"
               :error-messages="errors.newPassword"
+              prepend-icon="mdi-lock-plus"
             ></v-text-field>
 
             <v-text-field
               v-model="confirmPassword"
-              class="compact-form"
+              class=""
               label="Confirmar nueva contraseña"
               variant="outlined"
               type="password"
               density="compact"
               :error-messages="errors.confirmPassword"
+              prepend-icon="mdi-lock-check"
             ></v-text-field>
           </v-form>
         </v-card-text>

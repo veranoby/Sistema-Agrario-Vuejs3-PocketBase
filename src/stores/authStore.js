@@ -11,6 +11,8 @@ import { useSyncStore } from './syncStore'
 import { useActividadesStore } from '@/stores/actividadesStore'
 import { useZonasStore } from '@/stores/zonasStore'
 import { useSiembrasStore } from '@/stores/siembrasStore'
+import { useRecordatoriosStore } from '@/stores/recordatoriosStore'
+import { useProgramacionesStore } from '@/stores/programacionesStore'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -37,18 +39,12 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    async login(usernameOrEmail, password, rememberMe = false) {
+    async login(username, email, password, rememberMe = false) {
       const syncStore = useSyncStore()
       if (this.loading) return // Prevent multiple calls while loading
       this.loading = true
 
       const snackbarStore = useSnackbarStore()
-      const profileStore = useProfileStore()
-      const haciendaStore = useHaciendaStore()
-      const planStore = usePlanStore()
-      const actividadesStore = useActividadesStore()
-      const zonasStore = useZonasStore()
-      const siembrasStore = useSiembrasStore()
 
       if (!syncStore.isOnline) {
         throw new Error('Se requiere conexión a internet para el primer inicio de sesión')
@@ -57,37 +53,29 @@ export const useAuthStore = defineStore('auth', {
       snackbarStore.showLoading()
 
       try {
-        const authData = await pb.collection('users').authWithPassword(usernameOrEmail, password)
-
-        if (pb.authStore.isValid) {
-          profileStore.setUser(authData.record)
-
-          this.setSession(authData)
-
-          console.log('usuario:', profileStore.user)
-          console.log('isLoggedIn:', this.isLoggedIn)
-          console.log('token:', this.token)
-
-          await planStore.fetchAvailablePlans()
-          await haciendaStore.fetchHacienda(authData.record.hacienda)
-          await siembrasStore.cargarSiembras()
-          await zonasStore.init()
-          await actividadesStore.init()
-
-          router.push('/dashboard') // Navigate to dashboard.vue
-          if (rememberMe) {
-            syncStore.saveToLocalStorage('token', this.token)
-            syncStore.saveToLocalStorage('user', authData.record)
+        // Intentar login con username primero
+        if (username) {
+          const authData = await pb
+            .collection('users')
+            .authWithPassword(username.toUpperCase(), password)
+          if (pb.authStore.isValid) {
+            this.handleSuccessfulLogin(authData, rememberMe)
+            return true
           }
-
-          //    await syncStore.queueOperation({ type: 'login', data: { usernameOrEmail, password } })
-          return true
-        } else {
-          throw new Error('Login failed: Invalid credentials')
         }
+
+        // Si falla con username, intentar con email
+        if (email) {
+          const authData = await pb.collection('users').authWithPassword(email, password)
+          if (pb.authStore.isValid) {
+            this.handleSuccessfulLogin(authData, rememberMe)
+            return true
+          }
+        }
+
+        throw new Error('Invalid credentials')
       } catch (error) {
         handleError(error, 'Invalid credentials')
-
         return false
       } finally {
         this.loading = false
@@ -95,13 +83,56 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
+    async handleSuccessfulLogin(authData, rememberMe = false) {
+      // Set auth state
+      this.setSession(authData)
+
+      // Save auth data to local storage if remember me is checked
+      if (rememberMe) {
+        localStorage.setItem('pocketbase_auth', JSON.stringify(pb.authStore.model))
+      }
+
+      // Initialize stores in the correct order
+      const syncStore = useSyncStore()
+      syncStore.init()
+
+      const profileStore = useProfileStore()
+      const haciendaStore = useHaciendaStore()
+      const planStore = usePlanStore()
+      const actividadesStore = useActividadesStore()
+      const zonasStore = useZonasStore()
+      const siembrasStore = useSiembrasStore()
+      const recordatoriosStore = useRecordatoriosStore()
+      const programacionesStore = useProgramacionesStore()
+
+      // Load user profile
+      profileStore.setUser(authData.record)
+
+      // Load hacienda data
+      if (authData.record.hacienda) {
+        await haciendaStore.fetchHacienda(authData.record.hacienda)
+      }
+
+      // Load other necessary data in sequence to avoid race conditions
+      try {
+        await planStore.fetchAvailablePlans()
+        await actividadesStore.init()
+        await zonasStore.init()
+        await siembrasStore.init()
+        await recordatoriosStore.init()
+        await programacionesStore.init()
+      } catch (error) {
+        handleError(error, 'Error loading initial data')
+      }
+
+      // Redirect to dashboard
+      router.push('/dashboard')
+    },
+
     setSession(authData) {
       this.user = authData.record
       this.token = pb.authStore.token
       this.isLoggedIn = true
-
-      const syncStore = useSyncStore()
-      syncStore.init()
     },
 
     async register(formData, new_role) {
@@ -112,38 +143,17 @@ export const useAuthStore = defineStore('auth', {
 
       snackbarStore.showLoading()
 
-      console.log('new_role:', new_role)
-
       try {
-        const emailExists = await validationStore.checkEmailTaken(formData.email)
-
-        if (!emailExists) {
-          return
+        // Obtener plan gratuito
+        const gratisPlan = await planStore.getGratisPlan()
+        if (!gratisPlan || !gratisPlan.id) {
+          throw new Error('No se pudo obtener el plan gratuito')
         }
 
-        let haciendaId
-        let verified_user
+        // Crear hacienda
+        const newHacienda = await haciendaStore.createHacienda(formData.hacienda, gratisPlan.id)
 
-        if (new_role === 'administrador') {
-          console.log('entrando a administrador en registro:')
-
-          // Get the "gratis" plan
-          await planStore.fetchAvailablePlans()
-          const gratisPlan = await planStore.getGratisPlan()
-
-          // Use the existing createHacienda method from haciendaStore
-          const newHacienda = await haciendaStore.createHacienda(formData.hacienda, gratisPlan.id)
-
-          haciendaId = newHacienda.id
-          verified_user = false
-        } else {
-          console.log('entrando a NO administrador en registro:')
-
-          haciendaId = formData.hacienda
-          //        verified_user = true //should be true, but at the time, pocketbase doesnt handle
-          verified_user = false
-        }
-
+        // Crear usuario
         const userData = this.createUserData(
           formData.username,
           formData.email,
@@ -151,34 +161,23 @@ export const useAuthStore = defineStore('auth', {
           formData.lastname,
           formData.password,
           new_role,
-          haciendaId,
-          verified_user
+          newHacienda.id,
+          false
         )
-
-        console.log('user_data:', userData)
 
         await pb.collection('users').create(userData)
 
-        if (new_role === 'administrador') {
-          await this.sendVerificationEmail(formData.email)
+        // Enviar email de verificación
+        await this.sendVerificationEmail(formData.email)
 
-          snackbarStore.showSnackbar(
-            'Registrado con éxito. Por favor, consulte su correo electrónico para confirmación.',
-            'success'
-          )
-          this.registrationSuccess = true
-        } else {
-          snackbarStore.showSnackbar('Usuario ' + new_role + ' Registrado con éxito', 'success')
-        }
+        snackbarStore.showSnackbar(
+          'Registrado con éxito. Por favor, verifique su email.',
+          'success'
+        )
+        this.registrationSuccess = true
       } catch (error) {
-        if (new_role === 'administrador') {
-          this.registrationSuccess = false
-        }
-        if (error.message === 'Validation failed') {
-          validationStore.handleRegistrationError(error)
-        } else {
-          handleError(error, 'Registration failed')
-        }
+        this.registrationSuccess = false
+        handleError(error, 'Error en el registro')
       } finally {
         snackbarStore.hideLoading()
       }
@@ -224,13 +223,13 @@ export const useAuthStore = defineStore('auth', {
       try {
         await pb.collection('users').confirmVerification(token)
         snackbarStore.showSnackbar(
-          'Email confirmed successfully! You can now log in with your credentials.',
+          'Email confirmado exitosamente! Ya puede iniciar sesión.',
           'success'
         )
+        return true
       } catch (error) {
-        handleError(error, 'Failed to confirm email')
-      } finally {
-        snackbarStore.hideLoading()
+        handleError(error, 'Error al confirmar el email')
+        throw error
       }
     },
 

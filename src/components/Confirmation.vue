@@ -3,7 +3,7 @@
     <v-container class="rounded-lg border-4" v-if="isOpen">
       <v-col cols="12">
         <v-card>
-          <v-card-title> <h2 class="text-2xl font-bold">Confirm Your Email</h2></v-card-title>
+          <v-card-title> <h2 class="text-2xl font-bold">CONFIRME SU EMAIL..</h2></v-card-title>
           <v-card-text>
             <v-form @submit.prevent="confirmEmail">
               <v-text-field
@@ -42,7 +42,7 @@
 
 <script>
 import { onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 
@@ -58,6 +58,7 @@ export default {
   setup(props) {
     const authStore = useAuthStore()
     const route = useRoute()
+    const router = useRouter()
     const snackbarStore = useSnackbarStore()
     const token = ref('')
     const isOpenLocal = ref(props.isOpen)
@@ -73,6 +74,7 @@ export default {
         await authStore.confirmEmail(token.value)
         snackbarStore.showSnackbar('Email confirmed successfully!', 'success')
         isOpenLocal.value = false
+        router.push({ name: 'Login' })
       } catch (error) {
         snackbarStore.showSnackbar(
           'Failed to confirm email. Please check your token and try again.',
@@ -83,11 +85,22 @@ export default {
     }
 
     // Automatically extract the token from the query parameters
-    onMounted(() => {
-      const queryToken = route.query.token
+    onMounted(async () => {
+      const queryToken = route.params.token || route.query.token
       if (queryToken) {
         token.value = queryToken
-        confirmEmail()
+        try {
+          await authStore.confirmEmail(token.value)
+          snackbarStore.showSnackbar('Email confirmado exitosamente!', 'success')
+          isOpenLocal.value = false
+          router.push({ name: 'Login' })
+        } catch (error) {
+          snackbarStore.showSnackbar(
+            'Error al confirmar el email. Por favor verifique el token e intente nuevamente.',
+            'error'
+          )
+          isOpenLocal.value = true
+        }
       }
     })
 

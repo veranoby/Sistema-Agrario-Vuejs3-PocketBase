@@ -3,12 +3,15 @@ import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
 import { useSnackbarStore } from './snackbarStore'
 import { useHaciendaStore } from './haciendaStore'
-import { loadFromLocalStorage, saveToLocalStorage } from '@/utils/localStorageUtils'
+import { useSyncStore } from './syncStore'
 
 export const usePlanStore = defineStore('plan', {
   state: () => ({
-    plans: loadFromLocalStorage('plans') || null // Cargar desde localStorage
+    plans: [],
+    loading: false,
+    error: null
   }),
+
   persist: {
     key: 'plan',
     storage: sessionStorage,
@@ -18,45 +21,92 @@ export const usePlanStore = defineStore('plan', {
   getters: {
     currentPlan: (state) => {
       const haciendaStore = useHaciendaStore()
-      return state.plans
-        ? state.plans.find((plan) => plan.id === haciendaStore.mi_hacienda?.plan)
-        : null
+      return state.plans.find((plan) => plan.id === haciendaStore.mi_hacienda?.plan)
     }
   },
 
   actions: {
     async getGratisPlan() {
+      const syncStore = useSyncStore()
+      const cachedPlan = syncStore.loadFromLocalStorage('gratisPlan')
+
+      if (cachedPlan) {
+        return cachedPlan
+      }
+
       try {
-        const gratisPlan = await pb.collection('planes').getFirstListItem('nombre = "gratis"')
+        const plans = await pb.collection('planes').getFullList({ sort: 'precio' })
+        const gratisPlan = plans.find((plan) => plan.nombre === 'gratis')
+
+        if (!gratisPlan) {
+          throw new Error('Plan gratuito no encontrado')
+        }
+
+        syncStore.saveToLocalStorage('gratisPlan', gratisPlan)
         return gratisPlan
       } catch (error) {
         handleError(error, 'Error fetching gratis plan')
+        return null
       }
     },
 
     async fetchAvailablePlans() {
-      //listo
-      try {
-        const planssearch = await pb.collection('planes').getFullList({
-          sort: 'precio'
-        })
-        this.plans = planssearch
-        saveToLocalStorage('plans', this.plans) // Sincronizar con localStorage
-        console.log('Planes actualizados en localStorage:', this.plans)
+      const syncStore = useSyncStore()
+      this.loading = true
+
+      // Cargar desde localStorage primero
+      const cachedPlans = syncStore.loadFromLocalStorage('plans')
+      if (cachedPlans?.length) {
+        this.plans = cachedPlans
+        this.loading = false
         return this.plans
+      }
+
+      // Si no hay conexión, retornar vacío
+      if (!syncStore.isOnline) {
+        this.plans = []
+        this.loading = false
+        return []
+      }
+
+      try {
+        const plans = await pb.collection('planes').getFullList({ sort: 'precio' })
+        this.plans = plans
+        syncStore.saveToLocalStorage('plans', plans)
+
+        // Guardar el plan gratis en localStorage
+        const gratisPlan = plans.find((plan) => plan.nombre === 'gratis')
+        if (gratisPlan) {
+          syncStore.saveToLocalStorage('gratisPlan', gratisPlan)
+        }
+
+        return plans
       } catch (error) {
         handleError(error, 'Error fetching available plans')
+        return []
+      } finally {
+        this.loading = false
       }
     },
 
     async changePlan(newPlanId) {
+      const syncStore = useSyncStore()
       const snackbarStore = useSnackbarStore()
       const haciendaStore = useHaciendaStore()
+
+      // Verificar si está en modo offline
+      if (!syncStore.isOnline) {
+        snackbarStore.showSnackbar('No se pueden realizar cambios de plan en modo offline', 'error')
+        return
+      }
+
       snackbarStore.showLoading()
 
       try {
-        const currentPlan = await this.currentPlan
-        const newPlan = await pb.collection('planes').getOne(newPlanId)
+        const currentPlan = this.currentPlan
+        const newPlan =
+          this.plans.find((plan) => plan.id === newPlanId) ||
+          (await pb.collection('planes').getOne(newPlanId))
 
         if (
           newPlan.nombre === 'gratis' ||
@@ -71,23 +121,26 @@ export const usePlanStore = defineStore('plan', {
         }
 
         const updatedHacienda = await pb
-          .collection('HaciendaLabel')
-          .update(haciendaStore.mi_hacienda.id, {
-            plan: newPlanId
-          })
+          .collection('Haciendas')
+          .update(haciendaStore.mi_hacienda.id, { plan: newPlanId })
 
+        // Actualizar estado local
         haciendaStore.mi_hacienda = updatedHacienda
-        snackbarStore.showSnackbar('Plan updated successfully', 'success')
+        syncStore.saveToLocalStorage('mi_hacienda', updatedHacienda)
+
+        // Forzar actualización de planes
+        await this.fetchAvailablePlans()
+
+        snackbarStore.showSnackbar('Plan actualizado correctamente', 'success')
         return updatedHacienda
       } catch (error) {
-        handleError(error, 'Failed to change plan')
+        handleError(error, 'Error al cambiar el plan')
       } finally {
         snackbarStore.hideLoading()
       }
     },
 
     async confirmUserReset() {
-      //listo
       return new Promise((resolve) => {
         if (
           confirm(
@@ -102,7 +155,16 @@ export const usePlanStore = defineStore('plan', {
     },
 
     async resetHaciendaUsers() {
+      const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore()
+      const snackbarStore = useSnackbarStore()
+
+      // Verificar si está en modo offline
+      if (!syncStore.isOnline) {
+        snackbarStore.showSnackbar('No se pueden resetear usuarios en modo offline', 'error')
+        return
+      }
+
       try {
         const users = await pb.collection('users').getFullList({
           filter: `hacienda = "${haciendaStore.mi_hacienda.id}" && role != "administrador"`
@@ -112,7 +174,7 @@ export const usePlanStore = defineStore('plan', {
           await pb.collection('users').delete(user.id)
         }
       } catch (error) {
-        handleError(error, 'Error resetting hacienda users:')
+        handleError(error, 'Error resetting hacienda users')
       }
     }
   }

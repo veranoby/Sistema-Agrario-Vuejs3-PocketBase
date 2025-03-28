@@ -148,12 +148,25 @@ const actividadTipo = computed(() => {
 })
 
 const formatFecha = (fecha) => {
-  if (!fecha) return 'N/A'
-  return new Intl.DateTimeFormat('es-ES', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  }).format(new Date(fecha))
+  if (!fecha) return 'N/A';
+  
+  try {
+    // Verificar que la fecha sea válida
+    const fechaObj = new Date(fecha);
+    if (isNaN(fechaObj.getTime())) {
+      console.warn(`Fecha inválida: ${fecha}`);
+      return 'Pendiente';
+    }
+    
+    return new Intl.DateTimeFormat('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }).format(fechaObj);
+  } catch (error) {
+    console.error(`Error formateando fecha: ${fecha}`, error);
+    return 'Pendiente';
+  }
 }
 
 const ejecucionesPendientes = computed(() => {
