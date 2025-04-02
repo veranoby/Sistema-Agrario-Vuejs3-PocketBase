@@ -7,6 +7,7 @@ import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 import { useRecordatoriosStore } from '@/stores/recordatoriosStore'
+import { useAuthStore } from '@/stores/authStore'
 
 export class SyncQueue {
   constructor() {
@@ -69,6 +70,8 @@ export class SyncQueue {
 
   enrichOperation(operation) {
     const haciendaStore = useHaciendaStore()
+    const authStore = useAuthStore()
+
     return {
       ...operation,
       data: {
@@ -76,9 +79,11 @@ export class SyncQueue {
         hacienda: haciendaStore.mi_hacienda?.id,
         version: this.version
       },
+      userId: authStore.user?.id || null,
       retryCount: 0,
       status: 'pending',
       timestamp: Date.now(),
+      createdAt: Date.now(),
       priority: this.calculatePriority(operation.type)
     }
   }
@@ -111,91 +116,90 @@ export class SyncQueue {
         throw new Error('No hay conexión a internet para procesar la cola')
       }
 
-      // 1. Ordenar operaciones por timestamp para mantener orden de creación
-      this.queue.sort((a, b) => a.createdAt - b.createdAt)
+      const authStore = useAuthStore()
+      const currentUserId = authStore.user?.id
 
-      // 2. Agrupar operaciones manteniendo prioridad: crear, actualizar, eliminar
-      const [creates, updates, deletes] = this.groupOperations()
-      console.log('Operaciones agrupadas:', { creates, updates, deletes })
-
-      // 3. Procesar creaciones primero, actualizando referencias inmediatamente
-      for (const op of creates) {
-        try {
-          // Importante: resolver referencias a IDs temporales antes de crear
-          op.data = this.replaceTemporaryIdsInData(op.data)
-
-          const result = await this.executeOperation(op)
-          if (result && result.id) {
-            console.log(`Creado elemento en ${op.collection}: ${op.tempId} -> ${result.id}`)
-
-            // Guardar mapeo de IDs
-            this.tempToRealIdMap[op.tempId] = result.id
-            this.saveTempToRealIdMap()
-
-            // Actualizar store correspondiente
-            const store = this.getStoreForCollection(op.collection)
-            if (store) {
-              await store.updateLocalItem(op.tempId, result)
-            }
-
-            // Actualizar todas las operaciones pendientes con nuevos IDs
-            await this.updatePendingOperations(op.tempId, result.id)
-          }
-        } catch (error) {
-          this.handleError(op, error)
-        }
+      // Filtrar operaciones por usuario actual
+      let queueToProcess = this.queue
+      if (currentUserId) {
+        queueToProcess = this.queue.filter((op) => !op.userId || op.userId === currentUserId)
+        console.log(
+          `Filtrando operaciones para usuario ${currentUserId}, total: ${queueToProcess.length}`
+        )
       }
 
-      // 4. Procesar actualizaciones
-      for (const op of updates) {
-        try {
-          // Verificar si el ID existe y es válido
-          if (!op.id) {
-            console.warn('Operación de actualización sin ID, saltando:', op)
-            continue
-          }
+      // Ordenar operaciones por timestamp para mantener orden cronológico estricto
+      queueToProcess.sort((a, b) => a.createdAt - b.createdAt)
 
-          // Resolver ID del item a actualizar
-          let originalId = op.id
-          if (typeof op.id === 'string' && op.id.startsWith('temp_')) {
-            const realId = this.tempToRealIdMap[op.id]
-            if (!realId) {
-              console.warn(`No se encontró ID real para ${op.id}, saltando actualización`)
+      // Procesar operaciones en orden cronológico estricto
+      for (const op of queueToProcess) {
+        try {
+          if (op.type === 'create') {
+            // Resolver referencias a IDs temporales antes de crear
+            op.data = this.replaceTemporaryIdsInData(op.data)
+
+            const result = await this.executeOperation(op)
+            if (result && result.id) {
+              console.log(`Creado elemento en ${op.collection}: ${op.tempId} -> ${result.id}`)
+
+              // Guardar mapeo de IDs
+              this.tempToRealIdMap[op.tempId] = result.id
+              this.saveTempToRealIdMap()
+
+              // Actualizar store correspondiente
+              const store = this.getStoreForCollection(op.collection)
+              if (store) {
+                await store.updateLocalItem(op.tempId, result)
+              }
+
+              // Actualizar todas las operaciones pendientes con nuevos IDs
+              await this.updatePendingOperations(op.tempId, result.id)
+            }
+          } else if (op.type === 'update') {
+            // Verificar si el ID existe y es válido
+            if (!op.id) {
+              console.warn('Operación de actualización sin ID, saltando:', op)
               continue
             }
-            op.id = realId
-            console.log(
-              `Actualización: ID temporal ${originalId} reemplazado por ID real ${realId}`
-            )
-          }
 
-          // Resolver referencias a IDs temporales en los datos
-          op.data = this.replaceTemporaryIdsInData(op.data)
-
-          await this.executeOperation(op)
-        } catch (error) {
-          this.handleError(op, error)
-        }
-      }
-
-      // 5. Procesar eliminaciones
-      for (const op of deletes) {
-        try {
-          // Verificar si el ID existe y es válido
-          if (!op.id) {
-            console.warn('Operación de eliminación sin ID, saltando:', op)
-            continue
-          }
-
-          if (typeof op.id === 'string' && op.id.startsWith('temp_')) {
-            // Si es temporal, solo eliminar del store local
-            const store = this.getStoreForCollection(op.collection)
-            if (store) {
-              await store.removeLocalItem(op.id)
+            // Resolver ID del item a actualizar
+            let originalId = op.id
+            if (typeof op.id === 'string' && op.id.startsWith('temp_')) {
+              const realId = this.tempToRealIdMap[op.id]
+              if (!realId) {
+                console.warn(`No se encontró ID real para ${op.id}, saltando actualización`)
+                continue
+              }
+              op.id = realId
+              console.log(
+                `Actualización: ID temporal ${originalId} reemplazado por ID real ${realId}`
+              )
             }
-          } else {
+
+            // Resolver referencias a IDs temporales en los datos
+            op.data = this.replaceTemporaryIdsInData(op.data)
+
             await this.executeOperation(op)
+          } else if (op.type === 'delete') {
+            // Verificar si el ID existe y es válido
+            if (!op.id) {
+              console.warn('Operación de eliminación sin ID, saltando:', op)
+              continue
+            }
+
+            if (typeof op.id === 'string' && op.id.startsWith('temp_')) {
+              // Si es temporal, solo eliminar del store local
+              const store = this.getStoreForCollection(op.collection)
+              if (store) {
+                await store.removeLocalItem(op.id)
+              }
+            } else {
+              await this.executeOperation(op)
+            }
           }
+
+          // Marcar como completada después de procesar
+          op.status = 'completed'
         } catch (error) {
           this.handleError(op, error)
         }

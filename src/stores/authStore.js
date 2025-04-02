@@ -28,15 +28,36 @@ export const useAuthStore = defineStore('auth', {
   actions: {
     async init() {
       const syncStore = useSyncStore()
-      const token = syncStore.loadFromLocalStorage('token')
-      if (token) {
+
+      // Usar la misma clave que se usa al guardar
+      const authData = syncStore.loadFromLocalStorage('pocketbase_auth')
+
+      if (authData) {
         try {
-          const authData = await pb.collection('users').authRefresh()
-          this.setSession(authData)
+          // Restaurar el estado de autenticación en PocketBase
+          pb.authStore.save(authData.token, authData)
+
+          // Si se restauró correctamente, intentar actualizar con el servidor
+          if (pb.authStore.isValid) {
+            try {
+              // Intentar refrescar la autenticación con el servidor
+              const freshAuthData = await pb.collection('users').authRefresh()
+              this.setSession(freshAuthData)
+              return true
+            } catch (refreshError) {
+              // Si falla el refresh pero tenemos datos válidos localmente, usar esos
+              console.log('No se pudo actualizar la sesión con el servidor. Usando datos locales.')
+              this.setSession({ record: authData })
+              return true
+            }
+          }
         } catch (error) {
+          console.error('Error restaurando sesión:', error)
           this.logout()
+          return false
         }
       }
+      return false
     },
 
     async login(username, email, password, rememberMe = false) {
@@ -86,14 +107,14 @@ export const useAuthStore = defineStore('auth', {
     async handleSuccessfulLogin(authData, rememberMe = false) {
       // Set auth state
       this.setSession(authData)
-
-      // Save auth data to local storage if remember me is checked
-      if (rememberMe) {
-        localStorage.setItem('pocketbase_auth', JSON.stringify(pb.authStore.model))
-      }
-
-      // Initialize stores in the correct order
       const syncStore = useSyncStore()
+
+      // Guardar datos de autenticación en localStorage
+      syncStore.saveToLocalStorage('pocketbase_auth', pb.authStore.model, true) // Siempre usar localStorage
+      syncStore.saveToLocalStorage('last_auth_success', Date.now(), true)
+
+      // RESTAURAR EL FLUJO ORIGINAL: primero inicializar syncStore
+      // y luego cargar los demás stores
       syncStore.init()
 
       const profileStore = useProfileStore()

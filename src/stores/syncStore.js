@@ -5,6 +5,9 @@ import { useZonasStore } from '@/stores/zonasStore'
 import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useActividadesStore } from '@/stores/actividadesStore'
 import { useRecordatoriosStore } from '@/stores/recordatoriosStore'
+import { useAuthStore } from '@/stores/authStore'
+import { pb } from '@/utils/pocketbase'
+import { debounce } from 'lodash'
 
 export const useSyncStore = defineStore('sync', {
   state: () => ({
@@ -16,7 +19,8 @@ export const useSyncStore = defineStore('sync', {
     initialized: false,
     syncInProgress: false,
     // Mapeo de IDs temporales a reales
-    tempToRealIdMap: {}
+    tempToRealIdMap: {},
+    debouncedHandleVisibilityChange: null
   }),
 
   actions: {
@@ -32,13 +36,18 @@ export const useSyncStore = defineStore('sync', {
         window.addEventListener('online', this.handleOnline.bind(this))
         window.addEventListener('offline', this.handleOffline.bind(this))
 
-        this.initialized = true
-
-        // Cargar cola guardada
+        // Cargar cola guardada antes de intentar restaurar sesión
         const savedQueue = this.loadFromLocalStorage('syncQueue')
         if (savedQueue) {
           this.queue.queue = savedQueue
         }
+
+        // Intentar restaurar la sesión solo al inicio si es necesario
+        if (!pb.authStore.isValid) {
+          await this.restoreAuthSession()
+        }
+
+        this.initialized = true
 
         // Verificar si hay operaciones pendientes y estamos online
         if (navigator.onLine && this.queue.queue.length > 0) {
@@ -53,6 +62,9 @@ export const useSyncStore = defineStore('sync', {
     async handleOnline() {
       console.log('Conexión restaurada, verificando cola pendiente')
       this.isOnline = true
+
+      // Intentar restaurar la sesión antes de procesar la cola
+      await this.restoreAuthSession()
 
       // Notificar al usuario
       useSnackbarStore().showSnackbar('Conexión restaurada, sincronizando datos...', 'info')
@@ -86,7 +98,13 @@ export const useSyncStore = defineStore('sync', {
           operation.data.id = this.generateConsistentTempId(operation.collection)
         }
 
-        // Añadir a la cola
+        // Añadir a la cola con el userId actual
+        const authStore = useAuthStore()
+        const currentUserId = authStore.user?.id
+
+        // Incluir el userId en la operación
+        operation.userId = currentUserId || null
+
         const tempId = await this.queue.add(operation)
         this.persistQueueState()
 
@@ -381,8 +399,9 @@ export const useSyncStore = defineStore('sync', {
       }
     },
 
-    saveToLocalStorage(key, value) {
+    saveToLocalStorage(key, value, persistent = false) {
       try {
+        // Siempre utilizar localStorage por defecto para evitar problemas de sincronización
         localStorage.setItem(key, JSON.stringify(value))
       } catch (error) {
         this.handleSyncError(error, `Error guardando ${key} en localStorage`)
@@ -470,6 +489,87 @@ export const useSyncStore = defineStore('sync', {
       } catch (error) {
         console.error('Error al refrescar los stores:', error)
       }
-    }
+    },
+
+    // Nuevo método para restaurar la sesión de autenticación
+    async restoreAuthSession() {
+      // Si ya tenemos una sesión válida, no hacer nada
+      if (pb.authStore.isValid) {
+        console.log('La sesión actual es válida, no es necesario restaurar')
+        return true
+      }
+
+      const authStore = useAuthStore()
+      try {
+        // Obtener datos de sesión del localStorage
+        const authData = this.loadFromLocalStorage('pocketbase_auth')
+
+        if (!authData || !authData.token) {
+          console.log('No hay datos válidos de sesión guardados')
+          return false
+        }
+
+        // Establecer un límite de tiempo entre intentos
+        const lastRestoreAttempt = this.loadFromLocalStorage('last_restore_attempt') || 0
+        const now = Date.now()
+
+        if (now - lastRestoreAttempt < 60000) {
+          // 1 minuto
+          console.log('Demasiados intentos recientes, esperando...')
+          return false
+        }
+
+        // Guardar timestamp de intento
+        this.saveToLocalStorage('last_restore_attempt', now)
+
+        try {
+          // Restaurar token en PocketBase
+          pb.authStore.save(authData.token, authData)
+
+          // Verificar si la restauración fue exitosa
+          if (pb.authStore.isValid) {
+            console.log('Sesión restaurada correctamente')
+
+            // Actualizar el estado de autenticación en authStore
+            authStore.setSession({ record: authData })
+            return true
+          }
+        } catch (error) {
+          console.log('Error al restaurar token localmente:', error)
+        }
+
+        // Solo intentamos refresh si hace más de 10 minutos del último intento fallido
+        const lastFailedRefresh = this.loadFromLocalStorage('last_failed_refresh') || 0
+        if (now - lastFailedRefresh > 600000) {
+          // 10 minutos
+          try {
+            console.log('Intentando refrescar sesión con el servidor...')
+            const freshAuthData = await pb.collection('users').authRefresh()
+
+            if (pb.authStore.isValid) {
+              console.log('Sesión refrescada exitosamente')
+              this.saveToLocalStorage('last_auth_success', now)
+              authStore.setSession(freshAuthData)
+              return true
+            }
+          } catch (error) {
+            // Guardar timestamp del intento fallido
+            this.saveToLocalStorage('last_failed_refresh', now)
+            console.log('Error al refrescar sesión:', error)
+          }
+        } else {
+          console.log('Omitiendo refresh con servidor por intento reciente fallido')
+        }
+
+        console.log('No se pudo restaurar la sesión')
+        return false
+      } catch (error) {
+        console.error('Error al restaurar la sesión:', error)
+        return false
+      }
+    },
+
+    // Nuevo método para manejar cambios de visibilidad
+    async handleVisibilityChange() {}
   }
 })

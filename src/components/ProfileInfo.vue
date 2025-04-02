@@ -96,6 +96,22 @@
                 type="email"
                 prepend-icon="mdi-email"
               ></v-text-field>
+
+              <v-text-field
+                v-model="cedula"
+                label="Cedula/ID"
+                variant="outlined"
+                density="compact"
+                prepend-icon="mdi-account"
+              ></v-text-field>
+
+              <v-text-field
+                v-model="direccion"
+                label="Direccion/Hogar"
+                variant="outlined"
+                density="compact"
+                prepend-icon="mdi-map"
+              ></v-text-field>
             </div>
             <div class="m-0">
               <AvatarForm
@@ -181,6 +197,8 @@ const name = ref('')
 const lastname = ref('')
 const username = ref('')
 const email = ref('')
+const cedula = ref('')
+const direccion = ref('')
 const info = ref('')
 const isLoading = ref(false)
 const dialogOpen = ref(false)
@@ -196,6 +214,8 @@ const openDialog = () => {
     username.value = user.value.username
     email.value = user.value.email
     info.value = user.value.info
+    cedula.value = cedula.value.info
+    direccion.value = direccion.value.info
   }
   dialogOpen.value = true
 }
@@ -211,6 +231,9 @@ const saveProfileChanges = async () => {
       name: name.value,
       lastname: lastname.value,
       username: username.value,
+      cedula: cedula.value,
+      direccion: direccion.value,
+
       info: info.value
     })
     snackbarStore.showSnackbar('Profile updated successfully', 'success')
