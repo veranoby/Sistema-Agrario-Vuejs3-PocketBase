@@ -188,6 +188,7 @@ const snackbarStore = useSnackbarStore()
 // Cargar datos iniciales
 onMounted(async () => {
   await Promise.all([
+    haciendaStore.init(),
     recordatoriosStore.cargarRecordatorios(),
     siembrasStore.cargarSiembras(),
     actividadesStore.cargarActividades(),

@@ -118,14 +118,13 @@
             <div class="grid grid-cols-2 gap-1">
               <v-text-field
                 label="Nombre"
-                class="compact-form"
                 color="primary"
                 v-model="newUser.name"
                 variant="outlined"
                 required
                 density="compact"
                 :error-messages="v$.name.$errors.map((e) => e.$message)"
-                @input="v$.name.$touch()"
+                @input="(v$.name.$touch(), (newUser.name = newUser.name.toUpperCase()))"
               ></v-text-field>
               <v-text-field
                 v-model="newUser.lastname"
@@ -133,9 +132,8 @@
                 variant="outlined"
                 required
                 density="compact"
-                class="compact-form"
                 :error-messages="v$.lastname.$errors.map((e) => e.$message)"
-                @input="v$.lastname.$touch()"
+                @input="(v$.lastname.$touch(), (newUser.lastname = newUser.lastname.toUpperCase()))"
               ></v-text-field>
 
               <v-text-field
@@ -144,11 +142,11 @@
                 variant="outlined"
                 required
                 density="compact"
-                :class="usernameAvailable ? 'compact-form' : 'compact-form text-red'"
+                :class="usernameAvailable ? '' : ' text-red'"
                 :error-messages="v$.username.$errors.map((e) => e.$message)"
                 :color="usernameAvailable ? 'primary' : 'error'"
                 @blur="checkUsername"
-                @input="v$.username.$touch()"
+                @input="(v$.username.$touch(), (newUser.username = newUser.username.toUpperCase()))"
               ></v-text-field>
 
               <v-text-field
@@ -158,7 +156,7 @@
                 variant="outlined"
                 required
                 density="compact"
-                :class="emailAvailable ? 'compact-form' : 'compact-form text-red'"
+                :class="emailAvailable ? '' : ' text-red'"
                 :error-messages="v$.email.$errors.map((e) => e.$message)"
                 :color="emailAvailable ? 'primary' : 'error'"
                 @blur="checkEmail"
@@ -167,7 +165,6 @@
 
               <v-text-field
                 v-model="newUser.password"
-                class="compact-form"
                 label="Password"
                 variant="outlined"
                 required
@@ -183,7 +180,6 @@
 
               <v-text-field
                 v-model="newUser.passwordConfirm"
-                class="compact-form"
                 label="Confirm Password"
                 variant="outlined"
                 required
@@ -308,24 +304,38 @@ export default {
     const checkUsername = async () => {
       if (newUser.value.username.length >= 3) {
         try {
-          usernameAvailable.value = await validationStore.checkUsernameTaken(newUser.value.username)
-
-          console.log('pedido responde', usernameAvailable.value)
+          const fields = [
+            {
+              collection: 'users',
+              field: 'username',
+              value: newUser.value.username
+            }
+          ]
+          const results = await validationStore.checkFieldsTaken(fields)
+          usernameAvailable.value = results.username
         } catch (error) {
-          //   console.error('Error checking username:', error)
+          console.error('Error checking username:', error)
           usernameAvailable.value = false
         }
       } else {
         usernameAvailable.value = true
       }
     }
+
     const checkEmail = async () => {
       if (newUser.value.email) {
         try {
-          emailAvailable.value = await validationStore.checkEmailTaken(newUser.value.email)
-          console.log('checking Email availability:', newUser.value.email)
+          const fields = [
+            {
+              collection: 'users',
+              field: 'email',
+              value: newUser.value.email
+            }
+          ]
+          const results = await validationStore.checkFieldsTaken(fields)
+          emailAvailable.value = results.email
         } catch (error) {
-          console.log('Error checking email:', error)
+          console.error('Error checking email:', error)
           emailAvailable.value = false
         }
       } else {

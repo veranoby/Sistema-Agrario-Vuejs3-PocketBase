@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
-import { useSnackbarStore } from './snackbarStore'
 
 export const useValidationStore = defineStore('validation', {
   state: () => ({

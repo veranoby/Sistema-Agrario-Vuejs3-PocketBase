@@ -15,6 +15,7 @@ import ActividadesConfig from '@/components/actividadesConfig.vue'
 import ActividadesWorkspace from '@/components/actividadesWorkspace.vue'
 import ProgramacionesList from '@/components/ProgramacionesList.vue'
 import Recordatorios from '@/components/Recordatorios.vue'
+import Finanzas from '@/components/FinanzasConfig.vue'
 
 const routes = [
   { path: '/', component: HomeComp },
@@ -23,7 +24,7 @@ const routes = [
   { path: '/documentation', component: DocumentationComponent },
   { path: '/contact', component: ContactUs },
   { path: '/faq', component: FAQ },
-  { path: '/profile', component: ProfileComponent },
+  { path: '/profile', component: ProfileComponent, meta: { requiresAuth: true } },
   {
     path: '/auth/confirm-verification/:token?',
     component: EmailConfirmation,
@@ -71,6 +72,12 @@ const routes = [
     component: ZonasConfig,
     name: 'Gestion de Zonas de trabajo',
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/finanzas',
+    component: Finanzas,
+    name: 'Gestion rapida financiera'
+    //  meta: { requiresAuth: true }
   },
   {
     path: '/recordatorios',

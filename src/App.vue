@@ -64,10 +64,11 @@ const currentPage = computed(() => route.name?.toUpperCase() || '')
 const navigationLinks = [
   { id: 1, to: '/dashboard', icon: 'mdi-view-dashboard', label: 'D A S H B O A R D' },
   { id: 2, to: '/siembras', icon: 'mdi-sprout', label: 'Siembras/Proyectos' },
-  { id: 3, to: '/zonas', icon: 'mdi-map', label: 'Zonas' },
-  { id: 4, to: '/actividades', icon: 'mdi-gesture-tap-button', label: 'Actividades' },
-  { id: 5, to: '/programaciones', icon: 'mdi-alarm-check', label: 'Programaciones' },
-  { id: 6, to: '/recordatorios', icon: 'mdi-alarm-light-outline', label: 'Recordatorios' }
+  { id: 3, to: '/actividades', icon: 'mdi-gesture-tap-button', label: 'Actividades' },
+  { id: 4, to: '/programaciones', icon: 'mdi-alarm-check', label: 'Programaciones' },
+  { id: 5, to: '/zonas', icon: 'mdi-map', label: 'Zonas' },
+  { id: 6, to: '/finanzas', icon: 'mdi-cash-multiple', label: 'Finanzas' },
+  { id: 7, to: '/recordatorios', icon: 'mdi-alarm-light-outline', label: 'Recordatorios' }
 ]
 
 const handleLoginSuccess = () => {

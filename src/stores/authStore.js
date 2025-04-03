@@ -172,7 +172,10 @@ export const useAuthStore = defineStore('auth', {
         }
 
         // Crear hacienda
-        const newHacienda = await haciendaStore.createHacienda(formData.hacienda, gratisPlan.id)
+        if (!formData.hacienda) {
+          const newHacienda = await haciendaStore.createHacienda(formData.hacienda, gratisPlan.id)
+          formData.hacienda = newHacienda.id
+        }
 
         // Crear usuario
         const userData = this.createUserData(
@@ -182,7 +185,7 @@ export const useAuthStore = defineStore('auth', {
           formData.lastname,
           formData.password,
           new_role,
-          newHacienda.id,
+          formData.hacienda,
           false
         )
 
