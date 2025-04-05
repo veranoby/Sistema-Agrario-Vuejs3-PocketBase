@@ -1,9 +1,11 @@
 <template>
   <v-dialog v-model="dialogVisible" max-width="600px" @update:model-value="onDialogChange">
     <v-card>
-      <v-card-title class="text-h5">
-        {{ itemEditando ? 'Editar Registro' : 'Nuevo Registro' }}
-      </v-card-title>
+      <v-toolbar :color="headerColor">
+        <v-toolbar-title> {{ formTitle }}</v-toolbar-title>
+        <v-spacer></v-spacer>
+      </v-toolbar>
+
       <v-card-text>
         <v-form @submit.prevent="guardarRegistro" ref="form" v-model="formValid">
           <v-row>
@@ -137,8 +139,24 @@
       </v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn color="error" variant="text" @click="cerrar">Cancelar</v-btn>
-        <v-btn color="primary" variant="text" :disabled="!formValid" @click="guardarRegistro">
+        <v-btn
+          size="small"
+          variant="flat"
+          rounded="lg"
+          prepend-icon="mdi-cancel"
+          color="red-lighten-3"
+          @click="cerrar"
+          >Cancelar</v-btn
+        >
+        <v-btn
+          size="small"
+          variant="flat"
+          rounded="lg"
+          prepend-icon="mdi-check"
+          :color="headerColor"
+          :disabled="!formValid"
+          @click="guardarRegistro"
+        >
           Guardar
         </v-btn>
       </v-card-actions>
@@ -160,7 +178,8 @@ const haciendaStore = useHaciendaStore()
 // Props
 const props = defineProps({
   modelValue: Boolean,
-  itemEditando: Object
+  itemEditando: Object,
+  itemDuplicado: Object
 })
 
 // Emits
@@ -246,24 +265,36 @@ const usuariosHacienda = computed(() => {
 
 // Actualizar fecha completa cuando cambia alguno de los selectores
 function actualizarFecha() {
-  const fechaObj = new Date(
-    fechaSeleccionada.value.anio,
-    fechaSeleccionada.value.mes - 1, // date-fns usa 0-11 para meses
-    fechaSeleccionada.value.dia
-  )
-  formData.value.fecha = format(fechaObj, 'yyyy-MM-dd')
+  // Create the ISO date string with UTC time at noon to avoid timezone issues
+  const year = fechaSeleccionada.value.anio
+  const month = String(fechaSeleccionada.value.mes).padStart(2, '0')
+  const day = String(fechaSeleccionada.value.dia).padStart(2, '0')
+
+  // Set the time to T12:00:00Z (noon UTC) to avoid any timezone-related date shifts
+  formData.value.fecha = `${year}-${month}-${day}T12:00:00Z`
 }
 
 // Inicializar fecha seleccionada desde fecha del formulario
 function inicializarFechaSeleccionada() {
   try {
-    const fechaObj = parseISO(formData.value.fecha)
-    fechaSeleccionada.value = {
-      dia: getDate(fechaObj),
-      mes: getMonth(fechaObj) + 1, // date-fns usa 0-11 para meses
-      anio: getYear(fechaObj)
+    // Handle ISO date with or without time component
+    let dateStr = formData.value.fecha
+    if (dateStr.includes('T')) {
+      dateStr = dateStr.split('T')[0]
     }
+
+    const [year, month, day] = dateStr.split('-').map(Number)
+
+    fechaSeleccionada.value = {
+      dia: day,
+      mes: month,
+      anio: year
+    }
+
+    // Re-apply the standardized format with time to ensure consistency
+    actualizarFecha()
   } catch (error) {
+    console.error('Error initializing date selectors:', error)
     // En caso de error, usar fecha actual
     const hoy = new Date()
     fechaSeleccionada.value = {
@@ -271,44 +302,82 @@ function inicializarFechaSeleccionada() {
       mes: getMonth(hoy) + 1,
       anio: getYear(hoy)
     }
-    formData.value.fecha = format(hoy, 'yyyy-MM-dd')
+    actualizarFecha()
   }
 }
 
-// Cargar datos para edición
-function cargarDatosEdicion() {
+// Computed property to set the form title based on the action
+const formTitle = computed(() => {
   if (props.itemEditando) {
-    // Si itemEditando tiene un valor, cargar los datos del ítem
+    return 'Editar Registro'
+  } else if (props.itemDuplicado) {
+    return 'Duplicar Registro'
+  } else {
+    return 'Nuevo Registro'
+  }
+})
+
+// Computed property to set the header color based on the form action
+const headerColor = computed(() => {
+  if (props.itemEditando) {
+    return 'blue' // Color for editing
+  } else if (props.itemDuplicado) {
+    return 'orange' // Color for duplicating
+  } else {
+    return 'green' // Color for new record
+  }
+})
+
+// Function to initialize form data based on the action
+function initializeFormData() {
+  if (props.itemEditando) {
+    // For Edit: Load the data from the item being edited
     formData.value = {
-      fecha: props.itemEditando.fecha || format(new Date(), 'yyyy-MM-dd'),
+      fecha: props.itemEditando.fecha
+        ? format(parseISO(props.itemEditando.fecha), 'yyyy-MM-dd')
+        : '',
       detalle: props.itemEditando.detalle || '',
       razon_social: props.itemEditando.razon_social || '',
       factura: props.itemEditando.factura || '',
       costo: props.itemEditando.costo || '',
-      monto: props.itemEditando.monto || null,
+      monto: props.itemEditando.monto || 0,
       comentarios: props.itemEditando.comentarios || '',
       registro_por: props.itemEditando.registro_por || authStore.user?.id || '',
       pagado_por: props.itemEditando.pagado_por || ''
     }
-    inicializarFechaSeleccionada()
+  } else if (props.itemDuplicado) {
+    // For Duplicate: Load the data from the item being duplicated
+    formData.value = {
+      fecha: props.itemDuplicado.fecha
+        ? format(parseISO(props.itemDuplicado.fecha), 'yyyy-MM-dd')
+        : '',
+      detalle: props.itemDuplicado.detalle || '',
+      razon_social: props.itemDuplicado.razon_social || '',
+      factura: props.itemDuplicado.factura || '',
+      costo: props.itemDuplicado.costo || '',
+      monto: props.itemDuplicado.monto || 0,
+      comentarios: props.itemDuplicado.comentarios || '',
+      registro_por: authStore.user?.id || '',
+      pagado_por: props.itemDuplicado.pagado_por || ''
+    }
   } else {
-    // Si itemEditando es null, cargar los datos de formData
+    // For New Record: Initialize with default values
     formData.value = {
       fecha: format(new Date(), 'yyyy-MM-dd'),
-      detalle: formData.value.detalle || '',
-      razon_social: formData.value.razon_social || '',
-      factura: formData.value.factura || '',
-      costo: formData.value.costo || '',
-      monto: formData.value.monto || null,
-      comentarios: formData.value.comentarios || '',
+      detalle: '',
+      razon_social: '',
+      factura: '',
+      costo: '',
+      monto: null,
+      comentarios: '',
       registro_por: authStore.user?.id || '',
-      pagado_por: formData.value.pagado_por || ''
+      pagado_por: ''
     }
-    inicializarFechaSeleccionada()
   }
+  inicializarFechaSeleccionada()
 }
 
-// Guardar registro
+// Function to handle form submission
 async function guardarRegistro() {
   try {
     if (!formValid.value) {
@@ -316,8 +385,10 @@ async function guardarRegistro() {
     }
 
     if (props.itemEditando) {
+      // For Edit: Update the existing record
       await finanzaStore.updateRegistro(props.itemEditando.id, formData.value)
     } else {
+      // For Duplicate and New Record: Create a new record
       await finanzaStore.crearRegistro(formData.value)
     }
 
@@ -328,13 +399,15 @@ async function guardarRegistro() {
   }
 }
 
+// Function to close the form
 function cerrar() {
   dialogVisible.value = false
 }
 
+// Function to handle dialog visibility change
 function onDialogChange(visible) {
   if (visible) {
-    cargarDatosEdicion()
+    initializeFormData()
   }
 }
 
@@ -343,7 +416,16 @@ watch(
   () => props.itemEditando,
   (newValue) => {
     if (newValue) {
-      cargarDatosEdicion()
+      initializeFormData()
+    }
+  }
+)
+
+watch(
+  () => props.itemDuplicado,
+  (newValue) => {
+    if (newValue) {
+      initializeFormData()
     }
   }
 )
@@ -352,7 +434,7 @@ watch(
   () => props.modelValue,
   (newValue) => {
     if (newValue) {
-      cargarDatosEdicion()
+      initializeFormData()
     }
   }
 )
@@ -380,6 +462,6 @@ watch(
 )
 
 onMounted(() => {
-  cargarDatosEdicion()
+  initializeFormData()
 })
 </script>

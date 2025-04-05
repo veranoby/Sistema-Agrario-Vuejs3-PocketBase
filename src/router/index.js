@@ -76,8 +76,8 @@ const routes = [
   {
     path: '/finanzas',
     component: Finanzas,
-    name: 'Gestion rapida financiera'
-    //  meta: { requiresAuth: true }
+    name: 'Gestion rapida financiera',
+    meta: { requiresAuth: true }
   },
   {
     path: '/recordatorios',

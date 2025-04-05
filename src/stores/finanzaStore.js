@@ -78,6 +78,8 @@ export const useFinanzaStore = defineStore('finanzas', {
 
     async cargarRegistros() {
       const syncStore = useSyncStore()
+      const haciendaStore = useHaciendaStore()
+
       this.loading = true
 
       try {
@@ -94,7 +96,7 @@ export const useFinanzaStore = defineStore('finanzas', {
         }
 
         const records = await pb.collection('finanzas').getFullList({
-          filter: `hacienda="${haciendaStore.mi_hacienda?.id}"`,
+          filter: `Haciendas="${haciendaStore.mi_hacienda?.id}"`,
           expand: 'registro_por,pagado_por' // Asegurar que se expandan las relaciones
         })
         this.registros = records
@@ -192,11 +194,34 @@ export const useFinanzaStore = defineStore('finanzas', {
     async crearRegistro(registroData) {
       const syncStore = useSyncStore()
       const snackbarStore = useSnackbarStore()
+      const haciendaStore = useHaciendaStore()
       snackbarStore.showLoading()
+
+      // Make a copy of the data to avoid modifying the original
+      const processedData = { ...registroData }
+
+      // Compensate for the 1-day offset by adding a day to the date
+      if (processedData.fecha) {
+        try {
+          // Extract just the date part if it includes time
+          let dateStr = processedData.fecha
+          if (dateStr.includes('T')) {
+            dateStr = dateStr.split('T')[0]
+          }
+
+          // Parse the date, add 1 day, and format it back to YYYY-MM-DD
+          const dateObj = parseISO(dateStr)
+          const nextDay = new Date(dateObj)
+          nextDay.setDate(nextDay.getDate() + 1)
+          processedData.fecha = format(nextDay, 'yyyy-MM-dd')
+        } catch (error) {
+          console.error('Error processing date:', error)
+        }
+      }
 
       // Enriquecer datos con contexto de hacienda
       const enrichedData = {
-        ...registroData,
+        ...processedData,
         Haciendas: haciendaStore.mi_hacienda?.id,
         version: this.version
       }
@@ -245,6 +270,28 @@ export const useFinanzaStore = defineStore('finanzas', {
       const snackbarStore = useSnackbarStore()
       snackbarStore.showLoading()
 
+      // Make a copy of the data to avoid modifying the original
+      const processedData = { ...updateData }
+
+      // Compensate for the 1-day offset by adding a day to the date
+      if (processedData.fecha) {
+        try {
+          // Extract just the date part if it includes time
+          let dateStr = processedData.fecha
+          if (dateStr.includes('T')) {
+            dateStr = dateStr.split('T')[0]
+          }
+
+          // Parse the date, add 1 day, and format it back to YYYY-MM-DD
+          const dateObj = parseISO(dateStr)
+          const nextDay = new Date(dateObj)
+          nextDay.setDate(nextDay.getDate() + 1)
+          processedData.fecha = format(nextDay, 'yyyy-MM-dd')
+        } catch (error) {
+          console.error('Error processing date:', error)
+        }
+      }
+
       // Verificar que el ID existe
       if (!id) {
         snackbarStore.hideLoading()
@@ -262,7 +309,7 @@ export const useFinanzaStore = defineStore('finanzas', {
         if (index !== -1) {
           this.registros[index] = {
             ...this.registros[index],
-            ...updateData,
+            ...processedData,
             updated: new Date().toISOString()
           }
           syncStore.saveToLocalStorage('finanzas', this.registros)
@@ -272,7 +319,7 @@ export const useFinanzaStore = defineStore('finanzas', {
           type: 'update',
           collection: 'finanzas',
           id,
-          data: updateData
+          data: processedData
         })
 
         snackbarStore.hideLoading()
@@ -280,7 +327,7 @@ export const useFinanzaStore = defineStore('finanzas', {
       }
 
       try {
-        const record = await pb.collection('finanzas').update(id, updateData)
+        const record = await pb.collection('finanzas').update(id, processedData)
         const index = this.registros.findIndex((r) => r.id === id)
         if (index !== -1) {
           this.registros[index] = record
@@ -419,12 +466,10 @@ export const useFinanzaStore = defineStore('finanzas', {
           'Fecha',
           'Detalle',
           'Razón Social',
-          'N° Factura',
-          'Categoría',
-          'Monto',
-          'Comentarios',
-          'Registrado por',
-          'Pagado por'
+          'Factura o Recibo',
+          'Centro de Costo',
+          'Pagado por',
+          'Monto'
         ]
 
         // Datos de los registros
@@ -432,14 +477,12 @@ export const useFinanzaStore = defineStore('finanzas', {
           registrosDelMes.length > 0
             ? registrosDelMes.map((reg) => ({
                 Fecha: format(parseISO(reg.fecha), 'dd/MM/yyyy'),
-                Detalle: reg.detalle || '',
+                Detalle: reg.detalle || reg.comentarios || '',
                 'Razón Social': reg.razon_social || '',
-                'N° Factura': reg.factura || '',
-                Categoría: reg.costo || '',
-                Monto: reg.monto || 0,
-                Comentarios: reg.comentarios || '',
-                'Registrado por': reg.expand?.registro_por?.name || '',
-                'Pagado por': reg.expand?.pagado_por?.name || ''
+                'Factura o Recibo': reg.factura || '',
+                'Centro de Costo': reg.costo || '',
+                'Pagado por': reg.expand?.pagado_por?.name || '',
+                Monto: reg.monto || 0
               }))
             : [{}] // Objeto vacío si no hay registros
 
@@ -467,6 +510,15 @@ export const useFinanzaStore = defineStore('finanzas', {
           registrosDelMes.reduce((sum, reg) => sum + (reg.monto || 0), 0)
         ])
 
+        totalesData.push(
+          [''],
+          [`solicitado por :`],
+          [`aprobado por gerencia:`],
+          [`aprobado por gerencia:`],
+          ['aprobado por contabilidad:'],
+          [''] // Fila en blanco para separar
+        )
+
         // Crear hoja con cabecera e información
         const headerRow =
           registrosDelMes.length > 0 ? Object.keys(registrosData[0]) : defaultHeaders
@@ -485,12 +537,10 @@ export const useFinanzaStore = defineStore('finanzas', {
           { wch: 12 }, // Fecha
           { wch: 40 }, // Detalle
           { wch: 30 }, // Razón Social
-          { wch: 15 }, // N° Factura
-          { wch: 20 }, // Categoría
-          { wch: 15 }, // Monto
-          { wch: 40 }, // Comentarios
-          { wch: 20 }, // Registrado por
-          { wch: 20 } // Pagado por
+          { wch: 15 }, // Factura o Recibo
+          { wch: 20 }, // Centro de Costo
+          { wch: 20 }, // Pagado por
+          { wch: 15 } // Monto
         ]
 
         ws['!cols'] = colWidths

@@ -11,7 +11,8 @@
 
       <v-card-text>
         <v-alert type="info" class="mb-4">
-          El archivo Excel debe tener las siguientes columnas en el orden indicado:
+          El archivo Excel debe tener las siguientes columnas en el orden indicado, <br />INICIANDO
+          DESDE LA CELDA A1:
           <ul class="mt-2">
             <li>Fecha (dd/MM/yyyy)</li>
             <li>Detalle</li>
@@ -60,13 +61,7 @@
           </template>
         </v-data-table>
 
-        <v-progress-linear
-          v-if="importing"
-          :value="importProgress"
-          height="20"
-          color="primary"
-          class="mt-4"
-        >
+        <v-progress-linear color="success" :value="importProgress" height="12">
           <strong>{{ importProgress }}%</strong>
         </v-progress-linear>
       </v-card-text>
@@ -300,7 +295,7 @@ const startImport = async () => {
     // Omitir la primera fila (encabezados)
     const rows = json.slice(1)
     const totalRows = rows.length
-    const batchSize = 10 // Reducir el tamaño del lote para evitar autocancelación
+    const batchSize = 2 // Reducir el tamaño del lote para evitar autocancelación
     console.log(`Total de filas a procesar: ${totalRows}`)
 
     let successCount = 0
@@ -406,7 +401,7 @@ const startImport = async () => {
     dialogVisible.value = false
 
     // Eliminar el array de registros en localStorage para forzar una recarga desde PocketBase
-    localStorage.removeItem('finanzas_registros')
+    localStorage.removeItem('finanzas')
 
     // Forzar la recarga de registros en FinanzasConfig.vue
     await finanzaStore.cargarRegistros()

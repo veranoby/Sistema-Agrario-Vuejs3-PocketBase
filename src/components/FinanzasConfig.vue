@@ -55,12 +55,12 @@
           <v-card-text>
             <v-row align="center">
               <!-- Navegación de meses mejorada -->
-              <v-col cols="12" sm="6" md="4" class="d-flex align-center">
+              <v-col cols="12" sm="7" md="5" class="d-flex align-center">
                 <v-btn icon variant="text" @click="finanzaStore.changeMonth('prev')">
-                  <v-icon>mdi-chevron-left</v-icon>
+                  <v-icon>mdi-chevron-left-circle</v-icon>
                 </v-btn>
 
-                <div class="d-flex flex-column flex-sm-row gap-2 mx-2">
+                <div class="d-flex flex-column flex-sm-row gap-1 mx-2">
                   <v-select
                     v-model="selectedMonth"
                     :items="months"
@@ -85,7 +85,7 @@
                 </div>
 
                 <v-btn icon variant="text" @click="finanzaStore.changeMonth('next')">
-                  <v-icon>mdi-chevron-right</v-icon>
+                  <v-icon>mdi-chevron-right-circle</v-icon>
                 </v-btn>
               </v-col>
 
@@ -98,7 +98,7 @@
               </v-col>
 
               <!-- Botones de acción -->
-              <v-col cols="12" md="5" class="d-flex gap-2 justify-end">
+              <v-col cols="12" md="4" class="d-flex gap-2 justify-end">
                 <v-btn
                   variant="tonal"
                   color="success"
@@ -126,18 +126,19 @@
         <v-card class="mb-4">
           <v-card-text>
             <v-row>
-              <v-col cols="12" sm="4">
+              <v-col cols="12" sm="6">
                 <v-text-field
                   v-model="filters.razonSocial"
                   label="Filtrar por Razón Social"
                   density="compact"
+                  compact
                   variant="outlined"
                   prepend-inner-icon="mdi-filter"
                   hide-details
                   clearable
                 ></v-text-field>
               </v-col>
-              <v-col cols="12" sm="4">
+              <v-col cols="12" sm="3">
                 <v-select
                   v-model="filters.categoria"
                   :items="[
@@ -153,18 +154,20 @@
                   ]"
                   label="Filtrar por Categoría"
                   density="compact"
+                  compact
                   variant="outlined"
                   prepend-inner-icon="mdi-filter"
                   hide-details
                   clearable
                 ></v-select>
               </v-col>
-              <v-col cols="12" sm="4">
+              <v-col cols="12" sm="3">
                 <v-select
                   v-model="filters.pagadoPor"
                   :items="usuariosItems"
                   label="Filtrar por Pagado Por"
                   density="compact"
+                  compact
                   variant="outlined"
                   prepend-inner-icon="mdi-filter"
                   hide-details
@@ -179,6 +182,7 @@
                   v-model="filters.detalle"
                   label="Filtrar por Detalle"
                   density="compact"
+                  compact
                   variant="outlined"
                   prepend-inner-icon="mdi-filter"
                   hide-details
@@ -190,6 +194,7 @@
                   v-model="filters.comentarios"
                   label="Filtrar por Comentarios"
                   density="compact"
+                  compact
                   variant="outlined"
                   prepend-inner-icon="mdi-filter"
                   hide-details
@@ -229,13 +234,11 @@
 
             <!-- Registrado por / Pagado por -->
             <template v-slot:item.registro_por="{ item }">
-              {{ item.expand?.registro_por?.name || '-' }}
-              {{ item.expand?.registro_por?.lastname || '' }}
+              {{ getUsuarioNombre(item.registro_por) }}
             </template>
 
             <template v-slot:item.pagado_por="{ item }">
-              {{ item.expand?.pagado_por?.name || '-' }}
-              {{ item.expand?.pagado_por?.lastname || '' }}
+              {{ getUsuarioNombre(item.pagado_por) }}
             </template>
 
             <!-- Acciones por item -->
@@ -304,7 +307,12 @@
     </main>
 
     <!-- Usar el componente FinanzasForm -->
-    <FinanzasForm v-model="showForm" :itemEditando="itemEditando" @guardado="handleGuardado" />
+    <FinanzasForm
+      v-model="showForm"
+      :itemEditando="itemEditando"
+      :itemDuplicado="itemDuplicado"
+      @guardado="handleGuardado"
+    />
 
     <!-- Diálogo de confirmación para eliminar -->
     <v-dialog v-model="confirmDeleteDialog" max-width="400">
@@ -416,49 +424,54 @@ const usuariosItems = computed(() => {
 
 // Filtrar registros según los filtros aplicados
 const filteredRegistros = computed(() => {
-  return finanzaStore.registros.filter((reg) => {
-    // Filtro por mes y año
-    const regDate = parseISO(reg.fecha)
-    if (getMonth(regDate) !== selectedMonth.value || getYear(regDate) !== selectedYear.value) {
-      return false
-    }
+  return finanzaStore.registros
+    .filter((reg) => {
+      // Filtro por mes y año
+      const regDate = parseISO(reg.fecha)
+      if (getMonth(regDate) !== selectedMonth.value || getYear(regDate) !== selectedYear.value) {
+        return false
+      }
 
-    // Filtro por razón social
-    if (
-      filters.value.razonSocial &&
-      !reg.razon_social?.toLowerCase().includes(filters.value.razonSocial.toLowerCase())
-    ) {
-      return false
-    }
+      // Filtro por razón social
+      if (
+        filters.value.razonSocial &&
+        !reg.razon_social?.toLowerCase().includes(filters.value.razonSocial.toLowerCase())
+      ) {
+        return false
+      }
 
-    // Filtro por categoría
-    if (filters.value.categoria && reg.costo !== filters.value.categoria) {
-      return false
-    }
+      // Filtro por categoría
+      if (filters.value.categoria && reg.costo !== filters.value.categoria) {
+        return false
+      }
 
-    // Filtro por pagado por
-    if (filters.value.pagadoPor && reg.pagado_por !== filters.value.pagadoPor) {
-      return false
-    }
+      // Filtro por pagado por
+      if (filters.value.pagadoPor && reg.pagado_por !== filters.value.pagadoPor) {
+        return false
+      }
 
-    // Filtro por detalle
-    if (
-      filters.value.detalle &&
-      !reg.detalle?.toLowerCase().includes(filters.value.detalle.toLowerCase())
-    ) {
-      return false
-    }
+      // Filtro por detalle
+      if (
+        filters.value.detalle &&
+        !reg.detalle?.toLowerCase().includes(filters.value.detalle.toLowerCase())
+      ) {
+        return false
+      }
 
-    // Filtro por comentarios
-    if (
-      filters.value.comentarios &&
-      !reg.comentarios?.toLowerCase().includes(filters.value.comentarios.toLowerCase())
-    ) {
-      return false
-    }
+      // Filtro por comentarios
+      if (
+        filters.value.comentarios &&
+        !reg.comentarios?.toLowerCase().includes(filters.value.comentarios.toLowerCase())
+      ) {
+        return false
+      }
 
-    return true
-  })
+      return true
+    })
+    .sort((a, b) => {
+      // Sort by date in ascending order
+      return new Date(a.fecha) - new Date(b.fecha)
+    })
 })
 
 const syncStore = useSyncStore()
@@ -553,8 +566,17 @@ function formatCurrency(amount) {
   }).format(amount || 0)
 }
 
+// Función para duplicar un item
+function duplicarItem(item) {
+  itemEditando.value = null
+  itemDuplicado.value = item
+  showForm.value = true
+}
+
 function openNuevoItem() {
   itemEditando.value = null
+  itemDuplicado.value = null
+
   formData.value = {
     fecha: format(new Date(), 'yyyy-MM-dd'),
     detalle: '',
@@ -562,6 +584,7 @@ function openNuevoItem() {
     factura: '',
     costo: '',
     monto: null,
+    comentarios: '',
     registro_por: authStore.user.id,
     pagado_por: ''
   }
@@ -624,22 +647,13 @@ const handleGuardado = () => {
   itemEditando.value = null
 }
 
-// Función para duplicar un item
-function duplicarItem(item) {
-  itemEditando.value = {}
-  formData.value = {
-    fecha: item.fecha ? format(parseISO(item.fecha), 'yyyy-MM-dd') : '',
-    detalle: item.detalle || '',
-    razon_social: item.razon_social || '',
-    factura: item.factura || '',
-    costo: item.costo || '',
-    monto: item.monto || 0,
-    comentarios: item.comentarios || '',
-    registro_por: authStore.user.id,
-    pagado_por: item.pagado_por || ''
-  }
-  showForm.value = true
+// Function to get user name and last name from haciendaUsers
+function getUsuarioNombre(userId) {
+  const user = haciendaStore.haciendaUsers.find((u) => u.id === userId)
+  return user ? `${user.name || ''} ${user.lastname || ''}`.trim() || '-' : '-'
 }
+
+const itemDuplicado = ref(null)
 </script>
 
 <style scoped>
