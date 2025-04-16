@@ -135,70 +135,67 @@
                   v-html="actividadInfo.descripcion || 'No disponible'"
                 ></div>
               </v-card-text>
-
-              <!-- Siembras y Zonas -->
-
-              <div class="siembra-info m-4 p-0">
-                <v-card-title class="headline d-flex justify-between">
-                  <h2 class="text-md font-bold mt-2">
-                    <span v-if="actividadInfo.siembras.length > 0"
-                      >Siembras/Proyectos Asociados</span
-                    >
-                  </h2>
-                  <v-btn size="x-small" color="green-lighten-2" @click="openAddSiembrasZonas" icon>
-                    <v-icon>mdi-pencil</v-icon>
-                  </v-btn>
-                </v-card-title>
-                <v-card-text>
-                  <div class="flex flex-wrap">
-                    <v-chip
-                      v-for="siembraId in actividadInfo.siembras"
-                      size="x-small"
-                      :key="siembraId"
-                      class="m-1 p-1"
-                      :text="
-                        siembrasStore.getSiembraById(siembraId)?.nombre.toUpperCase() +
-                        ' ' +
-                        siembrasStore.getSiembraById(siembraId)?.tipo.toUpperCase()
-                      "
-                      pill
-                      color="green-lighten-3"
-                      variant="flat"
-                    >
-                    </v-chip>
-                  </div>
-                  <h2
-                    v-if="actividadInfo.zonas & (actividadInfo.zonas.length > 0)"
-                    class="text-l font-bold mt-2 mb-2"
-                  >
-                    Otras Zonas Asociadas
-                  </h2>
-
-                  <div class="flex flex-wrap">
-                    <v-chip
-                      v-for="zonasId in actividadInfo.zonas"
-                      size="x-small"
-                      :key="zonasId"
-                      class="m-1 p-1"
-                      :text="
-                        zonasStore.getZonaById(zonasId)?.nombre.toUpperCase() +
-                        ' - ' +
-                        zonasStore.getZonaById(zonasId)?.expand?.tipos_zonas?.nombre.toUpperCase()
-                      "
-                      pill
-                      color="blue-lighten-3"
-                      variant="flat"
-                    >
-                    </v-chip>
-                  </div>
-                </v-card-text>
-              </div>
             </v-card>
           </v-col>
 
           <v-col cols="6" class="pl-2">
-            <!-- SECCION PROGRAMACIONES -->
+            <!-- Siembras y Zonas -->
             <div class="siembra-info mt-0 p-0">
+              <v-card-title class="headline d-flex justify-between">
+                <h2 class="text-md font-bold mt-2">
+                  <span v-if="actividadInfo.siembras.length > 0">Siembras/Proyectos Asociados</span>
+                </h2>
+                <v-btn size="x-small" color="green-lighten-2" @click="openAddSiembrasZonas" icon>
+                  <v-icon>mdi-pencil</v-icon>
+                </v-btn>
+              </v-card-title>
+              <v-card-text>
+                <div class="flex flex-wrap">
+                  <v-chip
+                    v-for="siembraId in actividadInfo.siembras"
+                    size="x-small"
+                    :key="siembraId"
+                    class="m-1 p-1"
+                    :text="
+                      siembrasStore.getSiembraById(siembraId)?.nombre.toUpperCase() +
+                      ' ' +
+                      siembrasStore.getSiembraById(siembraId)?.tipo.toUpperCase()
+                    "
+                    pill
+                    color="green-lighten-3"
+                    variant="flat"
+                  >
+                  </v-chip>
+                </div>
+                <h2
+                  v-if="actividadInfo.zonas & (actividadInfo.zonas.length > 0)"
+                  class="text-l font-bold mt-2 mb-2"
+                >
+                  Otras Zonas Asociadas
+                </h2>
+
+                <div class="flex flex-wrap">
+                  <v-chip
+                    v-for="zonasId in actividadInfo.zonas"
+                    size="x-small"
+                    :key="zonasId"
+                    class="m-1 p-1"
+                    :text="
+                      zonasStore.getZonaById(zonasId)?.nombre.toUpperCase() +
+                      ' - ' +
+                      zonasStore.getZonaById(zonasId)?.expand?.tipos_zonas?.nombre.toUpperCase()
+                    "
+                    pill
+                    color="blue-lighten-3"
+                    variant="flat"
+                  >
+                  </v-chip>
+                </div>
+              </v-card-text>
+            </div>
+
+            <!-- SECCION PROGRAMACIONES -->
+            <div class="siembra-info mt-4 p-0">
               <v-card-title class="headline d-flex justify-between">
                 <h2 class="text-md font-bold mt-2">
                   <span>Programaciones</span>

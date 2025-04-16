@@ -89,12 +89,12 @@ const initApp = async () => {
   const themeStore = useThemeStore()
 
   try {
-    // Inicializar auth primero
-    await authStore.init()
-
     // Inicializar tema
     const currentTheme = themeStore.currentTheme
     document.documentElement.setAttribute('data-theme', currentTheme)
+
+    // Inicializar auth store primero
+    await authStore.init()
 
     // Solo inicializar sync si hay sesión
     if (authStore.isLoggedIn) {

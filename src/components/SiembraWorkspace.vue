@@ -317,12 +317,7 @@
                   <v-card flat class="p-2 bg-transparent">
                     <v-row no-gutters>
                       <v-col cols="7" class="pr-4">
-                        <p class="ml-2 mr-0 mb-2 p-0 text-xs">
-                          <v-icon>mdi-information-outline</v-icon> INFORMACION:<label
-                            class="rich-text-content"
-                            v-html="item.descripcion || 'No disponible'"
-                          ></label>
-                        </p>
+                        <!-- CHIPS DE METRICAS-->
                         <p>
                           <v-chip
                             v-for="(metrica, key) in item.metricas"
@@ -334,6 +329,14 @@
                           >
                             {{ key.replace(/_/g, ' ').toUpperCase() }}:{{ metrica.valor }}
                           </v-chip>
+                        </p>
+                        <hr />
+                        <!-- info de campos grabados-->
+                        <p class="ml-2 mr-0 mb-2 p-0 text-xs">
+                          <v-icon>mdi-information-outline</v-icon> INFORMACION:<label
+                            class="rich-text-content"
+                            v-html="item.descripcion || 'No disponible'"
+                          ></label>
                         </p>
                       </v-col>
                       <v-col cols="5" class="d-flex justify-center align-center">

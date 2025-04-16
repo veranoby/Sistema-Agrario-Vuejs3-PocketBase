@@ -148,7 +148,7 @@
                       v-if="metrica.tipo === 'select'"
                       v-model="metrica.valor"
                       :label="key"
-                      :items="metrica.opciones"
+                      :items="metrica.opciones || []"
                       variant="outlined"
                       density="compact"
                       class="compact-form"
@@ -157,10 +157,11 @@
                         <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
                       </template>
                     </v-select>
-                    <!-- Input number para tipo "string" -->
+
+                    <!-- Input string para tipo "string" -->
                     <v-text-field
                       v-else-if="metrica.tipo === 'string'"
-                      v-model.number="metrica.valor"
+                      v-model="metrica.valor"
                       :label="key"
                       density="compact"
                       variant="outlined"
@@ -170,6 +171,7 @@
                         <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
                       </template>
                     </v-text-field>
+
                     <!-- Input number para tipo "number" -->
                     <v-text-field
                       v-else-if="metrica.tipo === 'number'"
@@ -184,30 +186,36 @@
                         <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
                       </template>
                     </v-text-field>
-                    <!-- Input number para tipo "checkbox" -->
+
+                    <!-- Checkbox para tipo "checkbox" -->
                     <v-checkbox
                       v-else-if="metrica.tipo === 'checkbox'"
-                      v-model.number="metrica.valor"
+                      v-model="metrica.valor"
                       :label="key"
                       density="compact"
                       class="compact-form"
                     >
                       <template v-slot:append>
                         <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
-                      </template></v-checkbox
-                    >
-                    <!-- Input number para tipo "boolean" -->
-                    <v-checkbox
-                      v-else-if="metrica.tipo === 'boolean'"
-                      v-model.number="metrica.valor"
+                      </template>
+                    </v-checkbox>
+
+                    <!-- Multi-select para tipo "multi-select" -->
+                    <v-select
+                      v-else-if="metrica.tipo === 'multi-select'"
+                      v-model="metrica.valor"
                       :label="key"
+                      :items="metrica.opciones || []"
+                      multiple
+                      chips
+                      variant="outlined"
                       density="compact"
                       class="compact-form"
                     >
                       <template v-slot:append>
                         <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
-                      </template></v-checkbox
-                    >
+                      </template>
+                    </v-select>
                   </div>
                 </div>
               </v-card-text>
@@ -330,8 +338,21 @@
           variant="outlined"
           class="compact-form"
           v-model="newMetrica.tipo"
-          :items="['checkbox', 'number', 'text']"
+          :items="['checkbox', 'number', 'string', 'select', 'multi-select']"
           label="Tipo"
+          @update:model-value="handleTipoChange"
+        />
+        <!-- Campo de opciones que aparece solo para tipos específicos -->
+        <v-textarea
+          v-if="showOpcionesField"
+          density="compact"
+          variant="outlined"
+          class="compact-form"
+          v-model="newMetrica.opcionesText"
+          label="Opciones (separadas por coma)"
+          placeholder="Opción 1, Opción 2, Opción 3"
+          hint="Ingresa las opciones separadas por comas"
+          persistent-hint
         />
       </v-card-text>
       <v-card-actions>
@@ -436,10 +457,12 @@ const initialState = {
 const newMetrica = ref({
   titulo: '',
   descripcion: '',
-  tipo: ''
+  tipo: '',
+  opcionesText: ''
 })
 
 const addMetricaDialog = ref(false)
+const showOpcionesField = ref(false)
 
 import placeholderZonas from '@/assets/placeholder-zonas.png'
 
@@ -475,22 +498,49 @@ const handleAvatarUpdated = (updatedRecord) => {
 
 function openAddMetricaDialog() {
   addMetricaDialog.value = true
+  showOpcionesField.value = false
+  newMetrica.value = { titulo: '', descripcion: '', tipo: '', opcionesText: '' }
 }
+
+function handleTipoChange(value) {
+  // Mostrar campo de opciones solo para estos tipos
+  showOpcionesField.value = ['checkbox', 'select', 'multi-select'].includes(value)
+
+  // Limpiar opciones si se cambia a un tipo que no las necesita
+  if (!showOpcionesField.value) {
+    newMetrica.value.opcionesText = ''
+  }
+}
+
 function addMetrica() {
   if (newMetrica.value.titulo && newMetrica.value.tipo) {
     // Reemplazar espacios en blanco por guiones bajos en el título
     const sanitizedTitulo = newMetrica.value.titulo.replace(/\s+/g, '_')
 
-    console.log('newMetrica:', newMetrica)
+    // Procesar opciones si existen
+    let opciones = []
+    if (
+      newMetrica.value.opcionesText &&
+      ['checkbox', 'select', 'multi-select'].includes(newMetrica.value.tipo)
+    ) {
+      opciones = newMetrica.value.opcionesText
+        .split(',')
+        .map((opt) => opt.trim())
+        .filter((opt) => opt)
+    }
 
     zonaLocal.metricas[sanitizedTitulo] = {
       descripcion: newMetrica.value.descripcion,
       tipo: newMetrica.value.tipo,
-      valor: null // Inicializar valor como null
+      valor: newMetrica.value.tipo === 'multi-select' ? [] : null, // Array vacío para multi-select
+      opciones: opciones.length > 0 ? opciones : undefined
     }
+
     console.log('zonaLocal:', zonaLocal.metricas)
 
-    newMetrica.value = { titulo: '', descripcion: '', tipo: '' } // Resetear
+    // Restablecer el formulario
+    newMetrica.value = { titulo: '', descripcion: '', tipo: '', opcionesText: '' }
+    showOpcionesField.value = false
     addMetricaDialog.value = false
   } else {
     console.error('Título y tipo son requeridos para agregar una métrica')

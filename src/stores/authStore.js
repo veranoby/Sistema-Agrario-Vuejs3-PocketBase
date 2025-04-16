@@ -22,7 +22,8 @@ export const useAuthStore = defineStore('auth', {
     token: null,
     isLoggedIn: false,
     rememberMe: null,
-    showLoginDialog: false
+    showLoginDialog: false,
+    initialized: false
   }),
 
   actions: {
@@ -40,10 +41,31 @@ export const useAuthStore = defineStore('auth', {
           // Si se restauró correctamente, intentar actualizar con el servidor
           if (pb.authStore.isValid) {
             try {
-              // Intentar refrescar la autenticación con el servidor
-              const freshAuthData = await pb.collection('users').authRefresh()
-              this.setSession(freshAuthData)
-              return true
+              // Solo refrescar si realmente es necesario
+              if (this.tokenNeedsRefresh()) {
+                // Intentar refrescar la autenticación con el servidor
+                const freshAuthData = await pb.collection('users').authRefresh()
+                this.setSession(freshAuthData)
+
+                // Si hay rememberMe, reiniciar el timer de refresco
+                const rememberMe = syncStore.loadFromLocalStorage('rememberMe')
+                if (rememberMe) {
+                  this.startRefreshTimer()
+                }
+
+                return true
+              } else {
+                // No necesitamos refrescar, usar datos actuales
+                this.setSession({ record: authData })
+
+                // Si hay rememberMe, reiniciar el timer de refresco
+                const rememberMe = syncStore.loadFromLocalStorage('rememberMe')
+                if (rememberMe) {
+                  this.startRefreshTimer()
+                }
+
+                return true
+              }
             } catch (refreshError) {
               // Si falla el refresh pero tenemos datos válidos localmente, usar esos
               console.log('No se pudo actualizar la sesión con el servidor. Usando datos locales.')
@@ -57,7 +79,43 @@ export const useAuthStore = defineStore('auth', {
           return false
         }
       }
+
       return false
+    },
+
+    // Método para iniciar el timer de refresco
+    startRefreshTimer() {
+      // Detener cualquier timer existente primero
+      this.stopRefreshTimer()
+
+      // Refrescar cada 15 minutos
+      // Esta frecuencia debe ajustarse según la expiración configurada en PocketBase
+      this.refreshTimer = setInterval(
+        async () => {
+          if (this.isLoggedIn) {
+            try {
+              // Solo intentar refrescar si es necesario
+              if (this.tokenNeedsRefresh()) {
+                await this.refreshToken()
+              }
+            } catch (error) {
+              console.error('Error en refresco automático:', error)
+            }
+          } else {
+            // Si ya no estamos logueados, detener el timer
+            this.stopRefreshTimer()
+          }
+        },
+        15 * 60 * 1000
+      ) // 15 minutos
+    },
+
+    // Método para detener el timer de refresco
+    stopRefreshTimer() {
+      if (this.refreshTimer) {
+        clearInterval(this.refreshTimer)
+        this.refreshTimer = null
+      }
     },
 
     async login(username, email, password, rememberMe = false) {
@@ -68,35 +126,53 @@ export const useAuthStore = defineStore('auth', {
       const snackbarStore = useSnackbarStore()
 
       if (!syncStore.isOnline) {
+        this.loading = false
         throw new Error('Se requiere conexión a internet para el primer inicio de sesión')
       }
 
       snackbarStore.showLoading()
 
       try {
+        let authData = null
+
         // Intentar login con username primero
         if (username) {
-          const authData = await pb
-            .collection('users')
-            .authWithPassword(username.toUpperCase(), password)
-          if (pb.authStore.isValid) {
-            this.handleSuccessfulLogin(authData, rememberMe)
-            return true
+          try {
+            authData = await pb
+              .collection('users')
+              .authWithPassword(username.toUpperCase(), password)
+            if (pb.authStore.isValid) {
+              this.handleSuccessfulLogin(authData, rememberMe)
+              return true
+            }
+          } catch (error) {
+            console.log('Error al intentar login con username:', error)
+            // Continuamos intentando con email
           }
         }
 
-        // Si falla con username, intentar con email
-        if (email) {
-          const authData = await pb.collection('users').authWithPassword(email, password)
-          if (pb.authStore.isValid) {
-            this.handleSuccessfulLogin(authData, rememberMe)
-            return true
+        // Si falla con username o no se proporcionó username, intentar con email
+        if (email && !authData) {
+          try {
+            authData = await pb.collection('users').authWithPassword(email, password)
+            if (pb.authStore.isValid) {
+              this.handleSuccessfulLogin(authData, rememberMe)
+              return true
+            }
+          } catch (error) {
+            console.log('Error al intentar login con email:', error)
+            // Si llegamos aquí, ambos intentos fallaron
           }
         }
 
-        throw new Error('Invalid credentials')
+        // Si llegamos aquí sin haber obtenido authData, es porque fallaron ambos intentos
+        if (!authData) {
+          throw new Error('Credenciales incorrectas')
+        }
+
+        return true
       } catch (error) {
-        handleError(error, 'Invalid credentials')
+        handleError(error, 'Credenciales incorrectas')
         return false
       } finally {
         this.loading = false
@@ -104,14 +180,90 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
+    async refreshToken() {
+      const syncStore = useSyncStore()
+
+      // Verificar si el token es válido antes de intentar refrescarlo
+      if (!pb.authStore.isValid) {
+        // No tenemos token válido
+        return false
+      }
+
+      // Verificar si el token está por expirar
+      const token = pb.authStore.token
+      if (token) {
+        try {
+          // Solo refrescar si es necesario
+          const needsRefresh = this.tokenNeedsRefresh()
+
+          if (needsRefresh) {
+            const freshAuthData = await pb.collection('users').authRefresh()
+            this.setSession(freshAuthData)
+
+            // Actualizar token en localStorage
+            syncStore.saveToLocalStorage('pocketbase_auth', pb.authStore.model)
+            syncStore.saveToLocalStorage('last_auth_success', Date.now())
+
+            return true
+          }
+
+          // Token todavía válido y no necesita ser refrescado
+          return true
+        } catch (error) {
+          console.error('Error al refrescar token:', error)
+          return false
+        }
+      }
+
+      return false
+    },
+
+    // Método para determinar si el token necesita ser refrescado
+    tokenNeedsRefresh() {
+      const syncStore = useSyncStore()
+
+      // Obtener timestamp del último login exitoso
+      const lastSuccess = syncStore.loadFromLocalStorage('last_auth_success')
+
+      if (!lastSuccess) {
+        // Si no hay registro, asumimos que sí necesita refresco
+        return true
+      }
+
+      const now = Date.now()
+      const timeSinceLastSuccess = now - lastSuccess
+
+      // Refrescar si han pasado más de 20 minutos desde el último éxito
+      // Ajustar este tiempo según la configuración de expiración de token de PocketBase
+      const refreshThreshold = 20 * 60 * 1000 // 20 minutos
+
+      return timeSinceLastSuccess > refreshThreshold
+    },
+
     async handleSuccessfulLogin(authData, rememberMe = false) {
       // Set auth state
       this.setSession(authData)
       const syncStore = useSyncStore()
 
-      // Guardar datos de autenticación en localStorage
-      syncStore.saveToLocalStorage('pocketbase_auth', pb.authStore.model, true) // Siempre usar localStorage
-      syncStore.saveToLocalStorage('last_auth_success', Date.now(), true)
+      // Guardar datos de autenticación usando syncStore
+      syncStore.saveToLocalStorage('pocketbase_auth', pb.authStore.model)
+      syncStore.saveToLocalStorage('last_auth_success', Date.now())
+
+      // Si rememberMe es true, guardar información mínima necesaria para auto-login
+      if (rememberMe) {
+        const credentials = {
+          usernameOrEmail: authData.record.username || authData.record.email,
+          // No guardamos la password completa, solo un indicador
+          tokenOnly: true,
+          timestamp: Date.now()
+        }
+        syncStore.saveToLocalStorage('rememberMe', credentials)
+
+        // También iniciar el timer de refresco
+        this.startRefreshTimer()
+      } else {
+        syncStore.removeFromLocalStorage('rememberMe')
+      }
 
       // RESTAURAR EL FLUJO ORIGINAL: primero inicializar syncStore
       // y luego cargar los demás stores
@@ -274,31 +426,27 @@ export const useAuthStore = defineStore('auth', {
 
     async logout() {
       const snackbarStore = useSnackbarStore()
-      //    const syncStore = useSyncStore()
+      const syncStore = useSyncStore()
 
       try {
-        router.push('/dashboard')
-        //     pb.authStore.clear()
-        //    this.user = null
+        // Detener el timer de refresco si está activo
+        this.stopRefreshTimer()
+
+        // Limpiar datos de autenticación
+        pb.authStore.clear()
+        this.user = null
         this.token = null
         this.isLoggedIn = false
 
-        // Limpiar todo el localStorage
-        localStorage.clear()
+        // Limpiar datos en syncStore
+        syncStore.removeFromLocalStorage('pocketbase_auth')
+        syncStore.removeFromLocalStorage('rememberMe')
+        syncStore.removeFromLocalStorage('last_auth_success')
+        localStorage.clear
 
-        // O si prefieres usar syncStore para mantener la consistencia
-        // syncStore.removeFromLocalStorage('token')
-        // syncStore.removeFromLocalStorage('user')
-        // syncStore.removeFromLocalStorage('rememberMe')
-        // syncStore.removeFromLocalStorage('zonas')
-        // syncStore.removeFromLocalStorage('tiposZonas')
-        // syncStore.removeFromLocalStorage('actividades')
-        // syncStore.removeFromLocalStorage('tiposActividades')
-        // syncStore.removeFromLocalStorage('siembras')
-
+        // Redirigir
+        router.push('/')
         snackbarStore.showSnackbar('Logged out successfully', 'success')
-
-        // Redirigir después de limpiar el estado
       } catch (error) {
         console.error('Error during logout:', error)
         snackbarStore.showSnackbar('Error al cerrar sesión', 'error')

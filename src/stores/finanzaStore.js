@@ -445,6 +445,13 @@ export const useFinanzaStore = defineStore('finanzas', {
           }
         })
 
+        // Ordenar los registros por fecha antes de exportarlos
+        registrosDelMes.sort((a, b) => {
+          const fechaA = parseISO(a.fecha)
+          const fechaB = parseISO(b.fecha)
+          return fechaA - fechaB
+        })
+
         // Importar XLSX dinámicamente
         const { utils, writeFile } = await import('xlsx')
 

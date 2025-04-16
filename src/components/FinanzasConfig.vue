@@ -136,6 +136,9 @@
                   prepend-inner-icon="mdi-filter"
                   hide-details
                   clearable
+                  color="primary"
+                  :class="filters.razonSocial ? 'active-filter' : ''"
+                  :bg-color="filters.razonSocial ? 'blue-lighten-4' : undefined"
                 ></v-text-field>
               </v-col>
               <v-col cols="12" sm="3">
@@ -159,6 +162,9 @@
                   prepend-inner-icon="mdi-filter"
                   hide-details
                   clearable
+                  color="success"
+                  :class="filters.categoria ? 'active-filter' : ''"
+                  :bg-color="filters.categoria ? 'green-lighten-3' : undefined"
                 ></v-select>
               </v-col>
               <v-col cols="12" sm="3">
@@ -172,6 +178,9 @@
                   prepend-inner-icon="mdi-filter"
                   hide-details
                   clearable
+                  color="primary"
+                  :class="filters.pagadoPor ? 'active-filter' : ''"
+                  :bg-color="filters.pagadoPor ? 'blue-lighten-4' : undefined"
                 ></v-select>
               </v-col>
             </v-row>
@@ -187,6 +196,9 @@
                   prepend-inner-icon="mdi-filter"
                   hide-details
                   clearable
+                  color="success"
+                  :class="filters.detalle ? 'active-filter' : ''"
+                  :bg-color="filters.detalle ? 'green-lighten-3' : undefined"
                 ></v-text-field>
               </v-col>
               <v-col cols="12" sm="6">
@@ -199,6 +211,9 @@
                   prepend-inner-icon="mdi-filter"
                   hide-details
                   clearable
+                  color="primary"
+                  :class="filters.comentarios ? 'active-filter' : ''"
+                  :bg-color="filters.comentarios ? 'blue-lighten-4' : undefined"
                 ></v-text-field>
               </v-col>
             </v-row>
@@ -662,5 +677,9 @@ const itemDuplicado = ref(null)
 }
 .year-selector {
   min-width: 100px;
+}
+.filter-active {
+  border-color: #4caf50; /* Cambia este color según tu preferencia */
+  background-color: rgba(76, 175, 80, 0.1); /* Color de fondo suave */
 }
 </style>

@@ -49,70 +49,80 @@
     </div>
 
     <main class="flex-1 py-2">
-      <v-container>
-        <!-- Grupo por Siembras -->
-        <div
-          class="siembra-info"
-          v-for="(grupo, nombreSiembra) in groupedProgramaciones.siembras"
-          :key="'siembra-' + nombreSiembra"
-        >
-          <v-card-title class="font-bold text-sm mb-4 siembra-header">
-            <v-icon left>mdi-sprout</v-icon>
-            <router-link
-              :to="{
-                name: 'Ver Siembra/Proyecto',
-                params: { id: grupo[0].siembras[0] }
-              }"
-              class="text-inherit hover:text-primary"
-            >
-              Siembra/Proyecto: {{ nombreSiembra }}
-            </router-link>
-          </v-card-title>
+      <v-container class="p-0">
+        <v-row>
+          <!-- Grupo por Siembras -->
+          <v-col
+            cols="12"
+            sm="6"
+            md="4"
+            lg="4"
+            class="p-1"
+            v-for="(grupo, nombreSiembra) in groupedProgramaciones.siembras"
+            :key="'siembra-' + nombreSiembra"
+          >
+            <v-card-title class="font-bold text-sm mb-4 siembra-header">
+              <v-icon left>mdi-sprout</v-icon>
+              <router-link
+                :to="{
+                  name: 'Ver Siembra/Proyecto',
+                  params: { id: grupo[0].siembras[0] }
+                }"
+                class="text-inherit hover:text-primary"
+              >
+                Siembra/Proyecto: {{ nombreSiembra }}
+              </router-link>
+            </v-card-title>
 
-          <ProgramacionPanel
-            v-for="programacion in grupo"
-            :key="programacion.id"
-            :programacion="programacion"
-            @editar="openEditarProgramacion"
-            @ejecutar="ejecutarProgramacion"
-          />
-        </div>
+            <ProgramacionPanel
+              v-for="programacion in grupo"
+              :key="programacion.id"
+              :programacion="programacion"
+              @editar="openEditarProgramacion"
+              @ejecutar="ejecutarProgramacion"
+            />
+          </v-col>
 
-        <!-- Grupo por Actividades sin Siembra -->
-        <div
-          class="siembra-info"
-          v-for="(grupo, nombreActividad) in groupedProgramaciones.actividades"
-          :key="'actividad-' + nombreActividad"
-        >
-          <v-card-title class="font-bold text-sm mb-4 siembra-info">
-            <v-icon left>mdi-tools</v-icon>
-            <router-link
-              :to="{ name: 'Ver Actividad', params: { id: grupo[0].actividades[0] } }"
-              class="text-inherit hover:text-primary"
-            >
-              Actividad: {{ nombreActividad }}
-            </router-link>
-          </v-card-title>
+          <!-- Grupo por Actividades sin Siembra -->
+          <v-col
+            cols="12"
+            sm="6"
+            md="4"
+            lg="4"
+            class="p-1"
+            v-for="(grupo, nombreActividad) in groupedProgramaciones.actividades"
+            :key="'actividad-' + nombreActividad"
+          >
+            <v-card-title class="font-bold text-sm mb-4 siembra-info">
+              <v-icon left>mdi-tools</v-icon>
+              <router-link
+                :to="{ name: 'Ver Actividad', params: { id: grupo[0].actividades[0] } }"
+                class="text-inherit hover:text-primary"
+              >
+                Actividad: {{ nombreActividad }}
+              </router-link>
+            </v-card-title>
 
-          <ProgramacionPanel
-            v-for="programacion in grupo"
-            :key="programacion.id"
-            :programacion="programacion"
-            @editar="openEditarProgramacion"
-            @ejecutar="ejecutarProgramacion"
-          />
-        </div>
+            <ProgramacionPanel
+              v-for="programacion in grupo"
+              :key="programacion.id"
+              :programacion="programacion"
+              @editar="openEditarProgramacion"
+              @ejecutar="ejecutarProgramacion"
+            />
+          </v-col>
 
-        <v-alert
-          v-if="
-            !programacionesStore.loading &&
-            programacionesStore.programacionesPorHacienda.length === 0
-          "
-          type="info"
-          class="mt-4"
-        >
-          No hay Programaciones de actividades registradas
-        </v-alert>
+          <v-alert
+            v-if="
+              !programacionesStore.loading &&
+              programacionesStore.programacionesPorHacienda.length === 0
+            "
+            type="info"
+            class="mt-4"
+          >
+            No hay Programaciones de actividades registradas
+          </v-alert>
+        </v-row>
       </v-container>
     </main>
 

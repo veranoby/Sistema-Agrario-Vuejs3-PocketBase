@@ -503,9 +503,11 @@ export const useSyncStore = defineStore('sync', {
       try {
         // Obtener datos de sesión del localStorage
         const authData = this.loadFromLocalStorage('pocketbase_auth')
+        const rememberMe = this.loadFromLocalStorage('rememberMe')
 
-        if (!authData || !authData.token) {
-          console.log('No hay datos válidos de sesión guardados')
+        // Si no hay datos de sesión o no se debe recordar al usuario, no restaurar
+        if (!authData || !authData.token || rememberMe === false) {
+          console.log('No hay datos válidos de sesión guardados o no se debe recordar al usuario')
           return false
         }
 

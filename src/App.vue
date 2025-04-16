@@ -95,19 +95,59 @@ watch(isLoggedIn, (newValue) => {
 })
 
 onMounted(async () => {
-  const savedCredentials = localStorage.getItem('rememberMe')
-  if (savedCredentials) {
-    const { usernameOrEmail, password } = JSON.parse(savedCredentials)
-    await authStore.login(usernameOrEmail, password).catch(() => {
-      localStorage.removeItem('rememberMe')
-      localStorage.removeItem('token')
-    })
+  // Eliminar el intento de login automático que está fallando
+  // Ahora usaremos la lógica de init() de authStore que ya modificamos
+
+  // Si auth no está inicializado, iniciarlo
+  if (!authStore.initialized) {
+    await authStore.init()
   }
 
+  // Si sync no está inicializado y tenemos sesión, iniciarlo
   if (authStore.isLoggedIn && !syncStore.initialized) {
     await syncStore.init()
   }
+
+  // Detectar cuando el usuario retoma la actividad
+  window.addEventListener('focus', handleWindowFocus)
+  document.addEventListener('visibilitychange', handleVisibilityChange)
 })
+
+onBeforeUnmount(() => {
+  window.removeEventListener('focus', handleWindowFocus)
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+})
+
+const handleWindowFocus = () => {
+  // Cuando la ventana recupera el foco
+  refreshTokenIfNeeded()
+}
+
+const handleVisibilityChange = () => {
+  if (document.visibilityState === 'visible') {
+    // Cuando la pestaña se vuelve visible
+    refreshTokenIfNeeded()
+  }
+}
+
+const refreshTokenIfNeeded = async () => {
+  if (authStore.isLoggedIn) {
+    try {
+      await authStore.refreshToken()
+    } catch (error) {
+      console.error('Error al verificar/refrescar token:', error)
+
+      // Si el token no se pudo refrescar, pero tenemos rememberMe,
+      // mostramos el diálogo de login
+      const syncStore = useSyncStore()
+      const rememberMe = syncStore.loadFromLocalStorage('rememberMe')
+
+      if (rememberMe) {
+        showAuthModal.value = true
+      }
+    }
+  }
+}
 
 // Agregar verificación de autenticación antes de cada ruta
 router.beforeEach((to, from, next) => {

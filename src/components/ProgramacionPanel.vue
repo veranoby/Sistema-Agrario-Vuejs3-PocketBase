@@ -1,5 +1,5 @@
 <template>
-  <v-card class="mb-4 bg-transparent" :class="{ 'border-2 border-red': debeEjecutarHoy }">
+  <v-card class="mb-2 bg-transparent" border="false">
     <v-card-text class="p-2">
       <!-- Fila principal con descripción y botones -->
       <div class="flex min-w-0">
@@ -148,24 +148,24 @@ const actividadTipo = computed(() => {
 })
 
 const formatFecha = (fecha) => {
-  if (!fecha) return 'N/A';
-  
+  if (!fecha) return 'N/A'
+
   try {
     // Verificar que la fecha sea válida
-    const fechaObj = new Date(fecha);
+    const fechaObj = new Date(fecha)
     if (isNaN(fechaObj.getTime())) {
-      console.warn(`Fecha inválida: ${fecha}`);
-      return 'Pendiente';
+      console.warn(`Fecha inválida: ${fecha}`)
+      return 'Pendiente'
     }
-    
+
     return new Intl.DateTimeFormat('es-ES', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'
-    }).format(fechaObj);
+    }).format(fechaObj)
   } catch (error) {
-    console.error(`Error formateando fecha: ${fecha}`, error);
-    return 'Pendiente';
+    console.error(`Error formateando fecha: ${fecha}`, error)
+    return 'Pendiente'
   }
 }
 
