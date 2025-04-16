@@ -305,7 +305,9 @@
               </template>
 
               <template #[`item.actions`]="{ item }">
-                <v-icon class="me-2" @click="editActividad(item)"> mdi-pencil </v-icon>
+                <v-icon size="large" color="primary" class="me-2" @click="editActividad(item)">
+                  mdi-arrow-right-bold-circle-outline
+                </v-icon>
                 <v-icon @click="deleteActividad(item)"> mdi-delete </v-icon>
               </template>
 

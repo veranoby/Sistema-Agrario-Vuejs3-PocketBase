@@ -33,6 +33,7 @@
                 rounded="lg"
                 color="#6380a247"
                 prepend-icon="mdi-plus"
+                @click:prepend="dialogNuevaActividad = true"
                 @click="dialogNuevaActividad = true"
                 class="min-w-[210px]"
               >

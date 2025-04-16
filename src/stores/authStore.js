@@ -13,6 +13,7 @@ import { useZonasStore } from '@/stores/zonasStore'
 import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useRecordatoriosStore } from '@/stores/recordatoriosStore'
 import { useProgramacionesStore } from '@/stores/programacionesStore'
+import { debounce } from 'lodash'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -23,7 +24,8 @@ export const useAuthStore = defineStore('auth', {
     isLoggedIn: false,
     rememberMe: null,
     showLoginDialog: false,
-    initialized: false
+    initialized: false,
+    refreshTimer: null
   }),
 
   actions: {
@@ -67,7 +69,6 @@ export const useAuthStore = defineStore('auth', {
                 return true
               }
             } catch (refreshError) {
-              // Si falla el refresh pero tenemos datos válidos localmente, usar esos
               console.log('No se pudo actualizar la sesión con el servidor. Usando datos locales.')
               this.setSession({ record: authData })
               return true
@@ -88,26 +89,19 @@ export const useAuthStore = defineStore('auth', {
       // Detener cualquier timer existente primero
       this.stopRefreshTimer()
 
-      // Refrescar cada 15 minutos
-      // Esta frecuencia debe ajustarse según la expiración configurada en PocketBase
-      this.refreshTimer = setInterval(
-        async () => {
-          if (this.isLoggedIn) {
-            try {
-              // Solo intentar refrescar si es necesario
-              if (this.tokenNeedsRefresh()) {
-                await this.refreshToken()
-              }
-            } catch (error) {
-              console.error('Error en refresco automático:', error)
-            }
-          } else {
-            // Si ya no estamos logueados, detener el timer
-            this.stopRefreshTimer()
+      // Crear un método debounce para evitar múltiples refrescos simultáneos
+      const debouncedRefresh = debounce(async () => {
+        if (this.isLoggedIn && this.tokenNeedsRefresh()) {
+          try {
+            await this.refreshToken()
+          } catch (error) {
+            console.error('Error en refresco automático:', error)
           }
-        },
-        15 * 60 * 1000
-      ) // 15 minutos
+        }
+      }, 2000) // 2 segundos de debounce
+
+      // Refrescar cada 15 minutos
+      this.refreshTimer = setInterval(debouncedRefresh, 15 * 60 * 1000) // 15 minutos
     },
 
     // Método para detener el timer de refresco
@@ -185,29 +179,19 @@ export const useAuthStore = defineStore('auth', {
 
       // Verificar si el token es válido antes de intentar refrescarlo
       if (!pb.authStore.isValid) {
-        // No tenemos token válido
         return false
       }
 
       // Verificar si el token está por expirar
-      const token = pb.authStore.token
-      if (token) {
+      if (this.tokenNeedsRefresh()) {
         try {
-          // Solo refrescar si es necesario
-          const needsRefresh = this.tokenNeedsRefresh()
+          const freshAuthData = await pb.collection('users').authRefresh()
+          this.setSession(freshAuthData)
 
-          if (needsRefresh) {
-            const freshAuthData = await pb.collection('users').authRefresh()
-            this.setSession(freshAuthData)
+          // Actualizar token en syncStore
+          syncStore.saveToLocalStorage('pocketbase_auth', pb.authStore.model)
+          syncStore.saveToLocalStorage('last_auth_success', Date.now())
 
-            // Actualizar token en localStorage
-            syncStore.saveToLocalStorage('pocketbase_auth', pb.authStore.model)
-            syncStore.saveToLocalStorage('last_auth_success', Date.now())
-
-            return true
-          }
-
-          // Token todavía válido y no necesita ser refrescado
           return true
         } catch (error) {
           console.error('Error al refrescar token:', error)
@@ -215,7 +199,8 @@ export const useAuthStore = defineStore('auth', {
         }
       }
 
-      return false
+      // Token todavía válido y no necesita ser refrescado
+      return true
     },
 
     // Método para determinar si el token necesita ser refrescado
@@ -234,7 +219,6 @@ export const useAuthStore = defineStore('auth', {
       const timeSinceLastSuccess = now - lastSuccess
 
       // Refrescar si han pasado más de 20 minutos desde el último éxito
-      // Ajustar este tiempo según la configuración de expiración de token de PocketBase
       const refreshThreshold = 20 * 60 * 1000 // 20 minutos
 
       return timeSinceLastSuccess > refreshThreshold
@@ -246,7 +230,7 @@ export const useAuthStore = defineStore('auth', {
       const syncStore = useSyncStore()
 
       // Guardar datos de autenticación usando syncStore
-      syncStore.saveToLocalStorage('pocketbase_auth', pb.authStore.model)
+      syncStore.saveToLocalStorage('pocketbase_auth', pb.authStore.model, true)
       syncStore.saveToLocalStorage('last_auth_success', Date.now())
 
       // Si rememberMe es true, guardar información mínima necesaria para auto-login
@@ -263,6 +247,7 @@ export const useAuthStore = defineStore('auth', {
         this.startRefreshTimer()
       } else {
         syncStore.removeFromLocalStorage('rememberMe')
+        this.stopRefreshTimer()
       }
 
       // RESTAURAR EL FLUJO ORIGINAL: primero inicializar syncStore
@@ -432,7 +417,11 @@ export const useAuthStore = defineStore('auth', {
         // Detener el timer de refresco si está activo
         this.stopRefreshTimer()
 
-        // Limpiar datos de autenticación
+        // Redirigir PRIMERO para evitar errores de componentes
+        // que intentan renderizar mientras el estado se está limpiando
+        await router.push('/')
+
+        // Luego limpiar datos de autenticación
         pb.authStore.clear()
         this.user = null
         this.token = null
@@ -442,10 +431,7 @@ export const useAuthStore = defineStore('auth', {
         syncStore.removeFromLocalStorage('pocketbase_auth')
         syncStore.removeFromLocalStorage('rememberMe')
         syncStore.removeFromLocalStorage('last_auth_success')
-        localStorage.clear
 
-        // Redirigir
-        router.push('/')
         snackbarStore.showSnackbar('Logged out successfully', 'success')
       } catch (error) {
         console.error('Error during logout:', error)

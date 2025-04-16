@@ -501,17 +501,17 @@ export const useSyncStore = defineStore('sync', {
 
       const authStore = useAuthStore()
       try {
-        // Obtener datos de sesión del localStorage
+        // Obtener datos de sesión del localStorage centralizado
         const authData = this.loadFromLocalStorage('pocketbase_auth')
         const rememberMe = this.loadFromLocalStorage('rememberMe')
 
         // Si no hay datos de sesión o no se debe recordar al usuario, no restaurar
-        if (!authData || !authData.token || rememberMe === false) {
+        if (!authData || !authData.token || !rememberMe) {
           console.log('No hay datos válidos de sesión guardados o no se debe recordar al usuario')
           return false
         }
 
-        // Establecer un límite de tiempo entre intentos
+        // Establecer un límite de tiempo entre intentos para evitar sobrecarga
         const lastRestoreAttempt = this.loadFromLocalStorage('last_restore_attempt') || 0
         const now = Date.now()
 
@@ -534,6 +534,12 @@ export const useSyncStore = defineStore('sync', {
 
             // Actualizar el estado de autenticación en authStore
             authStore.setSession({ record: authData })
+
+            // Iniciar timer de refresh si es necesario
+            if (rememberMe) {
+              authStore.startRefreshTimer()
+            }
+
             return true
           }
         } catch (error) {
@@ -552,6 +558,12 @@ export const useSyncStore = defineStore('sync', {
               console.log('Sesión refrescada exitosamente')
               this.saveToLocalStorage('last_auth_success', now)
               authStore.setSession(freshAuthData)
+
+              // Iniciar timer de refresh
+              if (rememberMe) {
+                authStore.startRefreshTimer()
+              }
+
               return true
             }
           } catch (error) {

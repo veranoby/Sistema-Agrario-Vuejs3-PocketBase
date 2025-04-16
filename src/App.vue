@@ -36,13 +36,14 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useThemeStore } from './stores/themeStore'
 import { useAuthStore } from '@/stores/authStore'
 import Header from './components/Header.vue'
 import Sidebar from './components/Sidebar.vue'
 import AuthModal from './components/AuthModal.vue'
+import { pb } from '@/utils/pocketbase'
 
 import SnackbarComponent from '@/components/SnackbarComponent.vue'
 import { useSyncStore } from '@/stores/syncStore'
@@ -85,19 +86,24 @@ watch(
   { immediate: true }
 )
 
-watch(isLoggedIn, (newValue) => {
-  if (newValue) {
-    handleLoginSuccess()
-  } else {
-    navigationLinks.value = []
-    router.push('/')
-  }
-})
+watch(
+  isLoggedIn,
+  (newValue, oldValue) => {
+    if (newValue) {
+      handleLoginSuccess()
+    } else if (oldValue) {
+      nextTick(() => {
+        navigationLinks.value = []
+        if (router.currentRoute.value.meta.requiresAuth) {
+          router.push('/')
+        }
+      })
+    }
+  },
+  { immediate: true }
+)
 
 onMounted(async () => {
-  // Eliminar el intento de login automático que está fallando
-  // Ahora usaremos la lógica de init() de authStore que ya modificamos
-
   // Si auth no está inicializado, iniciarlo
   if (!authStore.initialized) {
     await authStore.init()
@@ -114,8 +120,14 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+  // Limpiar event listeners para evitar memory leaks
   window.removeEventListener('focus', handleWindowFocus)
   document.removeEventListener('visibilitychange', handleVisibilityChange)
+
+  // Importante: detener el timer de refresco al desmontar el componente
+  if (authStore.isLoggedIn) {
+    authStore.stopRefreshTimer()
+  }
 })
 
 const handleWindowFocus = () => {
@@ -133,7 +145,10 @@ const handleVisibilityChange = () => {
 const refreshTokenIfNeeded = async () => {
   if (authStore.isLoggedIn) {
     try {
-      await authStore.refreshToken()
+      // Verificar si el token necesita ser refrescado
+      if (authStore.tokenNeedsRefresh()) {
+        await authStore.refreshToken()
+      }
     } catch (error) {
       console.error('Error al verificar/refrescar token:', error)
 
@@ -143,7 +158,7 @@ const refreshTokenIfNeeded = async () => {
       const rememberMe = syncStore.loadFromLocalStorage('rememberMe')
 
       if (rememberMe) {
-        showAuthModal.value = true
+        authStore.showLoginDialog = true
       }
     }
   }

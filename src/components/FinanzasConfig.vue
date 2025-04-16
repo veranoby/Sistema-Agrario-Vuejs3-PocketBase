@@ -259,15 +259,32 @@
             <!-- Acciones por item -->
             <template v-slot:item.actions="{ item }">
               <div class="d-flex gap-2">
-                <v-tooltip text="Editar">
+                <v-tooltip
+                  :text="
+                    item.registro_por === authStore.user.id || userRole === 'administrador'
+                      ? 'Editar'
+                      : 'Solo el creador o administrador puede editar'
+                  "
+                >
                   <template v-slot:activator="{ props }">
                     <v-btn
                       icon
                       size="x-small"
                       variant="text"
-                      color="primary"
+                      :color="
+                        item.registro_por === authStore.user.id || userRole === 'administrador'
+                          ? 'primary'
+                          : 'grey'
+                      "
                       v-bind="props"
-                      @click="openEditarItem(item)"
+                      @click="
+                        item.registro_por === authStore.user.id || userRole === 'administrador'
+                          ? openEditarItem(item)
+                          : showEditError()
+                      "
+                      :disabled="
+                        item.registro_por !== authStore.user.id && userRole !== 'administrador'
+                      "
                     >
                       <v-icon>mdi-pencil</v-icon>
                     </v-btn>
@@ -287,15 +304,32 @@
                     </v-btn>
                   </template>
                 </v-tooltip>
-                <v-tooltip text="Eliminar">
+                <v-tooltip
+                  :text="
+                    item.registro_por === authStore.user.id || userRole === 'administrador'
+                      ? 'Eliminar'
+                      : 'Solo el creador o administrador puede eliminar'
+                  "
+                >
                   <template v-slot:activator="{ props }">
                     <v-btn
                       icon
                       size="x-small"
                       variant="text"
-                      color="error"
+                      :color="
+                        item.registro_por === authStore.user.id || userRole === 'administrador'
+                          ? 'error'
+                          : 'grey'
+                      "
                       v-bind="props"
-                      @click="confirmDelete(item)"
+                      @click="
+                        item.registro_por === authStore.user.id || userRole === 'administrador'
+                          ? confirmDelete(item)
+                          : showDeleteError()
+                      "
+                      :disabled="
+                        item.registro_por !== authStore.user.id && userRole !== 'administrador'
+                      "
                     >
                       <v-icon>mdi-delete</v-icon>
                     </v-btn>
@@ -669,6 +703,14 @@ function getUsuarioNombre(userId) {
 }
 
 const itemDuplicado = ref(null)
+
+function showEditError() {
+  alert('Solo el usuario que creó este registro o un administrador puede editar')
+}
+
+function showDeleteError() {
+  alert('Solo el usuario que creó este registro o un administrador puede eliminar')
+}
 </script>
 
 <style scoped>
