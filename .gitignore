@@ -14,16 +14,8 @@ dist
 dist-ssr
 .env
 .DS_Store
-pocketbase/data/
-pocketbase
-pocketbase/
 
-./pocketbase
-./pocketbase/*
-./pocketbase/data/*
-
-/pocketbase/data/
-/pocketbase
+# Excluir directorio pocketbase
 /pocketbase/
 
 coverage

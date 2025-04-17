@@ -135,6 +135,11 @@ export const useAuthStore = defineStore('auth', {
             authData = await pb
               .collection('users')
               .authWithPassword(username.toUpperCase(), password)
+            console.log('[AUTH] Datos de autenticación recibidos:', {
+              token: pb.authStore.token,
+              record: pb.authStore.record,
+              isValid: pb.authStore.isValid
+            })
             if (pb.authStore.isValid) {
               this.handleSuccessfulLogin(authData, rememberMe)
               return true
@@ -225,25 +230,32 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async handleSuccessfulLogin(authData, rememberMe = false) {
+      console.log('[AUTH] Iniciando handleSuccessfulLogin, rememberMe:', rememberMe)
+
       // Set auth state
       this.setSession(authData)
       const syncStore = useSyncStore()
 
-      // Guardar datos de autenticación usando syncStore
-      syncStore.saveToLocalStorage('pocketbase_auth', pb.authStore.model, true)
-      syncStore.saveToLocalStorage('last_auth_success', Date.now())
+      // Crear objeto de autenticación completo para guardar
+      const authToSave = {
+        token: pb.authStore.token,
+        record: pb.authStore.record,
+        ...pb.authStore.save()
+      }
 
-      // Si rememberMe es true, guardar información mínima necesaria para auto-login
+      // Guardar datos de autenticación usando syncStore
+      syncStore.saveToLocalStorage('pocketbase_auth', authToSave, true)
+      syncStore.saveToLocalStorage('last_auth_success', Date.now())
+      console.log('[AUTH] Datos de autenticación guardados en localStorage:', authToSave)
+
       if (rememberMe) {
         const credentials = {
           usernameOrEmail: authData.record.username || authData.record.email,
-          // No guardamos la password completa, solo un indicador
           tokenOnly: true,
           timestamp: Date.now()
         }
-        syncStore.saveToLocalStorage('rememberMe', credentials)
-
-        // También iniciar el timer de refresco
+        syncStore.saveToLocalStorage('rememberMe', credentials, true)
+        console.log('[AUTH] Credenciales rememberMe guardadas:', credentials)
         this.startRefreshTimer()
       } else {
         syncStore.removeFromLocalStorage('rememberMe')

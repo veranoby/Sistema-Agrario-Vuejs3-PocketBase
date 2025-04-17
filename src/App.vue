@@ -131,36 +131,41 @@ onBeforeUnmount(() => {
 })
 
 const handleWindowFocus = () => {
-  // Cuando la ventana recupera el foco
+  console.log('[APP] Ventana recuperó el foco')
   refreshTokenIfNeeded()
 }
 
 const handleVisibilityChange = () => {
+  console.log('[APP] Cambio de visibilidad:', document.visibilityState)
   if (document.visibilityState === 'visible') {
-    // Cuando la pestaña se vuelve visible
     refreshTokenIfNeeded()
   }
 }
 
 const refreshTokenIfNeeded = async () => {
+  console.log('[APP] Verificando si necesita refresh token...')
   if (authStore.isLoggedIn) {
     try {
-      // Verificar si el token necesita ser refrescado
+      console.log('[APP] isLoggedIn=true, verificando tokenNeedsRefresh')
       if (authStore.tokenNeedsRefresh()) {
+        console.log('[APP] Token necesita refresh, ejecutando...')
         await authStore.refreshToken()
+        console.log('[APP] Refresh token completado')
+      } else {
+        console.log('[APP] Token no necesita refresh aún')
       }
     } catch (error) {
-      console.error('Error al verificar/refrescar token:', error)
-
-      // Si el token no se pudo refrescar, pero tenemos rememberMe,
-      // mostramos el diálogo de login
+      console.error('[APP] Error en refreshTokenIfNeeded:', error)
       const syncStore = useSyncStore()
       const rememberMe = syncStore.loadFromLocalStorage('rememberMe')
+      console.log('[APP] rememberMe después de error:', rememberMe)
 
       if (rememberMe) {
         authStore.showLoginDialog = true
       }
     }
+  } else {
+    console.log('[APP] No está logueado, omitiendo refresh')
   }
 }
 

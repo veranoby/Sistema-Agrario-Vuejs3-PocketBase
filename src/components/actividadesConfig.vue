@@ -33,12 +33,14 @@
                 rounded="lg"
                 color="#6380a247"
                 prepend-icon="mdi-plus"
-                @click:prepend="dialogNuevaActividad = true"
-                @click="dialogNuevaActividad = true"
+                @click="NuevaActividad"
                 class="min-w-[210px]"
               >
                 Nueva Actividad
               </v-btn>
+              <!--       @click="dialogNuevaActividad = true" 
+                     @click:prepend="dialogNuevaActividad = true"
+                     -->
             </div>
           </div>
 
@@ -180,6 +182,11 @@ const getActividadAvatarUrl = (actividad) => {
 }
 
 const dialogNuevaActividad = ref(false)
+
+const NuevaActividad = () => {
+  dialogNuevaActividad.value = true
+}
+
 const nuevaActividadData = ref({
   nombre: '',
   tipo_actividades: null,

@@ -493,57 +493,69 @@ export const useSyncStore = defineStore('sync', {
 
     // Nuevo método para restaurar la sesión de autenticación
     async restoreAuthSession() {
-      // Si ya tenemos una sesión válida, no hacer nada
+      console.log('[SYNC] Iniciando restoreAuthSession')
+
       if (pb.authStore.isValid) {
-        console.log('La sesión actual es válida, no es necesario restaurar')
+        console.log('[SYNC] Sesión ya válida, no necesita restauración')
         return true
       }
 
-      const authStore = useAuthStore()
       try {
-        // Obtener datos de sesión del localStorage centralizado
         const authData = this.loadFromLocalStorage('pocketbase_auth')
         const rememberMe = this.loadFromLocalStorage('rememberMe')
+        console.log(
+          '[SYNC] Datos cargados de localStorage - authData:',
+          authData,
+          'rememberMe:',
+          rememberMe
+        )
 
-        // Si no hay datos de sesión o no se debe recordar al usuario, no restaurar
-        if (!authData || !authData.token || !rememberMe) {
-          console.log('No hay datos válidos de sesión guardados o no se debe recordar al usuario')
+        // Validación más robusta de authData
+        const isValidAuthData =
+          authData &&
+          typeof authData === 'object' &&
+          authData.token &&
+          authData.record &&
+          typeof authData.record === 'object'
+
+        if (!isValidAuthData) {
+          console.warn('[SYNC] authData inválido:', authData)
           return false
         }
 
-        // Establecer un límite de tiempo entre intentos para evitar sobrecarga
+        if (!rememberMe) {
+          console.log('[SYNC] No hay rememberMe, omitiendo restauración')
+          return false
+        }
+
         const lastRestoreAttempt = this.loadFromLocalStorage('last_restore_attempt') || 0
         const now = Date.now()
 
         if (now - lastRestoreAttempt < 60000) {
-          // 1 minuto
-          console.log('Demasiados intentos recientes, esperando...')
+          console.log('[SYNC] Demasiados intentos recientes, esperando...')
           return false
         }
 
-        // Guardar timestamp de intento
         this.saveToLocalStorage('last_restore_attempt', now)
+        console.log('[SYNC] Intentando restaurar sesión...')
 
         try {
-          // Restaurar token en PocketBase
           pb.authStore.save(authData.token, authData)
+          console.log('[SYNC] Token guardado en pb.authStore, isValid:', pb.authStore.isValid)
 
-          // Verificar si la restauración fue exitosa
           if (pb.authStore.isValid) {
-            console.log('Sesión restaurada correctamente')
-
-            // Actualizar el estado de autenticación en authStore
+            console.log('[SYNC] Sesión restaurada exitosamente')
+            const authStore = useAuthStore()
             authStore.setSession({ record: authData })
 
-            // Iniciar timer de refresh si es necesario
             if (rememberMe) {
+              console.log('[SYNC] Iniciando timer de refresh por rememberMe')
               authStore.startRefreshTimer()
             }
-
             return true
           }
         } catch (error) {
-          console.log('Error al restaurar token localmente:', error)
+          console.error('[SYNC] Error al restaurar token localmente:', error)
         }
 
         // Solo intentamos refresh si hace más de 10 minutos del último intento fallido
@@ -578,7 +590,7 @@ export const useSyncStore = defineStore('sync', {
         console.log('No se pudo restaurar la sesión')
         return false
       } catch (error) {
-        console.error('Error al restaurar la sesión:', error)
+        console.error('[SYNC] Error crítico al restaurar sesión:', error)
         return false
       }
     },
