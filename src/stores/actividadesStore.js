@@ -66,17 +66,24 @@ export const useActividadesStore = defineStore('actividades', {
     },
 
     async cargarActividades() {
+      // Local storage loading is now handled by initFromLocalStorage, called by syncStore.refreshAllStores
+      // or by the store's own init if called directly.
+      // This method will now primarily focus on fetching from the server if data isn't already populated.
       const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore()
       this.error = null
       this.loading = true
 
-      const actividadesLocal = useSyncStore().loadFromLocalStorage('actividades')
-      if (actividadesLocal) {
-        this.actividades = actividadesLocal
-        this.loading = false
-        return this.actividades
+      // If activities are already populated (e.g., by initFromLocalStorage), consider not re-fetching unless necessary.
+      // For now, we'll keep the original behavior of fetching if local data wasn't sufficient (though it's loaded elsewhere).
+      // This part might be redundant if initFromLocalStorage always runs first via refreshAllStores.
+      if (this.actividades.length > 0 && !navigator.onLine) { // Example: only fetch if online and empty
+          this.loading = false;
+          return this.actividades;
       }
+      
+      // If online, proceed to fetch from server.
+      // The original logic to check 'actividadesLocal' first is removed as initFromLocalStorage handles it.
 
       try {
         const records = await pb.collection('actividades').getFullList({
@@ -385,11 +392,15 @@ export const useActividadesStore = defineStore('actividades', {
     },
 
     async cargarTiposActividades() {
-      const tiposActividadesLocal = useSyncStore().loadFromLocalStorage('tiposActividades')
-      if (tiposActividadesLocal) {
-        this.tiposActividades = tiposActividadesLocal
-        return this.tiposActividades
+      // Local storage loading is now handled by initFromLocalStorage.
+      // This method will now primarily focus on fetching from the server if data isn't already populated.
+      const syncStore = useSyncStore(); // keep for saving later
+
+      if (this.tiposActividades.length > 0 && !navigator.onLine) { // Example: only fetch if online and empty
+          return this.tiposActividades;
       }
+      // If online, proceed to fetch from server.
+      // The original logic to check 'tiposActividadesLocal' first is removed.
 
       try {
         const records = await pb.collection('tipo_actividades').getFullList({
@@ -407,6 +418,15 @@ export const useActividadesStore = defineStore('actividades', {
       } catch (error) {
         handleError(error, 'Error al cargar tipos de actividades')
       }
+    },
+
+    initFromLocalStorage() {
+      const syncStore = useSyncStore();
+      const localActividades = syncStore.loadFromLocalStorage('actividades');
+      this.actividades = localActividades || [];
+      const localTiposActividades = syncStore.loadFromLocalStorage('tiposActividades');
+      this.tiposActividades = localTiposActividades || [];
+      console.log('[ACT_STORE] Initialized from localStorage. Actividades:', this.actividades.length, 'Tipos:', this.tiposActividades.length);
     }
   }
 })

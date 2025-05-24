@@ -52,16 +52,16 @@ export const useSiembrasStore = defineStore('siembras', {
     },
 
     async cargarSiembras() {
+      // Local storage loading is now handled by initFromLocalStorage.
       const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore()
       this.loading = true
 
       try {
-        const siembrasLocal = syncStore.loadFromLocalStorage('siembras')
-        if (siembrasLocal?.length) {
-          this.siembras = siembrasLocal
-          this.loading = false
-          return this.siembras
+        // If data already populated by initFromLocalStorage, and offline, return.
+        if (this.siembras.length > 0 && !navigator.onLine) {
+          this.loading = false;
+          return this.siembras;
         }
 
         if (!syncStore.isOnline) {
@@ -260,6 +260,13 @@ export const useSiembrasStore = defineStore('siembras', {
     // Método para eliminar un elemento local
     removeLocalItem(id) {
       return useSyncStore().removeLocalItem('siembras', id, this.siembras)
+    },
+
+    initFromLocalStorage() {
+      const syncStore = useSyncStore();
+      const localSiembras = syncStore.loadFromLocalStorage('siembras');
+      this.siembras = localSiembras || [];
+      console.log('[SIEMBRAS_STORE] Initialized from localStorage. Siembras:', this.siembras.length);
     }
   }
 })

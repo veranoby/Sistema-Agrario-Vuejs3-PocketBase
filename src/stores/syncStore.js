@@ -463,33 +463,33 @@ export const useSyncStore = defineStore('sync', {
     // Método para actualizar todas las referencias entre stores
     refreshAllStores() {
       try {
-        console.log('Refrescando todos los stores desde localStorage')
+        console.log('[SYNC_STORE] Refreshing all data stores from localStorage via initFromLocalStorage');
 
-        // Lista de stores y sus colecciones
-        const storeCollections = [
-          { store: useZonasStore(), collection: 'zonas', items: 'zonas' },
-          { store: useSiembrasStore(), collection: 'siembras', items: 'siembras' },
-          { store: useActividadesStore(), collection: 'actividades', items: 'actividades' },
-          { store: useRecordatoriosStore(), collection: 'recordatorios', items: 'recordatorios' }
-        ]
+        // Ensure stores are imported at the top of the file
+        const actividadesStore = useActividadesStore();
+        if (actividadesStore && typeof actividadesStore.initFromLocalStorage === 'function') {
+          actividadesStore.initFromLocalStorage();
+        }
 
-        // Actualizar cada store desde localStorage
-        storeCollections.forEach(({ store, collection, items }) => {
-          const data = this.loadFromLocalStorage(collection)
-          if (data && Array.isArray(data) && store[items]) {
-            // Conservar los elementos que no están en localStorage (por ejemplo, los recién creados)
-            const currentIds = data.map((item) => item.id)
-            const newItems = store[items].filter((item) => !currentIds.includes(item.id))
+        const zonasStore = useZonasStore();
+        if (zonasStore && typeof zonasStore.initFromLocalStorage === 'function') {
+          zonasStore.initFromLocalStorage();
+        }
 
-            // Combinar los datos de localStorage con los nuevos elementos
-            store[items] = [...data, ...newItems]
-            console.log(
-              `Store ${collection} actualizado con ${data.length} elementos de localStorage y ${newItems.length} nuevos elementos`
-            )
-          }
-        })
+        const siembrasStore = useSiembrasStore();
+        if (siembrasStore && typeof siembrasStore.initFromLocalStorage === 'function') {
+          siembrasStore.initFromLocalStorage();
+        }
+
+        const recordatoriosStore = useRecordatoriosStore();
+        if (recordatoriosStore && typeof recordatoriosStore.initFromLocalStorage === 'function') {
+          recordatoriosStore.initFromLocalStorage();
+        }
+        
+        console.log('[SYNC_STORE] All data stores refreshed from localStorage.');
       } catch (error) {
-        console.error('Error al refrescar los stores:', error)
+        console.error('Error al refrescar los stores:', error);
+        this.handleSyncError(error, 'Error refrescando stores');
       }
     },
 
