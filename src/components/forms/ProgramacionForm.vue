@@ -267,10 +267,7 @@ watch(
       form.value = {
         ...val,
         actividadesSeleccionadas: val.actividades || [],
-        frecuencia_personalizada:
-          typeof val.frecuencia_personalizada === 'string'
-            ? JSON.parse(val.frecuencia_personalizada)
-            : val.frecuencia_personalizada
+        frecuencia_personalizada: val.frecuencia_personalizada // Directly assign, expect object
       }
 
       // Cargar valores de frecuencia personalizada
@@ -349,18 +346,22 @@ const guardarProgramacion = async () => {
   try {
     const data = {
       ...form.value,
-      frecuencia_personalizada:
-        form.value.frecuencia === 'personalizada'
-          ? JSON.stringify({
-              tipo: frecuenciaPersonalizada.value.tipo,
-              cantidad: Number(frecuenciaPersonalizada.value.cantidad),
-              diasSemana: frecuenciaPersonalizada.value.diasSemana,
-              diasMes: frecuenciaPersonalizada.value.diasMes,
-              exclusiones: frecuenciaPersonalizada.value.exclusiones
-            })
-          : form.value.frecuencia === 'fecha_especifica'
-            ? JSON.stringify({ fecha: frecuenciaPersonalizada.value.fecha })
-            : null
+      // frecuencia_personalizada is already an object in form.value if relevant
+    }
+
+    if (form.value.frecuencia === 'personalizada') {
+      data.frecuencia_personalizada = {
+        tipo: frecuenciaPersonalizada.value.tipo,
+        cantidad: Number(frecuenciaPersonalizada.value.cantidad),
+        diasSemana: frecuenciaPersonalizada.value.diasSemana,
+        // Ensure diasMes is an array of numbers if needed, or handle as string
+        diasMes: frecuenciaPersonalizada.value.diasMes, 
+        exclusiones: frecuenciaPersonalizada.value.exclusiones
+      };
+    } else if (form.value.frecuencia === 'fecha_especifica') {
+      data.frecuencia_personalizada = { fecha: frecuenciaPersonalizada.value.fecha };
+    } else {
+      data.frecuencia_personalizada = null;
     }
 
     if (esEdicion.value) {
