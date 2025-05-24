@@ -15,15 +15,15 @@ export class SyncQueue {
     this.tempToRealIdMap = this.loadIdMappings()
     this.config = {
       maxRetries: 3,
-      batchSize: 10,
-      collectionPriority: ['siembras', 'zonas', 'actividades', 'recordatorios', 'programaciones']
+      batchSize: 10
+      // collectionPriority: ['siembras', 'zonas', 'actividades', 'recordatorios', 'programaciones'] // Removed
     }
     this.version = 1
     this.isProcessing = false
     this.maxStorageSize = 5 * 1024 * 1024
 
     // Bind methods para evitar problemas de contexto
-    this.sortByCollectionPriority = this.sortByCollectionPriority.bind(this)
+    // this.sortByCollectionPriority = this.sortByCollectionPriority.bind(this) // Removed
   }
 
   // Carga inicial
@@ -108,10 +108,9 @@ export class SyncQueue {
     }
 
     this.isProcessing = true
-    console.log('Iniciando procesamiento de cola:', this.queue)
+    console.log('Iniciando procesamiento de cola:', JSON.parse(JSON.stringify(this.queue)))
 
     try {
-      // Verificar conexión antes de procesar
       if (!navigator.onLine) {
         throw new Error('No hay conexión a internet para procesar la cola')
       }
@@ -119,172 +118,158 @@ export class SyncQueue {
       const authStore = useAuthStore()
       const currentUserId = authStore.user?.id
 
-      // Filtrar operaciones por usuario actual
-      let queueToProcess = this.queue
+      // Define a working queue for current processing run.
+      // Filter by current user (if any) and ensure we only attempt to process 'pending' operations.
+      let workQueue = []
       if (currentUserId) {
-        queueToProcess = this.queue.filter((op) => !op.userId || op.userId === currentUserId)
-        console.log(
-          `Filtrando operaciones para usuario ${currentUserId}, total: ${queueToProcess.length}`
+        workQueue = this.queue.filter(
+          (op) => (!op.userId || op.userId === currentUserId) && op.status === 'pending'
         )
+        console.log(
+          `Procesando ${workQueue.length} operaciones pendientes para usuario ${currentUserId}`
+        )
+      } else {
+        workQueue = this.queue.filter((op) => !op.userId && op.status === 'pending')
+        console.log(`Procesando ${workQueue.length} operaciones pendientes sin usuario asignado`)
       }
 
-      // Ordenar operaciones por timestamp para mantener orden cronológico estricto
-      queueToProcess.sort((a, b) => a.createdAt - b.createdAt)
+      if (workQueue.length === 0) {
+        console.log('No hay operaciones pendientes para procesar.')
+        this.isProcessing = false
+        return
+      }
 
-      // Procesar operaciones en orden cronológico estricto
-      for (const op of queueToProcess) {
-        try {
-          if (op.type === 'create') {
-            // Resolver referencias a IDs temporales antes de crear
-            op.data = this.replaceTemporaryIdsInData(op.data)
+      // Create Pass
+      const createOps = workQueue
+        .filter((op) => op.type === 'create') // Already filtered by status === 'pending'
+        .sort((a, b) => a.createdAt - b.createdAt)
 
-            const result = await this.executeOperation(op)
-            if (result && result.id) {
-              console.log(`Creado elemento en ${op.collection}: ${op.tempId} -> ${result.id}`)
+      if (createOps.length > 0) {
+        console.log('Create Pass - Operaciones:', JSON.parse(JSON.stringify(createOps)))
+        for (let i = 0; i < createOps.length; i += this.config.batchSize) {
+          const clientBatchOps = createOps.slice(i, i + this.config.batchSize)
+          // clientBatchOps are guaranteed to be 'create' and 'pending'
 
-              // Guardar mapeo de IDs
-              this.tempToRealIdMap[op.tempId] = result.id
-              this.saveTempToRealIdMap()
+          const pbBatch = pb.createBatch()
+          clientBatchOps.forEach((op) => {
+            const dataToSend = { ...op.data }
+            if (dataToSend.id && typeof dataToSend.id === 'string' && dataToSend.id.startsWith('temp_')) {
+              delete dataToSend.id
+            }
+            const resolvedData = this.replaceTemporaryIdsInData(dataToSend) // General mode
+            pbBatch.collection(op.collection).create(resolvedData)
+          })
 
-              // Actualizar store correspondiente
-              const store = this.getStoreForCollection(op.collection)
-              if (store) {
-                await store.updateLocalItem(op.tempId, result)
+          try {
+            console.log(`Create Pass - Enviando batch de ${clientBatchOps.length} operaciones`)
+            const results = await pbBatch.send()
+            console.log('Create Pass - Resultados del batch:', JSON.parse(JSON.stringify(results)))
+
+            for (let j = 0; j < results.length; j++) {
+              const createdRecord = results[j]
+              const originalOp = clientBatchOps[j] // op from our workQueue
+
+              if (createdRecord && createdRecord.id) {
+                this.tempToRealIdMap[originalOp.tempId] = createdRecord.id
+                originalOp.status = 'completed' // Mark as completed in the workQueue/original queue
+                // TODO: Notify syncStore or return data for Pinia store updates
+                await this.updatePendingOperations(originalOp.tempId, createdRecord.id)
+              } else {
+                console.error('Create Pass - Resultado inesperado para op:', originalOp, 'Resultado:', createdRecord)
+                this.handleBatchError([originalOp], new Error('Resultado inesperado en batch de creación'))
               }
-
-              // Actualizar todas las operaciones pendientes con nuevos IDs
-              await this.updatePendingOperations(op.tempId, result.id)
             }
-          } else if (op.type === 'update') {
-            // Verificar si el ID existe y es válido
-            if (!op.id) {
-              console.warn('Operación de actualización sin ID, saltando:', op)
-              continue
-            }
+            this.saveTempToRealIdMap()
+          } catch (batchError) {
+            console.error('Error en Create Pass batch:', batchError)
+            this.handleBatchError(clientBatchOps, batchError)
+          }
+        }
+      } else {
+        console.log('Create Pass - No hay operaciones de creación.')
+      }
 
-            // Resolver ID del item a actualizar
-            let originalId = op.id
+      // Update/Delete Pass
+      // We need to re-evaluate from workQueue which operations are *still* pending for update/delete,
+      // as some create operations might have resolved dependencies or some ops might have failed.
+      const updateDeleteOps = workQueue // workQueue items' statuses might have changed
+        .filter((op) => (op.type === 'update' || op.type === 'delete') && op.status === 'pending')
+        .sort((a, b) => a.createdAt - b.createdAt)
+
+      if (updateDeleteOps.length > 0) {
+        console.log('Update/Delete Pass - Operaciones:', JSON.parse(JSON.stringify(updateDeleteOps)))
+        for (let i = 0; i < updateDeleteOps.length; i += this.config.batchSize) {
+          const clientBatchOps = updateDeleteOps.slice(i, i + this.config.batchSize)
+          // clientBatchOps are 'update' or 'delete' and still 'pending'
+
+          const pbBatch = pb.createBatch()
+          const validClientBatchOps = []
+
+          for (const op of clientBatchOps) {
+            let resolvedMainId = op.id
             if (typeof op.id === 'string' && op.id.startsWith('temp_')) {
-              const realId = this.tempToRealIdMap[op.id]
-              if (!realId) {
-                console.warn(`No se encontró ID real para ${op.id}, saltando actualización`)
+              resolvedMainId = this.tempToRealIdMap[op.id]
+              if (!resolvedMainId) {
+                console.warn(`Update/Delete Pass: ID real para ${op.id} (op ${op.type} en ${op.collection}) no encontrado. Saltando del batch.`)
                 continue
               }
-              op.id = realId
-              console.log(
-                `Actualización: ID temporal ${originalId} reemplazado por ID real ${realId}`
-              )
             }
-
-            // Resolver referencias a IDs temporales en los datos
-            op.data = this.replaceTemporaryIdsInData(op.data)
-
-            await this.executeOperation(op)
-          } else if (op.type === 'delete') {
-            // Verificar si el ID existe y es válido
-            if (!op.id) {
-              console.warn('Operación de eliminación sin ID, saltando:', op)
+            if (!resolvedMainId) {
+              console.warn(`Update/Delete Pass: ID principal nulo/inválido para ${op.type} en ${op.collection} (ID: ${op.id}). Saltando.`)
               continue
             }
+            
+            const resolvedDataPayload = this.replaceTemporaryIdsInData(op.data) // General mode
 
-            if (typeof op.id === 'string' && op.id.startsWith('temp_')) {
-              // Si es temporal, solo eliminar del store local
-              const store = this.getStoreForCollection(op.collection)
-              if (store) {
-                await store.removeLocalItem(op.id)
-              }
-            } else {
-              await this.executeOperation(op)
+            if (op.type === 'update') {
+              pbBatch.collection(op.collection).update(resolvedMainId, resolvedDataPayload)
+            } else if (op.type === 'delete') {
+              pbBatch.collection(op.collection).delete(resolvedMainId)
             }
+            validClientBatchOps.push(op)
           }
 
-          // Marcar como completada después de procesar
-          op.status = 'completed'
-        } catch (error) {
-          this.handleError(op, error)
+          if (validClientBatchOps.length === 0) {
+            console.log('Update/Delete Pass - No hay operaciones válidas en este batch para enviar.')
+            continue
+          }
+
+          try {
+            console.log(`Update/Delete Pass - Enviando batch de ${validClientBatchOps.length} operaciones`)
+            await pbBatch.send()
+            console.log('Update/Delete Pass - Batch enviado exitosamente.')
+            validClientBatchOps.forEach((op) => {
+              op.status = 'completed' // Mark as completed in workQueue/original queue
+            })
+          } catch (batchError) {
+            console.error('Error en Update/Delete Pass batch:', batchError)
+            this.handleBatchError(validClientBatchOps, batchError)
+          }
         }
+      } else {
+        console.log('Update/Delete Pass - No hay operaciones de actualización/eliminación.')
       }
 
-      // Limpiar cola procesada
+      // Final queue cleanup: remove all 'completed' ops from the main this.queue
       this.queue = this.queue.filter((op) => op.status !== 'completed')
+      // Failed operations (maxRetries exceeded) will also be filtered here if their status is 'failed'
+      this.queue = this.queue.filter((op) => op.status !== 'failed')
+
+      this.saveState() // Saves the potentially modified main queue and the ID map
     } catch (error) {
-      console.error('Error procesando cola:', error)
+      console.error('Error general procesando cola:', error)
     } finally {
       this.isProcessing = false
+      console.log('Procesamiento de cola finalizado. Estado actual de this.queue:', JSON.parse(JSON.stringify(this.queue)))
+      console.log('Estado actual del mapeo de IDs:', JSON.parse(JSON.stringify(this.tempToRealIdMap)))
     }
   }
 
-  groupOperations() {
-    return [
-      this.queue.filter((op) => op.type === 'create'),
-      this.queue.filter((op) => op.type === 'update'),
-      this.queue.filter((op) => op.type === 'delete')
-    ]
-  }
+  // groupOperations y sortByCollectionPriority eliminados
 
-  sortByCollectionPriority(a, b) {
-    return (
-      this.config.collectionPriority.indexOf(a.collection) -
-      this.config.collectionPriority.indexOf(b.collection)
-    )
-  }
+  // executeOperation ya no es necesaria, su lógica está en el loop de process
+  // async executeOperation(op) { ... }
 
-  async executeOperation(op) {
-    const { type, collection, id, data } = op
-
-    // Para creaciones, usar el ID temporal directamente
-    if (type === 'create') {
-      try {
-        // Eliminar el ID temporal antes de enviar a PocketBase
-        const dataToSend = { ...data }
-        if (dataToSend.id && dataToSend.id.startsWith('temp_')) {
-          delete dataToSend.id
-        }
-
-        // Resolver referencias a IDs temporales en los datos
-        const resolvedData = this.replaceTemporaryIdsInData(dataToSend)
-
-        console.log(`Creando registro en ${collection} con datos:`, resolvedData)
-        const record = await pb.collection(collection).create(resolvedData)
-
-        // Marcar como completada
-        op.status = 'completed'
-
-        return record
-      } catch (error) {
-        console.error('Error creando registro:', error)
-        throw error
-      }
-    }
-
-    // Para actualizaciones y eliminaciones, resolver el ID real
-    const resolvedId = this.resolveRealId(id)
-    if (!resolvedId) {
-      throw new Error(`No se pudo resolver ID para ${id}`)
-    }
-
-    try {
-      let result
-      switch (type) {
-        case 'update':
-          result = await pb.collection(collection).update(resolvedId, data)
-          break
-        case 'delete':
-          result = await pb.collection(collection).delete(resolvedId)
-          break
-        default:
-          throw new Error(`Operación no soportada: ${type}`)
-      }
-
-      // Marcar como completada
-      op.status = 'completed'
-
-      return result
-    } catch (error) {
-      console.error(`Error en operación ${type} para ${collection}:`, error)
-      throw error
-    }
-  }
 
   // Helpers de IDs
   resolveRealId(tempId) {
@@ -392,181 +377,187 @@ export class SyncQueue {
     console.log('Operación exitosa:', op, result)
   }
 
-  handleError(op, error) {
-    console.error('Error procesando operación:', op, error)
-    if (error.response && error.response.data) {
-      console.error('Detalles del error:', error.response.data)
-    }
+  handleSuccess(op, result) {
+    // Implementa la lógica para manejar un resultado exitoso
+    console.log('Operación exitosa:', op, result)
+  }
 
-    // Incrementar contador de reintentos
+  // handleError se reemplaza o complementa con handleBatchError
+  // La lógica de reintentos individuales se mantiene si una op falla repetidamente en batches
+  handleError(op, error) {
+    console.error('Error procesando operación individualmente (fuera de un batch):', op, error)
+    if (error.response && error.response.data) {
+      console.error('Detalles del error individual:', error.response.data)
+    }
     op.retryCount = (op.retryCount || 0) + 1
     if (op.retryCount >= this.config.maxRetries) {
-      // Eliminar operaciones relacionadas si la operación falla definitivamente
-      const failedTempId = op.tempId
-      if (failedTempId) {
-        const relatedOps = this.queue.filter(
-          (op) =>
-            op.id === failedTempId ||
-            (op.id &&
-              typeof op.id === 'string' &&
-              op.id.startsWith(failedTempId.split('_').slice(0, 2).join('_')))
-        )
-
-        console.log(`Eliminando ${relatedOps.length} operaciones relacionadas con ${failedTempId}`)
-        for (const relOp of relatedOps) {
-          this.queue = this.queue.filter((op) => op.tempId !== relOp.tempId)
-        }
-
-        this.queue = this.queue.filter((op) => op.tempId !== failedTempId)
-      }
+      op.status = 'failed' // Marcar como fallida permanentemente
+      console.warn(
+        `Operación ${op.type} para ${op.collection} ID ${
+          op.id || op.tempId
+        } ha fallado ${this.config.maxRetries} veces. Marcada como 'failed'.`
+      )
     }
+    // La limpieza de operaciones 'failed' se hará en la limpieza general de la cola al final de process().
   }
 
-  async applyPendingUpdates(createOp, newId) {
-    if (!createOp || !createOp.tempId || !newId) return
-
-    console.log(
-      `Buscando actualizaciones pendientes para el ID temporal ${createOp.tempId} (ID real: ${newId})`
+  handleBatchError(operationsInFailedBatch, error) {
+    console.error(
+      'Error en batch PocketBase:',
+      error,
+      'Operaciones afectadas:',
+      JSON.parse(JSON.stringify(operationsInFailedBatch))
     )
 
-    // Extraer información del ID temporal para buscar coincidencias
-    const tempIdInfo = this.extractTempIdInfo(createOp.tempId)
-
-    if (!tempIdInfo) {
-      console.warn(`No se pudo extraer información del ID temporal ${createOp.tempId}`)
-      return
+    // Intentar obtener más detalles del error si es una instancia de ClientResponseError de PocketBase
+    if (error && error.isAbort === false && error.status !== 0 && typeof error.data === 'object') {
+      console.error('Detalles del error de batch (PocketBase ClientResponseError):', error.data)
+      // TODO: Considerar si el error.data de PocketBase puede indicar qué operaciones específicas del batch fallaron.
+      // Si es así, se podría aplicar retryCount/failed status solo a esas. Por ahora, se aplica a todas en el batch.
     }
 
-    // Buscar actualizaciones pendientes para este ID temporal
-    const pendingUpdates = this.queue.filter((op) => {
-      // Si es una actualización...
-      if (op.type !== 'update') return false
-
-      // Coincidencia exacta del ID
-      if (op.id === createOp.tempId) return true
-
-      // Buscar coincidencias parciales basadas en colección y timestamp
-      return this.isRelatedTempId(op.id, tempIdInfo)
+    operationsInFailedBatch.forEach((op) => {
+      op.retryCount = (op.retryCount || 0) + 1
+      console.log(
+        `Incrementado retryCount para op (ID: ${op.tempId || op.id}, Colección: ${
+          op.collection
+        }) a ${op.retryCount}. Status actual: ${op.status}`
+      )
+      if (op.retryCount >= this.config.maxRetries && op.status !== 'completed') { // No marcar como failed si de alguna manera se completó
+        op.status = 'failed'
+        console.warn(
+          `Operación ${op.type} para ${op.collection} ID ${
+            op.id || op.tempId
+          } ha fallado ${
+            this.config.maxRetries
+          } veces tras error de batch. Marcada como 'failed'.`
+        )
+      }
     })
-
-    if (pendingUpdates.length === 0) {
-      console.log(`No se encontraron actualizaciones pendientes para ${createOp.tempId}`)
-      return
-    }
-
-    console.log(
-      `Encontradas ${pendingUpdates.length} actualizaciones pendientes para el ID temporal ${createOp.tempId}`
-    )
-
-    // Ordenar por timestamp para aplicar en orden
-    pendingUpdates.sort((a, b) => a.createdAt - b.createdAt)
-
-    // Aplicar cada actualización
-    for (const updateOp of pendingUpdates) {
-      try {
-        // Actualizar el ID de la operación al ID real
-        const originalId = updateOp.id
-        updateOp.id = newId
-
-        // Reemplazar referencias a IDs temporales en los datos
-        updateOp.data = this.replaceTemporaryIdsInData(updateOp.data)
-
-        // Ejecutar la actualización
-        console.log(
-          `Aplicando actualización pendiente para ${createOp.collection} con ID ${newId}:`,
-          updateOp.data
-        )
-        await this.executeOperation(updateOp)
-
-        // Actualizar el mapeo de IDs temporales
-        if (originalId !== createOp.tempId) {
-          this.tempToRealIdMap[originalId] = newId
-          this.saveTempToRealIdMap()
-        }
-
-        // Eliminar la operación de la cola después de aplicarla
-        const index = this.queue.findIndex((op) => op === updateOp)
-        if (index !== -1) {
-          this.queue.splice(index, 1)
-        }
-      } catch (error) {
-        console.error(`Error aplicando actualización pendiente para ${createOp.collection}:`, error)
-      }
-    }
-
-    // Guardar el estado de la cola
-    this.saveState()
   }
 
-  // Actualiza las referencias a IDs temporales en operaciones pendientes
-  async updatePendingOperations(tempId, realId) {
-    if (!tempId || !realId) {
-      console.warn('Se requieren ambos IDs para actualizar operaciones pendientes')
+  // applyPendingUpdates es obsoleta y se elimina. updatePendingOperations es la sucesora.
+
+  async updatePendingOperations(tempIdJustCreated, newRealId) {
+    if (!tempIdJustCreated || !newRealId) {
+      console.warn(
+        'updatePendingOperations: Se requieren tempIdJustCreated y newRealId.'
+      )
       return 0
     }
 
     console.log(
-      `Actualizando operaciones pendientes con ID temporal: ${tempId} -> ID real: ${realId}`
+      `updatePendingOperations: Actualizando todas las operaciones pendientes en la cola global usando el mapeo: ${tempIdJustCreated} -> ${newRealId}`
     )
-
-    // Extraer información del ID temporal para comparaciones
-    const tempIdInfo = this.extractTempIdInfo(tempId)
-
-    if (!tempIdInfo) {
-      console.warn(`No se pudo extraer información del ID temporal ${tempId}`)
-      return 0
-    }
 
     let updatedCount = 0
 
-    // Actualizar todas las operaciones pendientes en la cola
     for (const op of this.queue) {
-      let updated = false
+      // Solo procesar operaciones que aún no están completadas o fallidas.
+      if (op.status === 'completed' || op.status === 'failed') {
+        continue
+      }
 
-      // 1. Actualizar IDs en operaciones de actualización y eliminación
-      if ((op.type === 'update' || op.type === 'delete') && op.id) {
-        // Verificar coincidencia exacta
-        if (op.id === tempId) {
-          op.id = realId
-          updated = true
-          console.log(`Actualizado ID en operación ${op.type}: ${tempId} -> ${realId}`)
-        }
-        // Verificar coincidencia por información de ID temporal
-        else if (tempIdInfo && typeof op.id === 'string' && op.id.startsWith('temp_')) {
-          const opIdInfo = this.extractTempIdInfo(op.id)
-          if (opIdInfo && this.areRelatedTempIds(tempIdInfo, opIdInfo)) {
-            console.log(
-              `Coincidencia parcial encontrada: ${op.id} parece estar relacionado con ${tempId}`
-            )
-            op.id = realId
-            updated = true
-          }
+      let modifiedByThisUpdate = false
+
+      // 1. Actualizar el ID principal de la operación (si es 'update' o 'delete' y su ID era tempIdJustCreated)
+      if (
+        (op.type === 'update' || op.type === 'delete') &&
+        op.id === tempIdJustCreated
+      ) {
+        console.log(
+          `  - En op ${op.type} (ID: ${op.id}, Colección: ${op.collection}), actualizando ID principal a ${newRealId}`
+        )
+        op.id = newRealId
+        modifiedByThisUpdate = true
+      }
+
+      // 2. Actualizar CUALQUIER referencia a tempIdJustCreated DENTRO del payload op.data
+      if (op.data && typeof op.data === 'object') {
+        const originalDataSnapshot = JSON.stringify(op.data)
+        // Usamos la versión de replaceTemporaryIdsInData que reemplaza un ID específico.
+        op.data = this.replaceTemporaryIdsInData(op.data, tempIdJustCreated, newRealId)
+
+        if (JSON.stringify(op.data) !== originalDataSnapshot) {
+          console.log(
+            `  - En op ${op.type} (ID: ${op.id || op.tempId}, Colección: ${op.collection}), datos internos actualizados para reflejar ${tempIdJustCreated} -> ${newRealId}`
+          )
+          modifiedByThisUpdate = true
         }
       }
 
-      // 2. Actualizar referencias en datos de operaciones
-      if (op.data) {
-        const originalData = JSON.stringify(op.data)
-        op.data = this.replaceTemporaryIdsInData(op.data)
-        if (JSON.stringify(op.data) !== originalData) {
-          updated = true
-        }
-      }
-
-      if (updated) {
+      if (modifiedByThisUpdate) {
         updatedCount++
       }
     }
 
     if (updatedCount > 0) {
-      this.saveState()
-      console.log(`Actualizadas ${updatedCount} operaciones pendientes con ID real ${realId}`)
+      console.log(
+        `updatePendingOperations: ${updatedCount} operaciones pendientes fueron actualizadas con el mapeo ${tempIdJustCreated} -> ${newRealId}.`
+      )
+      // No llamamos a this.saveState() aquí, se llamará al final de process() o saveTempToRealIdMap().
     }
-
     return updatedCount
   }
 
-  // Extrae información de un ID temporal
+  // replaceTemporaryIdsInData:
+  // - Si specificTempIdToReplace y newRealId se proporcionan, solo reemplaza esa instancia.
+  // - Si no, usa this.tempToRealIdMap para reemplazar todos los IDs temporales conocidos (modo general).
+  replaceTemporaryIdsInData(data, specificTempIdToReplace = null, newRealId = null) {
+    if (!data) return data
+
+    // Caso 1: Reemplazo específico de un ID temporal
+    if (specificTempIdToReplace && newRealId) {
+      if (typeof data === 'string' && data === specificTempIdToReplace) {
+        // console.log(`Reemplazo específico: ${specificTempIdToReplace} -> ${newRealId}`)
+        return newRealId
+      }
+      if (Array.isArray(data)) {
+        return data.map((item) =>
+          this.replaceTemporaryIdsInData(item, specificTempIdToReplace, newRealId)
+        )
+      }
+      if (typeof data === 'object') {
+        const result = { ...data }
+        for (const key in result) {
+          result[key] = this.replaceTemporaryIdsInData(
+            result[key],
+            specificTempIdToReplace,
+            newRealId
+          )
+        }
+        return result
+      }
+      return data
+    }
+
+    // Caso 2: Modo general - reemplazar todos los IDs temporales conocidos usando this.tempToRealIdMap
+    if (typeof data === 'string' && data.startsWith('temp_')) {
+      const mappedValue = this.tempToRealIdMap[data] // Usar el mapa general
+      if (mappedValue) {
+        // console.log(`Reemplazo general: ${data} -> ${mappedValue}`)
+        return mappedValue
+      }
+      return data // Si no está en el mapa, devolver el temp_ id original
+    }
+
+    if (Array.isArray(data)) {
+      return data.map((item) => this.replaceTemporaryIdsInData(item)) // Llamada recursiva en modo general
+    }
+
+    if (typeof data === 'object') {
+      const result = { ...data }
+      for (const key in result) {
+        result[key] = this.replaceTemporaryIdsInData(result[key]) // Llamada recursiva en modo general
+      }
+      return result
+    }
+
+    return data
+  }
+
+  // Extrae información de un ID temporal - Esta función ya no es crítica con la nueva lógica de reemplazo,
+  // pero se mantiene por si es útil para debugging o extensiones futuras.
   extractTempIdInfo(tempId) {
     if (!tempId || typeof tempId !== 'string' || !tempId.startsWith('temp_')) {
       return null

@@ -31,57 +31,42 @@ export const useAuthStore = defineStore('auth', {
   actions: {
     async init() {
       const syncStore = useSyncStore()
+      const model = syncStore.loadFromLocalStorage('pocketbase_auth');
 
-      // Usar la misma clave que se usa al guardar
-      const authData = syncStore.loadFromLocalStorage('pocketbase_auth')
-
-      if (authData) {
+      if (model) {
         try {
-          // Restaurar el estado de autenticación en PocketBase
-          pb.authStore.save(authData.token, authData)
+          // Restore the auth store from the loaded model
+          pb.authStore.save(model.token, model); // model.token is the token, model is the user model
 
-          // Si se restauró correctamente, intentar actualizar con el servidor
           if (pb.authStore.isValid) {
-            try {
-              // Solo refrescar si realmente es necesario
-              if (this.tokenNeedsRefresh()) {
-                // Intentar refrescar la autenticación con el servidor
-                const freshAuthData = await pb.collection('users').authRefresh()
-                this.setSession(freshAuthData)
-
-                // Si hay rememberMe, reiniciar el timer de refresco
-                const rememberMe = syncStore.loadFromLocalStorage('rememberMe')
-                if (rememberMe) {
-                  this.startRefreshTimer()
-                }
-
-                return true
-              } else {
-                // No necesitamos refrescar, usar datos actuales
-                this.setSession({ record: authData })
-
-                // Si hay rememberMe, reiniciar el timer de refresco
-                const rememberMe = syncStore.loadFromLocalStorage('rememberMe')
-                if (rememberMe) {
-                  this.startRefreshTimer()
-                }
-
-                return true
-              }
-            } catch (refreshError) {
-              console.log('No se pudo actualizar la sesión con el servidor. Usando datos locales.')
-              this.setSession({ record: authData })
-              return true
+            if (this.tokenNeedsRefresh()) { // tokenNeedsRefresh might need pb.authStore.model if it relied on authData.record
+              const freshAuthData = await pb.collection('users').authRefresh(); // freshAuthData is { token, record }
+              this.setSession(freshAuthData.record); // setSession expects the record
+            } else {
+              this.setSession(pb.authStore.model); // pb.authStore.model is the record
             }
+
+            const rememberMeIsActive = syncStore.loadFromLocalStorage('rememberMe_active');
+            if (rememberMeIsActive) {
+              this.startRefreshTimer()
+            }
+            this.initialized = true; // Successfully initialized with a valid session
+            return true;
+          } else {
+            // Auth store not valid after loading from model, treat as corrupted/invalid
+            console.warn('Session restored from localStorage was invalid.');
+            this.logout(); // Perform full cleanup
+            // this.initialized is set to true at the end, indicating an attempt was made.
+            return false;
           }
         } catch (error) {
-          console.error('Error restaurando sesión:', error)
-          this.logout()
-          return false
+          console.error('Error restoring session:', error);
+          this.logout(); // Perform full cleanup
+          return false;
         }
       }
 
-      this.initialized = true; // Mark as initialization attempted
+      this.initialized = true; // Mark as initialization attempted, even if no data found
       return false
     },
 
@@ -245,32 +230,21 @@ export const useAuthStore = defineStore('auth', {
       console.log('[AUTH] Iniciando handleSuccessfulLogin, rememberMe:', rememberMe)
 
       // Set auth state
-      this.setSession(authData)
+      this.setSession(authData.record) // authData from pb.authWithPassword is { token, record }
       const syncStore = useSyncStore()
 
-      // Crear objeto de autenticación completo para guardar
-      const authToSave = {
-        token: pb.authStore.token,
-        record: pb.authStore.record,
-        ...pb.authStore.save()
-      }
-
       // Guardar datos de autenticación usando syncStore
-      syncStore.saveToLocalStorage('pocketbase_auth', authToSave, true)
+      syncStore.saveToLocalStorage('pocketbase_auth', pb.authStore.model);
       syncStore.saveToLocalStorage('last_auth_success', Date.now())
-      console.log('[AUTH] Datos de autenticación guardados en localStorage:', authToSave)
+      console.log('[AUTH] Datos de autenticación (model) guardados en localStorage:', pb.authStore.model)
 
       if (rememberMe) {
-        const credentials = {
-          usernameOrEmail: authData.record.username || authData.record.email,
-          tokenOnly: true,
-          timestamp: Date.now()
-        }
-        syncStore.saveToLocalStorage('rememberMe', credentials, true)
-        console.log('[AUTH] Credenciales rememberMe guardadas:', credentials)
+        syncStore.saveToLocalStorage('rememberMe_active', true);
+        console.log('[AUTH] rememberMe_active guardado como true')
         this.startRefreshTimer()
       } else {
-        syncStore.removeFromLocalStorage('rememberMe')
+        syncStore.removeFromLocalStorage('rememberMe_active');
+        console.log('[AUTH] rememberMe_active eliminado')
         this.stopRefreshTimer()
       }
 
@@ -311,9 +285,9 @@ export const useAuthStore = defineStore('auth', {
       router.push('/dashboard')
     },
 
-    setSession(authData) {
-      this.user = authData.record
-      this.token = pb.authStore.token
+    setSession(record) { // record is pb.authStore.model or freshAuthData.record
+      this.user = record
+      this.token = pb.authStore.token // pb.authStore is the source of truth for the token
       this.isLoggedIn = true
     },
 
@@ -418,24 +392,11 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    async checkAuth() {
-      const token = localStorage.getItem('token')
-      if (token) {
-        console.log('Token encontrado en localStorage:', token)
-        try {
-          const authData = await pb.collection('users').authRefresh()
-          const profileStore = useProfileStore()
-          profileStore.setUser(authData.record)
-        } catch (error) {
-          localStorage.removeItem('token')
-          this.logout()
-        }
-      }
-    },
+    // async checkAuth() { ... } // Method removed
 
     async logout() {
       const snackbarStore = useSnackbarStore()
-      const syncStore = useSyncStore()
+      const syncStore = useSyncStore() // Ensure syncStore is available
 
       try {
         // Detener el timer de refresco si está activo
@@ -443,17 +404,23 @@ export const useAuthStore = defineStore('auth', {
 
         // Redirigir PRIMERO para evitar errores de componentes
         // que intentan renderizar mientras el estado se está limpiando
-        await router.push('/')
+        // Consider if router navigation should be here or handled by the caller
+        // For now, keeping it as it was.
+        if (router.currentRoute.value.path !== '/') {
+             await router.push('/')
+        }
+
 
         // Luego limpiar datos de autenticación
         pb.authStore.clear()
         this.user = null
         this.token = null
         this.isLoggedIn = false
+        this.initialized = false; // Reset initialized state for next app load/user
 
         // Limpiar datos en syncStore
         syncStore.removeFromLocalStorage('pocketbase_auth')
-        syncStore.removeFromLocalStorage('rememberMe')
+        syncStore.removeFromLocalStorage('rememberMe_active') // Updated key
         syncStore.removeFromLocalStorage('last_auth_success')
 
         snackbarStore.showSnackbar('Logged out successfully', 'success')
