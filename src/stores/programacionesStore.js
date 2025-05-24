@@ -552,6 +552,52 @@ export const useProgramacionesStore = defineStore('programaciones', {
         id,
         this.programaciones
       )
+    },
+
+    // Standard sync methods
+    applySyncedCreate(tempId, realItem) {
+      const syncStore = useSyncStore();
+      console.log(`[PROGRAMACIONES_STORE] Applying synced create: tempId ${tempId} -> realId ${realItem.id}`);
+      const index = this.programaciones.findIndex(p => p.id === tempId && p._isTemp);
+      if (index !== -1) {
+        this.programaciones[index] = { ...realItem, _isTemp: false };
+      } else {
+        // If not found by tempId (e.g., page reloaded), add if it's not already present by realId
+        if (!this.programaciones.some(p => p.id === realItem.id)) {
+            this.programaciones.unshift({ ...realItem, _isTemp: false }); // Or push, unshift to show newest first
+            console.log('[PROGRAMACIONES_STORE] Synced item added as new (was not found by tempId).');
+        } else {
+            console.log('[PROGRAMACIONES_STORE] Synced item already exists by realId.');
+        }
+      }
+      syncStore.saveToLocalStorage('programaciones', this.programaciones);
+      console.log('[PROGRAMACIONES_STORE] Synced create applied, localStorage updated.');
+    },
+
+    applySyncedUpdate(id, updatedItemData) {
+      const syncStore = useSyncStore();
+      console.log(`[PROGRAMACIONES_STORE] Applying synced update for id: ${id}`);
+      const index = this.programaciones.findIndex(p => p.id === id);
+      if (index !== -1) {
+        this.programaciones[index] = { ...this.programaciones[index], ...updatedItemData, _isTemp: false };
+        syncStore.saveToLocalStorage('programaciones', this.programaciones);
+        console.log('[PROGRAMACIONES_STORE] Synced update applied, localStorage updated.');
+      } else {
+         console.warn(`[PROGRAMACIONES_STORE] Could not find item with id ${id} to apply update.`);
+      }
+    },
+
+    applySyncedDelete(id) {
+      const syncStore = useSyncStore();
+      console.log(`[PROGRAMACIONES_STORE] Applying synced delete for id: ${id}`);
+      const initialLength = this.programaciones.length;
+      this.programaciones = this.programaciones.filter(p => p.id !== id);
+      if (this.programaciones.length < initialLength) {
+        syncStore.saveToLocalStorage('programaciones', this.programaciones);
+        console.log('[PROGRAMACIONES_STORE] Synced delete applied, localStorage updated.');
+      } else {
+        console.warn(`[PROGRAMACIONES_STORE] Could not find item with id ${id} to apply delete.`);
+      }
     }
   }
 })

@@ -366,6 +366,51 @@ export const useZonasStore = defineStore('zonas', {
       const localTiposZonas = syncStore.loadFromLocalStorage('tiposZonas');
       this.tiposZonas = localTiposZonas || [];
       console.log('[ZONAS_STORE] Initialized from localStorage. Zonas:', this.zonas.length, 'Tipos:', this.tiposZonas.length);
+    },
+
+    // Standard sync methods
+    applySyncedCreate(tempId, realItem) {
+      const syncStore = useSyncStore();
+      console.log(`[ZONAS_STORE] Applying synced create: tempId ${tempId} -> realId ${realItem.id}`);
+      const index = this.zonas.findIndex(z => z.id === tempId && z._isTemp);
+      if (index !== -1) {
+        this.zonas[index] = { ...realItem, _isTemp: false };
+      } else {
+        if (!this.zonas.some(z => z.id === realItem.id)) {
+            this.zonas.unshift({ ...realItem, _isTemp: false }); 
+            console.log('[ZONAS_STORE] Synced item added as new (was not found by tempId).');
+        } else {
+            console.log('[ZONAS_STORE] Synced item already exists by realId.');
+        }
+      }
+      syncStore.saveToLocalStorage('zonas', this.zonas);
+      console.log('[ZONAS_STORE] Synced create applied, localStorage updated.');
+    },
+
+    applySyncedUpdate(id, updatedItemData) {
+      const syncStore = useSyncStore();
+      console.log(`[ZONAS_STORE] Applying synced update for id: ${id}`);
+      const index = this.zonas.findIndex(z => z.id === id);
+      if (index !== -1) {
+        this.zonas[index] = { ...this.zonas[index], ...updatedItemData, _isTemp: false };
+        syncStore.saveToLocalStorage('zonas', this.zonas);
+        console.log('[ZONAS_STORE] Synced update applied, localStorage updated.');
+      } else {
+         console.warn(`[ZONAS_STORE] Could not find item with id ${id} to apply update.`);
+      }
+    },
+
+    applySyncedDelete(id) {
+      const syncStore = useSyncStore();
+      console.log(`[ZONAS_STORE] Applying synced delete for id: ${id}`);
+      const initialLength = this.zonas.length;
+      this.zonas = this.zonas.filter(z => z.id !== id);
+      if (this.zonas.length < initialLength) {
+        syncStore.saveToLocalStorage('zonas', this.zonas);
+        console.log('[ZONAS_STORE] Synced delete applied, localStorage updated.');
+      } else {
+        console.warn(`[ZONAS_STORE] Could not find item with id ${id} to apply delete.`);
+      }
     }
   }
 })

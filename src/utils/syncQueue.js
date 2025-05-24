@@ -104,10 +104,13 @@ export class SyncQueue {
   async process() {
     if (this.isProcessing) {
       console.log('Ya hay un procesamiento en curso, saltando...')
-      return
+      return { createdItems: [], updatedItems: [], deletedItems: [] } // Early exit with summary
     }
 
     this.isProcessing = true
+    let createdItems = []
+    let updatedItems = []
+    let deletedItems = []
     console.log('Iniciando procesamiento de cola:', JSON.parse(JSON.stringify(this.queue)))
 
     try {
@@ -136,7 +139,7 @@ export class SyncQueue {
       if (workQueue.length === 0) {
         console.log('No hay operaciones pendientes para procesar.')
         this.isProcessing = false
-        return
+        return { createdItems, updatedItems, deletedItems }
       }
 
       // Create Pass
@@ -172,7 +175,7 @@ export class SyncQueue {
               if (createdRecord && createdRecord.id) {
                 this.tempToRealIdMap[originalOp.tempId] = createdRecord.id
                 originalOp.status = 'completed' // Mark as completed in the workQueue/original queue
-                // TODO: Notify syncStore or return data for Pinia store updates
+                createdItems.push({ tempId: originalOp.tempId, realItem: createdRecord })
                 await this.updatePendingOperations(originalOp.tempId, createdRecord.id)
               } else {
                 console.error('Create Pass - Resultado inesperado para op:', originalOp, 'Resultado:', createdRecord)
@@ -204,6 +207,7 @@ export class SyncQueue {
 
           const pbBatch = pb.createBatch()
           const validClientBatchOps = []
+            const opsWithResolvedIds = [] // Store ops with their resolved IDs for later use
 
           for (const op of clientBatchOps) {
             let resolvedMainId = op.id
@@ -223,23 +227,46 @@ export class SyncQueue {
 
             if (op.type === 'update') {
               pbBatch.collection(op.collection).update(resolvedMainId, resolvedDataPayload)
+                opsWithResolvedIds.push({ ...op, resolvedMainId, resolvedDataPayload })
             } else if (op.type === 'delete') {
               pbBatch.collection(op.collection).delete(resolvedMainId)
+                opsWithResolvedIds.push({ ...op, resolvedMainId })
             }
-            validClientBatchOps.push(op)
+              validClientBatchOps.push(op) // Still push original op to validClientBatchOps for status update
           }
 
-          if (validClientBatchOps.length === 0) {
+            if (opsWithResolvedIds.length === 0) { // Check opsWithResolvedIds instead of validClientBatchOps
             console.log('Update/Delete Pass - No hay operaciones válidas en este batch para enviar.')
             continue
           }
 
           try {
-            console.log(`Update/Delete Pass - Enviando batch de ${validClientBatchOps.length} operaciones`)
+            console.log(`Update/Delete Pass - Enviando batch de ${opsWithResolvedIds.length} operaciones`)
             await pbBatch.send()
             console.log('Update/Delete Pass - Batch enviado exitosamente.')
-            validClientBatchOps.forEach((op) => {
-              op.status = 'completed' // Mark as completed in workQueue/original queue
+            
+            // Iterate over opsWithResolvedIds to correctly populate updatedItems and deletedItems
+            opsWithResolvedIds.forEach((opDetails) => {
+              // Find the original operation in validClientBatchOps to update its status
+              const originalOp = validClientBatchOps.find(vOp => vOp.tempId === opDetails.tempId || vOp.id === opDetails.id);
+              if (originalOp) {
+                originalOp.status = 'completed' // Mark as completed in workQueue/original queue
+
+                if (opDetails.type === 'update') {
+                  updatedItems.push({
+                    id: opDetails.resolvedMainId,
+                    updatedItem: opDetails.resolvedDataPayload,
+                    collection: opDetails.collection
+                  })
+                } else if (opDetails.type === 'delete') {
+                  deletedItems.push({
+                    id: opDetails.resolvedMainId,
+                    collection: opDetails.collection
+                  })
+                }
+              } else {
+                console.warn("Update/Delete Pass: No se encontró la operación original para marcar como completada después del batch:", opDetails);
+              }
             })
           } catch (batchError) {
             console.error('Error en Update/Delete Pass batch:', batchError)
@@ -262,6 +289,7 @@ export class SyncQueue {
       this.isProcessing = false
       console.log('Procesamiento de cola finalizado. Estado actual de this.queue:', JSON.parse(JSON.stringify(this.queue)))
       console.log('Estado actual del mapeo de IDs:', JSON.parse(JSON.stringify(this.tempToRealIdMap)))
+      return { createdItems, updatedItems, deletedItems }
     }
   }
 
@@ -278,14 +306,13 @@ export class SyncQueue {
     if (!tempId.startsWith('temp_')) return tempId
 
     // Buscar mapeo directo
-    const directMatch = this.tempToRealIdMap[tempId]
-    if (directMatch) return directMatch
+    const directMatch = this.tempToRealIdMap[tempId];
+    if (directMatch) {
+      return directMatch;
+    }
 
-    // Buscar por prefijo
-    const prefix = tempId.split('_').slice(0, 3).join('_')
-    const match = Object.keys(this.tempToRealIdMap).find((k) => k.startsWith(prefix))
-
-    return match ? this.tempToRealIdMap[match] : null
+    // If no direct match is found, resolution has failed for this tempId.
+    return null;
   }
 
   // Verifica si dos IDs temporales están relacionados
