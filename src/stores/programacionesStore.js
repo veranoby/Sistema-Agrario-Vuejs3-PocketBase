@@ -15,6 +15,7 @@ import { useHaciendaStore } from './haciendaStore'
 import { useSnackbarStore } from './snackbarStore'
 import { useActividadesStore } from '@/stores/actividadesStore'
 import { useSiembrasStore } from '@/stores/siembrasStore'
+import { useBitacoraStore } from './bitacoraStore';
 
 export const useProgramacionesStore = defineStore('programaciones', {
   state: () => ({
@@ -240,13 +241,13 @@ export const useProgramacionesStore = defineStore('programaciones', {
       try {
         if (nuevaProgramacion.frecuencia === 'fecha_especifica' && 
             nuevaProgramacion.frecuencia_personalizada) {
-          // Si es una fecha específica, usar esa fecha
-          const fechaEspecifica = JSON.parse(nuevaProgramacion.frecuencia_personalizada).fecha
+          // Si es una fecha específica, usar esa fecha (frecuencia_personalizada is now an object)
+          const fechaEspecifica = nuevaProgramacion.frecuencia_personalizada.fecha;
           proximaEjecucion = fechaEspecifica ? new Date(fechaEspecifica).toISOString() : fechaActual
         } else if (nuevaProgramacion.frecuencia === 'personalizada' && 
                   nuevaProgramacion.frecuencia_personalizada) {
-          // Si es personalizada, calcular basado en la configuración
-          const config = JSON.parse(nuevaProgramacion.frecuencia_personalizada)
+          // Si es personalizada, calcular basado en la configuración (frecuencia_personalizada is now an object)
+          const config = nuevaProgramacion.frecuencia_personalizada;
           const addFunctions = {
             dias: addDays,
             semanas: addWeeks,
@@ -335,17 +336,22 @@ export const useProgramacionesStore = defineStore('programaciones', {
 
     async obtenerSiembrasRelacionadas(actividadesIds) {
       const actividadesStore = useActividadesStore()
-      const siembrasStore = useSiembrasStore()
+      // const siembrasStore = useSiembrasStore(); // siembrasStore no parece usarse aquí directamente
       const siembras = new Set()
 
       for (const id of actividadesIds) {
         try {
-          const actividad = await actividadesStore.fetchActividadById(id)
+          let actividad = actividadesStore.actividades.find(a => a.id === id);
+          if (!actividad) {
+            console.log(`Actividad ${id} no encontrada localmente, buscando en DB...`)
+            actividad = await actividadesStore.fetchActividadById(id)
+          }
+
           if (actividad?.siembras) {
             actividad.siembras.forEach((siembraId) => siembras.add(siembraId))
           }
         } catch (error) {
-          console.error(`Error cargando actividad ${id}:`, error)
+          console.error(`Error procesando actividad ${id} para obtener siembras relacionadas:`, error)
         }
       }
 
@@ -465,40 +471,52 @@ export const useProgramacionesStore = defineStore('programaciones', {
     },
 
     async ejecutarProgramacion(id) {
-      const syncStore = useSyncStore()
+      const bitacoraStore = useBitacoraStore();
       const programacion = this.programaciones.find((p) => p.id === id)
-      if (!programacion) return
 
-      // Lógica para crear en bitácora
-      console.log('Registrando en bitácora:', {
-        programacion: id,
-        fecha: new Date().toISOString(),
-        actividad: programacion.actividad
-      })
+      if (!programacion) {
+        console.error(`Programacion con ID ${id} no encontrada.`)
+        return
+      }
 
-      // Actualizar fechas
-      const ultimaEjecucion = new Date().toISOString()
-      const proximaEjecucion = this.calcularProximaEjecucion({
-        ...programacion,
-        ultima_ejecucion: ultimaEjecucion
-      })
+      const actividadesParaRegistrar = Array.isArray(programacion.actividades) ? programacion.actividades : [];
+      if(actividadesParaRegistrar.length === 0) {
+        console.warn(`Programacion ${id} no tiene actividades asociadas para registrar en bitácora.`);
+        // Aún así, actualizaremos la fecha de ejecución de la programación.
+      }
+
+      for (const actividadId of actividadesParaRegistrar) {
+        const entryData = {
+          programacion_origen: programacion.id,
+          actividad_realizada: actividadId,
+          fecha_ejecucion: new Date().toISOString(),
+          estado_ejecucion: 'completado',
+          siembra_asociada: programacion.siembras && programacion.siembras.length > 0 ? programacion.siembras[0] : null
+        }
+        try {
+          console.log('Creando entrada en bitácora:', entryData)
+          await bitacoraStore.crearBitacoraEntry(entryData)
+        } catch (error) {
+          console.error(`Error creando entrada en bitácora para actividad ${actividadId} de programacion ${id}:`, error)
+          // Continuar con la siguiente actividad
+        }
+      }
+
+      const nuevaUltimaEjecucion = new Date().toISOString();
+      const nuevaProximaEjecucionObj = this.calcularProximaEjecucion({ 
+        ...programacion, 
+        ultima_ejecucion: nuevaUltimaEjecucion 
+      });
 
       try {
-        // Registrar en bitácora (por ahora solo console.log)
-        console.log('Registrando en bitácora:', {
-          programacion: id,
-          fecha: ultimaEjecucion,
-          actividad: programacion.actividad
-        })
-
-        // Actualizar programación
-        return await this.actualizarProgramacion(id, {
-          ultima_ejecucion: ultimaEjecucion,
-          proxima_ejecucion: proximaEjecucion.toISOString()
+        await this.actualizarProgramacion(id, {
+          ultima_ejecucion: nuevaUltimaEjecucion,
+          proxima_ejecucion: nuevaProximaEjecucionObj.toISOString()
         })
       } catch (error) {
-        handleError(error, 'Error al ejecutar programación')
-        throw error
+        // handleError ya es llamado por actualizarProgramacion, pero podemos loggear contexto adicional si es necesario.
+        console.error(`Error actualizando la programacion ${id} después de la ejecución:`, error);
+        // No re-lanzar para no romper el flujo si la bitácora se creó parcialmente.
       }
     },
 

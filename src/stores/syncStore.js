@@ -154,7 +154,7 @@ export const useSyncStore = defineStore('sync', {
     },
 
     // Método genérico para actualizar un elemento local
-    updateLocalItem(collection, tempId, newItem, items, options = {}) {
+    updateLocalItem(collection, tempId, newItem, items) { // options parameter removed
       if (!tempId || !newItem || !newItem.id) {
         console.error('Datos insuficientes para actualizar elemento local', { tempId, newItem })
         return false
@@ -401,7 +401,7 @@ export const useSyncStore = defineStore('sync', {
       }
     },
 
-    saveToLocalStorage(key, value, persistent = false) {
+    saveToLocalStorage(key, value) { // persistent parameter removed
       try {
         // Siempre utilizar localStorage por defecto para evitar problemas de sincronización
         localStorage.setItem(key, JSON.stringify(value))
@@ -495,7 +495,7 @@ export const useSyncStore = defineStore('sync', {
 
     // Removed restoreAuthSession method.
 
-    // Nuevo método para manejar cambios de visibilidad
-    async handleVisibilityChange() {}
+    // Nuevo método para manejar cambios de visibilidad - REMOVED as it was empty
+    // async handleVisibilityChange() {}
   }
 })
