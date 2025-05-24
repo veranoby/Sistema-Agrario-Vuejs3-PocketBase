@@ -66,17 +66,16 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
     },
 
     async cargarRecordatorios() {
+      // Local storage loading is now handled by initFromLocalStorage.
       const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore()
       this.error = null
       this.loading = true
 
-      // Cargar datos locales primero
-      const recordatoriosLocal = syncStore.loadFromLocalStorage('recordatorios')
-      if (recordatoriosLocal) {
-        this.recordatorios = recordatoriosLocal
-        this.loading = false
-        return this.recordatorios
+      // If data already populated by initFromLocalStorage, and offline, return.
+      if (this.recordatorios.length > 0 && !navigator.onLine) {
+        this.loading = false;
+        return this.recordatorios;
       }
 
       try {
@@ -338,6 +337,13 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
         id,
         this.recordatorios
       )
+    },
+
+    initFromLocalStorage() {
+      const syncStore = useSyncStore();
+      const localRecordatorios = syncStore.loadFromLocalStorage('recordatorios');
+      this.recordatorios = localRecordatorios || [];
+      console.log('[REC_STORE] Initialized from localStorage. Recordatorios:', this.recordatorios.length);
     }
   }
 })

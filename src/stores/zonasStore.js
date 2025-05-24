@@ -51,17 +51,16 @@ export const useZonasStore = defineStore('zonas', {
     },
 
     async cargarZonas() {
+      // Local storage loading is now handled by initFromLocalStorage.
       const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore()
       this.error = null
       this.loading = true
 
-      // Cargar datos locales primero
-      const zonasLocal = syncStore.loadFromLocalStorage('zonas')
-      if (zonasLocal) {
-        this.zonas = zonasLocal
-        this.loading = false
-        return this.zonas
+      // If data already populated by initFromLocalStorage, and offline, return.
+      if (this.zonas.length > 0 && !navigator.onLine) {
+        this.loading = false;
+        return this.zonas;
       }
 
       try {
@@ -266,10 +265,11 @@ export const useZonasStore = defineStore('zonas', {
     },
 
     async cargarTiposZonas() {
-      const tiposZonasLocal = useSyncStore().loadFromLocalStorage('tiposZonas')
-      if (tiposZonasLocal) {
-        this.tiposZonas = tiposZonasLocal
-        return this.tiposZonas
+      // Local storage loading is now handled by initFromLocalStorage.
+      const syncStore = useSyncStore(); // Keep for saving later.
+
+      if (this.tiposZonas.length > 0 && !navigator.onLine) {
+        return this.tiposZonas;
       }
 
       try {
@@ -357,6 +357,15 @@ export const useZonasStore = defineStore('zonas', {
 
     removeLocalItem(id) {
       return useSyncStore().removeLocalItem('zonas', id, this.zonas)
+    },
+
+    initFromLocalStorage() {
+      const syncStore = useSyncStore();
+      const localZonas = syncStore.loadFromLocalStorage('zonas');
+      this.zonas = localZonas || [];
+      const localTiposZonas = syncStore.loadFromLocalStorage('tiposZonas');
+      this.tiposZonas = localTiposZonas || [];
+      console.log('[ZONAS_STORE] Initialized from localStorage. Zonas:', this.zonas.length, 'Tipos:', this.tiposZonas.length);
     }
   }
 })

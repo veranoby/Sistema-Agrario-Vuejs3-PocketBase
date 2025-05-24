@@ -81,7 +81,19 @@ export const useAuthStore = defineStore('auth', {
         }
       }
 
+      this.initialized = true; // Mark as initialization attempted
       return false
+    },
+
+    async ensureAuthInitialized() {
+      if (!this.initialized) {
+        console.log('[AUTH_STORE] ensureAuthInitialized: Not initialized, calling init().');
+        await this.init(); // init() will set this.initialized = true after its attempt
+      } else {
+        console.log('[AUTH_STORE] ensureAuthInitialized: Already attempted initialization.');
+      }
+      // The source of truth for auth status is pb.authStore.isValid after init has run
+      return pb.authStore.isValid;
     },
 
     // Método para iniciar el timer de refresco
