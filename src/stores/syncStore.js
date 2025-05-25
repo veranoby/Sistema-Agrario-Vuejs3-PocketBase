@@ -5,6 +5,9 @@ import { useZonasStore } from '@/stores/zonasStore'
 import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useActividadesStore } from '@/stores/actividadesStore'
 import { useRecordatoriosStore } from '@/stores/recordatoriosStore'
+// Assume these stores will be created later
+import { useProgramacionesStore } from '@/stores/programacionesStore' 
+import { useBitacoraStore } from '@/stores/bitacoraStore'
 import { useAuthStore } from '@/stores/authStore'
 import { pb } from '@/utils/pocketbase'
 import { debounce } from 'lodash'
@@ -24,6 +27,20 @@ export const useSyncStore = defineStore('sync', {
   }),
 
   actions: {
+    getStoreByCollectionName(collectionName) {
+      const storeMap = {
+        zonas: useZonasStore,
+        siembras: useSiembrasStore,
+        actividades: useActividadesStore,
+        recordatorios: useRecordatoriosStore,
+        programaciones: useProgramacionesStore, // Assumed to be created
+        bitacora: useBitacoraStore // Assumed to be created
+        // ... add other stores as needed
+      }
+      const storeGetter = storeMap[collectionName]
+      return storeGetter ? storeGetter() : null
+    },
+
     async init() {
       if (this.initialized) return
 
@@ -139,14 +156,97 @@ export const useSyncStore = defineStore('sync', {
         }
 
         // Procesar cola
-        await this.queue.process()
+        const syncResults = await this.queue.process()
 
-        // Actualizar estado
-        this.lastSyncTime = Date.now()
-        this.persistQueueState()
-        useSnackbarStore().showSnackbar('Sincronización completada', 'success')
+        if (!syncResults || typeof syncResults !== 'object') {
+          console.error('processPendingQueue: syncResults no es válido o está indefinido.')
+          // No lanzar error aquí para permitir que el finally se ejecute, 
+          // pero sí registrarlo y evitar procesamiento adicional.
+          this.handleSyncError(new Error('Resultados de sincronización inválidos.'), 'Error procesando cola de sincronización')
+        } else {
+          const { createdItems, updatedItems, deletedItems } = syncResults
+
+          // Process Created Items
+          if (createdItems && createdItems.length > 0) {
+            for (const item of createdItems) {
+              try {
+                const collectionName = item.realItem.collectionName || item.realItem['@collectionName']
+                if (!collectionName) {
+                  console.warn('processPendingQueue: No se pudo determinar collectionName para el item creado:', item)
+                  continue
+                }
+                const targetStore = this.getStoreByCollectionName(collectionName)
+                if (targetStore && typeof targetStore.applySyncedCreate === 'function') {
+                  await targetStore.applySyncedCreate(item.tempId, item.realItem)
+                  // updateCrossStoreReferences se llama aquí para asegurar que el ID real está disponible
+                  await this.updateCrossStoreReferences(item.tempId, item.realItem.id)
+                } else {
+                  console.warn(
+                    `processPendingQueue: Store o método applySyncedCreate no encontrado para la colección '${collectionName}'.`
+                  )
+                }
+              } catch (e) {
+                console.error(`processPendingQueue: Error procesando item creado: ${item.tempId}`, e)
+                this.handleSyncError(e, `Error procesando creación para ${item.tempId}`)
+              }
+            }
+          }
+
+          // Process Updated Items
+          if (updatedItems && updatedItems.length > 0) {
+            for (const item of updatedItems) {
+              try {
+                const collectionName = item.collection
+                if (!collectionName) {
+                  console.warn('processPendingQueue: No se pudo determinar collectionName para el item actualizado:', item)
+                  continue
+                }
+                const targetStore = this.getStoreByCollectionName(collectionName)
+                if (targetStore && typeof targetStore.applySyncedUpdate === 'function') {
+                  await targetStore.applySyncedUpdate(item.id, item.updatedItem)
+                } else {
+                  console.warn(
+                    `processPendingQueue: Store o método applySyncedUpdate no encontrado para la colección '${collectionName}'.`
+                  )
+                }
+              } catch (e) {
+                console.error(`processPendingQueue: Error procesando item actualizado: ${item.id}`, e)
+                this.handleSyncError(e, `Error procesando actualización para ${item.id}`)
+              }
+            }
+          }
+
+          // Process Deleted Items
+          if (deletedItems && deletedItems.length > 0) {
+            for (const item of deletedItems) {
+              try {
+                const collectionName = item.collection
+                if (!collectionName) {
+                  console.warn('processPendingQueue: No se pudo determinar collectionName para el item eliminado:', item)
+                  continue
+                }
+                const targetStore = this.getStoreByCollectionName(collectionName)
+                if (targetStore && typeof targetStore.applySyncedDelete === 'function') {
+                  await targetStore.applySyncedDelete(item.id)
+                } else {
+                  console.warn(
+                    `processPendingQueue: Store o método applySyncedDelete no encontrado para la colección '${collectionName}'.`
+                  )
+                }
+              } catch (e) {
+                console.error(`processPendingQueue: Error procesando item eliminado: ${item.id}`, e)
+                this.handleSyncError(e, `Error procesando eliminación para ${item.id}`)
+              }
+            }
+          }
+          this.lastSyncTime = Date.now()
+          this.persistQueueState() // Persist after all items are processed
+          useSnackbarStore().showSnackbar('Sincronización completada', 'success')
+        }
       } catch (error) {
-        this.handleSyncError(error, 'Error procesando cola')
+        // Este catch maneja errores del this.queue.process() si lanza una excepción
+        // o errores no capturados dentro del bloque 'else'
+        this.handleSyncError(error, 'Error procesando cola de sincronización')
       } finally {
         this.syncStatus = 'idle'
         this.syncInProgress = false
@@ -438,53 +538,97 @@ export const useSyncStore = defineStore('sync', {
     },
 
     // Método para actualizar todas las referencias entre stores
-    updateCrossStoreReferences(tempId, realId) {
+    async updateCrossStoreReferences(tempId, realId) {
       if (!tempId || !realId) return
 
       console.log(`Actualizando referencias entre stores: ${tempId} -> ${realId}`)
 
-      // Lista de stores y sus colecciones
-      const storeCollections = [
-        { store: useZonasStore(), collection: 'zonas', items: 'zonas' },
-        { store: useSiembrasStore(), collection: 'siembras', items: 'siembras' },
-        { store: useActividadesStore(), collection: 'actividades', items: 'actividades' },
-        { store: useRecordatoriosStore(), collection: 'recordatorios', items: 'recordatorios' }
-      ]
+      const storeGetters = [
+        useZonasStore,
+        useSiembrasStore,
+        useActividadesStore,
+        useRecordatoriosStore,
+        useProgramacionesStore, // Assumed
+        useBitacoraStore // Assumed
+      ];
 
-      // Actualizar referencias en cada store
-      storeCollections.forEach(({ store, collection, items }) => {
-        if (store && store[items]) {
-          this.updateAllReferencesInStore(collection, tempId, realId, store[items])
-          this.saveToLocalStorage(collection, store[items])
+      for (const useStore of storeGetters) {
+        try {
+          const store = useStore();
+          // Determine collectionName from store ID or a specific property if available
+          const collectionName = store.$id || store.collectionName || 'unknown_collection'; 
+          
+          let itemsKey = null;
+          if (store[collectionName] && Array.isArray(store[collectionName])) { // e.g. zonasStore.zonas
+             itemsKey = collectionName;
+          } else if (store.items && Array.isArray(store.items)) { // a generic 'items' array
+             itemsKey = 'items';
+          } else {
+            // Attempt to find a plausible items array by inspecting the store's state
+            const stateKeys = Object.keys(store.$state || {});
+            for (const key of stateKeys) {
+              if (Array.isArray(store[key]) && store[key].length > 0 && typeof store[key][0] === 'object' && 'id' in store[key][0]) {
+                itemsKey = key;
+                break;
+              } else if (Array.isArray(store[key]) && store[key].length === 0) { // Store empty array, potentially the one
+                itemsKey = key;
+                // Do not break, maybe a populated one is found later
+              }
+            }
+          }
+          
+          if (itemsKey && store[itemsKey] && Array.isArray(store[itemsKey])) {
+            const updatedCount = this.updateAllReferencesInStore(collectionName, tempId, realId, store[itemsKey]);
+            if (updatedCount > 0) {
+              // Persist changes if the store has a method for it, or use generic saveToLocalStorage
+              if (typeof store.persistState === 'function') {
+                await store.persistState(); // Assuming persistState might be async
+              } else {
+                // Fallback to direct localStorage saving if persistState is not available
+                this.saveToLocalStorage(collectionName, store[itemsKey]); 
+              }
+              console.log(`UpdateCrossStoreReferences: Referencias actualizadas y persistidas para ${collectionName}.`);
+            }
+          } else {
+             console.warn(`UpdateCrossStoreReferences: No se pudo determinar/encontrar el array de items para el store '${collectionName}'. ItemsKey: ${itemsKey}. Store state:`, store ? store.$state : 'Store no disponible');
+          }
+        } catch (e) {
+          // Catch errors if a store isn't available (e.g. bitacoraStore not created yet or fails to init)
+          console.warn(`UpdateCrossStoreReferences: Error accediendo/actualizando store: ${e.message}. Esto puede ser normal si el store aún no está definido.`);
         }
-      })
+      }
     },
-
-    // Método para actualizar todas las referencias entre stores
+    
     refreshAllStores() {
       try {
         console.log('[SYNC_STORE] Refreshing all data stores from localStorage via initFromLocalStorage');
-
-        // Ensure stores are imported at the top of the file
-        const actividadesStore = useActividadesStore();
-        if (actividadesStore && typeof actividadesStore.initFromLocalStorage === 'function') {
-          actividadesStore.initFromLocalStorage();
-        }
-
-        const zonasStore = useZonasStore();
-        if (zonasStore && typeof zonasStore.initFromLocalStorage === 'function') {
-          zonasStore.initFromLocalStorage();
-        }
-
-        const siembrasStore = useSiembrasStore();
-        if (siembrasStore && typeof siembrasStore.initFromLocalStorage === 'function') {
-          siembrasStore.initFromLocalStorage();
-        }
-
-        const recordatoriosStore = useRecordatoriosStore();
-        if (recordatoriosStore && typeof recordatoriosStore.initFromLocalStorage === 'function') {
-          recordatoriosStore.initFromLocalStorage();
-        }
+    
+        const storesToRefresh = [
+          useActividadesStore,
+          useZonasStore,
+          useSiembrasStore,
+          useRecordatoriosStore,
+          useProgramacionesStore, // Assumed
+          useBitacoraStore // Assumed
+        ];
+    
+        storesToRefresh.forEach(useStore => {
+          try {
+            const store = useStore(); // Initialize the store
+            if (store && typeof store.initFromLocalStorage === 'function') {
+              store.initFromLocalStorage();
+            } else if (store) {
+              console.warn(`[SYNC_STORE] Store ${store.$id || 'unknown'} no tiene método initFromLocalStorage.`);
+            } else {
+              // This case should ideally not happen if useStore() is successful
+              console.warn(`[SYNC_STORE] No se pudo obtener una instancia del store.`);
+            }
+          } catch (e) {
+            // This catch is important if a store (like bitacora) is imported but not yet created,
+            // useStore() itself would throw an error.
+            console.warn(`[SYNC_STORE] Error inicializando store (puede que aún no exista o haya un error en su inicialización): ${e.message}.`);
+          }
+        });
         
         console.log('[SYNC_STORE] All data stores refreshed from localStorage.');
       } catch (error) {

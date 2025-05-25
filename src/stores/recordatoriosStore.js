@@ -344,6 +344,51 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
       const localRecordatorios = syncStore.loadFromLocalStorage('recordatorios');
       this.recordatorios = localRecordatorios || [];
       console.log('[REC_STORE] Initialized from localStorage. Recordatorios:', this.recordatorios.length);
+    },
+
+    // Standard sync methods
+    applySyncedCreate(tempId, realItem) {
+      const syncStore = useSyncStore();
+      console.log(`[RECORDATORIOS_STORE] Applying synced create: tempId ${tempId} -> realId ${realItem.id}`);
+      const index = this.recordatorios.findIndex(r => r.id === tempId && r._isTemp);
+      if (index !== -1) {
+        this.recordatorios[index] = { ...realItem, _isTemp: false };
+      } else {
+        if (!this.recordatorios.some(r => r.id === realItem.id)) {
+            this.recordatorios.unshift({ ...realItem, _isTemp: false }); 
+            console.log('[RECORDATORIOS_STORE] Synced item added as new (was not found by tempId).');
+        } else {
+            console.log('[RECORDATORIOS_STORE] Synced item already exists by realId.');
+        }
+      }
+      syncStore.saveToLocalStorage('recordatorios', this.recordatorios);
+      console.log('[RECORDATORIOS_STORE] Synced create applied, localStorage updated.');
+    },
+
+    applySyncedUpdate(id, updatedItemData) {
+      const syncStore = useSyncStore();
+      console.log(`[RECORDATORIOS_STORE] Applying synced update for id: ${id}`);
+      const index = this.recordatorios.findIndex(r => r.id === id);
+      if (index !== -1) {
+        this.recordatorios[index] = { ...this.recordatorios[index], ...updatedItemData, _isTemp: false };
+        syncStore.saveToLocalStorage('recordatorios', this.recordatorios);
+        console.log('[RECORDATORIOS_STORE] Synced update applied, localStorage updated.');
+      } else {
+         console.warn(`[RECORDATORIOS_STORE] Could not find item with id ${id} to apply update.`);
+      }
+    },
+
+    applySyncedDelete(id) {
+      const syncStore = useSyncStore();
+      console.log(`[RECORDATORIOS_STORE] Applying synced delete for id: ${id}`);
+      const initialLength = this.recordatorios.length;
+      this.recordatorios = this.recordatorios.filter(r => r.id !== id);
+      if (this.recordatorios.length < initialLength) {
+        syncStore.saveToLocalStorage('recordatorios', this.recordatorios);
+        console.log('[RECORDATORIOS_STORE] Synced delete applied, localStorage updated.');
+      } else {
+        console.warn(`[RECORDATORIOS_STORE] Could not find item with id ${id} to apply delete.`);
+      }
     }
   }
 })

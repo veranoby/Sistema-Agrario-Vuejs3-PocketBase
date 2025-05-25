@@ -427,6 +427,51 @@ export const useActividadesStore = defineStore('actividades', {
       const localTiposActividades = syncStore.loadFromLocalStorage('tiposActividades');
       this.tiposActividades = localTiposActividades || [];
       console.log('[ACT_STORE] Initialized from localStorage. Actividades:', this.actividades.length, 'Tipos:', this.tiposActividades.length);
+    },
+
+    // Standard sync methods
+    applySyncedCreate(tempId, realItem) {
+      const syncStore = useSyncStore();
+      console.log(`[ACTIVIDADES_STORE] Applying synced create: tempId ${tempId} -> realId ${realItem.id}`);
+      const index = this.actividades.findIndex(a => a.id === tempId && a._isTemp);
+      if (index !== -1) {
+        this.actividades[index] = { ...realItem, _isTemp: false };
+      } else {
+        if (!this.actividades.some(a => a.id === realItem.id)) {
+            this.actividades.unshift({ ...realItem, _isTemp: false }); 
+            console.log('[ACTIVIDADES_STORE] Synced item added as new (was not found by tempId).');
+        } else {
+            console.log('[ACTIVIDADES_STORE] Synced item already exists by realId.');
+        }
+      }
+      syncStore.saveToLocalStorage('actividades', this.actividades);
+      console.log('[ACTIVIDADES_STORE] Synced create applied, localStorage updated.');
+    },
+
+    applySyncedUpdate(id, updatedItemData) {
+      const syncStore = useSyncStore();
+      console.log(`[ACTIVIDADES_STORE] Applying synced update for id: ${id}`);
+      const index = this.actividades.findIndex(a => a.id === id);
+      if (index !== -1) {
+        this.actividades[index] = { ...this.actividades[index], ...updatedItemData, _isTemp: false };
+        syncStore.saveToLocalStorage('actividades', this.actividades);
+        console.log('[ACTIVIDADES_STORE] Synced update applied, localStorage updated.');
+      } else {
+         console.warn(`[ACTIVIDADES_STORE] Could not find item with id ${id} to apply update.`);
+      }
+    },
+
+    applySyncedDelete(id) {
+      const syncStore = useSyncStore();
+      console.log(`[ACTIVIDADES_STORE] Applying synced delete for id: ${id}`);
+      const initialLength = this.actividades.length;
+      this.actividades = this.actividades.filter(a => a.id !== id);
+      if (this.actividades.length < initialLength) {
+        syncStore.saveToLocalStorage('actividades', this.actividades);
+        console.log('[ACTIVIDADES_STORE] Synced delete applied, localStorage updated.');
+      } else {
+        console.warn(`[ACTIVIDADES_STORE] Could not find item with id ${id} to apply delete.`);
+      }
     }
   }
 })
