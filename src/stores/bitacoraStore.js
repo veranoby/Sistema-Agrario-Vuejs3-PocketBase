@@ -21,10 +21,49 @@ export const useBitacoraStore = defineStore('bitacora', {
     getBitacoraBySiembra: (state) => (siembraId) => {
       return state.bitacoraEntries.filter(entry => entry.siembra_asociada === siembraId);
     },
-    // Get all entries sorted by creation date (newest first)
-    sortedEntries: (state) => {
-      return [...state.bitacoraEntries].sort((a, b) => new Date(b.created) - new Date(a.created));
-    }
+    // Get all entries sorted by creation date (newest first) - Will be replaced by getEnrichedBitacoraEntries
+    // sortedEntries: (state) => {
+    //   return [...state.bitacoraEntries].sort((a, b) => new Date(b.created) - new Date(a.created));
+    // }
+
+    // New Enriched Getters
+    getEnrichedBitacoraEntries: (state) => {
+      return [...state.bitacoraEntries].sort((a, b) => {
+        const dateA = a.fecha_ejecucion ? new Date(a.fecha_ejecucion) : new Date(a.created);
+        const dateB = b.fecha_ejecucion ? new Date(b.fecha_ejecucion) : new Date(b.created);
+        return dateB - dateA; // Newest first
+      });
+    },
+
+    getEnrichedBitacoraBySiembra: (state) => (siembraId) => {
+      if (!siembraId) return [];
+      return state.bitacoraEntries
+        .filter(entry => {
+          // Check direct ID or expanded ID
+          if (entry.siembra_asociada === siembraId) return true;
+          return entry.expand?.siembra_asociada?.id === siembraId;
+        })
+        .sort((a, b) => {
+          const dateA = a.fecha_ejecucion ? new Date(a.fecha_ejecucion) : new Date(a.created);
+          const dateB = b.fecha_ejecucion ? new Date(b.fecha_ejecucion) : new Date(b.created);
+          return dateB - dateA; // Newest first
+        });
+    },
+
+    getEnrichedBitacoraByActividadRealizada: (state) => (actividadId) => {
+      if (!actividadId) return [];
+      return state.bitacoraEntries
+        .filter(entry => {
+          // Check direct ID or expanded ID
+          if (entry.actividad_realizada === actividadId) return true;
+          return entry.expand?.actividad_realizada?.id === actividadId;
+        })
+        .sort((a, b) => {
+          const dateA = a.fecha_ejecucion ? new Date(a.fecha_ejecucion) : new Date(a.created);
+          const dateB = b.fecha_ejecucion ? new Date(b.fecha_ejecucion) : new Date(b.created);
+          return dateB - dateA; // Newest first
+        });
+    },
   },
 
   actions: {
@@ -62,10 +101,10 @@ export const useBitacoraStore = defineStore('bitacora', {
       try {
         const records = await pb.collection('bitacora').getFullList({
           filter: `hacienda="${haciendaId}"`,
-          sort: '-created', // newest first
-          // Consider expanding relations if needed directly on load, e.g., expand: 'actividad_realizada,siembra_asociada'
+          sort: '-fecha_ejecucion', // newest first by execution date
+          expand: "actividad_realizada,actividad_realizada.tipo_actividades,siembra_asociada,user_responsable"
         });
-        this.bitacoraEntries = records.map(entry => ({...entry, _isTemp: false })); // Ensure no old temp flags
+        this.bitacoraEntries = records.map(entry => ({...entry, _isTemp: false })); 
         this.lastSync = Date.now();
         useSyncStore().saveToLocalStorage('bitacoraEntries', this.bitacoraEntries);
         console.log('[BITACORA_STORE] Fetched and saved to localStorage:', this.bitacoraEntries.length, 'entries.');
@@ -124,11 +163,13 @@ export const useBitacoraStore = defineStore('bitacora', {
       this.isLoading = true;
       try {
         // Data sent to PB should not contain tempId or _isTemp
-        const record = await pb.collection('bitacora').create(fullEntryData);
-        const newEntry = {...record, _isTemp: false };
+        const record = await pb.collection('bitacora').create(fullEntryData, {
+          expand: "actividad_realizada,actividad_realizada.tipo_actividades,siembra_asociada,user_responsable"
+        });
+        const newEntry = {...record, _isTemp: false }; // record should now be expanded
         this.bitacoraEntries.unshift(newEntry);
         syncStore.saveToLocalStorage('bitacoraEntries', this.bitacoraEntries);
-        console.log('[BITACORA_STORE] Entry created on PocketBase and added to store:', newEntry);
+        console.log('[BITACORA_STORE] Entry created on PocketBase (expanded) and added to store:', newEntry);
         return newEntry;
       } catch (error) {
         handleError(error, 'Error creando entrada de bitácora en PocketBase');
@@ -139,40 +180,75 @@ export const useBitacoraStore = defineStore('bitacora', {
     },
 
     // Apply a synced creation from syncStore
-    applySyncedCreate(tempId, realItem) {
+    async applySyncedCreate(tempId, realItem) {
       console.log(`[BITACORA_STORE] Applying synced create: tempId ${tempId} -> realId ${realItem.id}`);
-      const index = this.bitacoraEntries.findIndex(entry => entry.id === tempId && entry._isTemp);
-      if (index !== -1) {
-        this.bitacoraEntries[index] = { ...realItem, _isTemp: false };
-        useSyncStore().saveToLocalStorage('bitacoraEntries', this.bitacoraEntries);
-        console.log('[BITACORA_STORE] Synced create applied.');
-      } else {
-        // If not found by tempId (e.g., page reloaded before sync completed but after queue processed),
-        // add if it's not already present by realId (to avoid duplicates)
-        if (!this.bitacoraEntries.some(entry => entry.id === realItem.id)) {
-            this.bitacoraEntries.unshift({ ...realItem, _isTemp: false });
-            useSyncStore().saveToLocalStorage('bitacoraEntries', this.bitacoraEntries);
-            console.log('[BITACORA_STORE] Synced item added as new (was not found by tempId).');
+      const syncStore = useSyncStore();
+      let itemIndex = this.bitacoraEntries.findIndex(entry => entry.id === tempId && entry._isTemp);
+
+      try {
+        const freshEnrichedItem = await pb.collection('bitacora').getOne(realItem.id, { 
+            expand: "actividad_realizada,actividad_realizada.tipo_actividades,siembra_asociada,user_responsable" 
+        });
+        if (itemIndex !== -1) {
+            this.bitacoraEntries[itemIndex] = { ...freshEnrichedItem, _isTemp: false };
         } else {
-            console.log('[BITACORA_STORE] Synced item already exists by realId.');
+            // If not found by tempId, check if it exists by realId before adding
+            itemIndex = this.bitacoraEntries.findIndex(entry => entry.id === realItem.id);
+            if (itemIndex !== -1) {
+                this.bitacoraEntries[itemIndex] = { ...freshEnrichedItem, _isTemp: false }; // Update if exists
+                 console.log('[BITACORA_STORE] Synced item (create) already exists by realId, updated with fresh data.');
+            } else {
+                this.bitacoraEntries.unshift({ ...freshEnrichedItem, _isTemp: false }); // Add as new
+                console.log('[BITACORA_STORE] Synced item (create) added as new with fresh data (was not found by tempId).');
+            }
+        }
+      } catch (e) {
+        console.error("[BITACORA_STORE] Error re-fetching enriched item for applySyncedCreate:", e);
+        // Fallback to using the potentially less-expanded data from realItem
+        if (itemIndex !== -1) {
+            this.bitacoraEntries[itemIndex] = { ...realItem, _isTemp: false };
+        } else {
+            // Fallback: if not found by tempId, add if it's not already present by realId
+            if (!this.bitacoraEntries.some(entry => entry.id === realItem.id)) {
+                this.bitacoraEntries.unshift({ ...realItem, _isTemp: false });
+                console.log('[BITACORA_STORE] Synced item added as new (fallback, not found by tempId).');
+            } else {
+                 console.log('[BITACORA_STORE] Synced item already exists by realId (fallback).');
+            }
         }
       }
+      syncStore.saveToLocalStorage('bitacoraEntries', this.bitacoraEntries);
+      console.log('[BITACORA_STORE] Synced create applied, localStorage updated.');
     },
 
-    // Apply a synced update from syncStore
-    applySyncedUpdate(id, updatedItemData) {
+    async applySyncedUpdate(id, updatedItemData) {
       console.log(`[BITACORA_STORE] Applying synced update for id: ${id}`);
-      const index = this.bitacoraEntries.findIndex(entry => entry.id === id);
-      if (index !== -1) {
-        // Merge carefully: updatedItemData might be partial
-        this.bitacoraEntries[index] = { ...this.bitacoraEntries[index], ...updatedItemData, _isTemp: false };
-        useSyncStore().saveToLocalStorage('bitacoraEntries', this.bitacoraEntries);
-        console.log('[BITACORA_STORE] Synced update applied.');
-      } else {
-         console.warn(`[BITACORA_STORE] Could not find item with id ${id} to apply update.`);
-         // Optionally, fetch it if critical, or add if it's a new item not yet in local store
-         // For now, just log.
+      const syncStore = useSyncStore();
+      let itemIndex = this.bitacoraEntries.findIndex(entry => entry.id === id);
+
+      try {
+        const freshEnrichedItem = await pb.collection('bitacora').getOne(id, { 
+            expand: "actividad_realizada,actividad_realizada.tipo_actividades,siembra_asociada,user_responsable" 
+        });
+        if (itemIndex !== -1) {
+            this.bitacoraEntries[itemIndex] = { ...freshEnrichedItem, _isTemp: false };
+        } else {
+            // If for some reason it's not in the list, add it.
+            this.bitacoraEntries.unshift({ ...freshEnrichedItem, _isTemp: false });
+            console.warn(`[BITACORA_STORE] Item with id ${id} not found for update, added with fresh data.`);
+        }
+      } catch (e) {
+        console.error("[BITACORA_STORE] Error re-fetching enriched item for applySyncedUpdate:", e);
+        // Fallback to merging updatedItemData
+        if (itemIndex !== -1) {
+            this.bitacoraEntries[itemIndex] = { ...this.bitacoraEntries[itemIndex], ...updatedItemData, _isTemp: false };
+        } else {
+            // If not found, cannot apply partial update. Log warning.
+            console.warn(`[BITACORA_STORE] Could not find item with id ${id} to apply fallback update.`);
+        }
       }
+      syncStore.saveToLocalStorage('bitacoraEntries', this.bitacoraEntries);
+      console.log('[BITACORA_STORE] Synced update applied, localStorage updated.');
     },
 
     // Apply a synced delete from syncStore
