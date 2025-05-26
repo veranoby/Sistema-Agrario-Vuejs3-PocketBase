@@ -444,6 +444,9 @@ export const useAuthStore = defineStore('auth', {
         syncStore.removeFromLocalStorage('rememberMe')
         syncStore.removeFromLocalStorage('last_auth_success')
 
+        syncStore.removeFromLocalStorage('tiposZonas')
+        syncStore.removeFromLocalStorage('tiposActividades')
+
         snackbarStore.showSnackbar('Logged out successfully', 'success')
       } catch (error) {
         console.error('Error during logout:', error)

@@ -1,14 +1,8 @@
 <template>
-  <v-snackbar
-    :model-value="isVisible"
-    :color="color"
-    :timeout="2000"
-    multi-line
-    @update:modelValue="closeSnackbar"
-  >
+  <v-snackbar v-model="isVisible" :color="color" :timeout="2000" multi-line>
     {{ message }}
     <template v-slot:actions>
-      <v-btn color="white" variant="text" small @click="closeSnackbar" v-if="cloaseComp">
+      <v-btn color="white" variant="text" size="small" @click="closeSnackbar" v-if="cloaseComp">
         Cerrar
       </v-btn>
       <v-progress-circular color="white" indeterminate v-if="loadComp"></v-progress-circular>

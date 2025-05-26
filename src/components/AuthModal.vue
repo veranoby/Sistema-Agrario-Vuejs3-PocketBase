@@ -321,7 +321,6 @@ import registerLogo from '../assets/register-logo.png'
 import { useVuelidate } from '@vuelidate/core'
 import { required, email, minLength, sameAs, helpers } from '@vuelidate/validators'
 import { useSyncStore } from '@/stores/syncStore'
-import { debounce } from 'lodash'
 import { useRouter } from 'vue-router'
 
 const props = defineProps({

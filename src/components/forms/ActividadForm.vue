@@ -218,6 +218,8 @@ const filteredZonas = computed(() => {
 
 function getDefaultMetricaValue(tipo) {
   switch (tipo) {
+    case 'multi-select':
+      return []
     case 'checkbox':
       return []
     case 'number':

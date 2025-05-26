@@ -1,8 +1,9 @@
 <template>
-  <v-card class="mb-2 bg-transparent" border="false">
+  <!--  <v-card class="pt-2 bg-transparent" border="false">-->
+
+  <v-card variant="flat" :color="bgColor" class="pt-1" border="false">
     <v-card-text class="p-2">
-      <!-- Fila principal con descripción y botones -->
-      <div class="flex min-w-0">
+      <div class="flex min-w-0 pt-0 pb-2">
         <!-- Estado y alertas -->
         <div class="flex min-w-0">
           <v-tooltip location="top">
@@ -10,103 +11,118 @@
               <v-icon
                 v-bind="props"
                 :color="colorEstado"
-                size="x-small"
+                size="small"
                 class="cursor-help"
+                outline
                 icon="mdi-circle"
               />
             </template>
+
             <span class="capitalize">{{ programacion.estado }}</span>
           </v-tooltip>
 
-          <!-- Chip de pendientes -->
-          <v-tooltip location="top">
-            <template v-slot:activator="{ props }">
-              <v-chip
-                v-bind="props"
-                v-if="esUrgente"
-                color="red"
-                size="x-small"
-                variant="flat"
-                class="ml-2"
-              >
-                <v-icon small>mdi-alert</v-icon>
-                {{ ejecucionesPendientes }}
-              </v-chip>
-            </template>
-            <span>{{ ejecucionesPendientes }} pendiente(s)</span>
-          </v-tooltip>
-
           <!-- Descripción con truncate -->
-          <span class="ml-2 truncate">{{ programacion.descripcion }}</span>
 
-          <v-btn
-            size="small"
-            variant="text"
-            color="grey-darken-1"
-            icon="mdi-pencil"
-            density="comfortable"
-            @click="$emit('editar', programacion)"
-          />
+          <span class="ml-2 truncate text-shadow-lg text-shadow-black-300">{{
+            programacion.descripcion
+          }}</span>
         </div>
 
-        <!-- Botones de ejecución -->
-        <div class="flex items-center gap-2 ml-auto">
-          <v-chip v-if="debeEjecutarHoy" color="red" variant="elevated" size="small">
-            <v-icon small>mdi-alert</v-icon>
-            Ejecutar hoy
-          </v-chip>
+        <div class="flex items-center gap-2 ml-auto"></div>
+      </div>
 
-          <v-btn
-            v-if="ejecucionesPendientes > 1"
-            size="small"
-            variant="flat"
-            color="orange"
-            density="comfortable"
-            @click="ejecutarEnBloque"
-            class="transition-all duration-300 ease-in-out rounded-pill overflow-hidden"
-            :style="{ width: isHoveredMultiple ? '120px' : '36px' }"
-            @mouseenter="isHoveredMultiple = true"
-            @mouseleave="isHoveredMultiple = false"
-          >
-            <v-icon size="small" :class="{ 'mr-2': isHoveredMultiple }">mdi-play-multiple</v-icon>
-            <span v-show="isHoveredMultiple" class="transition-opacity duration-3000">
+      <!-- Fila principal con descripción y botones -->
+      <div class="flex min-w-0 pt-0 pb-2">
+        <!-- Chip de pendientes -->
+        <v-tooltip location="top">
+          <template v-slot:activator="{ props }">
+            <v-chip
+              v-bind="props"
+              v-if="esUrgente"
+              color="red"
+              size="x-small"
+              variant="flat"
+              class="mr-1 py-3"
+            >
+              <v-icon small>mdi-alert</v-icon>
               {{ ejecucionesPendientes }}
-            </span>
-          </v-btn>
+            </v-chip>
+          </template>
+          <span>{{ ejecucionesPendientes }} pendiente(s)</span>
+        </v-tooltip>
+        <!-- Tipo actividad -->
+        <v-chip color="blue-grey-lighten-1" size="small" variant="flat" class="mr-2">
+          <v-icon class="mr-2 text-white">mdi-folder-outline</v-icon>
+          <span class="capitalize text-white">{{ actividadTipo }}</span>
+        </v-chip>
+        <v-btn
+          size="small"
+          variant="outlined"
+          icon="mdi-pencil"
+          density="comfortable"
+          @click="$emit('editar', programacion)"
+        />
+        <!-- Botones de ejecución -->
+        <v-chip v-if="debeEjecutarHoy" color="red" variant="elevated" size="small">
+          <v-icon small>mdi-alert</v-icon>
+          Ejecutar hoy
+        </v-chip>
+        <!--          
+         v-if="ejecucionesPendientes > 1"
+-->
+        <v-btn
+          v-if="ejecucionesPendientes > 1"
+          size="small"
+          variant="flat"
+          color="orange-lighten-1"
+          density="comfortable"
+          @click="ejecutarEnBloque"
+          class="transition-all duration-300 ease-in-out rounded-pill overflow-hidden ml-1 pt-2 pb-5"
+          :style="{ width: isHoveredMultiple ? '120px' : '36px' }"
+          @mouseenter="isHoveredMultiple = true"
+          @mouseleave="isHoveredMultiple = false"
+        >
+          <v-icon size="small" :class="{ 'mr-1 ': isHoveredMultiple }">mdi-play-outline</v-icon>
+          <span
+            v-show="isHoveredMultiple"
+            class="text-shadow-lg/20 transition-opacity duration-3000 pb-0"
+            >Ejecutar {{ ejecucionesPendientes }}
+          </span>
+        </v-btn>
 
-          <v-btn
-            size="small"
-            variant="flat"
-            color="green"
-            density="comfortable"
-            @click="$emit('ejecutar', programacion.id)"
-            class="transition-all duration-300 ease-in-out rounded-pill overflow-hidden"
-            :style="{ width: isHoveredSingle ? '100px' : '36px' }"
-            @mouseenter="isHoveredSingle = true"
-            @mouseleave="isHoveredSingle = false"
-          >
-            <v-icon size="small" :class="{ 'mr-2': isHoveredSingle }">mdi-play</v-icon>
-            <span v-show="isHoveredSingle" class="transition-opacity duration-3000">
-              Ejecutar
-            </span>
-          </v-btn>
-        </div>
+        <v-btn
+          size="small"
+          variant="flat"
+          color="green"
+          density="comfortable"
+          @click="$emit('ejecutar', programacion.id)"
+          class="transition-all duration-300 ease-in-out rounded-pill overflow-hidden ml-1 pt-2 pb-5"
+          :style="{ width: isHoveredSingle ? '100px' : '36px' }"
+          @mouseenter="isHoveredSingle = true"
+          @mouseleave="isHoveredSingle = false"
+        >
+          <v-icon size="small" :class="{ 'mr-1': isHoveredSingle }">mdi-play</v-icon>
+          <span v-show="isHoveredSingle" class="transition-opacity duration-3000 pb-0">
+            Ejecutar
+          </span>
+        </v-btn>
       </div>
 
       <!-- Fila de información adicional -->
-      <div class="flex gap-4 mt-2 text-xs text-gray-600">
-        <div class="flex items-center gap-1">
-          <v-icon size="small" color="gray">mdi-folder-outline</v-icon>
-          <span class="capitalize">{{ actividadTipo }}</span>
-        </div>
-        <div class="flex items-center gap-1">
-          <v-icon size="small" color="gray">mdi-calendar-clock</v-icon>
-          <span>Última: {{ formatFecha(programacion.ultima_ejecucion) }}</span>
-        </div>
-        <div class="flex items-center gap-1">
-          <v-icon size="small" color="gray">mdi-calendar-arrow-right</v-icon>
-          <span>Próxima: {{ formatFecha(programacion.proxima_ejecucion) }}</span>
-        </div>
+      <div class="flex gap-4 mt-2 text-xs">
+        <v-chip color="blue-grey-lighten-1" size="small" variant="flat">
+          <v-icon class="mr-2 text-white">mdi-calendar-clock</v-icon>
+          <span class="capitalize text-shadow-lg/20" :style="{ color: textColor }"
+            >Última: {{ formatFecha(programacion.ultima_ejecucion) }}</span
+          >
+        </v-chip>
+
+        <v-chip color="blue-grey-darken-1" size="small" variant="flat">
+          <v-icon class="mr-2 text-white">mdi-calendar-clock</v-icon>
+          <span class="capitalize text-shadow-lg/20" :style="{ color: textColor }"
+            >Próxima: {{ formatFecha(programacion.proxima_ejecucion) }}</span
+          >
+        </v-chip>
       </div>
     </v-card-text>
   </v-card>
@@ -122,6 +138,14 @@ const props = defineProps({
   programacion: {
     type: Object,
     required: true
+  },
+  bgColor: {
+    type: String,
+    default: '#001f2f94'
+  },
+  textColor: {
+    type: String,
+    default: 'white'
   }
 })
 

@@ -1,7 +1,8 @@
+// main.js optimizado
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import piniaPersist from 'pinia-plugin-persistedstate'
-import { format } from 'date-fns'
+import { format } from 'date-fns' // Mantener porque se usa
 
 import App from './App.vue'
 import router from './router'
@@ -19,7 +20,7 @@ import { useThemeStore } from './stores/themeStore'
 import './assets/main.css'
 import './index.css'
 import 'vuetify/styles'
-import '@fortawesome/fontawesome-free/css/all.css'
+// Eliminar: import '@fortawesome/fontawesome-free/css/all.css'  // No necesario si solo usas MDI
 import '@mdi/font/css/materialdesignicons.css'
 import '@fontsource/plus-jakarta-sans/500.css'
 import '@fontsource/plus-jakarta-sans/600.css'
@@ -29,6 +30,8 @@ import { useVuelidate } from '@vuelidate/core'
 
 import { QuillEditor } from '@vueup/vue-quill'
 import '@vueup/vue-quill/dist/vue-quill.snow.css'
+
+// ... resto del código
 
 const vuetify = createVuetify({
   components,
@@ -61,6 +64,26 @@ const vuetify = createVuetify({
           secondary: '#424242'
         }
       }
+    }
+  },
+  // Añade esta configuración para las fuentes
+  defaults: {
+    global: {
+      font: {
+        family: "'Plus Jakarta Sans', sans-serif"
+      }
+    },
+    VCard: {
+      style: [{ fontFamily: "'Plus Jakarta Sans', sans-serif" }]
+    },
+    VBtn: {
+      style: [{ fontFamily: "'Plus Jakarta Sans', sans-serif" }]
+    },
+    VTextField: {
+      style: [{ fontFamily: "'Plus Jakarta Sans', sans-serif" }]
+    },
+    VSelect: {
+      style: [{ fontFamily: "'Plus Jakarta Sans', sans-serif" }]
     }
   }
 })

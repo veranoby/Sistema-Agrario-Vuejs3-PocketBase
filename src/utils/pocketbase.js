@@ -95,19 +95,20 @@ actividades:
 # Colección: 
 bitacora:
   id: string
-  created: datetime
-  updated: datetime
   hacienda: relation(haciendas)
-  fecha: date
+   siembras:  relation(siembras). multiple.
   actividades: relation(actividades)
-  zona: relation(zonas). pueden ser multiples
-  descripcion: string
-  users: relation(users) . para definir los responsables
-  estado: select(planificada, en_progreso, completada, cancelada)
+  programaciones:  relation(programaciones). 
+  zonas: relation(zonas). pueden ser multiples
+   fecha: date
+descripcion: string
+  user_created: relation(users) . para definir los responsables
+   user_edited: relation(users) . para definir los responsables
+ estado: select(planificada, en_progreso, completada, cancelada)
   metricas: json  # Almacena datos específicos de la actividad según metricas_requeridas
   notas: string
-  siembra:  relation(siembras). multiple.
-  programaciones:  relation(programaciones). 
+  created: datetime
+  updated: datetime
 
 # Colección: 
 programaciones:

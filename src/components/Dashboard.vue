@@ -173,7 +173,7 @@ import { useZonasStore } from '@/stores/zonasStore'
 import { handleError } from '@/utils/errorHandler'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 
-import StatusPanel from '@/components/StatusPanel.vue'
+import StatusPanel from '@/components/RecordatoriosStatusPanel.vue'
 import RecordatorioForm from '@/components/forms/RecordatorioForm.vue'
 
 // Stores

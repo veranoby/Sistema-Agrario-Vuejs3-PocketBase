@@ -61,23 +61,29 @@
             v-for="(grupo, nombreSiembra) in groupedProgramaciones.siembras"
             :key="'siembra-' + nombreSiembra"
           >
-            <v-card-title class="font-bold text-sm mb-4 siembra-header">
-              <v-icon left>mdi-sprout</v-icon>
-              <router-link
-                :to="{
-                  name: 'Ver Siembra/Proyecto',
-                  params: { id: grupo[0].siembras[0] }
-                }"
-                class="text-inherit hover:text-primary"
-              >
-                Siembra/Proyecto: {{ nombreSiembra }}
-              </router-link>
+            <v-card-title class="font-bold text-sm text-white p-2 pb-1 bg-green">
+              <v-chip color="#001f2f94" size="small" variant="flat" class="mr-2">
+                <v-icon class="mr-2 text-white">mdi-sprout</v-icon>
+                <span
+                  ><router-link
+                    :to="{
+                      name: 'Ver Siembra/Proyecto',
+                      params: { id: grupo[0].siembras[0] }
+                    }"
+                    class="text-white"
+                  >
+                    Siembra/Proyecto: {{ nombreSiembra }}
+                  </router-link></span
+                >
+              </v-chip>
             </v-card-title>
 
             <ProgramacionPanel
               v-for="programacion in grupo"
               :key="programacion.id"
               :programacion="programacion"
+              bg-color="#5757572e"
+              text-color="white"
               @editar="openEditarProgramacion"
               @ejecutar="ejecutarProgramacion"
             />
@@ -93,7 +99,7 @@
             v-for="(grupo, nombreActividad) in groupedProgramaciones.actividades"
             :key="'actividad-' + nombreActividad"
           >
-            <v-card-title class="font-bold text-sm mb-4 siembra-info">
+            <v-card-title class="font-bold text-sm text-white p-2 pb-1 bg-cyan-darken-1">
               <v-icon left>mdi-tools</v-icon>
               <router-link
                 :to="{ name: 'Ver Actividad', params: { id: grupo[0].actividades[0] } }"
@@ -107,6 +113,8 @@
               v-for="programacion in grupo"
               :key="programacion.id"
               :programacion="programacion"
+              bg-color="#5757577d"
+              text-color="white"
               @editar="openEditarProgramacion"
               @ejecutar="ejecutarProgramacion"
             />
@@ -160,7 +168,7 @@ const syncStore = useSyncStore()
 const showForm = ref(false)
 const programacionEditando = ref(null)
 
-const { tiposActividades } = storeToRefs(actividadesStore)
+//const { tiposActividades } = storeToRefs(actividadesStore)
 
 onMounted(async () => {
   // Asegurar que syncStore está inicializado

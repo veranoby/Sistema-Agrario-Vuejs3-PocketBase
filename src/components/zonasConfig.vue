@@ -162,7 +162,7 @@
                     <td :colspan="columns.length">
                       <v-card flat class="pa-4">
                         <v-row no-gutters>
-                          <v-col cols="7" class="pr-4">
+                          <v-col cols="9" class="pr-4">
                             <v-row no-gutters align="center" class="mb-2">
                               <v-col cols="auto" class="mr-2">
                                 <v-icon>mdi-map-marker-radius</v-icon>
@@ -196,16 +196,16 @@
                               <v-chip
                                 v-for="(metrica, key) in item.metricas"
                                 :key="key"
+                                color="blue-grey-lighten-1"
                                 size="x-small"
-                                outlined
+                                variant="flat"
                                 class="m-1"
-                                pill
                               >
                                 {{ key.toUpperCase() }}:{{ metrica.valor }}
                               </v-chip>
                             </v-row>
                           </v-col>
-                          <v-col cols="5" class="d-flex justify-center align-center">
+                          <v-col cols="3" class="d-flex justify-center align-center">
                             <v-img
                               v-if="item.avatar"
                               :src="getAvatarUrl(item)"

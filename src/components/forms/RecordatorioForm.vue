@@ -37,12 +37,23 @@
             </div>
 
             <div class="p-2 m-0">
+              <!-- Checkbox para habilitar fecha -->
+              <v-checkbox
+                v-model="usarFecha"
+                label="¿Agregar fecha para el recordatorio?"
+                color="primary"
+                hide-details
+                class="mb-2"
+                density="compact"
+              ></v-checkbox>
+
+              <!-- Campo de fecha solo visible si usarFecha está activado -->
               <v-text-field
+                v-if="usarFecha"
                 v-model="formData.fecha_recordatorio"
                 label="Fecha Recordatorio"
                 type="date"
                 :min="new Date().toISOString().split('T')[0]"
-                required
                 variant="outlined"
                 density="compact"
                 class="compact-form p-0 m-0"
@@ -203,6 +214,7 @@ const zonasStore = useZonasStore()
 // Data
 const formData = ref({ ...props.recordatorio })
 const loading = ref(false)
+const usarFecha = ref(!!props.recordatorio.fecha_recordatorio)
 
 // Options
 const prioridades = ['baja', 'media', 'alta']
@@ -217,8 +229,6 @@ const formColor = computed(() => (props.isEditing ? 'amber' : 'green'))
 
 const filteredZonas = computed(() => {
   const zonastemp = zonas.value.filter((zona) => !zona.siembra) // Filtrar zonas sin siembra
-  console.log('zonasStore.zonas:', zonasStore.zonas)
-  console.log('zonastemp:', zonastemp)
   return zonastemp
 })
 
@@ -246,6 +256,7 @@ watch(
       ...newVal,
       fecha_recordatorio: formatDateForInput(newVal.fecha_recordatorio)
     }
+    usarFecha.value = !!newVal.fecha_recordatorio
   }
 )
 
@@ -253,9 +264,15 @@ watch(
 async function handleSubmit() {
   loading.value = true
   try {
+    // Convertir título a mayúsculas
+    const tituloEnMayusculas = formData.value.titulo.toUpperCase()
+
     const data = {
       ...formData.value,
-      fecha_recordatorio: `${formData.value.fecha_recordatorio}T00:00:00.000Z`,
+      titulo: tituloEnMayusculas,
+      fecha_recordatorio: usarFecha.value
+        ? `${formData.value.fecha_recordatorio}T00:00:00.000Z`
+        : null,
       siembras: formData.value.siembras,
       actividades: formData.value.actividades,
       zonas: formData.value.zonas,

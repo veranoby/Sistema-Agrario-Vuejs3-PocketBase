@@ -91,7 +91,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+//import { ref, computed, onMounted } from 'vue'
+
+import { computed, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useProfileStore } from '@/stores/profileStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
@@ -99,10 +101,10 @@ import { useRecordatoriosStore } from '@/stores/recordatoriosStore'
 import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useActividadesStore } from '@/stores/actividadesStore'
 import { useZonasStore } from '@/stores/zonasStore'
-import { useSyncStore } from '@/stores/syncStore'
+//import { useSyncStore } from '@/stores/syncStore'
 import { handleError } from '@/utils/errorHandler'
-import StatusPanel from '@/components/StatusPanel.vue'
-import { useAvatarStore } from '@/stores/avatarStore'
+import StatusPanel from '@/components/RecordatoriosStatusPanel.vue'
+//import { useAvatarStore } from '@/stores/avatarStore'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 import RecordatorioForm from '@/components/forms/RecordatorioForm.vue'
 
@@ -119,10 +121,10 @@ const userRole = computed(() => profileStore.user.role)
 const avatarUrl = computed(() => profileStore.avatarUrl)
 
 // Estados del componente
-const dialog = ref(false)
+// const dialog = ref(false)
 //const guardando = ref(false)
-const editando = ref(false)
-const recordatorioEdit = ref(crearRecordatorioVacio())
+// const editando = ref(false)
+// const recordatorioEdit = ref(crearRecordatorioVacio())
 
 // Cargar datos iniciales
 onMounted(async () => {
@@ -134,7 +136,7 @@ onMounted(async () => {
   ])
 })
 
-// Métodos
+/* Métodos
 function crearRecordatorioVacio() {
   return {
     titulo: '',
@@ -146,7 +148,7 @@ function crearRecordatorioVacio() {
     actividades: [],
     zonas: []
   }
-}
+} */
 
 async function handleFormSubmit(data) {
   try {
@@ -161,6 +163,12 @@ async function handleFormSubmit(data) {
   } catch (error) {
     handleError(error, 'Error al guardar recordatorio')
   }
+}
+</script>
+
+<script>
+export default {
+  name: 'RecordatoriosPanel'
 }
 </script>
 

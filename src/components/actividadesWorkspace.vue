@@ -217,6 +217,8 @@
                   v-for="programacion in programacionesActividad"
                   :key="programacion.id"
                   :programacion="programacion"
+                  bg-color="#6e97b21c"
+                  text-color="color-text"
                   @ejecutar="ejecutarProgramacion"
                   @editar="editarProgramacion"
                 />
@@ -420,6 +422,23 @@
                                 </template>
                               </v-checkbox>
 
+                              <!-- Multi-select para tipo "multi-select" -->
+                              <v-select
+                                v-else-if="metrica.tipo === 'multi-select'"
+                                v-model="metrica.valor"
+                                :label="key"
+                                :items="metrica.opciones || []"
+                                multiple
+                                chips
+                                variant="outlined"
+                                density="compact"
+                                class="compact-form"
+                              >
+                                <template v-slot:append>
+                                  <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
+                                </template>
+                              </v-select>
+
                               <!-- Input number para tipo "checkbox" -->
                               <v-checkbox
                                 v-else-if="metrica.tipo === 'checkbox'"
@@ -470,34 +489,43 @@
             </div>
 
             <!-- Diálogo para agregar métrica personalizada -->
-            <v-dialog v-model="addMetricaDialog" persistent max-width="300px">
+            <v-dialog v-model="addMetricaDialog" persistent max-width="400px">
               <v-card>
                 <v-toolbar color="success" dark>
                   <v-toolbar-title>Agregar Métrica</v-toolbar-title>
                   <v-spacer></v-spacer>
                 </v-toolbar>
-                <v-card-text class="m-1 p-0 pl-2">
+                <v-card-text>
                   <v-text-field
                     density="compact"
                     variant="outlined"
-                    class="compact-form"
                     v-model="newMetrica.titulo"
                     label="Título"
                   />
                   <v-textarea
                     density="compact"
                     variant="outlined"
-                    class="compact-form"
                     v-model="newMetrica.descripcion"
                     label="Descripción"
                   />
                   <v-select
                     density="compact"
                     variant="outlined"
-                    class="compact-form"
                     v-model="newMetrica.tipo"
-                    :items="['checkbox', 'number', 'string']"
+                    :items="['checkbox', 'number', 'string', 'select', 'multi-select']"
                     label="Tipo"
+                    @update:model-value="handleTipoChange"
+                  />
+                  <!-- Campo de opciones que aparece solo para tipos específicos -->
+                  <v-textarea
+                    v-if="showOpcionesField"
+                    density="compact"
+                    variant="outlined"
+                    v-model="newMetrica.opcionesText"
+                    label="Opciones (separadas por coma)"
+                    placeholder="Opción 1, Opción 2, Opción 3"
+                    hint="*INGRESA LAS OPCIONES SEPARADAS POR COMAS"
+                    persistent-hint
                   />
                 </v-card-text>
                 <v-card-actions>
@@ -705,7 +733,7 @@ import { storeToRefs } from 'pinia'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import AvatarForm from '@/components/forms/AvatarForm.vue'
 
-import StatusPanel from '@/components/StatusPanel.vue'
+import StatusPanel from '@/components/RecordatoriosStatusPanel.vue'
 import RecordatorioForm from '@/components/forms/RecordatorioForm.vue'
 import { useRecordatoriosStore } from '@/stores/recordatoriosStore'
 
@@ -731,6 +759,8 @@ const actividadId = ref(route.params.id)
 const actividadInfo = ref({})
 const editActividadDialog = ref(false)
 const addMetricaDialog = ref(false)
+const showOpcionesField = ref(false)
+
 const editedActividad = ref({
   metricas: {}
 })
@@ -876,6 +906,18 @@ function openEditDialog() {
 
 function openAddMetricaDialog() {
   addMetricaDialog.value = true
+  showOpcionesField.value = false
+  newMetrica.value = { titulo: '', descripcion: '', tipo: '', opcionesText: '' }
+}
+
+function handleTipoChange(value) {
+  // Mostrar campo de opciones solo para estos tipos
+  showOpcionesField.value = ['checkbox', 'select', 'multi-select'].includes(value)
+
+  // Limpiar opciones si se cambia a un tipo que no las necesita
+  if (!showOpcionesField.value) {
+    newMetrica.value.opcionesText = ''
+  }
 }
 
 // Optimizar manejo de métricas
@@ -895,14 +937,49 @@ const metricasHandler = {
   }
 }
 
-// Optimizar addMetrica
+function addMetrica() {
+  if (newMetrica.value.titulo && newMetrica.value.tipo) {
+    // Reemplazar espacios en blanco por guiones bajos en el título
+    const sanitizedTitulo = newMetrica.value.titulo.toUpperCase().replace(/\s+/g, '_')
+
+    // Procesar opciones si existen
+    let opciones = []
+    if (
+      newMetrica.value.opcionesText &&
+      ['checkbox', 'select', 'multi-select'].includes(newMetrica.value.tipo)
+    ) {
+      opciones = newMetrica.value.opcionesText
+        .split(',')
+        .map((opt) => opt.trim())
+        .filter((opt) => opt)
+    }
+
+    editedActividad.value.metricas[sanitizedTitulo] = {
+      descripcion: newMetrica.value.descripcion,
+      tipo: newMetrica.value.tipo,
+      valor: newMetrica.value.tipo === 'multi-select' ? [] : null, // Array vacío para multi-select
+      opciones: opciones.length > 0 ? opciones : undefined
+    }
+
+    console.log('editedActividad:', editedActividad.value.metricas)
+
+    // Restablecer el formulario
+    newMetrica.value = { titulo: '', descripcion: '', tipo: '', opcionesText: '' }
+    showOpcionesField.value = false
+    addMetricaDialog.value = false
+  } else {
+    snackbarStore.showError('Título y tipo son requeridos para agregar una métrica')
+  }
+}
+
+/* Optimizar addMetrica
 function addMetrica() {
   if (!metricasHandler.validateMetrica(newMetrica.value)) {
-    snackbarStore.showError('Por favor complete todos los campos')
+    snackbarStore.showError('Título y tipo son requeridos para agregar una métrica')
     return
   }
 
-  const metricaKey = newMetrica.value.titulo.toLowerCase().replace(/ /g, '_')
+  const metricaKey = newMetrica.value.titulo.toUpperCase().replace(/ /g, '_')
   const valorInicial = metricasHandler.getInitialValue(newMetrica.value.tipo)
 
   editedActividad.value.metricas = {
@@ -917,6 +994,7 @@ function addMetrica() {
   addMetricaDialog.value = false
   newMetrica.value = { titulo: '', descripcion: '', tipo: '' }
 }
+*/
 
 function removeMetrica(index) {
   delete editedActividad.value.metricas[index]

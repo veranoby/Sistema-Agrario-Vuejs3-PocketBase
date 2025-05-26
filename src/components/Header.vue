@@ -45,7 +45,7 @@
           variant="flat"
           rounded="lg"
           prepend-icon="mdi-login"
-          color="grey-lighten-2"
+          color="success"
           class="mx-2"
           v-if="!isLoggedIn"
           @click="$emit('openAuthModal')"

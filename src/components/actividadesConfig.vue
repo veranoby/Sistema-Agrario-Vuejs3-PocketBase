@@ -54,7 +54,7 @@
     <main class="flex-1 py-2">
       <v-container>
         <v-row>
-          <v-alert v-if="actividades && actividades.length === 0" type="info" class="mt-4">
+          <v-alert v-if="!actividades?.length" type="info" class="mt-4">
             No hay Actividades registradas
           </v-alert>
 
@@ -66,73 +66,65 @@
             md="4"
             lg="3"
           >
-            <v-hover v-slot="{ isHovering, props }">
-              <v-card
-                v-bind="props"
-                :class="['Actividad-card', { 'card-hover': isHovering }]"
-                @click="abrirActividad(actividad.id)"
+            <v-card class="Actividad-card" @click="abrirActividad(actividad.id)">
+              <v-img
+                :src="getActividadAvatarUrl(actividad)"
+                height="200px"
+                cover
+                class="Actividad-image rounded-xl"
               >
-                <v-img
-                  :src="getActividadAvatarUrl(actividad)"
-                  height="200px"
-                  cover
-                  class="Actividad-image rounded-xl"
-                >
-                  <div class="fill-height card-overlay rounded-lg">
-                    <v-card-title class="px-1">
-                      <p class="">
-                        <v-chip
-                          :color="getStatusColor(actividad.activa)"
-                          size="x-small"
-                          variant="flat"
-                        >
-                          {{ getActividadEstado(actividad.activa) }}
-                        </v-chip>
-                      </p>
-                      <p class="text-white text-sm">{{ actividad.nombre }}</p>
-                      <p class="text-white text-xs font-weight-bold mb-2 mt-0">
-                        {{ ActividadesStore.getActividadTipo(actividad.tipo_actividades) }}
-                      </p>
-
-                      <p
-                        class="flex flex-wrap"
-                        v-for="siembraTemp in actividad.siembras"
-                        :key="siembraTemp"
+                <div class="fill-height card-overlay rounded-lg">
+                  <v-card-title class="px-1">
+                    <p class="">
+                      <v-chip
+                        :color="getStatusColor(actividad.activa)"
+                        size="x-small"
+                        variant="flat"
                       >
-                        <v-chip
-                          outlined
-                          size="x-small"
-                          class="compact-chips"
-                          pill
-                          color="green-lighten-3"
-                          variant="flat"
-                        >
-                          {{ siembrasStore.getSiembraNombre(siembraTemp) }}
-                        </v-chip>
-                      </p>
-                      <p class="flex flex-wrap" v-for="zonasId in actividad.zonas" :key="zonasId">
-                        <v-chip
-                          size="x-small"
-                          :key="zonasId"
-                          class="compact-chips"
-                          :text="
-                            zonasStore.getZonaById(zonasId)?.nombre.toUpperCase() +
-                            ' - ' +
-                            zonasStore
-                              .getZonaById(zonasId)
-                              ?.expand?.tipos_zonas?.nombre.toUpperCase()
-                          "
-                          pill
-                          color="blue-lighten-3"
-                          variant="flat"
-                        >
-                        </v-chip>
-                      </p>
-                    </v-card-title>
-                  </div>
-                </v-img>
-              </v-card>
-            </v-hover>
+                        {{ getActividadEstado(actividad.activa) }}
+                      </v-chip>
+                    </p>
+                    <p class="text-white text-sm">{{ actividad.nombre }}</p>
+                    <p class="text-white text-xs font-weight-bold mb-2 mt-0">
+                      {{ ActividadesStore.getActividadTipo(actividad.tipo_actividades) }}
+                    </p>
+
+                    <p
+                      class="flex flex-wrap"
+                      v-for="siembraTemp in actividad.siembras"
+                      :key="siembraTemp"
+                    >
+                      <v-chip
+                        outlined
+                        size="x-small"
+                        class="compact-chips"
+                        pill
+                        color="green-lighten-3"
+                        variant="flat"
+                      >
+                        {{ siembrasStore.getSiembraNombre(siembraTemp) }}
+                      </v-chip>
+                    </p>
+                    <p class="flex flex-wrap" v-for="zonasId in actividad.zonas" :key="zonasId">
+                      <v-chip
+                        size="x-small"
+                        :key="zonasId"
+                        class="compact-chips"
+                        :text="
+                          zonasStore.getZonaById(zonasId)?.nombre.toUpperCase() +
+                          ' - ' +
+                          zonasStore.getZonaById(zonasId)?.expand?.tipos_zonas?.nombre.toUpperCase()
+                        "
+                        pill
+                        color="blue-lighten-3"
+                        variant="flat"
+                      >
+                      </v-chip>
+                    </p>
+                  </v-card-title>
+                </div>
+              </v-img>
+            </v-card>
           </v-col>
         </v-row>
       </v-container>

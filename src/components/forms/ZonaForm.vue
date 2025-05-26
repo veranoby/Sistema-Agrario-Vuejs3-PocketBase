@@ -311,32 +311,29 @@
   </v-card>
 
   <!-- Diálogo para agregar métrica personalizada -->
-  <v-dialog v-model="addMetricaDialog" persistent max-width="300px">
+  <v-dialog v-model="addMetricaDialog" persistent max-width="400px">
     <v-card>
       <v-toolbar color="success" dark>
         <v-toolbar-title>Agregar Métrica</v-toolbar-title>
         <v-spacer></v-spacer>
       </v-toolbar>
 
-      <v-card-text class="m-1 p-0 pl-2">
+      <v-card-text>
         <v-text-field
           density="compact"
           variant="outlined"
-          class="compact-form"
           v-model="newMetrica.titulo"
           label="Título"
         />
         <v-textarea
           density="compact"
           variant="outlined"
-          class="compact-form"
           v-model="newMetrica.descripcion"
           label="Descripción"
         />
         <v-select
           density="compact"
           variant="outlined"
-          class="compact-form"
           v-model="newMetrica.tipo"
           :items="['checkbox', 'number', 'string', 'select', 'multi-select']"
           label="Tipo"
@@ -347,11 +344,10 @@
           v-if="showOpcionesField"
           density="compact"
           variant="outlined"
-          class="compact-form"
           v-model="newMetrica.opcionesText"
           label="Opciones (separadas por coma)"
           placeholder="Opción 1, Opción 2, Opción 3"
-          hint="Ingresa las opciones separadas por comas"
+          hint="*INGRESA LAS OPCIONES SEPARADAS POR COMAS"
           persistent-hint
         />
       </v-card-text>
@@ -515,7 +511,7 @@ function handleTipoChange(value) {
 function addMetrica() {
   if (newMetrica.value.titulo && newMetrica.value.tipo) {
     // Reemplazar espacios en blanco por guiones bajos en el título
-    const sanitizedTitulo = newMetrica.value.titulo.replace(/\s+/g, '_')
+    const sanitizedTitulo = newMetrica.value.titulo.toUpperCase().replace(/\s+/g, '_')
 
     // Procesar opciones si existen
     let opciones = []
@@ -543,7 +539,7 @@ function addMetrica() {
     showOpcionesField.value = false
     addMetricaDialog.value = false
   } else {
-    console.error('Título y tipo son requeridos para agregar una métrica')
+    snackbarStore.showError('Título y tipo son requeridos para agregar una métrica')
   }
 }
 

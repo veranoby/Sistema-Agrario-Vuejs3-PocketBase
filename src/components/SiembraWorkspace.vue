@@ -213,7 +213,7 @@
                 <td :colspan="columns.length" class="border-2 border-b-gray-400">
                   <v-card flat class="p-2 bg-transparent">
                     <v-row no-gutters>
-                      <v-col cols="7" class="pr-4">
+                      <v-col cols="9" class="pr-4">
                         <p v-if="item.gps" class="ml-2 mr-0 p-0 text-xs">
                           <v-icon>mdi-map-marker-radius</v-icon>
 
@@ -233,16 +233,16 @@
                           <v-chip
                             v-for="(metrica, key) in item.metricas"
                             :key="key"
+                            color="blue-grey-lighten-1"
                             size="x-small"
-                            outlined
+                            variant="flat"
                             class="m-1"
-                            pill
                           >
                             {{ key.replace(/_/g, ' ').toUpperCase() }}:{{ metrica.valor }}
                           </v-chip>
                         </p>
                       </v-col>
-                      <v-col cols="5" class="d-flex justify-center align-center">
+                      <v-col cols="3" class="d-flex justify-center align-center">
                         <v-img
                           v-if="item.avatar"
                           :src="getAvatarUrl(item.id)"
@@ -318,16 +318,16 @@
                 <td :colspan="columns.length" class="border-2 border-b-gray-400">
                   <v-card flat class="p-2 bg-transparent">
                     <v-row no-gutters>
-                      <v-col cols="7" class="pr-4">
+                      <v-col cols="9" class="pr-4">
                         <!-- CHIPS DE METRICAS-->
                         <p>
                           <v-chip
                             v-for="(metrica, key) in item.metricas"
                             :key="key"
+                            color="blue-grey-lighten-1"
                             size="x-small"
-                            outlined
+                            variant="flat"
                             class="m-1"
-                            pill
                           >
                             {{ key.replace(/_/g, ' ').toUpperCase() }}:{{ metrica.valor }}
                           </v-chip>
@@ -341,7 +341,7 @@
                           ></label>
                         </p>
                       </v-col>
-                      <v-col cols="5" class="d-flex justify-center align-center">
+                      <v-col cols="3" class="d-flex justify-center align-center">
                         <v-img
                           v-if="item.avatar"
                           :src="getAvatarUrl(item.id)"
@@ -913,13 +913,17 @@ function editZona(zona) {
           zona.metricas?.[key]?.valor ??
           (value.tipo === 'checkbox'
             ? []
-            : value.tipo === 'number'
-              ? 0
-              : value.tipo === 'select'
-                ? null
-                : value.tipo === 'boolean'
-                  ? false
-                  : null)
+            : value.tipo === 'string'
+              ? null
+              : value.tipo === 'number'
+                ? 0
+                : value.tipo === 'multi-select'
+                  ? []
+                  : value.tipo === 'select'
+                    ? null
+                    : value.tipo === 'boolean'
+                      ? false
+                      : null)
       }
     })
   }

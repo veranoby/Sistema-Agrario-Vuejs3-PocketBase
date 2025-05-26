@@ -56,54 +56,44 @@
           </v-alert>
 
           <v-col v-for="siembra in siembras" :key="siembra.id" cols="12" sm="6" md="4" lg="3">
-            <v-hover v-slot="{ isHovering, props }">
-              <v-card
-                v-bind="props"
-                :class="['siembra-card', { 'card-hover': isHovering }]"
-                @click="abrirSiembra(siembra.id)"
+            <v-card :class="['siembra-card']" @click="abrirSiembra(siembra.id)" class="hover-card">
+              <v-img
+                :src="getSiembraAvatarUrl(siembra)"
+                height="200px"
+                cover
+                class="siembra-image rounded-xl"
               >
-                <v-img
-                  :src="getSiembraAvatarUrl(siembra)"
-                  height="200px"
-                  cover
-                  class="siembra-image rounded-xl"
-                >
-                  <div class="fill-height card-overlay rounded-lg p-2">
-                    <v-card-title class="px-1">
-                      <div class="d-flex justify-space-between align-center mb-2">
-                        <span class="text-caption">{{ formatDate(siembra.fecha_inicio) }}</span>
-                        <v-chip
-                          :color="getStatusColor(siembra.estado)"
-                          size="x-small"
-                          variant="flat"
-                        >
-                          {{ siembra.estado }}
-                        </v-chip>
-                      </div>
-                      <span class="text-white text-xl whitespace-normal"
-                        >{{ siembra.nombre }} &nbsp;</span
-                      >
-                      <span class="text-white text-sm font-weight-bold mb-2 mt-0 whitespace-normal">
-                        {{ siembra.tipo }}
-                      </span>
+                <div class="fill-height card-overlay rounded-lg p-2">
+                  <v-card-title class="px-1">
+                    <div class="d-flex justify-space-between align-center mb-2">
+                      <span class="text-caption">{{ formatDate(siembra.fecha_inicio) }}</span>
+                      <v-chip :color="getStatusColor(siembra.estado)" size="x-small" variant="flat">
+                        {{ siembra.estado }}
+                      </v-chip>
+                    </div>
+                    <span class="text-white text-xl whitespace-normal"
+                      >{{ siembra.nombre }} &nbsp;</span
+                    >
+                    <span class="text-white text-sm font-weight-bold mb-2 mt-0 whitespace-normal">
+                      {{ siembra.tipo }}
+                    </span>
 
-                      <p class="text-caption flex flex-wrap">
-                        <span v-for="(zona, index) in getZoneNames(siembra)" :key="index">
-                          <v-chip
-                            size="x-small"
-                            pill
-                            color="blue-lighten-3"
-                            variant="flat"
-                            class="m-0 compact-chips"
-                            >{{ zona }}
-                          </v-chip>
-                        </span>
-                      </p>
-                    </v-card-title>
-                  </div>
-                </v-img>
-              </v-card>
-            </v-hover>
+                    <p class="text-caption flex flex-wrap">
+                      <span v-for="(zona, index) in getZoneNames(siembra)" :key="index">
+                        <v-chip
+                          size="x-small"
+                          pill
+                          color="blue-lighten-3"
+                          variant="flat"
+                          class="m-0 compact-chips"
+                          >{{ zona }}
+                        </v-chip>
+                      </span>
+                    </p>
+                  </v-card-title>
+                </div>
+              </v-img>
+            </v-card>
           </v-col>
         </v-row>
       </v-container>
@@ -329,5 +319,16 @@ const getSiembraAvatarUrl = (siembra) => {
 .v-card__title .text-h6 {
   font-size: 1.25rem !important;
   line-height: 1.5 !important;
+}
+
+.hover-card {
+  transition:
+    transform 0.3s,
+    box-shadow 0.3s;
+}
+
+.hover-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 }
 </style>
