@@ -310,7 +310,7 @@
 
 <script setup>
 //import { ref, computed, watch } from 'vue'
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
 
 import { useValidationStore } from '../stores/validationStore'
@@ -356,6 +356,16 @@ const loginForm = ref({
   password: '',
   rememberMe: false
 })
+
+onMounted(() => {
+  const rememberedUserData = syncStore.loadFromLocalStorage('rememberedUser');
+  if (rememberedUserData) {
+    loginForm.value.username = rememberedUserData.username || '';
+    loginForm.value.email = rememberedUserData.email || '';
+    loginForm.value.rememberMe = true;
+    console.log('[AUTHMODAL] Pre-filled login form with remembered user:', rememberedUserData);
+  }
+});
 
 const registerForm = ref({
   username: '',
