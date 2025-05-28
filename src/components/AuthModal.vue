@@ -359,11 +359,21 @@ const loginForm = ref({
 
 onMounted(() => {
   const rememberedUserData = syncStore.loadFromLocalStorage('rememberedUser');
-  if (rememberedUserData) {
-    loginForm.value.username = rememberedUserData.username || '';
-    loginForm.value.email = rememberedUserData.email || '';
-    loginForm.value.rememberMe = true;
-    console.log('[AUTHMODAL] Pre-filled login form with remembered user:', rememberedUserData);
+  // New log to always show what was loaded, before deciding to fill
+  console.log('[AUTHMODAL MOUNTED] Checking for rememberedUser in localStorage. Found:', JSON.parse(JSON.stringify(rememberedUserData)));
+
+  if (rememberedUserData && (rememberedUserData.username || rememberedUserData.email)) { // Ensure there's actually data to fill
+      console.log('[AUTHMODAL MOUNTED] Pre-filling login form with rememberedUser data:', JSON.parse(JSON.stringify(rememberedUserData)));
+      loginForm.value.username = rememberedUserData.username || '';
+      loginForm.value.email = rememberedUserData.email || '';
+      loginForm.value.rememberMe = true; // If we found data, assume rememberMe was true when it was saved
+  } else {
+      console.log('[AUTHMODAL MOUNTED] No valid rememberedUser data found, form will not be pre-filled by rememberedUser logic.');
+      // Explicitly clear the fields if no rememberedUser data, to counteract potential stale state
+      // if the modal is re-used without full re-creation.
+      // loginForm.value.username = ''; // Consider if this is too aggressive or if default empty state is fine
+      // loginForm.value.email = '';
+      // loginForm.value.rememberMe = false;
   }
 });
 
