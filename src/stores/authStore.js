@@ -30,56 +30,100 @@ export const useAuthStore = defineStore('auth', {
 
   actions: {
     async init() {
-      const syncStore = useSyncStore()
+      const syncStore = useSyncStore();
+      console.log('[AUTH INIT] Starting initialization...'); // New log
+
       const model = syncStore.loadFromLocalStorage('pocketbase_auth');
       console.log('[AUTH INIT] Loaded pocketbase_auth model:', JSON.parse(JSON.stringify(model)));
 
-      if (model) {
-        try {
-          // Restore the auth store from the loaded model
-          pb.authStore.save(model.token, model); // model.token is the token, model is the user model
-          console.log('[AUTH INIT] pb.authStore.isValid after loading model:', pb.authStore.isValid);
+      const rememberMeIsActive = syncStore.loadFromLocalStorage('rememberMe_active');
+      console.log('[AUTH INIT] rememberMe_active loaded as:', rememberMeIsActive);
 
-          if (pb.authStore.isValid) {
-            console.log('[AUTH INIT] Checking tokenNeedsRefresh(). Current value:', this.tokenNeedsRefresh());
-            if (this.tokenNeedsRefresh()) { // tokenNeedsRefresh might need pb.authStore.model if it relied on authData.record
-              console.log('[AUTH INIT] Attempting authRefresh...');
-              const freshAuthData = await pb.collection('users').authRefresh(); // freshAuthData is { token, record }
-              console.log('[AUTH INIT] authRefresh response:', JSON.parse(JSON.stringify(freshAuthData)));
-              this.setSession(freshAuthData.record); // setSession expects the record
-              console.log('[AUTH INIT] Session set from refreshed auth data. User:', JSON.parse(JSON.stringify(this.user)), 'IsLoggedIn:', this.isLoggedIn);
-            } else {
-              this.setSession(pb.authStore.model); // pb.authStore.model is the record
-              console.log('[AUTH INIT] Session set from existing model. User:', JSON.parse(JSON.stringify(this.user)), 'IsLoggedIn:', this.isLoggedIn);
-            }
+      if (model && model.token) { // Ensure model and token exist before trying to use them
+        pb.authStore.save(model.token, model);
+        console.log('[AUTH INIT] pb.authStore.isValid after loading model:', pb.authStore.isValid);
 
-            const rememberMeIsActive = syncStore.loadFromLocalStorage('rememberMe_active');
-            console.log('[AUTH INIT] rememberMe_active loaded as:', rememberMeIsActive);
-            if (rememberMeIsActive) {
-              this.startRefreshTimer()
+        if (pb.authStore.isValid) {
+          console.log('[AUTH INIT] Path A: Session is valid after loading model.');
+          if (this.tokenNeedsRefresh()) {
+            console.log('[AUTH INIT] Path A.1: Token needs refresh.');
+            try {
+              const freshAuthData = await pb.collection('users').authRefresh();
+              console.log('[AUTH INIT] authRefresh successful for Path A.1. Response:', JSON.parse(JSON.stringify(freshAuthData)));
+              this.setSession(freshAuthData.record);
+              syncStore.saveToLocalStorage('pocketbase_auth', pb.authStore.model); // Persist refreshed token
+              syncStore.saveToLocalStorage('last_auth_success', Date.now()); // Update last success time
+            } catch (error) {
+              console.error('[AUTH INIT] Error during authRefresh for Path A.1:', error);
+              // If refresh fails, this valid-but-needs-refresh session might become invalid.
+              // Consider if logout is needed here or if setSession simply won't be called.
+              // For now, let it fall through; if setSession isn't called, isLoggedIn remains false.
+              // Or, more robustly, logout if refresh fails:
+              this.logout(); // Logout if token refresh fails for an existing valid session
+              this.initialized = true;
+              return false;
             }
-            this.initialized = true; // Successfully initialized with a valid session
-            console.log('[AUTH INIT] Final state: isLoggedIn:', this.isLoggedIn, 'User:', JSON.parse(JSON.stringify(this.user)), 'Initialized:', this.initialized);
-            return true;
           } else {
-            // Auth store not valid after loading from model, treat as corrupted/invalid
-            console.warn('Session restored from localStorage was invalid.');
+            console.log('[AUTH INIT] Path A.2: Token is fine, no refresh needed.');
+            this.setSession(pb.authStore.model);
+          }
+
+          if (rememberMeIsActive) { // This check should be inside the valid session path
+              console.log('[AUTH INIT] Path A: rememberMe is active, starting refresh timer.');
+              this.startRefreshTimer();
+          } else {
+              // If not rememberMe, but session was valid (e.g. from a previous non-rememberMe session that hasn't expired)
+              // ensure timer is stopped.
+              this.stopRefreshTimer();
+          }
+          this.initialized = true;
+          console.log('[AUTH INIT] Path A: Initialization successful. isLoggedIn:', this.isLoggedIn);
+          return true;
+
+        } else { // pb.authStore.isValid is FALSE after loading model
+          console.log('[AUTH INIT] Path B: Session is INVALID after loading model.');
+          if (rememberMeIsActive) {
+            console.log('[AUTH INIT] Path B.1: rememberMe is active, attempting proactive authRefresh.');
+            try {
+              const freshAuthData = await pb.collection('users').authRefresh();
+              console.log('[AUTH INIT] Proactive authRefresh successful for Path B.1. Response:', JSON.parse(JSON.stringify(freshAuthData)));
+              this.setSession(freshAuthData.record);
+              syncStore.saveToLocalStorage('pocketbase_auth', pb.authStore.model); // Persist refreshed token
+              syncStore.saveToLocalStorage('last_auth_success', Date.now());
+              this.startRefreshTimer(); // Start timer as rememberMe is active
+              this.initialized = true;
+              console.log('[AUTH INIT] Path B.1: Initialization successful after proactive refresh. isLoggedIn:', this.isLoggedIn);
+              return true;
+            } catch (error) {
+              console.error('[AUTH INIT] Error during proactive authRefresh for Path B.1:', error);
+              // Proactive refresh failed, so now we must clear the invalid session.
+              this.logout();
+              this.initialized = true; // Mark initialized even if logout
+              console.log('[AUTH INIT] Path B.1: Proactive refresh failed, user logged out.');
+              return false;
+            }
+          } else {
+            console.log('[AUTH INIT] Path B.2: rememberMe is NOT active. Clearing invalid session.');
+            // No "Remember Me", and the loaded session is invalid. Clear it.
             this.logout(); // Perform full cleanup
-            // this.initialized is set to true at the end, indicating an attempt was made.
-            console.log('[AUTH INIT] Final state: isLoggedIn:', this.isLoggedIn, 'User:', JSON.parse(JSON.stringify(this.user)), 'Initialized:', this.initialized);
+            this.initialized = true; // Mark initialized even if logout
+            console.log('[AUTH INIT] Path B.2: User logged out.');
             return false;
           }
-        } catch (error) {
-          console.error('Error restoring session:', error);
-          this.logout(); // Perform full cleanup
-          console.log('[AUTH INIT] Final state: isLoggedIn:', this.isLoggedIn, 'User:', JSON.parse(JSON.stringify(this.user)), 'Initialized:', this.initialized);
-          return false;
         }
+      } else {
+        console.log('[AUTH INIT] Path C: No model or model.token found in localStorage.');
+        // No model found, so no session to restore.
+        // We shouldn't logout here as there's nothing to clear, just ensure clean state.
+        this.user = null;
+        this.token = null;
+        this.isLoggedIn = false;
+        // this.initialized = false; // This was in logout, ensure it's handled correctly.
+        // Initialized should be true because we've completed the init process.
+        this.initialized = true;
+        console.log('[AUTH INIT] Path C: Initialization complete, no user session.');
+        return false;
       }
-
-      this.initialized = true; // Mark as initialization attempted, even if no data found
-      console.log('[AUTH INIT] Final state: isLoggedIn:', this.isLoggedIn, 'User:', JSON.parse(JSON.stringify(this.user)), 'Initialized:', this.initialized);
-      return false
     },
 
     async ensureAuthInitialized() {
