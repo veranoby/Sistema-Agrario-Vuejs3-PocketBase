@@ -309,8 +309,8 @@
 </template>
 
 <script setup>
-//import { ref, computed, watch } from 'vue'
-import { ref, computed, watch } from 'vue'
+//import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
 
 import { useValidationStore } from '../stores/validationStore'
@@ -319,8 +319,10 @@ import { useSnackbarStore } from '../stores/snackbarStore'
 import loginLogo from '../assets/login-logo.png'
 import registerLogo from '../assets/register-logo.png'
 import { useVuelidate } from '@vuelidate/core'
-import { required, email, minLength, sameAs, helpers } from '@vuelidate/validators'
+import { required, minLength, sameAs, helpers } from '@vuelidate/validators'
+//import { required, email, minLength, sameAs, helpers } from '@vuelidate/validators'
 import { useSyncStore } from '@/stores/syncStore'
+//import { debounce } from 'lodash'
 import { useRouter } from 'vue-router'
 
 const props = defineProps({
@@ -354,6 +356,35 @@ const loginForm = ref({
   email: '',
   password: '',
   rememberMe: false
+})
+
+onMounted(() => {
+  const rememberedUserData = syncStore.loadFromLocalStorage('rememberedUser')
+  // New log to always show what was loaded, before deciding to fill
+  console.log(
+    '[AUTHMODAL MOUNTED] Checking for rememberedUser in localStorage. Found:',
+    JSON.parse(JSON.stringify(rememberedUserData))
+  )
+
+  if (rememberedUserData && (rememberedUserData.username || rememberedUserData.email)) {
+    // Ensure there's actually data to fill
+    console.log(
+      '[AUTHMODAL MOUNTED] Pre-filling login form with rememberedUser data:',
+      JSON.parse(JSON.stringify(rememberedUserData))
+    )
+    loginForm.value.username = rememberedUserData.username || ''
+    loginForm.value.email = rememberedUserData.email || ''
+    loginForm.value.rememberMe = true // If we found data, assume rememberMe was true when it was saved
+  } else {
+    console.log(
+      '[AUTHMODAL MOUNTED] No valid rememberedUser data found, form will not be pre-filled by rememberedUser logic.'
+    )
+    // Explicitly clear the fields if no rememberedUser data, to counteract potential stale state
+    // if the modal is re-used without full re-creation.
+    // loginForm.value.username = ''; // Consider if this is too aggressive or if default empty state is fine
+    // loginForm.value.email = '';
+    // loginForm.value.rememberMe = false;
+  }
 })
 
 const registerForm = ref({
@@ -562,22 +593,20 @@ const openForgotPasswordDialog = () => {
   forgotPasswordDialog.value = true
 }
 
+// Reemplazar el método actual con:
 const sendPasswordReset = async () => {
   const { valid } = await resetForm.value.validate()
-
   if (!valid) return
 
   resetLoading.value = true
   resetError.value = ''
 
   try {
-    await pb.collection('users').requestPasswordReset(resetEmail.value)
+    await authStore.requestPasswordReset(resetEmail.value)
     passwordResetSent.value = true
     snackbarStore.showSnackbar('Enlace de recuperación enviado', 'success')
   } catch (error) {
-    console.error('Error al solicitar recuperación de contraseña:', error)
     resetError.value = 'No pudimos procesar su solicitud. Verifique su email e intente nuevamente.'
-    snackbarStore.showSnackbar('Error al enviar enlace de recuperación', 'error')
   } finally {
     resetLoading.value = false
   }

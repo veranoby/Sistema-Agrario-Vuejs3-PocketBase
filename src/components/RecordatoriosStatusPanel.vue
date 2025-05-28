@@ -23,11 +23,11 @@
           >
             <!-- Fila 1: Título y metadatos -->
             <div class="d-flex align-center w-100 mb-1">
-              <span class="text-sm font-weight-bold flex-grow-1">
+              <span class="text-xs font-weight-bold flex-grow-1">
                 {{ item.titulo }}
               </span>
-              <span class="text-xs mr-2">
-                {{ getDaysAgo(item.updated) }}
+              <span class="text-xs font-weight-bold mr-2">
+                {{ getDaysAgo(item.fecha_creacion || item.created) }}
               </span>
               <v-btn
                 icon
@@ -53,7 +53,7 @@
                     :key="status"
                     @click="updateStatus(item.id, status)"
                   >
-                    <v-list-item-title density="compact" class="text-sm">{{
+                    <v-list-item-title density="compact" class="text-xs">{{
                       statusLabel(status)
                     }}</v-list-item-title>
                   </v-list-item>
@@ -62,7 +62,7 @@
 
                   <!-- Opción eliminar -->
                   <v-list-item @click="$emit('delete', item.id)">
-                    <v-list-item-title class="text-red">
+                    <v-list-item-title class="text-xs text-red">
                       <v-icon color="error" small class="mr-2">mdi-delete</v-icon>
                       Eliminar
                     </v-list-item-title>
@@ -75,7 +75,7 @@
             <v-row no-gutters>
               <!-- Columna Izquierda: Descripción -->
               <v-col cols="12" sm="9" class="pr-sm-3">
-                <p class="text-sm text-grey-darken-1 mb-0">
+                <p class="text-xs text-grey-darken-1 mb-0">
                   {{ item.descripcion || 'Sin descripción' }}
                 </p>
               </v-col>
@@ -84,7 +84,7 @@
               <v-col cols="12" sm="3" class="mt-2 mt-sm-0">
                 <div class="metadata-container">
                   <!-- Prioridad -->
-                  <v-chip :color="`${priorityColor(item.prioridad)}`" size="small" class="mb-1">
+                  <v-chip :color="`${priorityColor(item.prioridad)}`" size="x-small" class="mb-1">
                     <v-icon size="14" class="mr-1" :icon="priorityIcon(item.prioridad)"></v-icon>
                     {{ item.prioridad.toUpperCase() }}
                   </v-chip>
@@ -189,14 +189,11 @@ const formatDate = (dateString) => {
 
 const getDaysAgo = (dateString) => {
   if (!dateString) return ''
-  const updatedDate = new Date(dateString)
-  const today = new Date()
-  const diffTime = Math.abs(today - updatedDate)
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffTime = Math.abs(now - date)
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-
-  if (diffDays === 0) return 'Hoy'
-  if (diffDays === 1) return 'Hace 1 día'
-  return `Hace ${diffDays} días`
+  return `${diffDays} ${diffDays === 1 ? 'día' : 'días'}`
 }
 
 const statusLabel = (status) => {

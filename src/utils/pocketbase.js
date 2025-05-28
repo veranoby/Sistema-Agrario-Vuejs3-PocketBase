@@ -135,6 +135,7 @@ recordatorios:
   titulo: string
   descripcion: string
   fecha_recordatorio: datetime
+  fecha_creacion: datetime
   estado: select(pendiente, en_progreso, completado)
   prioridad: select(baja, media, alta)
   siembras:  relation(siembras). multiple.

@@ -66,17 +66,24 @@ export const useActividadesStore = defineStore('actividades', {
     },
 
     async cargarActividades() {
+      // Local storage loading is now handled by initFromLocalStorage, called by syncStore.refreshAllStores
+      // or by the store's own init if called directly.
+      // This method will now primarily focus on fetching from the server if data isn't already populated.
       const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore()
       this.error = null
       this.loading = true
 
-      const actividadesLocal = useSyncStore().loadFromLocalStorage('actividades')
-      if (actividadesLocal) {
-        this.actividades = actividadesLocal
-        this.loading = false
-        return this.actividades
+      // If activities are already populated (e.g., by initFromLocalStorage), consider not re-fetching unless necessary.
+      // For now, we'll keep the original behavior of fetching if local data wasn't sufficient (though it's loaded elsewhere).
+      // This part might be redundant if initFromLocalStorage always runs first via refreshAllStores.
+      if (this.actividades.length > 0 && !navigator.onLine) { // Example: only fetch if online and empty
+          this.loading = false;
+          return this.actividades;
       }
+      
+      // If online, proceed to fetch from server.
+      // The original logic to check 'actividadesLocal' first is removed as initFromLocalStorage handles it.
 
       try {
         const records = await pb.collection('actividades').getFullList({
@@ -385,11 +392,15 @@ export const useActividadesStore = defineStore('actividades', {
     },
 
     async cargarTiposActividades() {
-      const tiposActividadesLocal = useSyncStore().loadFromLocalStorage('tiposActividades')
-      if (tiposActividadesLocal) {
-        this.tiposActividades = tiposActividadesLocal
-        return this.tiposActividades
+      // Local storage loading is now handled by initFromLocalStorage.
+      // This method will now primarily focus on fetching from the server if data isn't already populated.
+      const syncStore = useSyncStore(); // keep for saving later
+
+      if (this.tiposActividades.length > 0 && !navigator.onLine) { // Example: only fetch if online and empty
+          return this.tiposActividades;
       }
+      // If online, proceed to fetch from server.
+      // The original logic to check 'tiposActividadesLocal' first is removed.
 
       try {
         const records = await pb.collection('tipo_actividades').getFullList({
@@ -406,6 +417,60 @@ export const useActividadesStore = defineStore('actividades', {
         useSyncStore().saveToLocalStorage('tiposActividades', this.tiposActividades)
       } catch (error) {
         handleError(error, 'Error al cargar tipos de actividades')
+      }
+    },
+
+    initFromLocalStorage() {
+      const syncStore = useSyncStore();
+      const localActividades = syncStore.loadFromLocalStorage('actividades');
+      this.actividades = localActividades || [];
+      const localTiposActividades = syncStore.loadFromLocalStorage('tiposActividades');
+      this.tiposActividades = localTiposActividades || [];
+      console.log('[ACT_STORE] Initialized from localStorage. Actividades:', this.actividades.length, 'Tipos:', this.tiposActividades.length);
+    },
+
+    // Standard sync methods
+    applySyncedCreate(tempId, realItem) {
+      const syncStore = useSyncStore();
+      console.log(`[ACTIVIDADES_STORE] Applying synced create: tempId ${tempId} -> realId ${realItem.id}`);
+      const index = this.actividades.findIndex(a => a.id === tempId && a._isTemp);
+      if (index !== -1) {
+        this.actividades[index] = { ...realItem, _isTemp: false };
+      } else {
+        if (!this.actividades.some(a => a.id === realItem.id)) {
+            this.actividades.unshift({ ...realItem, _isTemp: false }); 
+            console.log('[ACTIVIDADES_STORE] Synced item added as new (was not found by tempId).');
+        } else {
+            console.log('[ACTIVIDADES_STORE] Synced item already exists by realId.');
+        }
+      }
+      syncStore.saveToLocalStorage('actividades', this.actividades);
+      console.log('[ACTIVIDADES_STORE] Synced create applied, localStorage updated.');
+    },
+
+    applySyncedUpdate(id, updatedItemData) {
+      const syncStore = useSyncStore();
+      console.log(`[ACTIVIDADES_STORE] Applying synced update for id: ${id}`);
+      const index = this.actividades.findIndex(a => a.id === id);
+      if (index !== -1) {
+        this.actividades[index] = { ...this.actividades[index], ...updatedItemData, _isTemp: false };
+        syncStore.saveToLocalStorage('actividades', this.actividades);
+        console.log('[ACTIVIDADES_STORE] Synced update applied, localStorage updated.');
+      } else {
+         console.warn(`[ACTIVIDADES_STORE] Could not find item with id ${id} to apply update.`);
+      }
+    },
+
+    applySyncedDelete(id) {
+      const syncStore = useSyncStore();
+      console.log(`[ACTIVIDADES_STORE] Applying synced delete for id: ${id}`);
+      const initialLength = this.actividades.length;
+      this.actividades = this.actividades.filter(a => a.id !== id);
+      if (this.actividades.length < initialLength) {
+        syncStore.saveToLocalStorage('actividades', this.actividades);
+        console.log('[ACTIVIDADES_STORE] Synced delete applied, localStorage updated.');
+      } else {
+        console.warn(`[ACTIVIDADES_STORE] Could not find item with id ${id} to apply delete.`);
       }
     }
   }

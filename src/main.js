@@ -112,22 +112,28 @@ const initApp = async () => {
   const themeStore = useThemeStore()
 
   try {
-    // Inicializar tema
+    // Inicializar tema primero
     const currentTheme = themeStore.currentTheme
     document.documentElement.setAttribute('data-theme', currentTheme)
 
-    // Inicializar auth store primero
-    await authStore.init()
-
-    // Solo inicializar sync si hay sesión
-    if (authStore.isLoggedIn) {
-      await syncStore.init()
+    // Inicializar auth store y esperar a que termine
+    const isAuthenticated = await authStore.ensureAuthInitialized()
+    
+    // Solo inicializar sync si hay una sesión válida
+    if (isAuthenticated) {
+      try {
+        await syncStore.init()
+      } catch (syncError) {
+        console.error('Error initializing sync store:', syncError)
+        // Continuar con la aplicación incluso si hay error en sync
+      }
     }
   } catch (error) {
-    console.error('Error initializing app:', error)
+    console.error('Error during app initialization:', error)
+  } finally {
+    // Montar la aplicación en cualquier caso
+    app.mount('#app')
   }
-
-  app.mount('#app')
 }
 
 initApp()

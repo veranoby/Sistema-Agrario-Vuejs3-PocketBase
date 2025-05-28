@@ -227,26 +227,30 @@
           </v-col>
         </v-row>
 
-        <!-- Bitácora 
-        <v-card class="bitacora-section" elevation="2">
-          <v-card-title class="headline">Bitácora de la Actividad</v-card-title>
-          <v-card-text>
-            <v-data-table
-              :headers="bitacoraHeaders"
-              :items="filteredBitacora"
-              :items-per-page="itemsPerPage"
-              class="elevation-1"
-            >
-              <template #[`item.fecha`]="{ item }">
-                {{ formatDate(item.fecha) }}
-              </template>
-              <template #[`item.actions`]="{ item }">
-                <v-icon small @click="editBitacoraItem(item)">mdi-pencil</v-icon>
-                <v-icon small @click="deleteBitacoraItem(item)">mdi-delete</v-icon>
-              </template>
-            </v-data-table>
-          </v-card-text>
-        </v-card> -->
+        <!-- Bitácora Section using EmbeddedBitacoraList -->
+        <v-row no-gutters>
+          <v-col cols="12" class="mt-4">
+            <!-- Added mt-4 for spacing -->
+            <v-card class="bitacora-embedded-section" elevation="2">
+              <v-card-title class="d-flex justify-space-between align-center text-body-1">
+                <span>Bitácora Reciente</span>
+                <v-btn
+                  color="secondary"
+                  @click="openNewBitacoraEntryDialogActividad"
+                  size="small"
+                  variant="elevated"
+                >
+                  <v-icon start>mdi-plus-box-outline</v-icon>
+                  Nueva Entrada
+                </v-btn>
+              </v-card-title>
+              <v-card-text class="pa-2">
+                <!-- Adjusted padding -->
+                <EmbeddedBitacoraList :actividadId="actividadId" title="" :itemLimit="5" />
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
       </v-col>
 
       <!-- SIDEBAR  -->
@@ -718,6 +722,16 @@
       :actividadPredefinida="actividadId"
       @guardado="handleGuardado"
     />
+
+    <!-- Dialog for BitacoraEntryForm -->
+    <v-dialog v-model="showBitacoraFormDialogActividad" max-width="800px" persistent scrollable>
+      <BitacoraEntryForm
+        v-if="showBitacoraFormDialogActividad"
+        :actividadIdContext="actividadId"
+        @close="showBitacoraFormDialogActividad = false"
+        @save="handleBitacoraSaveActividad"
+      />
+    </v-dialog>
   </v-container>
 </template>
 
@@ -743,6 +757,8 @@ import { useProgramacionesStore } from '@/stores/programacionesStore'
 import ProgramacionPanel from '@/components/ProgramacionPanel.vue'
 import ProgramacionForm from '@/components/forms/ProgramacionForm.vue'
 import { useSnackbarStore } from '@/stores/snackbarStore'
+import EmbeddedBitacoraList from './EmbeddedBitacoraList.vue'
+import BitacoraEntryForm from '@/components/forms/BitacoraEntryForm.vue'
 
 const route = useRoute()
 const actividadesStore = useActividadesStore()
@@ -779,6 +795,8 @@ const mostrarFormProgramacion = ref(false)
 const programacionEdit = ref(null)
 
 const isLoading = ref(true)
+const showBitacoraFormDialogActividad = ref(false)
+// const itemsPerPage = ref(10); // Removed as it was likely for the old table
 
 const { user } = storeToRefs(profileStore)
 const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
@@ -829,6 +847,7 @@ const getStatusMsg = (status) => {
 }
 
 /*
+// These were related to the old bitacora table and are no longer needed.
 const estadosBitacora = ['planificada', 'en_progreso', 'completada', 'cancelada']
 
 const bitacoraHeaders = [
@@ -1137,6 +1156,16 @@ const handleGuardado = async () => {
   mostrarFormProgramacion.value = false
   programacionEdit.value = null
   await cargarProgramaciones()
+}
+
+function openNewBitacoraEntryDialogActividad() {
+  showBitacoraFormDialogActividad.value = true
+}
+
+async function handleBitacoraSaveActividad() {
+  showBitacoraFormDialogActividad.value = false
+  // Store reactivity should update EmbeddedBitacoraList.
+  // snackbarStore.showSnackbar('Entrada de bitácora guardada.', 'success'); // Form handles its own success snackbar
 }
 </script>
 

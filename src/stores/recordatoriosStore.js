@@ -14,7 +14,16 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
     lastSync: null,
     dialog: false,
     editando: false,
-    recordatorioEdit: null
+    recordatorioEdit: {
+      titulo: '',
+      descripcion: '',
+      fecha_recordatorio: new Date().toISOString().substr(0, 10),
+      prioridad: 'media',
+      estado: 'pendiente',
+      siembras: [],
+      actividades: [],
+      zonas: []
+    }
   }),
 
   getters: {
@@ -66,15 +75,14 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
     },
 
     async cargarRecordatorios() {
+      // Local storage loading is now handled by initFromLocalStorage.
       const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore()
       this.error = null
       this.loading = true
 
-      // Cargar datos locales primero
-      const recordatoriosLocal = syncStore.loadFromLocalStorage('recordatorios')
-      if (recordatoriosLocal) {
-        this.recordatorios = recordatoriosLocal
+      // If data already populated by initFromLocalStorage, and offline, return.
+      if (this.recordatorios.length > 0 && !navigator.onLine) {
         this.loading = false
         return this.recordatorios
       }
@@ -105,17 +113,24 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
       const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore()
 
-      // Enriquecer datos con contexto de hacienda
-      const fechaAjustada = recordatorioData.fecha_recordatorio.includes('T')
-        ? recordatorioData.fecha_recordatorio
-        : `${recordatorioData.fecha_recordatorio}T00:00:00.000Z`
+      // Manejar la fecha de recordatorio (puede ser null/undefined)
+      let fechaAjustada = null
+      if (recordatorioData.fecha_recordatorio) {
+        fechaAjustada = recordatorioData.fecha_recordatorio.includes('T')
+          ? recordatorioData.fecha_recordatorio
+          : `${recordatorioData.fecha_recordatorio}T00:00:00.000Z`
+      }
 
       const enrichedData = {
         ...recordatorioData,
+        actividades: recordatorioData.actividades || [],
+        zonas: recordatorioData.zonas || [],
+        siembras: recordatorioData.siembras || [],
         estado: 'pendiente',
         version: this.version,
         hacienda: haciendaStore.mi_hacienda?.id,
-        fecha_recordatorio: fechaAjustada
+        fecha_recordatorio: fechaAjustada,
+        fecha_creacion: new Date().toISOString() // Asegurar que siempre se establezca la fecha de creación
       }
 
       if (!syncStore.isOnline) {
@@ -125,7 +140,8 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
           id: tempId,
           _isTemp: true,
           created: new Date().toISOString(),
-          updated: new Date().toISOString()
+          updated: new Date().toISOString(),
+          fecha_creacion: new Date().toISOString() // Asegurar fecha_creacion en modo offline
         }
 
         this.recordatorios.unshift(tempRecordatorio)
@@ -182,6 +198,15 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
         version: this.version
       }
 
+      // Si se debe actualizar la fecha de creación, establecer la fecha actual
+      if (newData.fechaActualizar) {
+        // Usamos el campo personalizado fecha_creacion en lugar de el campo created de sistema
+        enrichedData['fecha_creacion'] = new Date().toISOString()
+      }
+
+      // Eliminar el campo de control para que no se intente guardar en la base de datos
+      delete enrichedData.fechaActualizar
+
       if (!syncStore.isOnline) {
         const index = this.recordatorios.findIndex((r) => r.id === id)
         if (index !== -1) {
@@ -237,7 +262,7 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
 
       if (!syncStore.isOnline) {
         // Verificar si el recordatorio existe antes de eliminarlo
-        const recordatorioExiste = this.recordatorios.some(r => r.id === id)
+        const recordatorioExiste = this.recordatorios.some((r) => r.id === id)
         if (!recordatorioExiste) {
           snackbarStore.hideLoading()
           throw new Error(`No se encontró recordatorio con ID: ${id}`)
@@ -311,15 +336,9 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
     },
 
     updateLocalItem(tempId, newItem) {
-      return useSyncStore().updateLocalItem(
-        'recordatorios',
-        tempId,
-        newItem,
-        this.recordatorios,
-        {
-          referenceFields: ['recordatorio', 'recordatorios']
-        }
-      )
+      return useSyncStore().updateLocalItem('recordatorios', tempId, newItem, this.recordatorios, {
+        referenceFields: ['recordatorio', 'recordatorios']
+      })
     },
 
     updateReferencesToItem(tempId, realId) {
@@ -333,11 +352,68 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
     },
 
     removeLocalItem(id) {
-      return useSyncStore().removeLocalItem(
-        'recordatorios',
-        id,
-        this.recordatorios
+      return useSyncStore().removeLocalItem('recordatorios', id, this.recordatorios)
+    },
+
+    initFromLocalStorage() {
+      const syncStore = useSyncStore()
+      const localRecordatorios = syncStore.loadFromLocalStorage('recordatorios')
+      this.recordatorios = localRecordatorios || []
+      console.log(
+        '[REC_STORE] Initialized from localStorage. Recordatorios:',
+        this.recordatorios.length
       )
+    },
+
+    // Standard sync methods
+    applySyncedCreate(tempId, realItem) {
+      const syncStore = useSyncStore()
+      console.log(
+        `[RECORDATORIOS_STORE] Applying synced create: tempId ${tempId} -> realId ${realItem.id}`
+      )
+      const index = this.recordatorios.findIndex((r) => r.id === tempId && r._isTemp)
+      if (index !== -1) {
+        this.recordatorios[index] = { ...realItem, _isTemp: false }
+      } else {
+        if (!this.recordatorios.some((r) => r.id === realItem.id)) {
+          this.recordatorios.unshift({ ...realItem, _isTemp: false })
+          console.log('[RECORDATORIOS_STORE] Synced item added as new (was not found by tempId).')
+        } else {
+          console.log('[RECORDATORIOS_STORE] Synced item already exists by realId.')
+        }
+      }
+      syncStore.saveToLocalStorage('recordatorios', this.recordatorios)
+      console.log('[RECORDATORIOS_STORE] Synced create applied, localStorage updated.')
+    },
+
+    applySyncedUpdate(id, updatedItemData) {
+      const syncStore = useSyncStore()
+      console.log(`[RECORDATORIOS_STORE] Applying synced update for id: ${id}`)
+      const index = this.recordatorios.findIndex((r) => r.id === id)
+      if (index !== -1) {
+        this.recordatorios[index] = {
+          ...this.recordatorios[index],
+          ...updatedItemData,
+          _isTemp: false
+        }
+        syncStore.saveToLocalStorage('recordatorios', this.recordatorios)
+        console.log('[RECORDATORIOS_STORE] Synced update applied, localStorage updated.')
+      } else {
+        console.warn(`[RECORDATORIOS_STORE] Could not find item with id ${id} to apply update.`)
+      }
+    },
+
+    applySyncedDelete(id) {
+      const syncStore = useSyncStore()
+      console.log(`[RECORDATORIOS_STORE] Applying synced delete for id: ${id}`)
+      const initialLength = this.recordatorios.length
+      this.recordatorios = this.recordatorios.filter((r) => r.id !== id)
+      if (this.recordatorios.length < initialLength) {
+        syncStore.saveToLocalStorage('recordatorios', this.recordatorios)
+        console.log('[RECORDATORIOS_STORE] Synced delete applied, localStorage updated.')
+      } else {
+        console.warn(`[RECORDATORIOS_STORE] Could not find item with id ${id} to apply delete.`)
+      }
     }
   }
 })

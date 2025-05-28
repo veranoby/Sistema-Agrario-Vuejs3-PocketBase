@@ -84,59 +84,21 @@
           </v-card-text>
         </v-card>
 
-        <!-- Bitácora 
-        <v-card class="bitacora-section" elevation="2">
-          <v-card-title class="headline d-flex justify-space-between align-center">
-            Bitácora de la Siembra
-
-            <v-btn color="green-lighten-2" @click="openAddBitacoraDialog" icon>
-              <v-icon>mdi-plus</v-icon>
+        <!-- Nueva Bitácora Section using EmbeddedBitacoraList -->
+        <v-card class="bitacora-embedded-section mb-4" elevation="2">
+          <v-card-title class="d-flex justify-space-between align-center">
+            <span>Bitácora Reciente</span>
+            <v-btn color="primary" @click="openNewBitacoraEntryDialog" size="small">
+              <v-icon start>mdi-plus-circle-outline</v-icon>
+              Nueva Entrada
             </v-btn>
           </v-card-title>
           <v-card-text>
-            <div class="d-flex flex-wrap align-center mb-0">
-              FILTRAR POR ZONAS:
-              <v-chip-group v-model="selectedZonas" column multiple>
-                <v-chip v-for="zona in zonasfiltradas" :key="zona.id" filter outlined size="small">
-                  {{ zona.nombre }}
-                </v-chip>
-              </v-chip-group>
-            </div>
-            <div class="d-flex flex-wrap align-center mb-0">
-              FILTRAR POR ACTIVIDAD:
-              <v-chip-group v-model="selectedActividades" column multiple>
-                <v-chip
-                  v-for="actividad in filteredActividades"
-                  :key="actividad.id"
-                  filter
-                  outlined
-                  size="small"
-                >
-                  {{ actividad.nombre }}
-                </v-chip>
-              </v-chip-group>
-            </div>
-            <v-data-table
-              :headers="bitacoraHeaders"
-              :items="filteredBitacora"
-              :items-per-page="itemsPerPage"
-              :footer-props="{
-                'items-per-page-options': [5, 10, 20],
-                'items-per-page-text': 'Elementos por página'
-              }"
-              class="elevation-1 tabla-compacta"
-              density="compact"
-            >
-              <template #[`item.fecha`]="{ item }">
-                {{ formatDate(item.fecha) }}
-              </template>
-              <template #[`item.actions`]="{ item }">
-                <v-icon small class="mr-2" @click="editBitacoraItem(item)"> mdi-pencil </v-icon>
-                <v-icon small @click="deleteBitacoraItem(item)"> mdi-delete </v-icon>
-              </template>
-            </v-data-table>
+            <EmbeddedBitacoraList :siembraId="siembraId" title="" :itemLimit="5" />
           </v-card-text>
-        </v-card> -->
+        </v-card>
+
+        <!-- The old commented-out Bitácora section is now completely removed. -->
       </v-col>
 
       <!-- Sidebar -->
@@ -565,6 +527,16 @@
       :siembra-preseleccionada="siembraId"
       @actividad-creada="loadActividades"
     />
+
+    <!-- Dialog for BitacoraEntryForm -->
+    <v-dialog v-model="showBitacoraFormDialog" max-width="800px" persistent scrollable>
+      <BitacoraEntryForm
+        v-if="showBitacoraFormDialog"
+        :siembraIdContext="siembraId"
+        @close="showBitacoraFormDialog = false"
+        @save="handleBitacoraSave"
+      />
+    </v-dialog>
   </v-container>
   <v-progress-circular v-else indeterminate color="primary"></v-progress-circular>
 </template>
@@ -588,6 +560,8 @@ import { useAvatarStore } from '@/stores/avatarStore'
 import { useActividadesStore } from '@/stores/actividadesStore'
 
 import ActividadForm from '@/components/forms/ActividadForm.vue'
+import EmbeddedBitacoraList from './EmbeddedBitacoraList.vue'
+import BitacoraEntryForm from '@/components/forms/BitacoraEntryForm.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -603,9 +577,10 @@ const actividadesStore = useActividadesStore()
 
 const siembraId = ref(route.params.id)
 const siembraInfo = ref({})
-const bitacora = ref([])
+// const bitacora = ref([]) // Removed
 
 const dialogNuevaActividad = ref(false)
+const showBitacoraFormDialog = ref(false)
 
 const { zonas, tiposZonas } = storeToRefs(zonasStore)
 
@@ -650,25 +625,25 @@ const headers_actividades = [
 const expanded = ref([])
 
 const areaUnit = ref('ha')
-const itemsPerPage = ref(10)
-const selectedZonas = ref([])
-const selectedActividades = ref([])
+const itemsPerPage = ref(10) // This might be used by other tables, keeping for now unless confirmed otherwise.
+// const selectedZonas = ref([]) // Removed
+// const selectedActividades = ref([]) // Removed
 
 const editSiembraDialog = ref(false)
 const editedSiembra = ref({})
 
-const addBitacoraDialog = ref(false)
-const addZonaDialog = ref(false)
+// const addBitacoraDialog = ref(false) // Removed
+const addZonaDialog = ref(false) // Keep for ZonaForm
 
-const newBitacora = ref({
-  fecha: new Date().toISOString().split('T')[0],
-  actividad: '',
-  zonas: [],
-  descripcion: '',
-  responsable: '',
-  estado: 'planificada',
-  notas: ''
-})
+// const newBitacora = ref({ // Removed
+//   fecha: new Date().toISOString().split('T')[0],
+//   actividad: '',
+//   zonas: [],
+//   descripcion: '',
+//   responsable: '',
+//   estado: 'planificada',
+//   notas: ''
+// })
 
 const estadosSiembra = ['planificada', 'en_crecimiento', 'cosechada', 'finalizada']
 const getStatusColor = (status) => {
@@ -681,28 +656,28 @@ const getStatusColor = (status) => {
   return colors[status] || 'gray'
 }
 
-const estadosBitacora = ['planificada', 'en_progreso', 'completada', 'cancelada']
+// const estadosBitacora = ['planificada', 'en_progreso', 'completada', 'cancelada'] // Removed
 
-const bitacoraHeaders = [
-  { text: 'Fecha', value: 'fecha' },
-  { text: 'Actividad', value: 'actividad.nombre' },
-  { text: 'Zona', value: 'zona.nombre' },
-  { text: 'Responsable', value: 'responsable.name' },
-  { text: 'Estado', value: 'estado' },
-  { text: 'Acciones', value: 'actions', sortable: false }
-]
+// const bitacoraHeaders = [ // Removed
+//   { text: 'Fecha', value: 'fecha' },
+//   { text: 'Actividad', value: 'actividad.nombre' },
+//   { text: 'Zona', value: 'zona.nombre' },
+//   { text: 'Responsable', value: 'responsable.name' },
+//   { text: 'Estado', value: 'estado' },
+//   { text: 'Acciones', value: 'actions', sortable: false }
+// ]
 
-const filteredBitacora = computed(() => {
-  return bitacora.value.filter((entry) => {
-    const zonaMatch =
-      selectedZonas.value.length === 0 ||
-      entry.zonas.some((zona) => selectedZonas.value.includes(zona.id))
-    const actividadMatch =
-      selectedActividades.value.length === 0 ||
-      selectedActividades.value.includes(entry.actividad.id)
-    return zonaMatch && actividadMatch
-  })
-})
+// const filteredBitacora = computed(() => { // Removed
+//   return bitacora.value.filter((entry) => {
+//     const zonaMatch =
+//       selectedZonas.value.length === 0 ||
+//       entry.zonas.some((zona) => selectedZonas.value.includes(zona.id))
+//     const actividadMatch =
+//       selectedActividades.value.length === 0 ||
+//       selectedActividades.value.includes(entry.actividad.id)
+//     return zonaMatch && actividadMatch
+//   })
+// })
 
 const modoEdicionZona = ref(false)
 const zonaEditando = ref({
@@ -747,13 +722,13 @@ async function loadSiembraInfo() {
   }
 }
 
-async function loadBitacora() {
-  try {
-    bitacora.value = await bitacoraStore.fetchBitacoraBySiembraId(siembraId.value)
-  } catch (error) {
-    handleError(error, 'Error al cargar la bitácora')
-  }
-}
+// async function loadBitacora() { // Removed
+//   try {
+//     bitacora.value = await bitacoraStore.fetchBitacoraBySiembraId(siembraId.value)
+//   } catch (error) {
+//     handleError(error, 'Error al cargar la bitácora')
+//   }
+// }
 
 async function loadHacienda() {
   try {
@@ -785,18 +760,18 @@ function openEditDialog() {
   editSiembraDialog.value = true
 }
 
-function openAddBitacoraDialog() {
-  newBitacora.value = {
-    fecha: new Date().toISOString().split('T')[0],
-    actividad: '',
-    zonas: [],
-    descripcion: '',
-    responsable: '',
-    estado: 'planificada',
-    notas: ''
-  }
-  addBitacoraDialog.value = true
-}
+// function openAddBitacoraDialog() { // Removed
+//   newBitacora.value = {
+//     fecha: new Date().toISOString().split('T')[0],
+//     actividad: '',
+//     zonas: [],
+//     descripcion: '',
+//     responsable: '',
+//     estado: 'planificada',
+//     notas: ''
+//   }
+//   addBitacoraDialog.value = true
+// }
 
 function openAddZonaDialog() {
   modoEdicionZona.value = false
@@ -852,46 +827,46 @@ async function saveSiembraEdit() {
   }
 }
 
-async function saveBitacoraEntry() {
-  try {
-    const entry = {
-      ...newBitacora.value,
-      siembra: siembraId.value,
-      hacienda: mi_hacienda.value.id
-    }
-    await bitacoraStore.addBitacoraEntry(entry)
-    addBitacoraDialog.value = false
-    loadBitacora()
-    snackbarStore.showSnackbar('Entrada de bitácora agregada con éxito', 'success')
-  } catch (error) {
-    handleError(error, 'Error al agregar entrada de bitácora')
-  }
-}
+// async function saveBitacoraEntry() { // Removed
+//   try {
+//     const entry = {
+//       ...newBitacora.value,
+//       siembra: siembraId.value,
+//       hacienda: mi_hacienda.value.id
+//     }
+//     await bitacoraStore.addBitacoraEntry(entry)
+//     addBitacoraDialog.value = false
+//     loadBitacora()
+//     snackbarStore.showSnackbar('Entrada de bitácora agregada con éxito', 'success')
+//   } catch (error) {
+//     handleError(error, 'Error al agregar entrada de bitácora')
+//   }
+// }
 
-async function editBitacoraItem(item) {
-  try {
-    const updatedItem = await bitacoraStore.updateBitacoraEntry(item.id, item)
-    const index = bitacora.value.findIndex((entry) => entry.id === item.id)
-    if (index !== -1) {
-      bitacora.value[index] = updatedItem
-    }
-    snackbarStore.showSnackbar('Entrada de bitácora actualizada con éxito', 'success')
-  } catch (error) {
-    handleError(error, 'Error al actualizar entrada de bitácora')
-  }
-}
+// async function editBitacoraItem(item) { // Removed
+//   try {
+//     const updatedItem = await bitacoraStore.updateBitacoraEntry(item.id, item)
+//     const index = bitacora.value.findIndex((entry) => entry.id === item.id)
+//     if (index !== -1) {
+//       bitacora.value[index] = updatedItem
+//     }
+//     snackbarStore.showSnackbar('Entrada de bitácora actualizada con éxito', 'success')
+//   } catch (error) {
+//     handleError(error, 'Error al actualizar entrada de bitácora')
+//   }
+// }
 
-async function deleteBitacoraItem(item) {
-  if (confirm('¿Está seguro de que desea eliminar esta entrada de la bitácora?')) {
-    try {
-      await bitacoraStore.deleteBitacoraEntry(item.id)
-      bitacora.value = bitacora.value.filter((entry) => entry.id !== item.id)
-      snackbarStore.showSnackbar('Entrada de bitácora eliminada con éxito', 'success')
-    } catch (error) {
-      handleError(error, 'Error al eliminar entrada de bitácora')
-    }
-  }
-}
+// async function deleteBitacoraItem(item) { // Removed
+//   if (confirm('¿Está seguro de que desea eliminar esta entrada de la bitácora?')) {
+//     try {
+//       await bitacoraStore.deleteBitacoraEntry(item.id)
+//       bitacora.value = bitacora.value.filter((entry) => entry.id !== item.id)
+//       snackbarStore.showSnackbar('Entrada de bitácora eliminada con éxito', 'success')
+//     } catch (error) {
+//       handleError(error, 'Error al eliminar entrada de bitácora')
+//     }
+//   }
+// }
 
 const editActividad = (item) => {
   // Redirigir a la página de actividades con el ID de la actividad
@@ -978,9 +953,9 @@ const getAvatarUrl = (zonaId) => {
   return avatarStore.getAvatarUrl({ ...zona, type: 'zona' }, 'zonas')
 }
 
-watch([selectedZonas, selectedActividades], () => {
-  loadBitacora()
-})
+// watch([selectedZonas, selectedActividades], () => { // Removed
+//   loadBitacora()
+// })
 
 onMounted(async () => {
   try {
@@ -988,7 +963,7 @@ onMounted(async () => {
     await Promise.all([
       zonasStore.cargarZonas(),
       zonasStore.cargarTiposZonas(),
-      //   loadBitacora(),
+      // loadBitacora(), // Removed
       loadActividades(),
       loadUsuarios(),
       loadHacienda()
@@ -1002,7 +977,7 @@ onMounted(async () => {
 
 const onZonaSaved = async () => {
   addZonaDialog.value = false
-  // await loadBitacora()
+  // await loadBitacora() // Removed
   snackbarStore.showSnackbar('Zona guardada exitosamente', 'success')
 }
 
@@ -1017,6 +992,16 @@ const handleAvatarUpdated = (updatedRecord) => {
 }
 
 const showAvatarDialog = ref(false)
+
+function openNewBitacoraEntryDialog() {
+  showBitacoraFormDialog.value = true
+}
+
+async function handleBitacoraSave() {
+  showBitacoraFormDialog.value = false
+  // EmbeddedBitacoraList should update reactively via store changes.
+  // snackbarStore.showSnackbar('Entrada de bitácora guardada.', 'success'); // Form handles its own snackbar
+}
 </script>
 
 <style scoped></style>

@@ -29,7 +29,7 @@
               <v-textarea
                 v-model="formData.descripcion"
                 label="Descripción"
-                rows="4"
+                rows="6"
                 variant="outlined"
                 density="compact"
                 class="compact-form"
@@ -67,6 +67,17 @@
                 density="compact"
                 class="compact-form p-0 m-0"
               ></v-select>
+
+              <!-- Checkbox para fecha de creacion -->
+              <v-checkbox
+                v-if="isEditing"
+                v-model="formData.fechaActualizar"
+                label="Actualizar fecha de creacion?"
+                color="primary"
+                hide-details
+                class="mb-2"
+                density="compact"
+              ></v-checkbox>
             </div>
           </div>
 
@@ -194,10 +205,12 @@ const props = defineProps({
       titulo: '',
       descripcion: '',
       fecha_recordatorio: new Date().toISOString().substr(0, 10),
+      fecha_creacion: new Date().toISOString(),
       prioridad: 'media',
       estado: 'pendiente',
       siembras: [],
       actividades: [],
+      fechaActualizar: false,
       zonas: []
     })
   },
@@ -212,12 +225,12 @@ const actividadesStore = useActividadesStore()
 const zonasStore = useZonasStore()
 
 // Data
-const formData = ref({ ...props.recordatorio })
+const formData = ref({ ...(props.recordatorio || {}) })
 const loading = ref(false)
-const usarFecha = ref(!!props.recordatorio.fecha_recordatorio)
+const usarFecha = ref(!!props.recordatorio?.fecha_recordatorio)
 
 // Options
-const prioridades = ['baja', 'media', 'alta']
+//const prioridades = ['baja', 'media', 'alta']
 const { siembras } = storeToRefs(siembrasStore)
 const actividadesOptions = computed(() => actividadesStore.actividades)
 const { zonas, tiposZonas } = storeToRefs(zonasStore)
@@ -225,7 +238,7 @@ const { zonas, tiposZonas } = storeToRefs(zonasStore)
 // Computed
 const formTitle = computed(() => (props.isEditing ? 'Editar Recordatorio' : 'Nuevo Recordatorio'))
 
-const formColor = computed(() => (props.isEditing ? 'amber' : 'green'))
+//const formColor = computed(() => (props.isEditing ? 'amber' : 'green'))
 
 const filteredZonas = computed(() => {
   const zonastemp = zonas.value.filter((zona) => !zona.siembra) // Filtrar zonas sin siembra
@@ -269,10 +282,15 @@ async function handleSubmit() {
 
     const data = {
       ...formData.value,
+      fechaActualizar: formData.value.fechaActualizar,
       titulo: tituloEnMayusculas,
       fecha_recordatorio: usarFecha.value
         ? `${formData.value.fecha_recordatorio}T00:00:00.000Z`
         : null,
+      fecha_creacion: formData.value.fechaActualizar
+        ? new Date().toISOString()
+        : formData.value.fecha_creacion,
+
       siembras: formData.value.siembras,
       actividades: formData.value.actividades,
       zonas: formData.value.zonas,

@@ -29,7 +29,7 @@
           color="#6380a247"
           prepend-icon="mdi-plus"
           @click="recordatoriosStore.abrirNuevoRecordatorio"
-          class="min-w-[210px] m-2"
+          class="min-w-[210px] mt-0 m-1 mb-4"
         >
           Nuevo recordatorio
         </v-btn>
@@ -45,6 +45,7 @@
 
         <!-- Panel de Pendientes -->
         <StatusPanel
+          v-if="recordatoriosStore.recordatoriosPendientes().length > 0"
           title="Pendientes"
           color="red"
           :items="recordatoriosStore.recordatoriosPendientes()"
@@ -55,6 +56,7 @@
         <br />
         <!-- Panel En Progreso -->
         <StatusPanel
+          v-if="recordatoriosStore.recordatoriosEnProgreso().length > 0"
           title="En Progreso"
           color="amber"
           :items="recordatoriosStore.recordatoriosEnProgreso()"
@@ -201,9 +203,6 @@ const { fullName, userRole, avatarUrl } = storeToRefs(profileStore)
 const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
 
 // Métodos
-function abrirNuevoRecordatorio() {
-  recordatoriosStore.abrirNuevoRecordatorio()
-}
 
 async function handleFormSubmit(data) {
   try {
