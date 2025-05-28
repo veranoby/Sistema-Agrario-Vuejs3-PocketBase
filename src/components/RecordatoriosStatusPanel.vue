@@ -19,16 +19,17 @@
             v-for="item in items"
             :key="item.id"
             class="mb-3 rounded-sm"
-            :style="`border-left: 3px solid ${color}; background-color: ${color}-lighten-45;`"
+            :style="`border-left: 3px solid ${color}; `"
           >
             <!-- Fila 1: Título y metadatos -->
             <div class="d-flex align-center w-100 mb-1">
-              <span class="text-xs font-weight-bold flex-grow-1">
+              <p class="text-xs font-weight-bold flex-grow-1">
                 {{ item.titulo }}
-              </span>
-              <span class="text-xs font-weight-bold mr-2">
-                {{ getDaysAgo(item.fecha_creacion || item.created) }}
-              </span>
+                <span class="text-xs font-weight-bold text-grey-darken-1 mr-2">
+                  (Hace {{ getDaysAgo(item.fecha_creacion || item.created) }})</span
+                >
+              </p>
+
               <v-btn
                 icon
                 variant="text"
@@ -79,9 +80,10 @@
                   {{ item.descripcion || 'Sin descripción' }}
                 </p>
               </v-col>
+              <v-col cols="12" sm="1" class="pr-sm-3"> </v-col>
 
               <!-- Columna Derecha: Metadatos -->
-              <v-col cols="12" sm="3" class="mt-2 mt-sm-0">
+              <v-col cols="12" sm="2" class="mt-2 mt-sm-0">
                 <div class="metadata-container">
                   <!-- Prioridad -->
                   <v-chip :color="`${priorityColor(item.prioridad)}`" size="x-small" class="mb-1">
