@@ -658,8 +658,8 @@ export const useProgramacionesStore = defineStore('programaciones', {
         if (tipoActividad && tipoActividad.formato_reporte && tipoActividad.formato_reporte.columnas) {
           const mappedMetricaKeys = new Set();
           tipoActividad.formato_reporte.columnas.forEach(col => {
-            if (col.metrica_asociada && col.titulo !== 'Observaciones') {
-              mappedMetricaKeys.add(col.metrica_asociada);
+            if (col.metrica && col.titulo !== 'Observaciones') { // Changed from metrica_asociada to metrica
+              mappedMetricaKeys.add(col.metrica);
             }
           });
 
@@ -805,8 +805,8 @@ export const useProgramacionesStore = defineStore('programaciones', {
       if (tipoActividad && tipoActividad.formato_reporte && tipoActividad.formato_reporte.columnas) {
         const mappedMetricaKeys = new Set();
         tipoActividad.formato_reporte.columnas.forEach(col => {
-          if (col.metrica_asociada && col.titulo !== 'Observaciones') { // Ensure 'Observaciones' column itself is not treated as a mapped metric
-            mappedMetricaKeys.add(col.metrica_asociada);
+          if (col.metrica && col.titulo !== 'Observaciones') { // Changed from metrica_asociada to metrica
+            mappedMetricaKeys.add(col.metrica);
           }
         });
 
