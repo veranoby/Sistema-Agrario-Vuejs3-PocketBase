@@ -45,7 +45,8 @@
               variant="outlined"
               density="compact"
               @update:modelValue="onActividadChange"
-              :disabled="isEditMode && !!props.actividadIdContext" 
+              :disabled="isEditMode && !!props.actividadIdContext"
+              clearable
             ></v-autocomplete>
           </v-col>
           
@@ -139,6 +140,7 @@ import { ref, reactive, onMounted, watch, computed } from 'vue';
 import { useActividadesStore } from '@/stores/actividadesStore';
 import { useSiembrasStore } from '@/stores/siembrasStore';
 import { useBitacoraStore } from '@/stores/bitacoraStore';
+import { useProgramacionesStore } from '@/stores/programacionesStore'; // Added
 import { useSnackbarStore } from '@/stores/snackbarStore';
 import { handleError } from '@/utils/errorHandler';
 
@@ -162,10 +164,12 @@ const emit = defineEmits(['close', 'save']);
 const actividadesStore = useActividadesStore();
 const siembrasStore = useSiembrasStore();
 const bitacoraStore = useBitacoraStore();
+const programacionesStore = useProgramacionesStore(); // Added
 const snackbarStore = useSnackbarStore();
 
 const bitacoraFormRef = ref(null);
 const isSubmitting = ref(false);
+const isPrefillingMetrics = ref(false); // Flag to manage metric prefilling
 
 const actividadesDisponibles = ref([]);
 const siembrasDisponibles = ref([]); // For optional siembra_asociada selection
@@ -178,6 +182,7 @@ const defaultFormData = () => ({
   notas: '',
   siembra_asociada_id: props.siembraIdContext || null, // Auto-assign if context provided
   metricas_values: {}, // Holds values for dynamic metric fields
+  programacion_origen_id: null, // Added for prefill
 });
 
 const formData = reactive(defaultFormData());
@@ -228,6 +233,25 @@ onMounted(async () => {
 
     if (isEditMode.value && props.entryToEdit) {
       populateFormForEdit();
+    } else if (programacionesStore.pendingBitacoraFromProgramacionData) {
+      // Pre-fill from programacionesStore
+      const pendingData = programacionesStore.pendingBitacoraFromProgramacionData;
+      formData.actividad_realizada_id = pendingData.actividadRealizadaId;
+      // Ensure date is in 'YYYY-MM-DDTHH:mm' format for datetime-local input
+      const dt = new Date(pendingData.fechaEjecucion);
+      formData.fecha_ejecucion = `${pendingData.fechaEjecucion}T${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
+      formData.notas = pendingData.observacionesPreload;
+      formData.programacion_origen_id = pendingData.programacionOrigenId;
+      formData.siembra_asociada_id = pendingData.siembraAsociadaId;
+
+      isPrefillingMetrics.value = true; // Set flag to prefill metrics once actividad details are loaded
+
+      // loadActividadDetails will be called by the watcher on actividad_realizada_id
+      // or we can call it explicitly if needed, but watcher should handle it.
+      // The actual metric prefilling will happen in a watchEffect or watcher for selectedActividadDetalles
+
+      // Clear the data from the store AFTER it has been used
+      // programacionesStore.clearPendingBitacoraData(); // Moved to after metrics are set
     }
 
   } catch (error) {
@@ -274,22 +298,122 @@ async function loadActividadDetails(actividadId) {
   } catch (error) {
     handleError(error, `Error cargando detalles de actividad ${actividadId}`);
     selectedActividadDetalles.value = null;
+    formData.metricas_values = {}; // Clear metrics when activity is cleared
+    formData.notas = ''; // Clear notes when activity is cleared
+    return; // Exit early
+  }
+  try {
+    // Fetch full actividad details including its 'metricas' definition and expanded 'tipo_actividades' (for formato_reporte)
+    const actividad = await actividadesStore.fetchActividadById(actividadId, { expand: 'tipo_actividades' }); 
+    selectedActividadDetalles.value = actividad;
+    // Initialize metric values based on definition (e.g., default values)
+    // This will be called first, then specific prefill from programacion can override.
+    initializeMetricasValues(); 
+    
+    // If not prefilling from a programacion, then populate observations from activity details.
+    // If prefilling from programacion, observations are set from pendingData.observacionesPreload.
+    if (!isPrefillingMetrics.value) {
+      await populateObservationsFromActivityDetails(selectedActividadDetalles.value);
+    }
+
+  } catch (error) {
+    handleError(error, `Error cargando detalles de actividad ${actividadId}`);
+    selectedActividadDetalles.value = null;
+    formData.metricas_values = {};
+    formData.notas = '';
   }
 }
 
+// Populates formData.notas with unmapped metrics
+async function populateObservationsFromActivityDetails(activityDetails) {
+  if (!activityDetails) {
+    formData.notas = '';
+    return;
+  }
+  let observacionesContent = '';
+  try {
+    // Ensure tipo_actividades is available, might need to await if not always expanded
+    const tipoActividad = activityDetails.expand?.tipo_actividades;
+    if (tipoActividad && tipoActividad.formato_reporte && tipoActividad.formato_reporte.columnas) {
+      const mappedMetricaKeys = new Set();
+      tipoActividad.formato_reporte.columnas.forEach(col => {
+        if (col.metrica_asociada && col.titulo !== 'Observaciones') {
+          mappedMetricaKeys.add(col.metrica_asociada);
+        }
+      });
+
+      const unmappedMetricasContent = [];
+      if (activityDetails.metricas && typeof activityDetails.metricas === 'object') {
+        for (const metricaKey in activityDetails.metricas) {
+          if (Object.prototype.hasOwnProperty.call(activityDetails.metricas, metricaKey) && !mappedMetricaKeys.has(metricaKey)) {
+            const metrica = activityDetails.metricas[metricaKey];
+            const desc = metrica.descripcion || metricaKey;
+            // Use the actual 'valor' for observations, not 'defaultValue'
+            const val = metrica.valor !== undefined && metrica.valor !== null ? metrica.valor : 'N/A';
+            const unit = metrica.unidad || '';
+            unmappedMetricasContent.push(`${desc}: ${val} ${unit}`.trim());
+          }
+        }
+      }
+      observacionesContent = unmappedMetricasContent.join('\n');
+    }
+  } catch (error) {
+    console.error('[BitacoraEntryForm] Error generating observacionesContent from activity details:', error);
+  }
+  formData.notas = observacionesContent;
+}
+
+
 function initializeMetricasValues() {
-  formData.metricas_values = {};
+  const newMetricasValues = {};
   if (selectedActividadDetalles.value?.metricas) {
     for (const key in selectedActividadDetalles.value.metricas) {
       const metricaDef = selectedActividadDetalles.value.metricas[key];
-      // Set default value based on type or definition
-      formData.metricas_values[key] = metricaDef.defaultValue !== undefined ? metricaDef.defaultValue : (metricaDef.tipo === 'boolean' ? false : null);
+      newMetricasValues[key] = metricaDef.defaultValue !== undefined ? metricaDef.defaultValue : (metricaDef.tipo === 'boolean' ? false : null);
     }
   }
+  formData.metricas_values = newMetricasValues;
 }
 
+// Watch for selectedActividadDetalles to be populated, then prefill metrics if needed
+// This watcher is primarily for the scenario where data is coming from programacionesStore
+watch(selectedActividadDetalles, (newDetails) => {
+  if (newDetails && isPrefillingMetrics.value && programacionesStore.pendingBitacoraFromProgramacionData) {
+    const pendingMetricas = programacionesStore.pendingBitacoraFromProgramacionData.metricasToPreload;
+    if (pendingMetricas) {
+      for (const key in pendingMetricas) {
+        if (Object.prototype.hasOwnProperty.call(pendingMetricas, key)) {
+          // Check if this metric key exists in the form's metric definitions (derived from selectedActividadDetalles)
+          // This ensures we only try to set values for metrics that are actually part of the form
+          if (Object.prototype.hasOwnProperty.call(formData.metricas_values, key) || 
+              (selectedActividadDetalles.value?.metricas && Object.prototype.hasOwnProperty.call(selectedActividadDetalles.value.metricas, key)) ) {
+            formData.metricas_values[key] = pendingMetricas[key];
+          } else {
+            console.warn(`[BitacoraEntryForm] Metrica key "${key}" from prefill data not found in current activity's metric definitions. Skipping.`);
+          }
+        }
+      }
+    }
+    // After attempting to prefill metrics, clear the flag and the store data
+    isPrefillingMetrics.value = false;
+    programacionesStore.clearPendingBitacoraData();
+    console.log('[BitacoraEntryForm] Prefilled metrics and cleared pending data.');
+  }
+}, { deep: true }); // deep watch might be needed if metricas_values structure is complex initially
+
 async function onActividadChange(actividadId) {
-  await loadActividadDetails(actividadId);
+  // The flag isPrefillingMetrics is true ONLY during onMounted if pendingData from programacion exists.
+  // If user manually changes activity, isPrefillingMetrics will be false.
+  // If activityId is cleared, loadActividadDetails(null) handles reset.
+  if (actividadId) {
+    await loadActividadDetails(actividadId);
+    // Note: populateObservationsFromActivityDetails is now called within loadActividadDetails
+    // if !isPrefillingMetrics.value. Metric values (defaults) are set by initializeMetricasValues.
+    // Specific prefill from programacion (metricasToPreload) is handled by the watch on selectedActividadDetalles.
+  } else {
+    // Activity cleared by user
+    await loadActividadDetails(null); // This will clear metrics and notes
+  }
 }
 
 function populateFormForEdit() {
@@ -368,12 +492,35 @@ async function submitForm() {
       await bitacoraStore.updateBitacoraEntry(props.entryToEdit.id, dataToSubmit);
       snackbarStore.showSnackbar('Entrada de bitácora actualizada con éxito.', 'success');
     } else {
-      await bitacoraStore.crearBitacoraEntry(dataToSubmit);
+      // Include programacion_origen_id if present for new entries
+      if (formData.programacion_origen_id) {
+        dataToSubmit.programacion_origen = formData.programacion_origen_id;
+      }
+      const newEntry = await bitacoraStore.crearBitacoraEntry(dataToSubmit); // Capture new entry if needed
       snackbarStore.showSnackbar('Nueva entrada de bitácora creada con éxito.', 'success');
+
+      // After successful bitacora entry creation, finalize programacion execution if applicable
+      if (formData.programacion_origen_id) {
+        try {
+          // formData.fecha_ejecucion is in YYYY-MM-DDTHH:mm format from the input
+          // finalizeProgramacionExecution expects YYYY-MM-DD, so we split it.
+          const fechaSinHora = formData.fecha_ejecucion.split('T')[0];
+          await programacionesStore.finalizeProgramacionExecution({
+            programacionId: formData.programacion_origen_id,
+            fechaEjecucionReal: fechaSinHora 
+          });
+          snackbarStore.showSnackbar('Programación actualizada.', 'success');
+        } catch (progError) {
+          console.error('Error finalizing programacion execution:', progError);
+          // handleError(progError, 'Error actualizando la programación asociada'); // Optionally show another snackbar
+          snackbarStore.showSnackbar('Error actualizando la programación asociada. La bitácora se guardó.', 'warning');
+        }
+      }
     }
     emit('save');
     closeDialog();
   } catch (error) {
+    // Error from bitacoraStore operations will be caught here
     handleError(error, `Error ${isEditMode.value ? 'actualizando' : 'creando'} entrada de bitácora`);
     // snackbar is shown by handleError
   } finally {

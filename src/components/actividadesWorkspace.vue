@@ -219,7 +219,7 @@
                   :programacion="programacion"
                   bg-color="#6e97b21c"
                   text-color="color-text"
-                  @ejecutar="ejecutarProgramacion"
+                  @request-single-execution="handleRequestSingleExecution"
                   @editar="editarProgramacion"
                 />
               </v-card-text>
@@ -737,8 +737,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router' // Added useRouter
 import { useActividadesStore } from '@/stores/actividadesStore'
 import { handleError } from '@/utils/errorHandler'
 import { useProfileStore } from '@/stores/profileStore'
@@ -761,6 +760,7 @@ import EmbeddedBitacoraList from './EmbeddedBitacoraList.vue'
 import BitacoraEntryForm from '@/components/forms/BitacoraEntryForm.vue'
 
 const route = useRoute()
+const router = useRouter() // Added
 const actividadesStore = useActividadesStore()
 const avatarStore = useAvatarStore()
 const profileStore = useProfileStore()
@@ -1156,6 +1156,31 @@ const handleGuardado = async () => {
   mostrarFormProgramacion.value = false
   programacionEdit.value = null
   await cargarProgramaciones()
+}
+
+// const ejecutarProgramacion = async (id) => { // Old method, replaced by handleRequestSingleExecution
+//   await programacionesStore.ejecutarProgramacion(id)
+//   await cargarProgramaciones()
+// }
+
+async function handleRequestSingleExecution(programacion) {
+  if (!programacionesStore) {
+    console.error("Programaciones store is not available.");
+    snackbarStore.showSnackbar('Error: No se pudo acceder al store de programaciones.', 'error');
+    return;
+  }
+  try {
+    const success = await programacionesStore.prepareForBitacoraEntryFromProgramacion(programacion);
+    if (success) {
+      // Using 'Dashboard de Inicio' as the placeholder route, as done in ProgramacionesList.vue
+      router.push({ name: 'Dashboard de Inicio' }); 
+    } else {
+      snackbarStore.showSnackbar('No se pudo preparar la entrada de bitácora desde la programación.', 'warning');
+    }
+  } catch (error) {
+    console.error("Error preparing for bitacora entry from programacion:", error);
+    snackbarStore.showSnackbar('Error crítico preparando bitácora desde la programación.', 'error');
+  }
 }
 
 function openNewBitacoraEntryDialogActividad() {

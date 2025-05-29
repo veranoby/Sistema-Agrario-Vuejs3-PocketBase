@@ -86,6 +86,7 @@
               text-color="white"
               @editar="openEditarProgramacion"
               @ejecutar="ejecutarProgramacion"
+              @request-single-execution="handleRequestSingleExecution"
             />
           </v-col>
 
@@ -117,6 +118,7 @@
               text-color="white"
               @editar="openEditarProgramacion"
               @ejecutar="ejecutarProgramacion"
+              @request-single-execution="handleRequestSingleExecution"
             />
           </v-col>
 
@@ -144,6 +146,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useProgramacionesStore } from '@/stores/programacionesStore'
 import { useActividadesStore } from '@/stores/actividadesStore'
 import { useSyncStore } from '@/stores/syncStore'
@@ -162,6 +165,7 @@ const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
 const userRole = computed(() => profileStore.user.role)
 const avatarUrl = computed(() => profileStore.avatarUrl)
 
+const router = useRouter()
 const programacionesStore = useProgramacionesStore()
 const actividadesStore = useActividadesStore()
 const syncStore = useSyncStore()
@@ -225,5 +229,17 @@ const ejecutarProgramacion = async (id) => {
 const handleGuardado = () => {
   showForm.value = false
   programacionEditando.value = null
+}
+
+const handleRequestSingleExecution = async (programacion) => {
+  // This action will be created in the next step.
+  // It will store the programacion data in the programacionesStore
+  // so that BitacoraEntryForm can access it.
+  await programacionesStore.prepareForBitacoraEntryFromProgramacion(programacion)
+  
+  // Navigate to the view where the user can fill the bitacora entry.
+  // Assuming 'Dashboard de Inicio' provides access to Bitacora functionality.
+  // This might need adjustment if a more specific route for BitacoraEntryForm exists.
+  router.push({ name: 'Dashboard de Inicio' })
 }
 </script>

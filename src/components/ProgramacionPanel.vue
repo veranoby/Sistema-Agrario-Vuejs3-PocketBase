@@ -71,12 +71,12 @@
          v-if="ejecucionesPendientes > 1"
 -->
         <v-btn
-          v-if="ejecucionesPendientes > 1"
+          v-if="props.programacion.estado === 'activo' && ejecucionesPendientes > 1"
           size="small"
           variant="flat"
           color="orange-lighten-1"
           density="comfortable"
-          @click="ejecutarEnBloque"
+          @click="showPendientesDialog = true"
           class="transition-all duration-300 ease-in-out rounded-pill overflow-hidden ml-1 pt-2 pb-5"
           :style="{ width: isHoveredMultiple ? '120px' : '36px' }"
           @mouseenter="isHoveredMultiple = true"
@@ -91,11 +91,12 @@
         </v-btn>
 
         <v-btn
+          v-if="canExecuteSingle"
           size="small"
           variant="flat"
           color="green"
           density="comfortable"
-          @click="$emit('ejecutar', programacion.id)"
+          @click="$emit('request-single-execution', programacion)"
           class="transition-all duration-300 ease-in-out rounded-pill overflow-hidden ml-1 pt-2 pb-5"
           :style="{ width: isHoveredSingle ? '100px' : '36px' }"
           @mouseenter="isHoveredSingle = true"
@@ -107,6 +108,12 @@
           </span>
         </v-btn>
       </div>
+
+      <ProgramacionesPendientesDialog 
+        v-if="showPendientesDialog" 
+        v-model="showPendientesDialog" 
+        :programacion="programacion" 
+      />
 
       <!-- Fila de información adicional -->
       <div class="flex gap-4 mt-2 text-xs">
@@ -131,8 +138,9 @@
 <script setup>
 import { defineProps, computed, ref } from 'vue'
 import { useActividadesStore } from '@/stores/actividadesStore'
-import { differenceInDays, differenceInMonths, isBefore } from 'date-fns'
+import { differenceInDays, differenceInMonths, isBefore, isValid } from 'date-fns'
 import { useProgramacionesStore } from '@/stores/programacionesStore'
+import ProgramacionesPendientesDialog from '@/components/dialogs/ProgramacionesPendientesDialog.vue';
 
 const props = defineProps({
   programacion: {
@@ -262,25 +270,32 @@ const debeEjecutarHoy = computed(() => {
   return proximaEjecucionNormalizada.getTime() === hoyNormalizado.getTime()
 })
 
-const esPendiente = computed(() => {
-  const fechaEjecucion =
-    props.programacion.frecuencia === 'fecha_especifica'
-      ? new Date(props.programacion.frecuencia_personalizada?.fecha)
-      : new Date(props.programacion.proxima_ejecucion)
+const canExecuteSingle = computed(() => {
+  if (props.programacion.estado !== 'activo') {
+    return false
+  }
+  const proximaEjecucionDate = new Date(props.programacion.proxima_ejecucion)
+  // Gracefully handle invalid dates: if proxima_ejecucion is invalid, proximaIsValid will be false.
+  const proximaIsValid = isValid(proximaEjecucionDate)
 
-  return isBefore(fechaEjecucion, hoy)
+  // Condition: isPastDue OR debeEjecutarHoy OR hasPending
+  const isPastDue = proximaIsValid && isBefore(proximaEjecucionDate, new Date())
+  const hasPending = ejecucionesPendientes.value > 0
+
+  return isPastDue || debeEjecutarHoy.value || hasPending
 })
 
 const isHoveredMultiple = ref(false)
 const isHoveredSingle = ref(false)
+const showPendientesDialog = ref(false)
 
-const ejecutarEnBloque = async () => {
-  try {
-    for (let i = 0; i < ejecucionesPendientes.value; i++) {
-      await programacionesStore.ejecutarProgramacion(props.programacion.id)
-    }
-  } catch (error) {
-    console.error('Error ejecutando en bloque:', error)
-  }
-}
+// const ejecutarEnBloque = async () => { // Method is no longer needed as per new requirements
+//   // try {
+//   //   for (let i = 0; i < ejecucionesPendientes.value; i++) {
+//   //     await programacionesStore.ejecutarProgramacion(props.programacion.id)
+//   //   }
+//   // } catch (error) {
+//   //   console.error('Error ejecutando en bloque:', error)
+//   // }
+// }
 </script>

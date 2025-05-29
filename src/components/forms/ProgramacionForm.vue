@@ -24,8 +24,7 @@
               <v-chip-group
                 color="blue-darken-4"
                 column
-                multiple
-                v-model="form.actividadesSeleccionadas"
+                v-model="form.actividadSeleccionadaId"
               >
                 <v-chip
                   v-for="actividad in filteredActividadesSiebra"
@@ -45,8 +44,7 @@
                 prepend-icon="mdi-gesture-tap-button"
                 color="blue-darken-4"
                 column
-                multiple
-                v-model="form.actividadesSeleccionadas"
+                v-model="form.actividadSeleccionadaId"
               >
                 <v-chip
                   v-for="actividad in filteredActividades"
@@ -219,7 +217,7 @@ const filteredActividadesSiebra = computed(() => {
 
 const form = ref({
   descripcion: '',
-  actividadesSeleccionadas: props.actividadPredefinida ? [props.actividadPredefinida] : [],
+  actividadSeleccionadaId: props.actividadPredefinida || null,
   frecuencia: 'diaria',
   frecuencia_personalizada: null,
   estado: 'activo'
@@ -266,7 +264,7 @@ watch(
     if (val) {
       form.value = {
         ...val,
-        actividadesSeleccionadas: val.actividades || [],
+        actividadSeleccionadaId: val.actividades && val.actividades.length > 0 ? val.actividades[0] : null,
         frecuencia_personalizada: val.frecuencia_personalizada // Directly assign, expect object
       }
 
@@ -292,7 +290,7 @@ watch(
   () => props.actividadPredefinida,
   (val) => {
     if (val) {
-      form.value.actividadesSeleccionadas = [val]
+      form.value.actividadSeleccionadaId = val
     }
   },
   { immediate: true }
@@ -321,7 +319,7 @@ const cerrarDialog = () => {
 
 const resetForm = () => ({
   descripcion: '',
-  actividadesSeleccionadas: [],
+  actividadSeleccionadaId: null,
   frecuencia: 'diaria',
   frecuencia_personalizada: null,
   estado: 'activo'
@@ -389,14 +387,12 @@ const diasSemanaOptions = [
 
 // Computed para generar la descripción dinámica
 const descripcionDinamica = computed(() => {
-  // Parte 1: Nombres de actividades seleccionadas
-  const nombresActividades = form.value.actividadesSeleccionadas
-    .map((id) => {
-      const actividad = actividades.value.find((a) => a.id === id)
-      return actividad?.nombre || ''
-    })
-    .filter((nombre) => nombre)
-    .join(', ')
+  // Parte 1: Nombre de la actividad seleccionada
+  let nombreActividad = '';
+  if (form.value.actividadSeleccionadaId) {
+    const actividad = actividades.value.find(a => a.id === form.value.actividadSeleccionadaId);
+    nombreActividad = actividad?.nombre || '';
+  }
 
   // Parte 2: Frecuencia seleccionada
   let frecuenciaTexto = ''
@@ -408,13 +404,13 @@ const descripcionDinamica = computed(() => {
   }
 
   // Combinar ambas partes
-  return `${nombresActividades}${nombresActividades && frecuenciaTexto ? ' - ' : ''}${frecuenciaTexto}`
+  return `${nombreActividad}${nombreActividad && frecuenciaTexto ? ' - ' : ''}${frecuenciaTexto}`
 })
 
 // Watcher para actualizar el campo descripción
 watch(
   [
-    () => form.value.actividadesSeleccionadas,
+    () => form.value.actividadSeleccionadaId, // Changed from actividadesSeleccionadas
     () => form.value.frecuencia,
     () => frecuenciaPersonalizada.value.tipo,
     () => frecuenciaPersonalizada.value.cantidad
