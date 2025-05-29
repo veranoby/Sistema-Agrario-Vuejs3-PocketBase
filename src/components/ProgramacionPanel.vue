@@ -1,109 +1,122 @@
 <template>
   <!--  <v-card class="pt-2 bg-transparent" border="false">-->
 
-  <v-card variant="flat" :color="bgColor" class="pt-1" border="false">
-    <v-card-text class="p-2">
-      <div class="flex min-w-0 pt-0 pb-2">
+  <v-card variant="flat" :color="bgColor" class="pt-1 ma-1" border="false">
+    <v-card-text class="pa-2">
+      <div class="d-flex align-center min-w-0 pt-0 pb-2"> <!-- Added align-center -->
         <!-- Estado y alertas -->
-        <div class="flex min-w-0">
+        <div class="d-flex align-center min-w-0"> <!-- Added align-center -->
           <v-tooltip location="top">
-            <template v-slot:activator="{ props }">
+            <template v-slot:activator="{ props: tooltipIconProps }"> <!-- Changed props to tooltipIconProps for clarity -->
               <v-icon
-                v-bind="props"
+                v-bind="tooltipIconProps"
                 :color="colorEstado"
                 size="small"
                 class="cursor-help"
-                outline
                 icon="mdi-circle"
               />
             </template>
-
             <span class="capitalize">{{ programacion.estado }}</span>
           </v-tooltip>
 
-          <!-- Descripción con truncate -->
-
-          <span class="ml-2 truncate text-shadow-lg text-shadow-black-300">{{
-            programacion.descripcion
-          }}</span>
+          <v-tooltip location="top" :text="programacion.descripcion">
+            <template v-slot:activator="{ props: tooltipDescProps }">
+              <span v-bind="tooltipDescProps" class="ml-2 truncate text-shadow-lg text-shadow-black-300">
+                {{ programacion.descripcion }}
+              </span>
+            </template>
+          </v-tooltip>
         </div>
-
-        <div class="flex items-center gap-2 ml-auto"></div>
+        <!-- Spacer can be added here if needed, or use justify-space-between on parent for full width spread -->
       </div>
 
-      <!-- Fila principal con descripción y botones -->
-      <div class="flex min-w-0 pt-0 pb-2">
+      <!-- Fila principal con chips y botones -->
+      <div class="d-flex align-center min-w-0 pt-0 pb-1">
         <!-- Chip de pendientes -->
-        <v-tooltip location="top">
-          <template v-slot:activator="{ props }">
+        <v-tooltip location="top" v-if="esUrgente">
+          <template v-slot:activator="{ props: tooltipUrgenteProps }">
             <v-chip
-              v-bind="props"
-              v-if="esUrgente"
+              v-bind="tooltipUrgenteProps"
               color="red"
               size="x-small"
+              density="compact"
               variant="flat"
-              class="mr-1 py-3"
+              class="mr-1"
             >
-              <v-icon small>mdi-alert</v-icon>
+              <v-icon start size="small">mdi-alert-circle-outline</v-icon>
               {{ ejecucionesPendientes }}
             </v-chip>
           </template>
           <span>{{ ejecucionesPendientes }} pendiente(s)</span>
         </v-tooltip>
+        
         <!-- Tipo actividad -->
-        <v-chip color="blue-grey-lighten-1" size="small" variant="flat" class="mr-2">
-          <v-icon class="mr-2 text-white">mdi-folder-outline</v-icon>
-          <span class="capitalize text-white">{{ actividadTipo }}</span>
+        <v-chip color="blue-grey" size="x-small" density="compact" variant="flat" class="mr-2">
+          <v-icon start size="small">mdi-folder-outline</v-icon>
+          <span class="capitalize">{{ actividadTipo }}</span>
         </v-chip>
+
+        <v-spacer></v-spacer> <!-- Pushes subsequent items to the right -->
+
+        <!-- Edit Button -->
         <v-btn
-          size="small"
-          variant="outlined"
+          variant="text"
           icon="mdi-pencil"
           density="comfortable"
+          size="small" 
           @click="$emit('editar', programacion)"
+          class="mr-1"
         />
-        <!-- Botones de ejecución -->
-        <v-chip v-if="debeEjecutarHoy" color="red" variant="elevated" size="small">
-          <v-icon small>mdi-alert</v-icon>
-          Ejecutar hoy
+        
+        <!-- "Execute Today" Chip - positioned near execution buttons -->
+        <v-chip 
+          v-if="debeEjecutarHoy" 
+          color="pink-darken-1" 
+          variant="elevated" 
+          size="x-small" 
+          density="compact"
+          class="mr-1"
+        >
+          <v-icon start size="small">mdi-calendar-today</v-icon>
+          Hoy
         </v-chip>
-        <!--          
-         v-if="ejecucionesPendientes > 1"
--->
+
+        <!-- Execute All Pending Button -->
         <v-btn
           v-if="props.programacion.estado === 'activo' && ejecucionesPendientes > 1"
           size="small"
-          variant="flat"
-          color="orange-lighten-1"
+          variant="tonal"
+          color="orange-darken-1"
           density="comfortable"
           @click="showPendientesDialog = true"
-          class="transition-all duration-300 ease-in-out rounded-pill overflow-hidden ml-1 pt-2 pb-5"
-          :style="{ width: isHoveredMultiple ? '120px' : '36px' }"
+          class="transition-all duration-300 ease-in-out rounded-pill overflow-hidden ml-1 animated-btn"
+          :style="{ 'min-width': isHoveredMultiple ? '120px' : '36px' }"
           @mouseenter="isHoveredMultiple = true"
           @mouseleave="isHoveredMultiple = false"
         >
-          <v-icon size="small" :class="{ 'mr-1 ': isHoveredMultiple }">mdi-play-outline</v-icon>
+          <v-icon size="small" :class="{ 'mr-1': isHoveredMultiple }">mdi-playlist-play</v-icon>
           <span
             v-show="isHoveredMultiple"
-            class="text-shadow-lg/20 transition-opacity duration-3000 pb-0"
+            class="text-shadow-lg/20 transition-opacity duration-3000 text-caption"
             >Ejecutar {{ ejecucionesPendientes }}
           </span>
         </v-btn>
 
+        <!-- Execute Single Button -->
         <v-btn
           v-if="canExecuteSingle"
           size="small"
-          variant="flat"
-          color="green"
+          variant="tonal"
+          color="green-darken-1"
           density="comfortable"
           @click="$emit('request-single-execution', programacion)"
-          class="transition-all duration-300 ease-in-out rounded-pill overflow-hidden ml-1 pt-2 pb-5"
-          :style="{ width: isHoveredSingle ? '100px' : '36px' }"
+          class="transition-all duration-300 ease-in-out rounded-pill overflow-hidden ml-1 animated-btn"
+          :style="{ 'min-width': isHoveredSingle ? '100px' : '36px' }"
           @mouseenter="isHoveredSingle = true"
           @mouseleave="isHoveredSingle = false"
         >
           <v-icon size="small" :class="{ 'mr-1': isHoveredSingle }">mdi-play</v-icon>
-          <span v-show="isHoveredSingle" class="transition-opacity duration-3000 pb-0">
+          <span v-show="isHoveredSingle" class="transition-opacity duration-3000 text-caption">
             Ejecutar
           </span>
         </v-btn>
@@ -115,25 +128,33 @@
         :programacion="programacion" 
       />
 
-      <!-- Fila de información adicional -->
-      <div class="flex gap-4 mt-2 text-xs">
-        <v-chip color="blue-grey-lighten-1" size="small" variant="flat">
-          <v-icon class="mr-2 text-white">mdi-calendar-clock</v-icon>
-          <span class="capitalize text-shadow-lg/20" :style="{ color: textColor }"
-            >Última: {{ formatFecha(programacion.ultima_ejecucion) }}</span
-          >
+      <!-- Fila de información adicional (Date Chips) -->
+      <div class="d-flex align-center gap-2 mt-1 text-xs">
+        <v-chip color="blue-grey-lighten-2" size="x-small" density="compact" variant="flat">
+          <v-icon start size="small">mdi-history</v-icon>
+          <span class="capitalize text-shadow-lg/20">
+            Última: {{ formatFecha(programacion.ultima_ejecucion) }}
+          </span>
         </v-chip>
 
-        <v-chip color="blue-grey-darken-1" size="small" variant="flat">
-          <v-icon class="mr-2 text-white">mdi-calendar-clock</v-icon>
-          <span class="capitalize text-shadow-lg/20" :style="{ color: textColor }"
-            >Próxima: {{ formatFecha(programacion.proxima_ejecucion) }}</span
-          >
+        <v-chip color="blue-grey" size="x-small" density="compact" variant="flat">
+          <v-icon start size="small">mdi-calendar-arrow-right</v-icon>
+          <span class="capitalize text-shadow-lg/20">
+            Próxima: {{ formatFecha(programacion.proxima_ejecucion) }}
+          </span>
         </v-chip>
       </div>
     </v-card-text>
   </v-card>
 </template>
+
+<style scoped>
+.animated-btn {
+  transition: min-width 0.2s ease-in-out;
+  /* Ensure other styles for the button don't interfere with the transition */
+}
+/* Add any other specific styles if needed */
+</style>
 
 <script setup>
 import { defineProps, computed, ref } from 'vue'
