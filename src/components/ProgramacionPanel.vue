@@ -44,10 +44,10 @@
               class="mr-1"
             >
               <v-icon start size="small">mdi-alert-circle-outline</v-icon>
-              {{ ejecucionesPendientes }}
+              {{ props.programacion.ejecucionesPendientes }}
             </v-chip>
           </template>
-          <span>{{ ejecucionesPendientes }} pendiente(s)</span>
+          <span>{{ props.programacion.ejecucionesPendientes }} pendiente(s)</span>
         </v-tooltip>
         
         <!-- Tipo actividad -->
@@ -83,7 +83,7 @@
 
         <!-- Execute All Pending Button -->
         <v-btn
-          v-if="props.programacion.estado === 'activo' && ejecucionesPendientes > 1"
+          v-if="props.programacion.estado === 'activo' && props.programacion.ejecucionesPendientes > 1"
           size="small"
           variant="tonal"
           color="orange-darken-1"
@@ -98,7 +98,7 @@
           <span
             v-show="isHoveredMultiple"
             class="text-shadow-lg/20 transition-opacity duration-3000 text-caption"
-            >Ejecutar {{ ejecucionesPendientes }}
+            >Ejecutar {{ props.programacion.ejecucionesPendientes }}
           </span>
         </v-btn>
 
@@ -222,40 +222,7 @@ const formatFecha = (fecha) => {
   }
 }
 
-const ejecucionesPendientes = computed(() => {
-  if (!props.programacion.ultima_ejecucion) return 1
-
-  const hoy = new Date()
-  const ultimaEjecucion = new Date(props.programacion.ultima_ejecucion)
-
-  if (props.programacion.frecuencia === 'fecha_especifica') {
-    const fechaEspecifica = new Date(props.programacion.frecuencia_personalizada?.fecha)
-    return fechaEspecifica < hoy ? 1 : 0
-  }
-
-  const diasDesdeUltima = differenceInDays(hoy, ultimaEjecucion)
-
-  switch (props.programacion.frecuencia) {
-    case 'diaria':
-      return diasDesdeUltima
-    case 'semanal':
-      return Math.floor(diasDesdeUltima / 7)
-    case 'quincenal':
-      return Math.floor(diasDesdeUltima / 15)
-    case 'mensual':
-      return differenceInMonths(hoy, ultimaEjecucion)
-    case 'personalizada':
-      const config = props.programacion.frecuencia_personalizada
-      if (config.tipo === 'dias') return Math.floor(diasDesdeUltima / config.cantidad)
-      if (config.tipo === 'semanas') return Math.floor(diasDesdeUltima / (7 * config.cantidad))
-      if (config.tipo === 'meses') return differenceInMonths(hoy, ultimaEjecucion) / config.cantidad
-      return 0
-    default:
-      return 0
-  }
-})
-
-const esUrgente = computed(() => ejecucionesPendientes.value > 0)
+const esUrgente = computed(() => props.programacion.ejecucionesPendientes > 0)
 
 const hoy = new Date()
 const debeEjecutarHoy = computed(() => {
@@ -301,7 +268,7 @@ const canExecuteSingle = computed(() => {
 
   // Condition: isPastDue OR debeEjecutarHoy OR hasPending
   const isPastDue = proximaIsValid && isBefore(proximaEjecucionDate, new Date())
-  const hasPending = ejecucionesPendientes.value > 0
+  const hasPending = props.programacion.ejecucionesPendientes > 0
 
   return isPastDue || debeEjecutarHoy.value || hasPending
 })

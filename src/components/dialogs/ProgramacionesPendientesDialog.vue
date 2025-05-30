@@ -103,12 +103,12 @@ const addDateIfUnique = (dateObj, targetArray) => {
 
 
 const calculateMissedDates = () => {
-  console.log("[Dialog] Calculating missed dates for:", props.programacion.descripcion);
+  // console.log("[Dialog] Calculating missed dates for:", props.programacion.descripcion); // Removed
   isLoading.value = true;
   missedDates.value = [];
   
   if (!props.programacion || props.programacion.ejecucionesPendientes <= 0) {
-    console.log("[Dialog] No programacion data or no pendientes.");
+    // console.log("[Dialog] No programacion data or no pendientes."); // Removed
     isLoading.value = false;
     return;
   }
@@ -191,7 +191,7 @@ const calculateMissedDates = () => {
            // continue;
            // Or, simply don't add it if it's before the earliest possible start (created date)
            if (isBefore(previousDueDate, startOfDay(parseISO(created)))) {
-               console.log(`[Dialog] Calculated date ${format(previousDueDate, 'yyyy-MM-dd')} is before creation date ${format(startOfDay(parseISO(created)), 'yyyy-MM-dd')}. Skipping.`);
+               // console.log(`[Dialog] Calculated date ${format(previousDueDate, 'yyyy-MM-dd')} is before creation date ${format(startOfDay(parseISO(created)), 'yyyy-MM-dd')}. Skipping.`); // Removed
                cursorDate = previousDueDate; // Still update cursor to continue calculation correctly for next step
                continue;
            }
@@ -212,7 +212,7 @@ const calculateMissedDates = () => {
   if (iterations >= 500) {
       console.warn("[Dialog] Max iterations reached. Results might be incomplete or review logic.");
   }
-  console.log("[Dialog] Calculated missed dates:", missedDates.value.map(d => d.formattedDate));
+  // console.log("[Dialog] Calculated missed dates:", missedDates.value.map(d => d.formattedDate)); // Removed
   isLoading.value = false;
 };
 

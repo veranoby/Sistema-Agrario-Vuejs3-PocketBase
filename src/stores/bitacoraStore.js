@@ -69,14 +69,14 @@ export const useBitacoraStore = defineStore('bitacora', {
   actions: {
     // Initialize store: load from localStorage, then fetch if online
     async init() {
-      console.log('[BITACORA_STORE] Initializing...');
+      // console.log('[BITACORA_STORE] Initializing...'); // Removed
       const syncStore = useSyncStore();
       const haciendaStore = useHaciendaStore();
 
       const localData = syncStore.loadFromLocalStorage('bitacoraEntries');
       if (localData) {
         this.bitacoraEntries = localData;
-        console.log('[BITACORA_STORE] Loaded from localStorage:', this.bitacoraEntries.length, 'entries.');
+        // console.log('[BITACORA_STORE] Loaded from localStorage:', this.bitacoraEntries.length, 'entries.'); // Removed
       }
 
       if (syncStore.isOnline && haciendaStore.mi_hacienda?.id) {
@@ -87,7 +87,7 @@ export const useBitacoraStore = defineStore('bitacora', {
           console.error('[BITACORA_STORE] Error during initial fetch:', error);
         }
       }
-      console.log('[BITACORA_STORE] Initialization complete.');
+      // console.log('[BITACORA_STORE] Initialization complete.'); // Removed
     },
 
     // Fetch entries from PocketBase for the current hacienda
@@ -96,7 +96,7 @@ export const useBitacoraStore = defineStore('bitacora', {
         console.warn('[BITACORA_STORE] No haciendaId provided to cargarBitacoraEntries.');
         return;
       }
-      console.log(`[BITACORA_STORE] Fetching entries for hacienda: ${haciendaId}`);
+      // console.log(`[BITACORA_STORE] Fetching entries for hacienda: ${haciendaId}`); // Removed
       this.isLoading = true;
       try {
         const records = await pb.collection('bitacora').getFullList({
@@ -107,7 +107,7 @@ export const useBitacoraStore = defineStore('bitacora', {
         this.bitacoraEntries = records.map(entry => ({...entry, _isTemp: false })); 
         this.lastSync = Date.now();
         useSyncStore().saveToLocalStorage('bitacoraEntries', this.bitacoraEntries);
-        console.log('[BITACORA_STORE] Fetched and saved to localStorage:', this.bitacoraEntries.length, 'entries.');
+        // console.log('[BITACORA_STORE] Fetched and saved to localStorage:', this.bitacoraEntries.length, 'entries.'); // Removed
       } catch (error) {
         handleError(error, 'Error cargando entradas de bitácora desde PocketBase');
       } finally {
@@ -117,7 +117,7 @@ export const useBitacoraStore = defineStore('bitacora', {
 
     // Create a new bitacora entry
     async crearBitacoraEntry(entryData) {
-      console.log('[BITACORA_STORE] Attempting to create bitacora entry:', entryData);
+      // console.log('[BITACORA_STORE] Attempting to create bitacora entry:', entryData); // Removed
       const syncStore = useSyncStore();
       const authStore = useAuthStore();
       const haciendaStore = useHaciendaStore();
@@ -137,7 +137,7 @@ export const useBitacoraStore = defineStore('bitacora', {
       }
 
       if (!syncStore.isOnline) {
-        console.log('[BITACORA_STORE] Offline mode: Creating temporary entry.');
+        // console.log('[BITACORA_STORE] Offline mode: Creating temporary entry.'); // Removed
         const tempId = syncStore.generateTempId(); // Use syncStore's method
         const tempEntry = {
           ...fullEntryData,
@@ -155,11 +155,11 @@ export const useBitacoraStore = defineStore('bitacora', {
           data: fullEntryData, // Data without tempId for PB
           tempId: tempId,
         });
-        console.log('[BITACORA_STORE] Temporary entry created and queued:', tempEntry);
+        // console.log('[BITACORA_STORE] Temporary entry created and queued:', tempEntry); // Removed
         return tempEntry;
       }
 
-      console.log('[BITACORA_STORE] Online mode: Creating entry directly on PocketBase.');
+      // console.log('[BITACORA_STORE] Online mode: Creating entry directly on PocketBase.'); // Removed
       this.isLoading = true;
       try {
         // Data sent to PB should not contain tempId or _isTemp
@@ -169,7 +169,7 @@ export const useBitacoraStore = defineStore('bitacora', {
         const newEntry = {...record, _isTemp: false }; // record should now be expanded
         this.bitacoraEntries.unshift(newEntry);
         syncStore.saveToLocalStorage('bitacoraEntries', this.bitacoraEntries);
-        console.log('[BITACORA_STORE] Entry created on PocketBase (expanded) and added to store:', newEntry);
+        // console.log('[BITACORA_STORE] Entry created on PocketBase (expanded) and added to store:', newEntry); // Removed
         return newEntry;
       } catch (error) {
         handleError(error, 'Error creando entrada de bitácora en PocketBase');
@@ -267,10 +267,10 @@ export const useBitacoraStore = defineStore('bitacora', {
     // Placeholder for direct online update if needed, with offline queuing
     async updateBitacoraEntry(id, dataToUpdate) {
         const syncStore = useSyncStore();
-        console.log(`[BITACORA_STORE] Attempting to update entry ${id}:`, dataToUpdate);
+        // console.log(`[BITACORA_STORE] Attempting to update entry ${id}:`, dataToUpdate); // Removed
 
         if (!syncStore.isOnline) {
-            console.log('[BITACORA_STORE] Offline mode: Queuing update.');
+            // console.log('[BITACORA_STORE] Offline mode: Queuing update.'); // Removed
             // Update locally first
             const index = this.bitacoraEntries.findIndex(entry => entry.id === id);
             if (index !== -1) {
@@ -291,7 +291,7 @@ export const useBitacoraStore = defineStore('bitacora', {
             return this.bitacoraEntries[index];
         }
 
-        console.log('[BITACORA_STORE] Online mode: Updating entry directly on PocketBase.');
+        // console.log('[BITACORA_STORE] Online mode: Updating entry directly on PocketBase.'); // Removed
         this.isLoading = true;
         try {
             const record = await pb.collection('bitacora').update(id, dataToUpdate);
@@ -315,10 +315,10 @@ export const useBitacoraStore = defineStore('bitacora', {
     // Placeholder for direct online delete if needed, with offline queuing
     async deleteBitacoraEntry(id) {
         const syncStore = useSyncStore();
-        console.log(`[BITACORA_STORE] Attempting to delete entry ${id}`);
+        // console.log(`[BITACORA_STORE] Attempting to delete entry ${id}`); // Removed
 
         if (!syncStore.isOnline) {
-            console.log('[BITACORA_STORE] Offline mode: Queuing delete.');
+            // console.log('[BITACORA_STORE] Offline mode: Queuing delete.'); // Removed
             // Remove locally first
             const initialLength = this.bitacoraEntries.length;
             this.bitacoraEntries = this.bitacoraEntries.filter(entry => entry.id !== id);
@@ -338,7 +338,7 @@ export const useBitacoraStore = defineStore('bitacora', {
             return true;
         }
 
-        console.log('[BITACORA_STORE] Online mode: Deleting entry directly on PocketBase.');
+        // console.log('[BITACORA_STORE] Online mode: Deleting entry directly on PocketBase.'); // Removed
         this.isLoading = true;
         try {
             await pb.collection('bitacora').delete(id);

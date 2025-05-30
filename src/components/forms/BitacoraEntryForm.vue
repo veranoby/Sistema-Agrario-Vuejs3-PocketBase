@@ -310,9 +310,15 @@ async function loadActividadDetails(actividadId) {
     // This will be called first, then specific prefill from programacion can override.
     initializeMetricasValues(); 
     
-    // If not prefilling from a programacion, then populate observations from activity details.
-    // If prefilling from programacion, observations are set from pendingData.observacionesPreload.
-    if (!isPrefillingMetrics.value) {
+    // If not prefilling from a programacion (i.e. manual selection), 
+    // then populate observations from activity details and prefill metric fields with their stored 'valor'.
+    if (!isPrefillingMetrics.value && selectedActividadDetalles.value?.metricas) {
+      metricasParaFormulario.value.forEach(metricaField => {
+        const actividadMetrica = selectedActividadDetalles.value.metricas[metricaField.key];
+        if (actividadMetrica && typeof actividadMetrica.valor !== 'undefined') {
+          formData.metricas_values[metricaField.key] = actividadMetrica.valor;
+        }
+      });
       await populateObservationsFromActivityDetails(selectedActividadDetalles.value);
     }
 
@@ -397,7 +403,7 @@ watch(selectedActividadDetalles, (newDetails) => {
     // After attempting to prefill metrics, clear the flag and the store data
     isPrefillingMetrics.value = false;
     programacionesStore.clearPendingBitacoraData();
-    console.log('[BitacoraEntryForm] Prefilled metrics and cleared pending data.');
+    // console.log('[BitacoraEntryForm] Prefilled metrics and cleared pending data.'); // Removed
   }
 }, { deep: true }); // deep watch might be needed if metricas_values structure is complex initially
 

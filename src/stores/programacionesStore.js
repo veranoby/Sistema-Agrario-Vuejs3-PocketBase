@@ -221,7 +221,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
           if (config.tipo === 'dias') return Math.floor(diasDesdeUltima / config.cantidad);
           if (config.tipo === 'semanas') return Math.floor(diasDesdeUltima / (7 * config.cantidad));
           if (config.tipo === 'meses') {
-            return differenceInMonths(hoy, ultimaEjecucion) / config.cantidad;
+            return Math.floor(differenceInMonths(hoy, ultimaEjecucion) / config.cantidad);
           }
           return 0;
         }
@@ -346,7 +346,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
         try {
           let actividad = actividadesStore.actividades.find(a => a.id === id);
           if (!actividad) {
-            console.log(`Actividad ${id} no encontrada localmente, buscando en DB...`)
+            // console.log(`Actividad ${id} no encontrada localmente, buscando en DB...`) // Removed
             actividad = await actividadesStore.fetchActividadById(id)
           }
 
@@ -498,7 +498,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
           siembra_asociada: programacion.siembras && programacion.siembras.length > 0 ? programacion.siembras[0] : null
         }
         try {
-          console.log('Creando entrada en bitácora:', entryData)
+          // console.log('Creando entrada en bitácora:', entryData) // Removed
           await bitacoraStore.crearBitacoraEntry(entryData)
         } catch (error) {
           console.error(`Error creando entrada en bitácora para actividad ${actividadId} de programacion ${id}:`, error)
@@ -684,13 +684,13 @@ export const useProgramacionesStore = defineStore('programaciones', {
         };
 
         this.pendingBitacoraFromProgramacionData = prefillDataObject;
-        console.log('[ProgramacionesStore] Prepared data for Bitacora Entry:', this.pendingBitacoraFromProgramacionData);
+        // console.log('[ProgramacionesStore] Prepared data for Bitacora Entry:', this.pendingBitacoraFromProgramacionData); // Removed
         return true;
       },
 
       clearPendingBitacoraData() {
         this.pendingBitacoraFromProgramacionData = null;
-        console.log('[ProgramacionesStore] Cleared pending bitacora data.');
+        // console.log('[ProgramacionesStore] Cleared pending bitacora data.'); // Removed
       },
 
       async finalizeProgramacionExecution(payload) {

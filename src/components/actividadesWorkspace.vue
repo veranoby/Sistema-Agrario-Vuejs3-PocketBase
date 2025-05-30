@@ -1172,8 +1172,7 @@ async function handleRequestSingleExecution(programacion) {
   try {
     const success = await programacionesStore.prepareForBitacoraEntryFromProgramacion(programacion);
     if (success) {
-      // Using 'Dashboard de Inicio' as the placeholder route, as done in ProgramacionesList.vue
-      router.push({ name: 'Dashboard de Inicio' }); 
+      showBitacoraFormDialogActividad.value = true; 
     } else {
       snackbarStore.showSnackbar('No se pudo preparar la entrada de bitácora desde la programación.', 'warning');
     }
