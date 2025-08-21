@@ -482,15 +482,25 @@ export const useFinanzaStore = defineStore('finanzas', {
         // Datos de los registros
         const registrosData =
           registrosDelMes.length > 0
-            ? registrosDelMes.map((reg) => ({
-                Fecha: format(parseISO(reg.fecha), 'dd/MM/yyyy'),
-                Detalle: reg.detalle || reg.comentarios || '',
-                'Razón Social': reg.razon_social || '',
-                'Factura o Recibo': reg.factura || '',
-                'Centro de Costo': reg.costo || '',
-                'Pagado por': reg.expand?.pagado_por?.name || '',
-                Monto: reg.monto || 0
-              }))
+            ? registrosDelMes.map((reg) => {
+                // Obtener el nombre del usuario que pagó usando haciendaStore
+                const pagadoPorUser = haciendaStore.haciendaUsers.find(
+                  (u) => u.id === reg.pagado_por
+                )
+                const nombrePagadoPor = pagadoPorUser
+                  ? `${pagadoPorUser.name || ''} ${pagadoPorUser.lastname || ''}`.trim()
+                  : ''
+
+                return {
+                  Fecha: format(parseISO(reg.fecha), 'dd/MM/yyyy'),
+                  Detalle: reg.detalle + (reg.comentarios ? ' | ' + reg.comentarios : '') || '',
+                  'Razón Social': reg.razon_social || '',
+                  'Factura o Recibo': reg.factura || '',
+                  'Centro de Costo': reg.costo || '',
+                  'Pagado por': nombrePagadoPor || reg.expand?.pagado_por?.name || '',
+                  Monto: reg.monto || 0
+                }
+              })
             : [{}] // Objeto vacío si no hay registros
 
         // Agrupar montos por categoría
