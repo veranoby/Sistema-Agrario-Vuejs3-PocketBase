@@ -14,13 +14,45 @@ export class SyncQueue {
     this.queue = []
     this.tempToRealIdMap = this.loadIdMappings()
     this.config = {
-      maxRetries: 3,
-      batchSize: 10
+      maxRetries: 5, // Increased from 3 to 5 for better retry handling
+      batchSize: 10,
+      baseDelay: 1000, // Base delay of 1 second for exponential backoff
+      maxDelay: 30000  // Maximum delay of 30 seconds for exponential backoff
       // collectionPriority: ['siembras', 'zonas', 'actividades', 'recordatorios', 'programaciones'] // Removed
     }
     this.version = 1
     this.isProcessing = false
     this.maxStorageSize = 5 * 1024 * 1024
+
+    // Performance metrics
+    this.metrics = {
+      operationCounts: {
+        total: 0,
+        successful: 0,
+        failed: 0,
+        retried: 0
+      },
+      timing: {
+        totalProcessingTime: 0,
+        averageOperationTime: 0,
+        lastProcessedAt: null
+      },
+      queueStats: {
+        currentQueueSize: 0,
+        maxQueueSize: 0,
+        averageQueueSize: 0
+      },
+      syncRate: {
+        operationsPerMinute: 0,
+        successRate: 0
+      },
+      errors: {
+        totalErrors: 0,
+        errorTypes: {},
+        lastError: null
+      }
+    }
+    this.metricsHistory = [] // Store historical metrics for trend analysis
 
     // Bind methods para evitar problemas de contexto
     // this.sortByCollectionPriority = this.sortByCollectionPriority.bind(this) // Removed
@@ -65,6 +97,10 @@ export class SyncQueue {
 
     this.queue.push(enrichedOp)
     this.saveState()
+    
+    // Update queue statistics
+    this.updateQueueStats()
+    
     return enrichedOp.tempId
   }
 
@@ -111,6 +147,7 @@ export class SyncQueue {
     let createdItems = []
     let updatedItems = []
     let deletedItems = []
+    const startTime = Date.now() // Track processing start time
     console.log('Iniciando procesamiento de cola:', JSON.parse(JSON.stringify(this.queue)))
 
     try {
@@ -123,16 +160,17 @@ export class SyncQueue {
 
       // Define a working queue for current processing run.
       // Filter by current user (if any) and ensure we only attempt to process 'pending' operations.
+      // Also include operations that are retrying (not yet failed)
       let workQueue = []
       if (currentUserId) {
         workQueue = this.queue.filter(
-          (op) => (!op.userId || op.userId === currentUserId) && op.status === 'pending'
+          (op) => (!op.userId || op.userId === currentUserId) && (op.status === 'pending' || op.status === 'retrying')
         )
         console.log(
           `Procesando ${workQueue.length} operaciones pendientes para usuario ${currentUserId}`
         )
       } else {
-        workQueue = this.queue.filter((op) => !op.userId && op.status === 'pending')
+        workQueue = this.queue.filter((op) => !op.userId && (op.status === 'pending' || op.status === 'retrying'))
         console.log(`Procesando ${workQueue.length} operaciones pendientes sin usuario asignado`)
       }
 
@@ -144,7 +182,7 @@ export class SyncQueue {
 
       // Create Pass
       const createOps = workQueue
-        .filter((op) => op.type === 'create') // Already filtered by status === 'pending'
+        .filter((op) => op.type === 'create' && (op.status === 'pending' || op.status === 'retrying')) // Filter by status
         .sort((a, b) => a.createdAt - b.createdAt)
 
       if (createOps.length > 0) {
@@ -177,15 +215,28 @@ export class SyncQueue {
                 originalOp.status = 'completed' // Mark as completed in the workQueue/original queue
                 createdItems.push({ tempId: originalOp.tempId, realItem: createdRecord })
                 await this.updatePendingOperations(originalOp.tempId, createdRecord.id)
+                
+                // Update metrics for successful operation
+                this.updateOperationCounts('create', true, originalOp.retryCount > 0)
               } else {
                 console.error('Create Pass - Resultado inesperado para op:', originalOp, 'Resultado:', createdRecord)
                 this.handleBatchError([originalOp], new Error('Resultado inesperado en batch de creación'))
+                
+                // Update metrics for failed operation
+                this.updateOperationCounts('create', false, originalOp.retryCount > 0)
+                this.trackError('unexpected_result')
               }
             }
             this.saveTempToRealIdMap()
           } catch (batchError) {
             console.error('Error en Create Pass batch:', batchError)
             this.handleBatchError(clientBatchOps, batchError)
+            
+            // Update metrics for failed operations in batch
+            clientBatchOps.forEach(op => {
+              this.updateOperationCounts('create', false, op.retryCount > 0)
+              this.trackError(batchError.name || 'batch_error')
+            })
           }
         }
       } else {
@@ -196,7 +247,7 @@ export class SyncQueue {
       // We need to re-evaluate from workQueue which operations are *still* pending for update/delete,
       // as some create operations might have resolved dependencies or some ops might have failed.
       const updateDeleteOps = workQueue // workQueue items' statuses might have changed
-        .filter((op) => (op.type === 'update' || op.type === 'delete') && op.status === 'pending')
+        .filter((op) => (op.type === 'update' || op.type === 'delete') && (op.status === 'pending' || op.status === 'retrying'))
         .sort((a, b) => a.createdAt - b.createdAt)
 
       if (updateDeleteOps.length > 0) {
@@ -258,11 +309,15 @@ export class SyncQueue {
                     updatedItem: opDetails.resolvedDataPayload,
                     collection: opDetails.collection
                   })
+                  // Update metrics for successful update operation
+                  this.updateOperationCounts('update', true, originalOp.retryCount > 0)
                 } else if (opDetails.type === 'delete') {
                   deletedItems.push({
                     id: opDetails.resolvedMainId,
                     collection: opDetails.collection
                   })
+                  // Update metrics for successful delete operation
+                  this.updateOperationCounts('delete', true, originalOp.retryCount > 0)
                 }
               } else {
                 console.warn("Update/Delete Pass: No se encontró la operación original para marcar como completada después del batch:", opDetails);
@@ -271,6 +326,12 @@ export class SyncQueue {
           } catch (batchError) {
             console.error('Error en Update/Delete Pass batch:', batchError)
             this.handleBatchError(validClientBatchOps, batchError)
+            
+            // Update metrics for failed operations in batch
+            validClientBatchOps.forEach(op => {
+              this.updateOperationCounts(op.type, false, op.retryCount > 0)
+              this.trackError(batchError.name || 'batch_error')
+            })
           }
         }
       } else {
@@ -278,13 +339,29 @@ export class SyncQueue {
       }
 
       // Final queue cleanup: remove all 'completed' ops from the main this.queue
+      const initialQueueSize = this.queue.length
       this.queue = this.queue.filter((op) => op.status !== 'completed')
       // Failed operations (maxRetries exceeded) will also be filtered here if their status is 'failed'
       this.queue = this.queue.filter((op) => op.status !== 'failed')
 
       this.saveState() // Saves the potentially modified main queue and the ID map
+      
+      // Update queue statistics
+      this.updateQueueStats()
+      
+      // Track timing metrics
+      const endTime = Date.now()
+      this.trackTiming(startTime, endTime, createdItems.length + updatedItems.length + deletedItems.length)
+      
+      // Update sync rate
+      this.updateSyncRate()
+      
+      // Save metrics to history
+      this.saveMetricsToHistory()
+      
     } catch (error) {
       console.error('Error general procesando cola:', error)
+      this.trackError(error.name || 'processing_error')
     } finally {
       this.isProcessing = false
       console.log('Procesamiento de cola finalizado. Estado actual de this.queue:', JSON.parse(JSON.stringify(this.queue)))
@@ -411,23 +488,58 @@ export class SyncQueue {
 
   // handleError se reemplaza o complementa con handleBatchError
   // La lógica de reintentos individuales se mantiene si una op falla repetidamente en batches
+  // This method handles individual operation errors and implements exponential backoff retry logic
   handleError(op, error) {
     console.error('Error procesando operación individualmente (fuera de un batch):', op, error)
     if (error.response && error.response.data) {
       console.error('Detalles del error individual:', error.response.data)
     }
     op.retryCount = (op.retryCount || 0) + 1
-    if (op.retryCount >= this.config.maxRetries) {
+    
+    // Track error metrics
+    this.trackError(error.name || 'individual_error')
+    
+    // Check if we should retry with exponential backoff
+    if (op.retryCount < this.config.maxRetries) {
+      // Set status to 'retrying' so it gets picked up again
+      op.status = 'retrying';
+      
+      // Calculate delay with exponential backoff and jitter
+      const delay = this.calculateBackoffDelay(op.retryCount - 1); // retryCount-1 because we just incremented
+      
+      console.log(
+        `Programando reintento para operación ${op.type} en ${op.collection} ID ${
+          op.id || op.tempId
+        } después de ${delay}ms`
+      )
+      
+      // Schedule retry with delay
+      setTimeout(() => {
+        console.log(
+          `Reintentando operación ${op.type} en ${op.collection} ID ${
+            op.id || op.tempId
+          } (intento ${op.retryCount})`
+        )
+        // Update status back to pending so process() will pick it up
+        op.status = 'pending';
+        this.saveState(); // Save the updated status
+      }, delay)
+    } else if (op.retryCount >= this.config.maxRetries) {
       op.status = 'failed' // Marcar como fallida permanentemente
       console.warn(
         `Operación ${op.type} para ${op.collection} ID ${
           op.id || op.tempId
         } ha fallado ${this.config.maxRetries} veces. Marcada como 'failed'.`
       )
+      // Track as failed operation
+      this.updateOperationCounts(op.type, false, true)
     }
     // La limpieza de operaciones 'failed' se hará en la limpieza general de la cola al final de process().
   }
 
+  // Handle errors that occur during batch operations
+  // This method implements exponential backoff retry logic with jitter to prevent
+  // overwhelming the server with retry attempts
   handleBatchError(operationsInFailedBatch, error) {
     console.error(
       'Error en batch PocketBase:',
@@ -435,6 +547,9 @@ export class SyncQueue {
       'Operaciones afectadas:',
       JSON.parse(JSON.stringify(operationsInFailedBatch))
     )
+
+    // Track error metrics
+    this.trackError(error.name || 'batch_error')
 
     // Intentar obtener más detalles del error si es una instancia de ClientResponseError de PocketBase
     if (error && error.isAbort === false && error.status !== 0 && typeof error.data === 'object') {
@@ -450,7 +565,33 @@ export class SyncQueue {
           op.collection
         }) a ${op.retryCount}. Status actual: ${op.status}`
       )
-      if (op.retryCount >= this.config.maxRetries && op.status !== 'completed') { // No marcar como failed si de alguna manera se completó
+      
+      // Check if we should retry with exponential backoff
+      if (op.retryCount < this.config.maxRetries && op.status !== 'completed') {
+        // Set status to 'retrying' so it gets picked up again
+        op.status = 'retrying';
+        
+        // Calculate delay with exponential backoff and jitter
+        const delay = this.calculateBackoffDelay(op.retryCount - 1); // retryCount-1 because we just incremented
+        
+        console.log(
+          `Programando reintento para operación ${op.type} en ${op.collection} ID ${
+            op.id || op.tempId
+          } después de ${delay}ms`
+        )
+        
+        // Schedule retry with delay
+        setTimeout(() => {
+          console.log(
+            `Reintentando operación ${op.type} en ${op.collection} ID ${
+              op.id || op.tempId
+            } (intento ${op.retryCount})`
+          )
+          // Update status back to pending so process() will pick it up
+          op.status = 'pending';
+          this.saveState(); // Save the updated status
+        }, delay)
+      } else if (op.retryCount >= this.config.maxRetries && op.status !== 'completed') {
         op.status = 'failed'
         console.warn(
           `Operación ${op.type} para ${op.collection} ID ${
@@ -459,6 +600,8 @@ export class SyncQueue {
             this.config.maxRetries
           } veces tras error de batch. Marcada como 'failed'.`
         )
+        // Track as failed operation
+        this.updateOperationCounts(op.type, false, true)
       }
     })
   }
@@ -645,6 +788,171 @@ export class SyncQueue {
 
     // Formato simple y consistente: temp_TIMESTAMP_RANDOM
     return `temp_${timestamp}_${randomPart}`
+  }
+
+  // Calculate exponential backoff delay with jitter
+  // This method implements an exponential backoff algorithm with jitter to prevent
+  // thundering herd problems when retrying failed operations.
+  // Formula: delay = min(baseDelay * 2^retryCount + jitter, maxDelay)
+  // where jitter is a random value between 0 and 25% of the capped delay
+  calculateBackoffDelay(retryCount) {
+    // Exponential backoff: baseDelay * 2^retryCount
+    const exponentialDelay = this.config.baseDelay * Math.pow(2, retryCount)
+    
+    // Cap the delay to maxDelay
+    const cappedDelay = Math.min(exponentialDelay, this.config.maxDelay)
+    
+    // Add jitter: random value between 0 and 25% of the capped delay
+    const jitter = Math.random() * cappedDelay * 0.25
+    
+    // Return the final delay with jitter
+    return Math.min(cappedDelay + jitter, this.config.maxDelay)
+  }
+
+  // Performance Metrics Management
+  // Methods to track, update, and retrieve performance metrics
+
+  // Initialize metrics tracking
+  initializeMetrics() {
+    this.metrics = {
+      operationCounts: {
+        total: 0,
+        successful: 0,
+        failed: 0,
+        retried: 0
+      },
+      timing: {
+        totalProcessingTime: 0,
+        averageOperationTime: 0,
+        lastProcessedAt: null
+      },
+      queueStats: {
+        currentQueueSize: 0,
+        maxQueueSize: 0,
+        averageQueueSize: 0
+      },
+      syncRate: {
+        operationsPerMinute: 0,
+        successRate: 0
+      },
+      errors: {
+        totalErrors: 0,
+        errorTypes: {},
+        lastError: null
+      }
+    }
+    this.metricsHistory = []
+  }
+
+  // Update operation counts
+  updateOperationCounts(operationType, isSuccess = true, isRetry = false) {
+    this.metrics.operationCounts.total++
+    
+    if (isSuccess) {
+      this.metrics.operationCounts.successful++
+    } else {
+      this.metrics.operationCounts.failed++
+    }
+    
+    if (isRetry) {
+      this.metrics.operationCounts.retried++
+    }
+    
+    // Update success rate
+    if (this.metrics.operationCounts.total > 0) {
+      this.metrics.syncRate.successRate = 
+        (this.metrics.operationCounts.successful / this.metrics.operationCounts.total) * 100
+    }
+  }
+
+  // Track timing metrics
+  trackTiming(startTime, endTime, operationCount = 1) {
+    const duration = endTime - startTime
+    this.metrics.timing.totalProcessingTime += duration
+    this.metrics.timing.lastProcessedAt = new Date()
+    
+    // Update average operation time
+    if (operationCount > 0) {
+      const avgTimePerOperation = duration / operationCount
+      this.metrics.timing.averageOperationTime = 
+        (this.metrics.timing.averageOperationTime + avgTimePerOperation) / 2
+    }
+  }
+
+  // Update queue statistics
+  updateQueueStats() {
+    const currentSize = this.queue.length
+    this.metrics.queueStats.currentQueueSize = currentSize
+    
+    // Update max queue size
+    if (currentSize > this.metrics.queueStats.maxQueueSize) {
+      this.metrics.queueStats.maxQueueSize = currentSize
+    }
+    
+    // Update average queue size (simple moving average)
+    this.metrics.queueStats.averageQueueSize = 
+      (this.metrics.queueStats.averageQueueSize + currentSize) / 2
+  }
+
+  // Track errors
+  trackError(errorType) {
+    this.metrics.errors.totalErrors++
+    this.metrics.errors.lastError = {
+      type: errorType,
+      timestamp: new Date()
+    }
+    
+    // Track error types
+    if (!this.metrics.errors.errorTypes[errorType]) {
+      this.metrics.errors.errorTypes[errorType] = 0
+    }
+    this.metrics.errors.errorTypes[errorType]++
+  }
+
+  // Update sync rate metrics
+  updateSyncRate() {
+    // Calculate operations per minute based on last hour of data
+    const oneHourAgo = Date.now() - 60 * 60 * 1000
+    const recentMetrics = this.metricsHistory.filter(
+      m => m.timestamp > oneHourAgo
+    )
+    
+    if (recentMetrics.length > 0) {
+      const totalRecentOps = recentMetrics.reduce(
+        (sum, m) => sum + m.operationCounts.total, 0
+      )
+      this.metrics.syncRate.operationsPerMinute = totalRecentOps / 60
+    }
+  }
+
+  // Save current metrics to history
+  saveMetricsToHistory() {
+    const metricsCopy = JSON.parse(JSON.stringify(this.metrics))
+    metricsCopy.timestamp = Date.now()
+    this.metricsHistory.push(metricsCopy)
+    
+    // Keep only last 100 metrics entries to prevent memory bloat
+    if (this.metricsHistory.length > 100) {
+      this.metricsHistory = this.metricsHistory.slice(-100)
+    }
+  }
+
+  // Get current performance metrics
+  getPerformanceMetrics() {
+    return {
+      ...this.metrics,
+      history: this.metricsHistory.slice(-10) // Last 10 entries for trend analysis
+    }
+  }
+
+  // Reset metrics (for testing or periodic resets)
+  resetMetrics() {
+    this.initializeMetrics()
+  }
+
+  // Public method to get metrics
+  getMetrics() {
+    return this.getPerformanceMetrics()
   }
 
   // State management

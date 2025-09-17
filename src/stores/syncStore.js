@@ -639,6 +639,83 @@ export const useSyncStore = defineStore('sync', {
 
     // Removed restoreAuthSession method.
 
+    // Nuevo método para manejar optimistic updates
+    async optimisticOperation(operation, localUpdateFn) {
+      try {
+        // 1. Ejecutar actualización local inmediatamente
+        const localResult = localUpdateFn()
+        
+        // 2. Encolar operación para sincronización
+        const tempId = await this.queueOperation(operation)
+        
+        // 3. Retornar resultado con indicador de estado pendiente
+        return { ...localResult, tempId, isPending: true }
+      } catch (error) {
+        this.handleSyncError(error, 'Error en operación optimista')
+        throw error
+      }
+    },
+
+    // Métodos para gestión de métricas de rendimiento
+    // Estos métodos permiten obtener, resetear y monitorear las métricas de rendimiento
+
+    // Obtener métricas de rendimiento actuales
+    getPerformanceMetrics() {
+      return this.queue.getPerformanceMetrics()
+    },
+
+    // Resetear métricas (para pruebas o reinicios periódicos)
+    resetPerformanceMetrics() {
+      this.queue.resetMetrics()
+    },
+
+    // Obtener historial de métricas para análisis de tendencias
+    getMetricsHistory(limit = 10) {
+      const history = this.queue.metricsHistory || []
+      return history.slice(-limit)
+    },
+
+    // Verificar si hay alertas de rendimiento
+    checkPerformanceAlerts() {
+      const metrics = this.getPerformanceMetrics()
+      const alerts = []
+
+      // Alerta de tasa de éxito baja
+      if (metrics.syncRate.successRate < 90) {
+        alerts.push({
+          type: 'LOW_SUCCESS_RATE',
+          severity: 'WARNING',
+          message: 'La tasa de éxito de sincronización está por debajo del 90%',
+          currentValue: metrics.syncRate.successRate,
+          threshold: 90
+        })
+      }
+
+      // Alerta de cola grande
+      if (metrics.queueStats.currentQueueSize > 50) {
+        alerts.push({
+          type: 'LARGE_QUEUE',
+          severity: 'WARNING',
+          message: `Hay ${metrics.queueStats.currentQueueSize} operaciones pendientes en la cola`,
+          currentValue: metrics.queueStats.currentQueueSize,
+          threshold: 50
+        })
+      }
+
+      // Alerta de muchos errores
+      if (metrics.errors.totalErrors > 10) {
+        alerts.push({
+          type: 'HIGH_ERROR_COUNT',
+          severity: 'CRITICAL',
+          message: `Se han registrado ${metrics.errors.totalErrors} errores`,
+          currentValue: metrics.errors.totalErrors,
+          threshold: 10
+        })
+      }
+
+      return alerts
+    },
+
     // Nuevo método para manejar cambios de visibilidad - REMOVED as it was empty
     // async handleVisibilityChange() {}
   }
