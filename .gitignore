@@ -15,8 +15,9 @@ dist-ssr
 .env
 .DS_Store
 
-# Excluir directorio pocketbase
+# Excluir directorio pocketbase y brain
 /pocketbase/
+/brain/
 
 coverage
 *.local
