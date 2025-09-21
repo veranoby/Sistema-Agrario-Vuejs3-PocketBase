@@ -17,7 +17,7 @@ export const useZonasStore = defineStore('zonas', {
 
   persist: {
     key: 'zonas',
-    storage: sessionStorage,
+    storage: localStorage,
     paths: ['zonas', 'tiposZonas']
   },
 
@@ -97,29 +97,28 @@ export const useZonasStore = defineStore('zonas', {
       }
 
       if (!syncStore.isOnline) {
-        // Usar la función unificada para generar ID temporal
-        const tempId = syncStore.generateTempId()
-
-        const tempZona = {
-          ...enrichedData,
-          id: tempId,
-          created: new Date().toISOString(),
-          updated: new Date().toISOString(),
-          _isTemp: true
-        }
-
-        this.zonas.unshift(tempZona)
-        syncStore.saveToLocalStorage('zonas', this.zonas)
-
-        await syncStore.queueOperation({
-          type: 'create',
-          collection: 'zonas',
-          data: enrichedData,
-          tempId
-        })
-
-        snackbarStore.hideLoading()
-        return tempZona
+        // Usar optimistic operation
+        return syncStore.optimisticOperation(
+          {
+            type: 'create',
+            collection: 'zonas',
+            data: enrichedData
+          },
+          () => {
+            // Función de actualización local
+            const tempId = syncStore.generateTempId()
+            const tempZona = {
+              ...enrichedData,
+              id: tempId,
+              created: new Date().toISOString(),
+              updated: new Date().toISOString(),
+              _isTemp: true
+            }
+            this.zonas.unshift(tempZona)
+            syncStore.saveToLocalStorage('zonas', this.zonas)
+            return tempZona
+          }
+        )
       }
 
       // Online flow
@@ -153,28 +152,29 @@ export const useZonasStore = defineStore('zonas', {
       }
 
       if (!syncStore.isOnline) {
-        const index = this.zonas.findIndex((z) => z.id === id)
-        if (index !== -1) {
-          this.zonas[index] = {
-            ...this.zonas[index],
-            ...enrichedData,
-            updated: new Date().toISOString()
+        // Usar optimistic operation
+        return syncStore.optimisticOperation(
+          {
+            type: 'update',
+            collection: 'zonas',
+            id,
+            data: enrichedData
+          },
+          () => {
+            // Función de actualización local
+            const index = this.zonas.findIndex((z) => z.id === id)
+            if (index !== -1) {
+              this.zonas[index] = {
+                ...this.zonas[index],
+                ...enrichedData,
+                updated: new Date().toISOString()
+              }
+              syncStore.saveToLocalStorage('zonas', this.zonas)
+              return this.zonas[index]
+            }
+            return null
           }
-        }
-
-        // Usar la función unificada para generar ID temporal
-        const tempId = syncStore.generateTempId()
-        await syncStore.queueOperation({
-          type: 'update',
-          collection: 'zonas',
-          id,
-          data: enrichedData,
-          tempId
-        })
-
-        snackbarStore.hideLoading()
-        syncStore.saveToLocalStorage('zonas', this.zonas)
-        return this.zonas[index]
+        )
       }
 
       // Online flow
@@ -215,16 +215,20 @@ export const useZonasStore = defineStore('zonas', {
           throw new Error(`No se encontró zona con ID: ${id}`)
         }
 
-        this.zonas = this.zonas.filter((z) => z.id !== id)
-
-        await syncStore.queueOperation({
-          type: 'delete',
-          collection: 'zonas',
-          id
-        })
-        snackbarStore.hideLoading()
-        syncStore.saveToLocalStorage('zonas', this.zonas)
-        return true
+        // Usar optimistic operation
+        return syncStore.optimisticOperation(
+          {
+            type: 'delete',
+            collection: 'zonas',
+            id
+          },
+          () => {
+            // Función de actualización local
+            this.zonas = this.zonas.filter((z) => z.id !== id)
+            syncStore.saveToLocalStorage('zonas', this.zonas)
+            return true
+          }
+        )
       }
 
       try {

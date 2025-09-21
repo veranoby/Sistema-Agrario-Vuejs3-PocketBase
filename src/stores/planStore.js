@@ -14,7 +14,7 @@ export const usePlanStore = defineStore('plan', {
 
   persist: {
     key: 'plan',
-    storage: sessionStorage,
+    storage: localStorage,
     paths: ['plans']
   },
 

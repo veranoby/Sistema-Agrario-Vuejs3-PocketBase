@@ -4,6 +4,7 @@ import { handleError } from '@/utils/errorHandler';
 import { useSyncStore } from './syncStore'; // For queueOperation and generateTempId
 import { useAuthStore } from './authStore'; // For current user ID
 import { useHaciendaStore } from './haciendaStore'; // For current hacienda ID
+import { useProgramacionesStore } from './programacionesStore'; // For clearing compliance cache
 
 export const useBitacoraStore = defineStore('bitacora', {
   state: () => ({
@@ -99,10 +100,11 @@ export const useBitacoraStore = defineStore('bitacora', {
       console.log(`[BITACORA_STORE] Fetching entries for hacienda: ${haciendaId}`);
       this.isLoading = true;
       try {
+        // Simplificar consulta para debug - remover expand problemático
         const records = await pb.collection('bitacora').getFullList({
           filter: `hacienda="${haciendaId}"`,
-          sort: '-fecha_ejecucion', // newest first by execution date
-          expand: "actividad_realizada,actividad_realizada.tipo_actividades,siembra_asociada,user_responsable"
+          sort: '-created' // usar created en lugar de fecha_ejecucion por si no existe
+          // expand: "actividad_realizada,actividad_realizada.tipo_actividades,siembra_asociada,user_responsable" // Comentado temporalmente
         });
         this.bitacoraEntries = records.map(entry => ({...entry, _isTemp: false })); 
         this.lastSync = Date.now();
@@ -156,6 +158,11 @@ export const useBitacoraStore = defineStore('bitacora', {
           tempId: tempId,
         });
         console.log('[BITACORA_STORE] Temporary entry created and queued:', tempEntry);
+        
+        // Clear compliance state cache since bitacora entries have changed
+        const programacionesStore = useProgramacionesStore();
+        programacionesStore.clearComplianceStateCache();
+        
         return tempEntry;
       }
 
@@ -170,6 +177,11 @@ export const useBitacoraStore = defineStore('bitacora', {
         this.bitacoraEntries.unshift(newEntry);
         syncStore.saveToLocalStorage('bitacoraEntries', this.bitacoraEntries);
         console.log('[BITACORA_STORE] Entry created on PocketBase (expanded) and added to store:', newEntry);
+        
+        // Clear compliance state cache since bitacora entries have changed
+        const programacionesStore = useProgramacionesStore();
+        programacionesStore.clearComplianceStateCache();
+        
         return newEntry;
       } catch (error) {
         handleError(error, 'Error creando entrada de bitácora en PocketBase');
@@ -219,6 +231,10 @@ export const useBitacoraStore = defineStore('bitacora', {
       }
       syncStore.saveToLocalStorage('bitacoraEntries', this.bitacoraEntries);
       console.log('[BITACORA_STORE] Synced create applied, localStorage updated.');
+      
+      // Clear compliance state cache since bitacora entries have changed
+      const programacionesStore = useProgramacionesStore();
+      programacionesStore.clearComplianceStateCache();
     },
 
     async applySyncedUpdate(id, updatedItemData) {
@@ -249,6 +265,10 @@ export const useBitacoraStore = defineStore('bitacora', {
       }
       syncStore.saveToLocalStorage('bitacoraEntries', this.bitacoraEntries);
       console.log('[BITACORA_STORE] Synced update applied, localStorage updated.');
+      
+      // Clear compliance state cache since bitacora entries have changed
+      const programacionesStore = useProgramacionesStore();
+      programacionesStore.clearComplianceStateCache();
     },
 
     // Apply a synced delete from syncStore
@@ -262,6 +282,10 @@ export const useBitacoraStore = defineStore('bitacora', {
       } else {
         console.warn(`[BITACORA_STORE] Could not find item with id ${id} to apply delete.`);
       }
+      
+      // Clear compliance state cache since bitacora entries have changed
+      const programacionesStore = useProgramacionesStore();
+      programacionesStore.clearComplianceStateCache();
     },
     
     // Placeholder for direct online update if needed, with offline queuing
@@ -272,15 +296,12 @@ export const useBitacoraStore = defineStore('bitacora', {
         if (!syncStore.isOnline) {
             console.log('[BITACORA_STORE] Offline mode: Queuing update.');
             // Update locally first
-            const index = this.bitacoraEntries.findIndex(entry => entry.id === id);
-            if (index !== -1) {
-                this.bitacoraEntries[index] = { ...this.bitacoraEntries[index], ...dataToUpdate, updated: new Date().toISOString() };
-                syncStore.saveToLocalStorage('bitacoraEntries', this.bitacoraEntries);
-            } else {
-                 console.warn(`[BITACORA_STORE] Cannot update locally: item with id ${id} not found.`);
-                 // Do not queue if item doesn't exist locally
-                 return null;
-            }
+            this.bitacoraEntries[index] = { ...this.bitacoraEntries[index], ...dataToUpdate, updated: new Date().toISOString() };
+            syncStore.saveToLocalStorage('bitacoraEntries', this.bitacoraEntries);
+            
+            // Clear compliance state cache since bitacora entries have changed
+            const programacionesStore = useProgramacionesStore();
+            programacionesStore.clearComplianceStateCache();
             
             await syncStore.queueOperation({
                 type: 'update',
@@ -303,6 +324,11 @@ export const useBitacoraStore = defineStore('bitacora', {
                 this.bitacoraEntries.unshift(updatedEntry); // Add if not found (should ideally exist)
             }
             syncStore.saveToLocalStorage('bitacoraEntries', this.bitacoraEntries);
+            
+            // Clear compliance state cache since bitacora entries have changed
+            const programacionesStore = useProgramacionesStore();
+            programacionesStore.clearComplianceStateCache();
+            
             return updatedEntry;
         } catch (error) {
             handleError(error, `Error actualizando entrada de bitácora ${id} en PocketBase`);
@@ -324,6 +350,10 @@ export const useBitacoraStore = defineStore('bitacora', {
             this.bitacoraEntries = this.bitacoraEntries.filter(entry => entry.id !== id);
             if (this.bitacoraEntries.length < initialLength) {
                 syncStore.saveToLocalStorage('bitacoraEntries', this.bitacoraEntries);
+                
+                // Clear compliance state cache since bitacora entries have changed
+                const programacionesStore = useProgramacionesStore();
+                programacionesStore.clearComplianceStateCache();
             } else {
                 console.warn(`[BITACORA_STORE] Cannot delete locally: item with id ${id} not found.`);
                 // Do not queue if item doesn't exist locally
@@ -344,6 +374,11 @@ export const useBitacoraStore = defineStore('bitacora', {
             await pb.collection('bitacora').delete(id);
             this.bitacoraEntries = this.bitacoraEntries.filter(entry => entry.id !== id);
             syncStore.saveToLocalStorage('bitacoraEntries', this.bitacoraEntries);
+            
+            // Clear compliance state cache since bitacora entries have changed
+            const programacionesStore = useProgramacionesStore();
+            programacionesStore.clearComplianceStateCache();
+            
             return true;
         } catch (error) {
             handleError(error, `Error eliminando entrada de bitácora ${id} en PocketBase`);

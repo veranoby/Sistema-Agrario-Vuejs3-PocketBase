@@ -1,0 +1,640 @@
+<template>
+  <v-form ref="form" class="agricultural-batch-form">
+    <v-container>
+      <!-- Activity Preview Header -->
+      <v-row v-if="actividadPreview">
+        <v-col cols="12">
+          <v-card variant="outlined" class="agricultural-preview-card mb-4">
+            <v-card-title class="agricultural-preview-header">
+              <v-icon start color="green-darken-2">mdi-leaf</v-icon>
+              <div>
+                <div class="text-h6 font-weight-bold">{{ actividadPreview.nombre }}</div>
+                <div class="text-caption text-medium-emphasis">
+                  {{ actividadPreview.expand?.tipo_actividades?.nombre || 'Tipo no disponible' }}
+                </div>
+              </div>
+              <v-spacer />
+              <v-chip color="primary" variant="tonal" size="large">
+                <v-icon start>mdi-calendar-multiple</v-icon>
+                {{ fechasSeleccionadas.length }} entradas
+              </v-chip>
+            </v-card-title>
+
+            <v-card-text class="pa-4">
+              <!-- Date Range Display -->
+              <div class="agricultural-date-summary mb-4">
+                <v-chip
+                  color="blue-grey-lighten-2"
+                  variant="outlined"
+                  size="default"
+                  class="agricultural-chip"
+                >
+                  <v-icon start size="small">mdi-calendar-range</v-icon>
+                  <strong>Rango:</strong> {{ formatDateRange() }}
+                </v-chip>
+              </div>
+
+              <!-- Selectable Metrics Section -->
+              <div v-if="metricasDisponibles.length > 0" class="mt-4">
+                <div class="d-flex align-center justify-space-between mb-3">
+                  <h4 class="text-subtitle-1 font-weight-bold agricultural-section-title">
+                    <v-icon start color="green-darken-2">mdi-chart-line</v-icon>
+                    Métricas a Registrar
+                  </h4>
+                  <div class="d-flex ga-2">
+                    <v-btn
+                      size="small"
+                      variant="outlined"
+                      color="primary"
+                      @click="selectAllMetrics"
+                      :disabled="allMetricsSelected"
+                    >
+                      Seleccionar Todo
+                    </v-btn>
+                    <v-btn
+                      size="small"
+                      variant="outlined"
+                      color="error"
+                      @click="clearAllMetrics"
+                      :disabled="!anyMetricsSelected"
+                    >
+                      Limpiar Todo
+                    </v-btn>
+                  </div>
+                </div>
+
+                <v-row dense>
+                  <v-col
+                    v-for="metrica in metricasDisponibles"
+                    :key="metrica.key"
+                    cols="12"
+                    sm="6"
+                    md="4"
+                  >
+                    <v-card
+                      variant="outlined"
+                      class="agricultural-metric-card"
+                      :class="{ 'metric-selected': metricasSeleccionadas.includes(metrica.key) }"
+                    >
+                      <v-card-text class="pa-3">
+                        <v-checkbox-btn
+                          :model-value="metricasSeleccionadas.includes(metrica.key)"
+                          @update:model-value="toggleMetricSelection(metrica.key)"
+                          color="success"
+                          class="agricultural-checkbox"
+                        >
+                          <template #label>
+                            <div class="metric-label-content">
+                              <div class="metric-name">{{ metrica.descripcion }}</div>
+                              <div class="metric-value">
+                                <strong>{{ metrica.valor }}</strong>
+                                <span v-if="metrica.unidad" class="text-caption"> {{ metrica.unidad }}</span>
+                              </div>
+                            </div>
+                          </template>
+                        </v-checkbox-btn>
+                      </v-card-text>
+                    </v-card>
+                  </v-col>
+                </v-row>
+
+                <!-- Selection Summary -->
+                <v-alert
+                  v-if="metricasSeleccionadas.length > 0"
+                  type="info"
+                  variant="tonal"
+                  class="mt-3 agricultural-alert"
+                >
+                  <v-icon start>mdi-information</v-icon>
+                  {{ metricasSeleccionadas.length }} de {{ metricasDisponibles.length }} métricas seleccionadas se registrarán en cada entrada de bitácora.
+                </v-alert>
+              </div>
+
+              <!-- Auto-generated Observations Preview -->
+              <div v-if="observacionesAutomaticas" class="mt-4">
+                <h4 class="text-subtitle-1 font-weight-bold agricultural-section-title mb-2">
+                  <v-icon start color="orange-darken-2">mdi-text-box-outline</v-icon>
+                  Observaciones Automáticas
+                </h4>
+                <v-textarea
+                  :model-value="observacionesAutomaticas"
+                  readonly
+                  rows="3"
+                  variant="outlined"
+                  density="comfortable"
+                  class="agricultural-readonly-textarea"
+                  hide-details
+                />
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
+
+      <!-- Additional Observations Input -->
+      <v-row>
+        <v-col cols="12">
+          <v-card variant="outlined" class="agricultural-input-card">
+            <v-card-title class="agricultural-input-header">
+              <v-icon start color="blue-darken-2">mdi-pencil</v-icon>
+              Observaciones Adicionales
+            </v-card-title>
+            <v-card-text class="pa-4">
+              <v-textarea
+                v-model="observacionesAdicionales"
+                label="Escribe observaciones adicionales que se agregarán a cada entrada"
+                rows="4"
+                variant="outlined"
+                density="comfortable"
+                class="agricultural-textarea"
+                hint="Estas observaciones se combinarán con las observaciones automáticas en cada entrada de bitácora"
+                persistent-hint
+                :placeholder="observacionesPlaceholder"
+                @input="$emit('update:observaciones', observacionesAdicionales)"
+              />
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
+    </v-container>
+  </v-form>
+</template>
+
+<script setup>
+import { ref, computed, watch } from 'vue';
+import { format } from 'date-fns';
+
+const props = defineProps({
+  actividadPreview: {
+    type: Object,
+    default: null
+  },
+  fechasSeleccionadas: {
+    type: Array,
+    default: () => []
+  },
+  observaciones: {
+    type: String,
+    default: ''
+  }
+});
+
+const emit = defineEmits(['update:observaciones', 'update:metricasSeleccionadas']);
+
+const form = ref(null);
+const observacionesAdicionales = ref(props.observaciones);
+const metricasSeleccionadas = ref([]);
+
+// Initialize selected metrics when activity changes
+watch(() => props.actividadPreview, (newActivity) => {
+  if (newActivity?.metricas) {
+    // Auto-select all available metrics by default
+    metricasSeleccionadas.value = metricasDisponibles.value.map(m => m.key);
+    emit('update:metricasSeleccionadas', metricasSeleccionadas.value);
+  }
+}, { immediate: true });
+
+// Watch for observaciones changes
+watch(() => props.observaciones, (newValue) => {
+  observacionesAdicionales.value = newValue;
+});
+
+// Available metrics that can be selected
+const metricasDisponibles = computed(() => {
+  if (!props.actividadPreview?.metricas) return [];
+
+  const metricas = [];
+  for (const [key, metrica] of Object.entries(props.actividadPreview.metricas)) {
+    if (metrica.valor !== null && metrica.valor !== undefined && metrica.valor !== '') {
+      metricas.push({
+        key,
+        descripcion: metrica.descripcion || key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        valor: metrica.valor,
+        unidad: metrica.unidad || ''
+      });
+    }
+  }
+  return metricas;
+});
+
+// Computed for metrics selection states
+const allMetricsSelected = computed(() => {
+  return metricasDisponibles.value.length > 0 &&
+         metricasSeleccionadas.value.length === metricasDisponibles.value.length;
+});
+
+const anyMetricsSelected = computed(() => {
+  return metricasSeleccionadas.value.length > 0;
+});
+
+// Date range formatting
+const formatDateRange = () => {
+  if (props.fechasSeleccionadas.length === 0) return 'Sin fechas seleccionadas';
+  if (props.fechasSeleccionadas.length === 1) {
+    return formatDate(props.fechasSeleccionadas[0]);
+  }
+
+  const sortedDates = [...props.fechasSeleccionadas].sort();
+  const firstDate = sortedDates[0];
+  const lastDate = sortedDates[sortedDates.length - 1];
+
+  return `${formatDate(firstDate)} - ${formatDate(lastDate)}`;
+};
+
+const formatDate = (dateString) => {
+  try {
+    const date = new Date(dateString);
+    return format(date, 'dd/MM/yyyy');
+  } catch (error) {
+    return dateString;
+  }
+};
+
+// Observaciones placeholder
+const observacionesPlaceholder = computed(() => {
+  if (!props.actividadPreview) return '';
+
+  const activityName = props.actividadPreview.nombre || 'esta actividad';
+  const dateCount = props.fechasSeleccionadas.length;
+
+  return `Ejemplo: Condiciones climáticas favorables para ${activityName}. Registro de ${dateCount} ejecuciones completadas satisfactoriamente.`;
+});
+
+// Auto-generated observations (unmapped metrics)
+const observacionesAutomaticas = computed(() => {
+  if (!props.actividadPreview) return '';
+
+  try {
+    const tipoActividad = props.actividadPreview.expand?.tipo_actividades;
+    if (!tipoActividad?.formato_reporte?.columnas) return '';
+
+    const mappedMetricaKeys = new Set();
+    tipoActividad.formato_reporte.columnas.forEach(col => {
+      if (col.metrica && col.nombre !== 'Observaciones') {
+        mappedMetricaKeys.add(col.metrica);
+      }
+    });
+
+    const unmappedContent = [];
+    if (props.actividadPreview.metricas) {
+      for (const [key, metrica] of Object.entries(props.actividadPreview.metricas)) {
+        if (!mappedMetricaKeys.has(key) && metrica.valor !== null && metrica.valor !== undefined && metrica.valor !== '') {
+          const desc = metrica.descripcion || key.replace(/_/g, ' ');
+          const unit = metrica.unidad || '';
+          unmappedContent.push(`${desc}: ${metrica.valor} ${unit}`.trim());
+        }
+      }
+    }
+
+    return unmappedContent.join('\n');
+  } catch (error) {
+    console.error('[BatchGeneralDataForm] Error generating automatic observaciones:', error);
+    return '';
+  }
+});
+
+// Metrics selection methods
+const toggleMetricSelection = (metricKey) => {
+  const index = metricasSeleccionadas.value.indexOf(metricKey);
+  if (index > -1) {
+    metricasSeleccionadas.value.splice(index, 1);
+  } else {
+    metricasSeleccionadas.value.push(metricKey);
+  }
+  emit('update:metricasSeleccionadas', metricasSeleccionadas.value);
+};
+
+const selectAllMetrics = () => {
+  metricasSeleccionadas.value = metricasDisponibles.value.map(m => m.key);
+  emit('update:metricasSeleccionadas', metricasSeleccionadas.value);
+};
+
+const clearAllMetrics = () => {
+  metricasSeleccionadas.value = [];
+  emit('update:metricasSeleccionadas', metricasSeleccionadas.value);
+};
+
+// Watch observaciones changes and emit to parent
+watch(observacionesAdicionales, (newValue) => {
+  emit('update:observaciones', newValue);
+});
+</script>
+
+<style scoped>
+/* Agricultural Color Palette */
+:root {
+  --agri-green-primary: #2e7d32;
+  --agri-green-light: #4caf50;
+  --agri-earth-brown: #5d4037;
+  --agri-soil-dark: #3e2723;
+  --agri-sunshine-yellow: #ffd54f;
+  --agri-sky-blue: #1976d2;
+  --agri-harvest-orange: #f57c00;
+  --agri-warning-red: #d32f2f;
+  --agri-surface-light: #f8f9fa;
+  --agri-surface-card: #ffffff;
+}
+
+/* Agricultural Batch Form Styling */
+.agricultural-batch-form {
+  background: transparent;
+}
+
+/* Preview Card Styling */
+.agricultural-preview-card {
+  border: 2px solid rgba(46, 125, 50, 0.2);
+  border-radius: 12px;
+  background: var(--agri-surface-card);
+  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.agricultural-preview-card:hover {
+  border-color: var(--agri-green-light);
+  box-shadow: 0 6px 16px rgba(46, 125, 50, 0.15);
+}
+
+.agricultural-preview-header {
+  background: linear-gradient(135deg, var(--agri-surface-light) 0%, #ffffff 100%);
+  border-bottom: 1px solid rgba(46, 125, 50, 0.1);
+  padding: 16px 20px;
+}
+
+/* Date Summary Styling */
+.agricultural-date-summary {
+  padding: 12px;
+  background: rgba(46, 125, 50, 0.05);
+  border-radius: 8px;
+  border-left: 4px solid var(--agri-green-primary);
+}
+
+.agricultural-chip {
+  font-weight: 500;
+  letter-spacing: 0.025em;
+  min-height: 36px;
+}
+
+/* Section Titles */
+.agricultural-section-title {
+  color: var(--agri-soil-dark);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Metric Cards */
+.agricultural-metric-card {
+  border: 2px solid rgba(76, 175, 80, 0.2);
+  border-radius: 10px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: var(--agri-surface-card);
+  min-height: 80px;
+  position: relative;
+  overflow: hidden;
+}
+
+.agricultural-metric-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--agri-green-primary), var(--agri-green-light));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.agricultural-metric-card:hover {
+  border-color: var(--agri-green-light);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(46, 125, 50, 0.2);
+}
+
+.agricultural-metric-card:hover::before {
+  opacity: 1;
+}
+
+.agricultural-metric-card.metric-selected {
+  border-color: var(--agri-green-primary);
+  background: rgba(46, 125, 50, 0.05);
+  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.15);
+}
+
+.agricultural-metric-card.metric-selected::before {
+  opacity: 1;
+}
+
+/* Checkbox Styling */
+.agricultural-checkbox {
+  width: 100%;
+}
+
+.agricultural-checkbox .v-label {
+  width: 100%;
+  color: var(--agri-soil-dark);
+}
+
+.metric-label-content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metric-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--agri-soil-dark);
+  line-height: 1.2;
+}
+
+.metric-value {
+  font-size: 0.85rem;
+  color: var(--agri-earth-brown);
+  opacity: 0.8;
+}
+
+/* Agricultural Alert */
+.agricultural-alert {
+  border-radius: 8px;
+  border-left: 4px solid var(--agri-sky-blue);
+}
+
+/* Input Card Styling */
+.agricultural-input-card {
+  border: 2px solid rgba(25, 118, 210, 0.2);
+  border-radius: 12px;
+  background: var(--agri-surface-card);
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.1);
+}
+
+.agricultural-input-header {
+  background: linear-gradient(135deg, rgba(25, 118, 210, 0.05) 0%, #ffffff 100%);
+  border-bottom: 1px solid rgba(25, 118, 210, 0.1);
+  padding: 16px 20px;
+  color: var(--agri-soil-dark);
+}
+
+/* Textarea Styling */
+.agricultural-textarea .v-field {
+  border-radius: 8px;
+}
+
+.agricultural-textarea .v-field--focused {
+  border-color: var(--agri-sky-blue);
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.1);
+}
+
+.agricultural-readonly-textarea .v-field {
+  background-color: rgba(46, 125, 50, 0.05);
+  border-color: rgba(46, 125, 50, 0.2);
+}
+
+/* Button Styling */
+.v-btn.v-btn--variant-outlined {
+  border-radius: 8px;
+  font-weight: 500;
+  letter-spacing: 0.025em;
+  min-height: 36px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.v-btn.v-btn--variant-outlined:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.v-btn.v-btn--variant-outlined.v-btn--disabled {
+  opacity: 0.6;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Responsive Design for Tablet Use */
+@media (max-width: 1024px) {
+  .agricultural-preview-header {
+    padding: 20px 16px;
+  }
+
+  .agricultural-metric-card {
+    min-height: 90px;
+  }
+
+  .metric-name {
+    font-size: 0.95rem;
+  }
+
+  .metric-value {
+    font-size: 0.9rem;
+  }
+
+  .agricultural-chip {
+    min-height: 40px;
+  }
+}
+
+@media (max-width: 768px) {
+  .agricultural-preview-card,
+  .agricultural-input-card {
+    border-radius: 8px;
+  }
+
+  .agricultural-preview-header,
+  .agricultural-input-header {
+    padding: 16px 12px;
+  }
+
+  .agricultural-metric-card {
+    min-height: 100px;
+  }
+
+  .metric-name {
+    font-size: 1rem;
+  }
+
+  .metric-value {
+    font-size: 0.95rem;
+  }
+
+  .v-btn {
+    min-height: 44px;
+    width: 100%;
+    margin-bottom: 8px;
+  }
+
+  .d-flex.ga-2 {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+/* Enhanced Focus States for Accessibility */
+.agricultural-metric-card:focus-within {
+  outline: 3px solid var(--agri-sky-blue);
+  outline-offset: 2px;
+}
+
+.agricultural-checkbox:focus-visible {
+  outline: 2px solid var(--agri-sky-blue);
+  outline-offset: 1px;
+  border-radius: 4px;
+}
+
+/* Loading States */
+.agricultural-batch-form.loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.agricultural-batch-form.loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  z-index: 10;
+}
+
+/* Animation Classes */
+.agricultural-metric-card {
+  animation: fadeInScale 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* High Contrast Colors for Outdoor Visibility */
+.v-theme--light .metric-name {
+  color: #1a1a1a;
+}
+
+.v-theme--light .metric-value {
+  color: #424242;
+}
+
+.v-theme--light .agricultural-section-title {
+  color: #1a1a1a;
+}
+
+/* Selection indicators */
+.metric-selected .metric-name {
+  color: var(--agri-green-primary);
+  font-weight: 700;
+}
+
+.metric-selected .metric-value {
+  color: var(--agri-earth-brown);
+  font-weight: 600;
+}
+</style>

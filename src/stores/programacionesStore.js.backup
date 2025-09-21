@@ -17,6 +17,152 @@ import { useHaciendaStore } from './haciendaStore';
 import { useSnackbarStore } from './snackbarStore';
 import { useBitacoraStore } from './bitacoraStore';
 
+// Simple memoization function
+const memoize = (fn) => {
+  const cache = new Map();
+  const memoizedFn = (...args) => {
+    const key = JSON.stringify(args);
+    if (cache.has(key)) {
+      return cache.get(key);
+    }
+    const result = fn(...args);
+    cache.set(key, result);
+    return result;
+  };
+  
+  // Add a method to clear the cache
+  memoizedFn.clearCache = () => cache.clear();
+  
+  return memoizedFn;
+};
+
+// Create memoized versions of the functions
+const getComplianceStateMemoized = memoize((state, programacion) => {
+  const { useBitacoraStore } = require('@/stores/bitacoraStore')
+  const bitacoraStore = useBitacoraStore()
+  
+  // Get today's date
+  const hoy = new Date()
+  const hoyNormalizado = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate())
+  
+  // Get programacion dates
+  const proximaEjecucionDate = programacion.frecuencia === 'fecha_especifica'
+    ? new Date(programacion.frecuencia_personalizada?.fecha)
+    : new Date(programacion.proxima_ejecucion)
+  
+  const ultimaEjecucionDate = programacion.ultima_ejecucion 
+    ? new Date(programacion.ultima_ejecucion)
+    : null
+    
+  const proximaEjecucionNormalizada = new Date(
+    proximaEjecucionDate.getFullYear(),
+    proximaEjecucionDate.getMonth(),
+    proximaEjecucionDate.getDate()
+  )
+  
+  // Check if there are bitacora entries for this programacion
+  const bitacoraEntries = bitacoraStore.getBitacoraByProgramacion(programacion.id)
+  const hasBitacoraEntries = bitacoraEntries && bitacoraEntries.length > 0
+  
+  // Calculate pending executions
+  const ejecucionesPendientes = state.calcularEjecucionesPendientes(programacion)
+  
+  // Determine compliance state based on requirements
+  if (hasBitacoraEntries && ultimaEjecucionDate) {
+    // If we have bitacora entries and last execution date, check if it's registered
+    const latestBitacora = bitacoraEntries.reduce((latest, entry) => {
+      const entryDate = new Date(entry.fecha_ejecucion || entry.created)
+      const latestDate = new Date(latest.fecha_ejecucion || latest.created)
+      return entryDate > latestDate ? entry : latest
+    }, bitacoraEntries[0])
+    
+    const latestBitacoraDate = new Date(latestBitacora.fecha_ejecucion || latestBitacora.created)
+    const latestBitacoraNormalizada = new Date(
+      latestBitacoraDate.getFullYear(),
+      latestBitacoraDate.getMonth(),
+      latestBitacoraDate.getDate()
+    )
+    
+    // If the latest bitacora entry matches the last execution date, it's registered
+    const ultimaEjecucionNormalizada = new Date(
+      ultimaEjecucionDate.getFullYear(),
+      ultimaEjecucionDate.getMonth(),
+      ultimaEjecucionDate.getDate()
+    )
+    
+    if (latestBitacoraNormalizada.getTime() === ultimaEjecucionNormalizada.getTime()) {
+      return 'REGISTRADO' // 🟢
+    }
+  }
+  
+  // If it's registered, return that state
+  if (hasBitacoraEntries) {
+    return 'REGISTRADO' // 🟢
+  }
+  
+  // Check if it's programmed for the future
+  if (proximaEjecucionNormalizada.getTime() > hoyNormalizado.getTime()) {
+    return 'PROGRAMADO' // ⏳
+  }
+  
+  // Check if it's due today
+  if (proximaEjecucionNormalizada.getTime() === hoyNormalizado.getTime()) {
+    return 'PENDIENTE' // 🟡
+  }
+  
+  // Check if it's overdue
+  if (proximaEjecucionNormalizada.getTime() < hoyNormalizado.getTime()) {
+    // If it's overdue and has multiple pending executions, it's accumulated
+    if (ejecucionesPendientes >= 2) {
+      return 'ACUMULADO' // 🔴
+    } else {
+      // If it's just overdue (1 pending), it's overdue
+      return 'VENCIDO' // ⚠️
+    }
+  }
+  
+  // Default fallback
+  return 'PROGRAMADO' // ⏳
+});
+
+const getComplianceStateColorMemoized = memoize((state, programacion) => {
+  const complianceState = getComplianceStateMemoized(state, programacion)
+  switch (complianceState) {
+    case 'REGISTRADO': return 'green'
+    case 'PENDIENTE': return 'yellow'
+    case 'ACUMULADO': return 'red'
+    case 'PROGRAMADO': return 'blue'
+    case 'VENCIDO': return 'orange'
+    default: return 'grey'
+  }
+});
+
+const getComplianceStateIconMemoized = memoize((state, programacion) => {
+  const complianceState = getComplianceStateMemoized(state, programacion)
+  switch (complianceState) {
+    case 'REGISTRADO': return 'mdi-check-circle'
+    case 'PENDIENTE': return 'mdi-alert-circle'
+    case 'ACUMULADO': return 'mdi-alert-circle-outline'
+    case 'PROGRAMADO': return 'mdi-clock-outline'
+    case 'VENCIDO': return 'mdi-alert'
+    default: return 'mdi-help-circle'
+  }
+});
+
+const getComplianceStateTooltipMemoized = memoize((state, programacion) => {
+  const complianceState = getComplianceStateMemoized(state, programacion)
+  const ejecucionesPendientes = state.calcularEjecucionesPendientes(programacion)
+  
+  switch (complianceState) {
+    case 'REGISTRADO': return 'Bitácora registrada, cumplimiento documentado'
+    case 'PENDIENTE': return 'Pendiente por hoy, necesita documentación'
+    case 'ACUMULADO': return `${ejecucionesPendientes} ejecuciones acumuladas, riesgo de incumplimiento'
+    case 'PROGRAMADO': return 'Programado para fecha futura, no aplicable aún'
+    case 'VENCIDO': return 'Vencido, pendiente de documentación'
+    default: return 'Estado desconocido'
+  }
+});
+
 export const useProgramacionesStore = defineStore('programaciones', {
   state: () => ({
     programaciones: [],
@@ -30,7 +176,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
 
   persist: {
     key: 'programaciones',
-    storage: sessionStorage,
+    storage: localStorage,
     paths: ['programaciones']
   },
 
@@ -79,7 +225,27 @@ export const useProgramacionesStore = defineStore('programaciones', {
 
         return isBefore(fechaEjecucion, hoy)
       })
-    }
+    },
+
+    // Function to get compliance state for a programacion
+    getComplianceState: (state) => (programacion) => {
+      return getComplianceStateMemoized(state, programacion);
+    },
+
+    // Function to get compliance state color
+    getComplianceStateColor: (state) => (programacion) => {
+      return getComplianceStateColorMemoized(state, programacion);
+    },
+
+    // Function to get compliance state icon
+    getComplianceStateIcon: (state) => (programacion) => {
+      return getComplianceStateIconMemoized(state, programacion);
+    },
+
+    // Function to get compliance state tooltip
+    getComplianceStateTooltip: (state) => (programacion) => {
+      return getComplianceStateTooltipMemoized(state, programacion);
+    },
   },
 
   actions: {
@@ -110,7 +276,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
 
       try {
         const records = await pb.collection('programaciones').getFullList({
-          filter: `hacienda="${haciendaStore.mi_hacienda?.id}"`,
+          filter: `hacienda='${haciendaStore.mi_hacienda?.id}'`,
           expand: 'actividad,siembras'
         })
 
@@ -226,8 +392,26 @@ export const useProgramacionesStore = defineStore('programaciones', {
           return 0;
         }
         default:
-          return 0
+      return 0
+    },
+
+    getFechasPendientes(programacion) {
+      if (!programacion || !programacion.ultima_ejecucion) return [];
+
+      const fechas = [];
+      let fechaCursor = new Date(programacion.ultima_ejecucion);
+      const hoy = new Date();
+
+      while (isBefore(fechaCursor, hoy)) {
+        const proxima = this.calcularProximaEjecucion({ ...programacion, ultima_ejecucion: fechaCursor.toISOString() });
+        if (isBefore(proxima, hoy)) {
+          fechas.push(proxima.toISOString().split('T')[0]);
+          fechaCursor = proxima;
+        } else {
+          break;
+        }
       }
+      return fechas;
     },
 
     async crearProgramacion(nuevaProgramacion) {
@@ -734,31 +918,17 @@ export const useProgramacionesStore = defineStore('programaciones', {
       },
 
       async ejecutarProgramacionesBatch(payload) {
-        const { programacionId, fechasEjecucion, observacionesAdicionales = '', siembraId = null, metricasSeleccionadas = [] } = payload;
-
+        const { programacionId, fechasEjecucion, observacionesAdicionales = '' } = payload; 
+        
         const actividadesStore = useActividadesStore();
         const bitacoraStore = useBitacoraStore();
         const snackbarStore = useSnackbarStore();
-
-        // Validate siembra context to prevent cross-siembra data corruption
-        if (!siembraId) {
-          console.warn('[Store] No siembraId provided for batch execution - proceeding without siembra isolation');
-        }
 
         const programacion = this.programaciones.find(p => p.id === programacionId);
         if (!programacion) {
           console.error(`[Store] Programacion ${programacionId} no encontrada.`);
           snackbarStore.showSnackbar(`Error: Programación ${programacionId} no encontrada.`, 'error');
           return;
-        }
-
-        // Validate siembra context against programacion's siembras
-        if (siembraId && programacion.siembras && Array.isArray(programacion.siembras)) {
-          if (!programacion.siembras.includes(siembraId)) {
-            console.error(`[Store] SiembraId ${siembraId} not associated with programacion ${programacionId}`);
-            snackbarStore.showSnackbar(`Error: La siembra especificada no está asociada a esta programación.`, 'error');
-            return;
-          }
         }
 
         if (!programacion.actividades || programacion.actividades.length === 0) {
@@ -787,26 +957,18 @@ export const useProgramacionesStore = defineStore('programaciones', {
         if (actividad.metricas && typeof actividad.metricas === 'object') {
           for (const key in actividad.metricas) {
             if (Object.prototype.hasOwnProperty.call(actividad.metricas, key) && actividad.metricas[key] && typeof actividad.metricas[key].valor !== 'undefined') {
-              // If metricasSeleccionadas is provided and not empty, filter by selected metrics
-              if (metricasSeleccionadas.length > 0) {
-                if (metricasSeleccionadas.includes(key)) {
-                  metricasToSubmit[key] = actividad.metricas[key].valor;
-                }
-              } else {
-                // If no filtering provided, include all metrics (backward compatibility)
-                metricasToSubmit[key] = actividad.metricas[key].valor;
-              }
+              metricasToSubmit[key] = actividad.metricas[key].valor;
             }
           }
         }
-
+        
         let observacionesContent = '';
         try {
-          const tipoActividad = actividad.expand?.tipo_actividades;
+          const tipoActividad = actividad.expand?.tipo_actividades; 
           if (tipoActividad && tipoActividad.formato_reporte && tipoActividad.formato_reporte.columnas) {
             const mappedMetricaKeys = new Set();
             tipoActividad.formato_reporte.columnas.forEach(col => {
-              if (col.metrica && col.titulo !== 'Observaciones') {
+              if (col.metrica && col.titulo !== 'Observaciones') { 
                 mappedMetricaKeys.add(col.metrica);
               }
             });
@@ -829,29 +991,20 @@ export const useProgramacionesStore = defineStore('programaciones', {
           console.error('[Store] Error generando observacionesContent para batch:', error);
         }
 
-        // Combine auto-generated observaciones with additional user input
-        const finalObservaciones = [observacionesContent, observacionesAdicionales]
-          .filter(obs => obs && obs.trim())
-          .join('\n\n');
-
         let successfulExecutions = 0;
         let latestSuccessfullyExecutedDate = null;
-
+        
         const sortedDates = [...fechasEjecucion].sort((a, b) => new Date(a) - new Date(b));
 
         for (const dateString of sortedDates) {
-          // Create bitacora entries ONLY for the specified siembra context
           const entryData = {
             programacion_origen: programacionId,
             actividad_realizada: primaryActivityId,
             fecha_ejecucion: new Date(dateString + 'T00:00:00.000Z').toISOString(),
             estado_ejecucion: 'completado',
-            // Use the specific siembraId if provided, otherwise fall back to programacion's first siembra
-            siembra_asociada: siembraId || (programacion.siembras && programacion.siembras.length > 0 ? programacion.siembras[0] : null),
-            // Ensure siembras array includes the specific siembra context
-            siembras: siembraId ? [siembraId] : (programacion.siembras || []),
-            metricas: { ...metricasToSubmit },
-            notas: finalObservaciones,
+            siembra_asociada: programacion.siembras && programacion.siembras.length > 0 ? programacion.siembras[0] : null,
+            metricas: { ...metricasToSubmit }, 
+            notas: observacionesAdicionales ? `${observacionesContent}\n\n${observacionesAdicionales}`.trim() : observacionesContent, 
           };
 
           try {
@@ -864,33 +1017,30 @@ export const useProgramacionesStore = defineStore('programaciones', {
           }
         }
 
-        // Update proxima_ejecucion based on LAST created entry date, not today
         if (successfulExecutions > 0 && latestSuccessfullyExecutedDate) {
           const dateParts = latestSuccessfullyExecutedDate.split('-');
           const year = parseInt(dateParts[0], 10);
-          const month = parseInt(dateParts[1], 10) - 1;
+          const month = parseInt(dateParts[1], 10) - 1; 
           const day = parseInt(dateParts[2], 10);
           const latestDateObj = new Date(Date.UTC(year, month, day, 0, 0, 0));
           const latestSuccessfullyExecutedDateISO = latestDateObj.toISOString();
 
-          const tempProgForCalc = {
-            ...programacion,
-            ultima_ejecucion: latestSuccessfullyExecutedDateISO
+          const tempProgForCalc = { 
+            ...programacion, 
+            ultima_ejecucion: latestSuccessfullyExecutedDateISO 
           };
-
+          
           const proximaEjecucionDate = this.calcularProximaEjecucion(tempProgForCalc);
           const proxima_ejecucion_iso = proximaEjecucionDate.toISOString();
           const ejecuciones_pendientes = this.calcularEjecucionesPendientes(tempProgForCalc);
 
           try {
-            await this.actualizarProgramacion(programacionId, {
-              ultima_ejecucion: latestSuccessfullyExecutedDateISO,
-              proxima_ejecucion: proxima_ejecucion_iso,
-              ejecucionesPendientes: ejecuciones_pendientes
+            await this.actualizarProgramacion(programacionId, { 
+              ultima_ejecucion: latestSuccessfullyExecutedDateISO, 
+              proxima_ejecucion: proxima_ejecucion_iso, 
+              ejecucionesPendientes: ejecuciones_pendientes 
             });
-
-            const siembraContext = siembraId ? ` (Siembra: ${siembraId})` : '';
-            snackbarStore.showSnackbar(`${successfulExecutions} de ${sortedDates.length} programaciones ejecutadas y registradas${siembraContext}. Programación actualizada.`, 'success');
+            snackbarStore.showSnackbar(`${successfulExecutions} de ${sortedDates.length} programaciones ejecutadas y registradas. Programación actualizada.`, 'success');
           } catch (updateError) {
             console.error(`[Store] Error actualizando programacion ${programacionId} post-batch:`, updateError);
             snackbarStore.showSnackbar('Bitácoras registradas, pero falló la actualización de la programación.', 'warning');
@@ -901,311 +1051,17 @@ export const useProgramacionesStore = defineStore('programaciones', {
           snackbarStore.showSnackbar('No se seleccionaron fechas para ejecutar.', 'info');
         }
       },
-
-      // Calculate pending execution dates based on programacion frequency with siembra context isolation
-      getFechasPendientes(programacion, siembraId = null) {
-        if (!programacion) {
-          console.warn('[ProgramacionesStore] No programacion provided to getFechasPendientes');
-          return [];
-        }
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        const fechas = [];
-
-        // Handle fecha_especifica (one-time execution)
-        if (programacion.frecuencia === 'fecha_especifica') {
-          if (programacion.frecuencia_personalizada?.fecha) {
-            const fechaEspecifica = new Date(programacion.frecuencia_personalizada.fecha);
-            fechaEspecifica.setHours(0, 0, 0, 0);
-
-            // Only include if it's in the past or today
-            if (fechaEspecifica <= today) {
-              // Check if this date hasn't been processed in bitacora for the specific siembra
-              if (!this.isFechaProcessedInBitacora(programacion.id, fechaEspecifica, siembraId)) {
-                fechas.push(format(fechaEspecifica, 'yyyy-MM-dd'));
-              }
-            }
-          }
-          return fechas;
-        }
-
-        // Calculate pending dates for recurring programaciones from ultima_ejecucion, NOT from today
-        const ultimaEjecucion = programacion.ultima_ejecucion
-          ? new Date(programacion.ultima_ejecucion)
-          : new Date(programacion.created || programacion.proxima_ejecucion);
-        ultimaEjecucion.setHours(0, 0, 0, 0);
-
-        let currentDate = new Date(ultimaEjecucion);
-
-        // Generate dates from ultima_ejecucion until today
-        while (currentDate < today) {
-          // Calculate next execution date based on frequency
-          const nextDate = this.calcularSiguienteFecha(currentDate, programacion);
-
-          if (nextDate <= today) {
-            // Only include dates that haven't been processed in bitacora for this specific siembra
-            if (!this.isFechaProcessedInBitacora(programacion.id, nextDate, siembraId)) {
-              fechas.push(format(nextDate, 'yyyy-MM-dd'));
-            }
-          }
-
-          currentDate = nextDate;
-
-          // Safety limit: don't generate more than 100 dates
-          if (fechas.length >= 100) {
-            console.warn('[ProgramacionesStore] Hit safety limit generating pending dates');
-            break;
-          }
-        }
-
-        return fechas.sort();
-      },
-
-      // Check if a specific date has been processed in bitacora for a given siembra context
-      isFechaProcessedInBitacora(programacionId, fecha, siembraId = null) {
-        const bitacoraStore = useBitacoraStore();
-
-        if (!bitacoraStore.bitacoras || !Array.isArray(bitacoraStore.bitacoras)) {
-          return false;
-        }
-
-        const fechaStr = format(fecha, 'yyyy-MM-dd');
-
-        return bitacoraStore.bitacoras.some(bitacora => {
-          // Check if this bitacora entry matches the programacion
-          if (bitacora.programaciones !== programacionId) {
-            return false;
-          }
-
-          // Check if the execution date matches
-          const bitacoraFecha = bitacora.fecha ? format(new Date(bitacora.fecha), 'yyyy-MM-dd') : null;
-          if (bitacoraFecha !== fechaStr) {
-            return false;
-          }
-
-          // If siembraId is specified, check siembra context isolation
-          if (siembraId) {
-            const bitacoraSiembras = Array.isArray(bitacora.siembras) ? bitacora.siembras : [];
-            return bitacoraSiembras.includes(siembraId);
-          }
-
-          // If no specific siembra context, any bitacora entry counts
-          return true;
-        });
-      },
-
-      // Helper method to calculate next date based on frequency
-      calcularSiguienteFecha(baseDate, programacion) {
-        const config = programacion.frecuencia_personalizada || {};
-
-        switch (programacion.frecuencia) {
-          case 'diaria':
-            return addDays(baseDate, 1);
-          case 'semanal':
-            return addWeeks(baseDate, 1);
-          case 'quincenal':
-            return addDays(baseDate, 15);
-          case 'mensual':
-            return addMonths(baseDate, 1);
-          case 'personalizada':
-            const addFunctions = {
-              dias: addDays,
-              semanas: addWeeks,
-              meses: addMonths,
-              años: addYears
-            };
-            return addFunctions[config.tipo]?.(baseDate, config.cantidad) || addDays(baseDate, 1);
-          default:
-            return addDays(baseDate, 1);
-        }
-      },
       // === End of moved actions ===
       
-      // Compliance State Methods - Enhanced with siembra context isolation
-      getComplianceState(programacion, siembraId = null) {
-        if (!programacion) return 'PROGRAMADO'
-
-        const today = new Date()
-        today.setHours(0, 0, 0, 0)
-
-        // Use proxima_ejecucion instead of fecha_programada to avoid undefined field
-        const fechaProgramada = programacion.proxima_ejecucion
-          ? new Date(programacion.proxima_ejecucion)
-          : new Date()
-        fechaProgramada.setHours(0, 0, 0, 0)
-
-        // Check if there's a bitacora entry for this programacion with siembra context
-        const bitacoraStore = useBitacoraStore()
-        const hasBitacoraEntry = this.hasBitacoraEntryForSiembra(programacion.id, siembraId)
-
-        if (hasBitacoraEntry) {
-          return 'REGISTRADO'
-        }
-
-        if (fechaProgramada > today) {
-          return 'PROGRAMADO'
-        }
-
-        if (fechaProgramada.getTime() === today.getTime()) {
-          return 'PENDIENTE'
-        }
-
-        const daysDiff = Math.floor((today - fechaProgramada) / (1000 * 60 * 60 * 24))
-        if (daysDiff > 2) {
-          return 'ACUMULADO'
-        }
-
-        return 'VENCIDO'
+      // Method to clear compliance state cache when bitacora entries change
+      clearComplianceStateCache() {
+        getComplianceStateMemoized.clearCache();
+        getComplianceStateColorMemoized.clearCache();
+        getComplianceStateIconMemoized.clearCache();
+        getComplianceStateTooltipMemoized.clearCache();
       },
-
-      // Helper method to check bitacora entries with siembra context
-      hasBitacoraEntryForSiembra(programacionId, siembraId = null) {
-        const bitacoraStore = useBitacoraStore()
-
-        if (!bitacoraStore.bitacoras || !Array.isArray(bitacoraStore.bitacoras)) {
-          return false
-        }
-
-        return bitacoraStore.bitacoras.some(bitacora => {
-          // Check if this bitacora entry matches the programacion
-          if (bitacora.programaciones !== programacionId) {
-            return false
-          }
-
-          // If siembraId is specified, check siembra context isolation
-          if (siembraId) {
-            const bitacoraSiembras = Array.isArray(bitacora.siembras) ? bitacora.siembras : []
-            return bitacoraSiembras.includes(siembraId)
-          }
-
-          // If no specific siembra context, any bitacora entry counts
-          return true
-        })
-      },
-
-      getComplianceStateColor(programacion, siembraId = null) {
-        const state = this.getComplianceState(programacion, siembraId)
-        const colors = {
-          'REGISTRADO': 'success',
-          'PENDIENTE': 'warning',
-          'ACUMULADO': 'error',
-          'PROGRAMADO': 'info',
-          'VENCIDO': 'orange'
-        }
-        return colors[state] || 'grey'
-      },
-
-      getComplianceStateIcon(programacion, siembraId = null) {
-        const state = this.getComplianceState(programacion, siembraId)
-        const icons = {
-          'REGISTRADO': 'mdi-check-circle',
-          'PENDIENTE': 'mdi-clock-alert-outline',
-          'ACUMULADO': 'mdi-alert-circle',
-          'PROGRAMADO': 'mdi-calendar-clock',
-          'VENCIDO': 'mdi-alert-outline'
-        }
-        return icons[state] || 'mdi-help-circle'
-      },
-
-      getComplianceStateTooltip(programacion, siembraId = null) {
-        const state = this.getComplianceState(programacion, siembraId)
-        const today = new Date()
-
-        // Use proxima_ejecucion instead of fecha_programada to avoid NaN
-        const fechaProgramada = programacion.proxima_ejecucion
-          ? new Date(programacion.proxima_ejecucion)
-          : new Date()
-
-        // Ensure we have a valid date before calculating
-        const daysDiff = fechaProgramada && !isNaN(fechaProgramada)
-          ? Math.floor((today - fechaProgramada) / (1000 * 60 * 60 * 24))
-          : 0
-
-        const siembraContext = siembraId ? ` (Siembra: ${siembraId})` : ''
-        const tooltips = {
-          'REGISTRADO': `Cumplimiento registrado en bitácora${siembraContext}`,
-          'PENDIENTE': `Requiere documentación hoy${siembraContext}`,
-          'ACUMULADO': `${Math.abs(daysDiff)} días sin documentar - riesgo de cumplimiento${siembraContext}`,
-          'PROGRAMADO': `Programado para fecha futura${siembraContext}`,
-          'VENCIDO': `Vencido hace ${Math.abs(daysDiff)} días${siembraContext}`
-        }
-        return tooltips[state] || state
-      },
-
-      // Enhanced method to get pending dates with proper validation and edge case handling
-      getFechasPendientesWithValidation(programacion, siembraId = null) {
-        try {
-          // Graceful handling when programacion is null/undefined
-          if (!programacion) {
-            console.warn('[ProgramacionesStore] No programacion provided to getFechasPendientesWithValidation')
-            return []
-          }
-
-          // Use the core method with siembra context
-          const fechas = this.getFechasPendientes(programacion, siembraId)
-
-          // Additional validation for edge cases
-          if (!Array.isArray(fechas)) {
-            console.error('[ProgramacionesStore] getFechasPendientes returned non-array result')
-            return []
-          }
-
-          // Filter out invalid dates
-          const validFechas = fechas.filter(fecha => {
-            try {
-              const dateObj = new Date(fecha)
-              return !isNaN(dateObj.getTime())
-            } catch (error) {
-              console.warn(`[ProgramacionesStore] Invalid date found: ${fecha}`)
-              return false
-            }
-          })
-
-          console.log(`[ProgramacionesStore] Generated ${validFechas.length} valid pending dates for programacion ${programacion.id}${siembraId ? ` (siembra: ${siembraId})` : ''}`)
-          return validFechas
-
-        } catch (error) {
-          console.error('[ProgramacionesStore] Error in getFechasPendientesWithValidation:', error)
-          handleError(error, 'Error calculating pending dates')
-          return []
-        }
-      },
-
-      // Multi-siembra isolation validation method
-      validateSiembraContext(programacionId, siembraId) {
-        if (!siembraId) {
-          console.warn('[ProgramacionesStore] No siembraId provided for validation')
-          return { valid: true, warning: 'No siembra context specified' }
-        }
-
-        const programacion = this.programaciones.find(p => p.id === programacionId)
-        if (!programacion) {
-          return { valid: false, error: `Programación ${programacionId} no encontrada` }
-        }
-
-        if (!programacion.siembras || !Array.isArray(programacion.siembras)) {
-          return { valid: false, error: 'Programación no tiene siembras asociadas' }
-        }
-
-        if (!programacion.siembras.includes(siembraId)) {
-          return {
-            valid: false,
-            error: `Siembra ${siembraId} no está asociada a la programación ${programacionId}`
-          }
-        }
-
-        return { valid: true, message: 'Siembra context validated successfully' }
-      },
-
+      
       // Aquí se pueden agregar más acciones si es necesario
       
     } // Fin del objeto actions
   }) // Fin de defineStore
-
-// Las siguientes funciones ya están definidas dentro del store:
-// - prepareForBitacoraEntryFromProgramacion
-// - clearPendingBitacoraData
-// - finalizeProgramacionExecution
-// - ejecutarProgramacionesBatch

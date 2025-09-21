@@ -5,12 +5,14 @@ import { useZonasStore } from '@/stores/zonasStore'
 import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useActividadesStore } from '@/stores/actividadesStore'
 import { useRecordatoriosStore } from '@/stores/recordatoriosStore'
+import { useHaciendaStore } from '@/stores/haciendaStore'
 // Assume these stores will be created later
-import { useProgramacionesStore } from '@/stores/programacionesStore' 
+import { useProgramacionesStore } from '@/stores/programacionesStore'
 import { useBitacoraStore } from '@/stores/bitacoraStore'
 import { useAuthStore } from '@/stores/authStore'
 import { pb } from '@/utils/pocketbase'
 import { debounce } from 'lodash'
+import { logger, logP3, logSync, logError } from '@/utils/logger'
 
 export const useSyncStore = defineStore('sync', {
   state: () => ({
@@ -23,7 +25,46 @@ export const useSyncStore = defineStore('sync', {
     syncInProgress: false,
     // Mapeo de IDs temporales a reales
     tempToRealIdMap: {},
-    debouncedHandleVisibilityChange: null
+    debouncedHandleVisibilityChange: null,
+    // Interval IDs para cleanup
+    cleanupIntervalId: null,
+    // FASE 2: Configuración de sincronización selectiva
+    selectiveSyncConfig: {
+      enabled: false,
+      collections: {
+        Haciendas: { enabled: true, priority: 'high', immediate: true },
+        actividades: { enabled: true, priority: 'high', immediate: true },
+        siembras: { enabled: true, priority: 'medium', immediate: true },
+        zonas: { enabled: true, priority: 'medium', immediate: true },
+        programaciones: { enabled: true, priority: 'low', immediate: false },
+        bitacora: { enabled: true, priority: 'low', immediate: false },
+        recordatorios: { enabled: false, priority: 'low', immediate: false }
+      },
+      deferredSyncInterval: 30000, // 30 segundos para datos no críticos
+      lastDeferredSync: null
+    },
+    // FASE 4: Configuración para patrones offline avanzados
+    offlineFeatures: {
+      searchIndexEnabled: true,
+      reportsEnabled: true,
+      analyticsEnabled: true,
+      cacheEnabled: true,
+      maxCacheSize: 50 * 1024 * 1024, // 50MB
+      cacheExpiryTime: 24 * 60 * 60 * 1000, // 24 horas
+      searchIndexLastUpdate: null,
+      lastReportGeneration: null
+    },
+    // Cache inteligente para datos frecuentes
+    intelligentCache: {
+      frequentData: new Map(), // Cache de datos frecuentemente accedidos
+      searchIndex: new Map(), // Índice de búsqueda offline
+      reports: new Map(), // Cache de reportes generados
+      analytics: {
+        dailyStats: new Map(),
+        weeklyStats: new Map(),
+        monthlyStats: new Map()
+      }
+    }
   }),
 
   actions: {
@@ -58,6 +99,12 @@ export const useSyncStore = defineStore('sync', {
         if (savedQueue) {
           this.queue.queue = savedQueue
         }
+
+        // FASE 2: Inicializar configuración selectiva
+        this.initSelectiveSyncConfig()
+
+        // FASE 4: Inicializar funcionalidades offline avanzadas
+        this.initOfflineFeatures()
 
         // Intentar restaurar la sesión solo al inicio si es necesario
         const authStore = useAuthStore(); // Ensure authStore is imported/available
@@ -716,7 +763,1199 @@ export const useSyncStore = defineStore('sync', {
       return alerts
     },
 
+    // FASE 2: Métodos para sincronización selectiva
+
+    // Configurar sincronización selectiva
+    configureSelectiveSync(config) {
+      try {
+        // Merge de configuración manteniendo defaults
+        this.selectiveSyncConfig = {
+          ...this.selectiveSyncConfig,
+          ...config,
+          collections: {
+            ...this.selectiveSyncConfig.collections,
+            ...(config.collections || {})
+          }
+        }
+
+        // Guardar configuración en localStorage
+        this.saveToLocalStorage('selectiveSyncConfig', this.selectiveSyncConfig)
+
+        console.log('Configuración de sincronización selectiva actualizada:', this.selectiveSyncConfig)
+        return true
+      } catch (error) {
+        console.error('Error configurando sincronización selectiva:', error)
+        return false
+      }
+    },
+
+    // Obtener configuración actual de sincronización selectiva
+    getSelectiveSyncConfig() {
+      return { ...this.selectiveSyncConfig }
+    },
+
+    // Verificar si una colección debe sincronizarse inmediatamente
+    shouldSyncImmediately(collectionName) {
+      if (!this.selectiveSyncConfig.enabled) return true
+
+      const config = this.selectiveSyncConfig.collections[collectionName]
+      return config ? config.enabled && config.immediate : true
+    },
+
+    // Obtener prioridad de una colección
+    getCollectionPriority(collectionName) {
+      if (!this.selectiveSyncConfig.enabled) return 'high'
+
+      const config = this.selectiveSyncConfig.collections[collectionName]
+      return config ? config.priority : 'medium'
+    },
+
+    // Verificar si una colección está habilitada para sincronización
+    isCollectionSyncEnabled(collectionName) {
+      if (!this.selectiveSyncConfig.enabled) return true
+
+      const config = this.selectiveSyncConfig.collections[collectionName]
+      return config ? config.enabled : true
+    },
+
+    // Procesar sincronización diferida
+    async processDeferredSync() {
+      if (!this.selectiveSyncConfig.enabled) return
+
+      const now = Date.now()
+      const lastSync = this.selectiveSyncConfig.lastDeferredSync || 0
+      const interval = this.selectiveSyncConfig.deferredSyncInterval
+
+      if (now - lastSync < interval) return
+
+      try {
+        console.log('Procesando sincronización diferida...')
+
+        // Filtrar operaciones diferidas de la cola
+        const deferredOperations = this.queue.queue.filter(op => {
+          const config = this.selectiveSyncConfig.collections[op.collectionName]
+          return config && config.enabled && !config.immediate
+        })
+
+        if (deferredOperations.length > 0) {
+          console.log(`Procesando ${deferredOperations.length} operaciones diferidas`)
+          // Procesar operaciones diferidas con prioridad baja
+          await this.processPendingQueue()
+        }
+
+        this.selectiveSyncConfig.lastDeferredSync = now
+        this.saveToLocalStorage('selectiveSyncConfig', this.selectiveSyncConfig)
+
+      } catch (error) {
+        console.error('Error en sincronización diferida:', error)
+      }
+    },
+
+    // Inicializar configuración selectiva desde localStorage
+    initSelectiveSyncConfig() {
+      try {
+        const saved = this.loadFromLocalStorage('selectiveSyncConfig')
+        if (saved) {
+          this.selectiveSyncConfig = {
+            ...this.selectiveSyncConfig,
+            ...saved,
+            collections: {
+              ...this.selectiveSyncConfig.collections,
+              ...(saved.collections || {})
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error cargando configuración selectiva:', error)
+      }
+    },
+
+    // FASE 3: Métodos para gestión de historial de cambios y resolución de conflictos
+
+    // Trackear cambio local en el historial
+    trackLocalChange(entityId, collection, operation, oldData, newData) {
+      try {
+        return this.queue.trackLocalChange(entityId, collection, operation, oldData, newData)
+      } catch (error) {
+        console.error('Error tracking local change:', error)
+        return null
+      }
+    },
+
+    // Obtener historial de cambios para una entidad
+    getChangeHistory(entityId, collection = null, limit = 50) {
+      try {
+        return this.queue.getChangeHistory(entityId, collection, limit)
+      } catch (error) {
+        console.error('Error getting change history:', error)
+        return []
+      }
+    },
+
+    // Resolver conflicto con contexto histórico
+    resolveConflictWithContext(localData, remoteData, entityId, collection) {
+      try {
+        return this.queue.resolveConflictWithContext(localData, remoteData, entityId, collection)
+      } catch (error) {
+        console.error('Error resolving conflict with context:', error)
+        // Fallback: devolver datos remotos
+        return remoteData
+      }
+    },
+
+    // Obtener historial de resoluciones de conflictos
+    getConflictResolutionHistory(limit = 20) {
+      try {
+        const history = this.queue.changeHistory?.conflictResolutions || []
+        return history
+          .sort((a, b) => b.timestamp - a.timestamp)
+          .slice(0, limit)
+      } catch (error) {
+        console.error('Error getting conflict resolution history:', error)
+        return []
+      }
+    },
+
+    // Limpiar historial antiguo
+    cleanupOldHistory(maxAgeMs = 30 * 24 * 60 * 60 * 1000) {
+      try {
+        this.queue.cleanupOldHistory(maxAgeMs)
+      } catch (error) {
+        console.error('Error cleaning up old history:', error)
+      }
+    },
+
+    // Exportar historial completo para análisis
+    exportChangeHistory() {
+      try {
+        const history = {
+          changes: this.queue.changeHistory?.changes || [],
+          conflictResolutions: this.queue.changeHistory?.conflictResolutions || [],
+          exportedAt: Date.now(),
+          version: '1.0'
+        }
+
+        const blob = new Blob([JSON.stringify(history, null, 2)], { type: 'application/json' })
+        const url = URL.createObjectURL(blob)
+
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `change-history-${new Date().toISOString().split('T')[0]}.json`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+
+        return true
+      } catch (error) {
+        console.error('Error exporting change history:', error)
+        return false
+      }
+    },
+
+    // FASE 4: Métodos para patrones offline avanzados
+
+    // Habilitar/deshabilitar funcionalidades offline
+    enableOfflineFeatures(features) {
+      try {
+        this.offlineFeatures = {
+          ...this.offlineFeatures,
+          ...features
+        }
+
+        // Guardar configuración
+        this.saveToLocalStorage('offlineFeatures', this.offlineFeatures)
+
+        // Inicializar funcionalidades habilitadas
+        if (this.offlineFeatures.searchIndexEnabled) {
+          this.buildSearchIndex()
+        }
+
+        if (this.offlineFeatures.analyticsEnabled) {
+          this.initializeAnalytics()
+        }
+
+        console.log('Funcionalidades offline configuradas:', this.offlineFeatures)
+        return true
+      } catch (error) {
+        console.error('Error habilitando funcionalidades offline:', error)
+        return false
+      }
+    },
+
+    // Búsqueda offline en todas las colecciones
+    searchOffline(query, collections = null, options = {}) {
+      if (!this.offlineFeatures.searchIndexEnabled) {
+        console.warn('Búsqueda offline no habilitada')
+        return []
+      }
+
+      try {
+        const {
+          limit = 50,
+          fuzzy = true,
+          fields = ['name', 'nombre', 'descripcion', 'observaciones']
+        } = options
+
+        const normalizedQuery = query.toLowerCase().trim()
+        if (!normalizedQuery) return []
+
+        const results = []
+        const targetCollections = collections || Object.keys(this.intelligentCache.searchIndex)
+
+        for (const collection of targetCollections) {
+          const indexData = this.intelligentCache.searchIndex.get(collection) || []
+
+          indexData.forEach(item => {
+            let score = 0
+            let matchedFields = []
+
+            // Buscar en campos especificados
+            fields.forEach(field => {
+              const fieldValue = item[field]
+              if (fieldValue && typeof fieldValue === 'string') {
+                const normalizedValue = fieldValue.toLowerCase()
+
+                // Coincidencia exacta
+                if (normalizedValue.includes(normalizedQuery)) {
+                  score += 10
+                  matchedFields.push({ field, value: fieldValue, type: 'exact' })
+                }
+                // Coincidencia difusa (si está habilitada)
+                else if (fuzzy && this.fuzzyMatch(normalizedQuery, normalizedValue)) {
+                  score += 5
+                  matchedFields.push({ field, value: fieldValue, type: 'fuzzy' })
+                }
+              }
+            })
+
+            if (score > 0) {
+              results.push({
+                ...item,
+                collection,
+                searchScore: score,
+                matchedFields,
+                searchTimestamp: Date.now()
+              })
+            }
+          })
+        }
+
+        // Ordenar por score y limitar resultados
+        return results
+          .sort((a, b) => b.searchScore - a.searchScore)
+          .slice(0, limit)
+
+      } catch (error) {
+        console.error('Error en búsqueda offline:', error)
+        return []
+      }
+    },
+
+    // Coincidencia difusa simple
+    fuzzyMatch(query, text) {
+      const distance = this.levenshteinDistance(query, text)
+      const maxLength = Math.max(query.length, text.length)
+      const similarity = (maxLength - distance) / maxLength
+      return similarity > 0.6 // 60% de similitud mínima
+    },
+
+    // Distancia de Levenshtein para coincidencia difusa
+    levenshteinDistance(str1, str2) {
+      const matrix = []
+
+      for (let i = 0; i <= str2.length; i++) {
+        matrix[i] = [i]
+      }
+
+      for (let j = 0; j <= str1.length; j++) {
+        matrix[0][j] = j
+      }
+
+      for (let i = 1; i <= str2.length; i++) {
+        for (let j = 1; j <= str1.length; j++) {
+          if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+            matrix[i][j] = matrix[i - 1][j - 1]
+          } else {
+            matrix[i][j] = Math.min(
+              matrix[i - 1][j - 1] + 1,
+              matrix[i][j - 1] + 1,
+              matrix[i - 1][j] + 1
+            )
+          }
+        }
+      }
+
+      return matrix[str2.length][str1.length]
+    },
+
+    // Construir índice de búsqueda offline
+    async buildSearchIndex() {
+      try {
+        console.log('Construyendo índice de búsqueda offline...')
+
+        const stores = [
+          { name: 'Haciendas', store: useHaciendaStore },
+          { name: 'actividades', store: useActividadesStore },
+          { name: 'siembras', store: useSiembrasStore },
+          { name: 'zonas', store: useZonasStore },
+          { name: 'recordatorios', store: useRecordatoriosStore },
+          { name: 'programaciones', store: useProgramacionesStore },
+          { name: 'bitacora', store: useBitacoraStore }
+        ]
+
+        for (const { name, store } of stores) {
+          try {
+            const storeInstance = store()
+            const items = storeInstance.items || storeInstance.list || []
+
+            // Crear índice de búsqueda con datos relevantes
+            const indexData = items.map(item => ({
+              id: item.id,
+              ...item,
+              indexedAt: Date.now()
+            }))
+
+            this.intelligentCache.searchIndex.set(name, indexData)
+            console.log(`Índice construido para ${name}: ${indexData.length} elementos`)
+
+          } catch (storeError) {
+            console.warn(`Error indexando ${name}:`, storeError)
+          }
+        }
+
+        this.offlineFeatures.searchIndexLastUpdate = Date.now()
+        this.saveToLocalStorage('offlineFeatures', this.offlineFeatures)
+
+        console.log('Índice de búsqueda offline completado')
+
+      } catch (error) {
+        console.error('Error construyendo índice de búsqueda:', error)
+      }
+    },
+
+    // Generar reportes offline
+    generateOfflineReport(type, parameters = {}) {
+      if (!this.offlineFeatures.reportsEnabled) {
+        console.warn('Generación de reportes offline no habilitada')
+        return null
+      }
+
+      try {
+        const { dateFrom, dateTo, collections = ['actividades', 'bitacora'] } = parameters
+
+        const reportId = `report_${type}_${Date.now()}`
+        const report = {
+          id: reportId,
+          type,
+          parameters,
+          generatedAt: Date.now(),
+          data: {},
+          summary: {}
+        }
+
+        switch (type) {
+          case 'bpa_compliance':
+            report.data = this.generateBPAComplianceReport(collections, dateFrom, dateTo)
+            break
+
+          case 'activity_summary':
+            report.data = this.generateActivitySummaryReport(collections, dateFrom, dateTo)
+            break
+
+          case 'productivity':
+            report.data = this.generateProductivityReport(collections, dateFrom, dateTo)
+            break
+
+          default:
+            console.warn('Tipo de reporte no soportado:', type)
+            return null
+        }
+
+        // Calcular resumen
+        report.summary = this.calculateReportSummary(report.data, type)
+
+        // Guardar en cache
+        this.intelligentCache.reports.set(reportId, report)
+        this.offlineFeatures.lastReportGeneration = Date.now()
+
+        console.log('Reporte offline generado:', reportId)
+        return report
+
+      } catch (error) {
+        console.error('Error generando reporte offline:', error)
+        return null
+      }
+    },
+
+    // Generar reporte de cumplimiento BPA
+    generateBPAComplianceReport(collections, dateFrom, dateTo) {
+      const data = {
+        haciendas: [],
+        zonas: [],
+        actividades: [],
+        totalScore: 0,
+        complianceLevel: 'Sin datos'
+      }
+
+      try {
+        const zonasStore = useZonasStore()
+        const zonas = zonasStore.items || []
+
+        zonas.forEach(zona => {
+          if (zona.datos_bpa) {
+            const bpaScore = this.calculateBPAScore(zona.datos_bpa)
+            data.zonas.push({
+              id: zona.id,
+              nombre: zona.nombre || 'Sin nombre',
+              bpaScore,
+              lastUpdate: zona.updated || zona.created
+            })
+          }
+        })
+
+        // Calcular score total
+        if (data.zonas.length > 0) {
+          data.totalScore = data.zonas.reduce((sum, zona) => sum + zona.bpaScore, 0) / data.zonas.length
+        }
+
+        // Determinar nivel de cumplimiento
+        if (data.totalScore >= 90) data.complianceLevel = 'Excelente'
+        else if (data.totalScore >= 75) data.complianceLevel = 'Bueno'
+        else if (data.totalScore >= 60) data.complianceLevel = 'Regular'
+        else data.complianceLevel = 'Deficiente'
+
+      } catch (error) {
+        console.error('Error generando reporte BPA:', error)
+      }
+
+      return data
+    },
+
+    // Calcular score BPA simplificado
+    calculateBPAScore(datosBpa) {
+      if (!datosBpa || typeof datosBpa !== 'object') return 0
+
+      let totalPoints = 0
+      let maxPoints = 0
+
+      Object.values(datosBpa).forEach(value => {
+        if (typeof value === 'number') {
+          totalPoints += value
+          maxPoints += 100 // Asumiendo máximo 100 por categoría
+        }
+      })
+
+      return maxPoints > 0 ? Math.round((totalPoints / maxPoints) * 100) : 0
+    },
+
+    // Generar analytics básicos offline
+    generateOfflineAnalytics(period = 'daily') {
+      if (!this.offlineFeatures.analyticsEnabled) {
+        console.warn('Analytics offline no habilitados')
+        return null
+      }
+
+      try {
+        const analytics = {
+          period,
+          generatedAt: Date.now(),
+          operationsCount: 0,
+          syncMetrics: {},
+          userActivity: {},
+          dataVolume: {}
+        }
+
+        // Obtener métricas de sincronización
+        analytics.syncMetrics = this.getPerformanceMetrics()
+
+        // Calcular estadísticas de operaciones
+        const queueStats = this.queue.getPerformanceMetrics()
+        analytics.operationsCount = queueStats.operationCounts.total
+
+        // Calcular volumen de datos (aproximado)
+        analytics.dataVolume = this.calculateDataVolume()
+
+        // Guardar en cache de analytics
+        const cacheKey = `${period}_${new Date().toISOString().split('T')[0]}`
+        this.intelligentCache.analytics[`${period}Stats`].set(cacheKey, analytics)
+
+        console.log('Analytics offline generados:', period)
+        return analytics
+
+      } catch (error) {
+        console.error('Error generando analytics offline:', error)
+        return null
+      }
+    },
+
+    // Calcular volumen de datos aproximado
+    calculateDataVolume() {
+      try {
+        const stores = ['Haciendas', 'actividades', 'siembras', 'zonas', 'recordatorios']
+        let totalItems = 0
+        let estimatedSize = 0
+
+        stores.forEach(storeName => {
+          const savedData = this.loadFromLocalStorage(storeName)
+          if (savedData) {
+            const itemCount = Array.isArray(savedData) ? savedData.length :
+                             savedData.items ? savedData.items.length : 0
+            totalItems += itemCount
+            estimatedSize += new Blob([JSON.stringify(savedData)]).size
+          }
+        })
+
+        return {
+          totalItems,
+          estimatedSize,
+          estimatedSizeMB: Math.round(estimatedSize / (1024 * 1024) * 100) / 100
+        }
+      } catch (error) {
+        console.error('Error calculando volumen de datos:', error)
+        return { totalItems: 0, estimatedSize: 0, estimatedSizeMB: 0 }
+      }
+    },
+
+    // Limpiar cache inteligente
+    cleanupIntelligentCache() {
+      try {
+        const now = Date.now()
+        const expiryTime = this.offlineFeatures.cacheExpiryTime
+
+        // Limpiar cache de reportes antiguos
+        for (const [key, report] of this.intelligentCache.reports.entries()) {
+          if (now - report.generatedAt > expiryTime) {
+            this.intelligentCache.reports.delete(key)
+          }
+        }
+
+        // Limpiar analytics antiguos
+        Object.values(this.intelligentCache.analytics).forEach(cache => {
+          for (const [key, data] of cache.entries()) {
+            if (now - data.generatedAt > expiryTime) {
+              cache.delete(key)
+            }
+          }
+        })
+
+        console.log('Cache inteligente limpiado')
+
+      } catch (error) {
+        console.error('Error limpiando cache:', error)
+      }
+    },
+
+    // Inicializar analytics
+    initializeAnalytics() {
+      try {
+        // Generar analytics iniciales si no existen
+        const today = new Date().toISOString().split('T')[0]
+
+        if (!this.intelligentCache.analytics.dailyStats.has(`daily_${today}`)) {
+          this.generateOfflineAnalytics('daily')
+        }
+
+        console.log('Analytics inicializados')
+
+      } catch (error) {
+        console.error('Error inicializando analytics:', error)
+      }
+    },
+
+    // Inicializar funcionalidades offline
+    initOfflineFeatures() {
+      try {
+        // Cargar configuración guardada
+        const saved = this.loadFromLocalStorage('offlineFeatures')
+        if (saved) {
+          this.offlineFeatures = {
+            ...this.offlineFeatures,
+            ...saved
+          }
+        }
+
+        // Inicializar funcionalidades habilitadas
+        if (this.offlineFeatures.searchIndexEnabled) {
+          // Construir índice de búsqueda en background
+          setTimeout(() => this.buildSearchIndex(), 2000)
+        }
+
+        if (this.offlineFeatures.analyticsEnabled) {
+          this.initializeAnalytics()
+        }
+
+        // Limpiar cache periódicamente y guardar ID para cleanup
+        if (this.cleanupIntervalId) {
+          clearInterval(this.cleanupIntervalId)
+        }
+        this.cleanupIntervalId = setInterval(() => this.cleanupIntelligentCache(), 60 * 60 * 1000) // Cada hora
+
+        console.log('Funcionalidades offline inicializadas:', this.offlineFeatures)
+
+      } catch (error) {
+        console.error('Error inicializando funcionalidades offline:', error)
+      }
+    },
+
+    // Agregar métodos faltantes para reportes
+    generateActivitySummaryReport(collections, dateFrom, dateTo) {
+      const data = {
+        totalActivities: 0,
+        completedActivities: 0,
+        pendingActivities: 0,
+        byCategory: {},
+        timeRange: { from: dateFrom, to: dateTo }
+      }
+
+      try {
+        const actividadesStore = useActividadesStore()
+        const actividades = actividadesStore.items || []
+
+        actividades.forEach(actividad => {
+          data.totalActivities++
+
+          // Categorizar por estado (ejemplo simplificado)
+          if (actividad.estado === 'completado') {
+            data.completedActivities++
+          } else {
+            data.pendingActivities++
+          }
+
+          // Agrupar por categoría
+          const categoria = actividad.categoria || 'Sin categoría'
+          data.byCategory[categoria] = (data.byCategory[categoria] || 0) + 1
+        })
+
+      } catch (error) {
+        console.error('Error generando reporte de actividades:', error)
+      }
+
+      return data
+    },
+
+    generateProductivityReport(collections, dateFrom, dateTo) {
+      const data = {
+        totalHours: 0,
+        averageEfficiency: 0,
+        topPerformers: [],
+        productivityTrend: []
+      }
+
+      try {
+        const bitacoraStore = useBitacoraStore()
+        const bitacora = bitacoraStore.items || []
+
+        // Análisis simplificado de productividad
+        bitacora.forEach(entrada => {
+          if (entrada.tiempo_dedicado) {
+            data.totalHours += entrada.tiempo_dedicado
+          }
+        })
+
+      } catch (error) {
+        console.error('Error generando reporte de productividad:', error)
+      }
+
+      return data
+    },
+
+    calculateReportSummary(reportData, type) {
+      const summary = {
+        totalRecords: 0,
+        keyMetrics: {},
+        recommendations: []
+      }
+
+      try {
+        switch (type) {
+          case 'bpa_compliance':
+            summary.totalRecords = reportData.zonas?.length || 0
+            summary.keyMetrics = {
+              averageScore: reportData.totalScore || 0,
+              complianceLevel: reportData.complianceLevel || 'Sin datos'
+            }
+            if (reportData.totalScore < 75) {
+              summary.recommendations.push('Mejorar prácticas de BPA en zonas con bajo puntaje')
+            }
+            break
+
+          case 'activity_summary':
+            summary.totalRecords = reportData.totalActivities || 0
+            summary.keyMetrics = {
+              completionRate: reportData.totalActivities > 0
+                ? Math.round((reportData.completedActivities / reportData.totalActivities) * 100)
+                : 0
+            }
+            break
+
+          case 'productivity':
+            summary.totalRecords = 1
+            summary.keyMetrics = {
+              totalHours: reportData.totalHours || 0,
+              efficiency: reportData.averageEfficiency || 0
+            }
+            break
+        }
+
+      } catch (error) {
+        console.error('Error calculando resumen de reporte:', error)
+      }
+
+      return summary
+    },
+
     // Nuevo método para manejar cambios de visibilidad - REMOVED as it was empty
     // async handleVisibilityChange() {}
+
+    // P3.1: OPTIMIZACIÓN - Carga optimizada con requests paralelos (ÚNICO MÉTODO)
+
+    // P3.1: OPTIMIZACIÓN - Carga optimizada con requests paralelos (dos fases)
+    async loadDashboardWithParallelRequests() {
+      const startTime = performance.now()
+
+      try {
+        // FASE 1: Cargar hacienda primero (prerequisito)
+        const haciendaStore = useHaciendaStore()
+        let haciendaId = haciendaStore.mi_hacienda?.id
+
+        // Si no hay hacienda cargada, cargarla primero
+        if (!haciendaId) {
+          await haciendaStore.init()
+          haciendaId = haciendaStore.mi_hacienda?.id
+        }
+
+        if (!haciendaId) {
+          throw new Error('No se pudo cargar la hacienda')
+        }
+
+        // FASE 2: Cargar resto de colecciones en paralelo con filtros y expansiones correctas
+        const promises = [
+          pb.collection('recordatorios').getList(1, 500, {
+            skipTotal: true,
+            filter: `hacienda="${haciendaId}"`,
+            expand: 'actividades.tipo_actividades,zonas.tipos_zonas'
+          })
+            .then(result => ({ collection: 'recordatorios', data: result.items || [] }))
+            .catch(error => ({ collection: 'recordatorios', data: [], error: error.message })),
+
+          pb.collection('siembras').getList(1, 500, {
+            skipTotal: true,
+            filter: `hacienda="${haciendaId}"`
+            // Las siembras no necesitan expand según el store original
+          })
+            .then(result => ({ collection: 'siembras', data: result.items || [] }))
+            .catch(error => ({ collection: 'siembras', data: [], error: error.message })),
+
+          pb.collection('actividades').getList(1, 500, {
+            skipTotal: true,
+            filter: `hacienda="${haciendaId}"`,
+            expand: 'tipo_actividades,siembras'
+          })
+            .then(result => ({ collection: 'actividades', data: result.items || [] }))
+            .catch(error => ({ collection: 'actividades', data: [], error: error.message })),
+
+          pb.collection('zonas').getList(1, 500, {
+            skipTotal: true,
+            filter: `hacienda="${haciendaId}"`,
+            expand: 'tipos_zonas'
+          })
+            .then(result => ({ collection: 'zonas', data: result.items || [] }))
+            .catch(error => ({ collection: 'zonas', data: [], error: error.message }))
+        ]
+
+        const results = await Promise.all(promises)
+        const duration = performance.now() - startTime
+
+        // Procesar resultados
+        const collections = {}
+        let totalRecords = 0
+        let successfulCollections = 1 // Contar hacienda como exitosa
+
+        // Agregar hacienda al resultado (ya cargada en fase 1)
+        collections['Haciendas'] = haciendaStore.mi_hacienda ? [haciendaStore.mi_hacienda] : []
+        totalRecords += collections['Haciendas'].length
+
+        // Procesar resultados de fase 2
+        results.forEach(result => {
+          if (result.error) {
+            collections[result.collection] = []
+          } else {
+            collections[result.collection] = result.data
+            totalRecords += result.data.length
+            successfulCollections++
+          }
+        })
+
+        const metrics = {
+          duration: Math.round(duration),
+          collectionsLoaded: successfulCollections,
+          recordsLoaded: totalRecords,
+          recordsPerSecond: Math.round(totalRecords / (duration / 1000))
+        }
+
+        return {
+          success: successfulCollections > 0,
+          collections,
+          metrics
+        }
+      } catch (error) {
+        return {
+          success: false,
+          error: error.message,
+          collections: {},
+          metrics: { duration: Math.round(performance.now() - startTime), collectionsLoaded: 0, recordsLoaded: 0 }
+        }
+      }
+    },
+
+    // P3.1: HELPER - Procesar resultados de batch API
+    processBatchResults(batchData) {
+      const collections = {}
+
+      if (Array.isArray(batchData)) {
+        const collectionNames = ['Haciendas', 'recordatorios', 'siembras', 'actividades', 'zonas']
+
+        batchData.forEach((result, index) => {
+          const collectionName = collectionNames[index] || `collection_${index}`
+
+          if (result.status === 200 && result.body?.items) {
+            collections[collectionName] = result.body.items
+            console.log(`✅ Batch result - ${collectionName}: ${result.body.items.length} registros`)
+          } else {
+            collections[collectionName] = []
+            console.warn(`⚠️ Batch result - ${collectionName}: Error ${result.status}`)
+          }
+        })
+      }
+
+      return collections
+    },
+
+    // P3.1: Batch processing para Dashboard y carga inicial
+    async batchInitializeDashboard() {
+      try {
+        logP3('Iniciando batch processing para Dashboard...', 'batch_start')
+        const startTime = performance.now()
+
+        // Verificar autenticación antes de continuar
+        const authStore = useAuthStore()
+        if (!authStore.isLoggedIn || !pb.authStore.isValid) {
+          console.warn('P3.1: Usuario no autenticado, cancelando batch processing')
+          return {
+            success: false,
+            error: 'Usuario no autenticado',
+            collections: {},
+            metrics: { duration: 0, collectionsLoaded: 0, recordsLoaded: 0 }
+          }
+        }
+
+        // 🧪 ESTRATEGIA DE DEBUG: Probar methods step by step
+        console.log('🧪 P3.1: Ejecutando tests diagnósticos...')
+
+        // Paso 0: Verificar capacidades del servidor
+        const serverCapabilities = await this.testServerCapabilities()
+        console.log('🧪 Server capabilities:', serverCapabilities)
+
+        // Paso 1: Probar requests individuales
+        const individualResults = await this.testIndividualRequests()
+        console.log('🧪 Individual results:', individualResults)
+
+        // Paso 2: Probar batch simple
+        const simpleBatchResult = await this.testSimpleBatch()
+        console.log('🧪 Simple batch result:', simpleBatchResult)
+
+        // Paso 2.5: Si batch simple falla, probar con límites de PocketBase
+        if (!simpleBatchResult.success) {
+          console.log('🧪 Probando batch respetando configuraciones PocketBase...')
+          const batchWithLimitsResult = await this.testBatchWithLimits()
+          console.log('🧪 Batch with limits result:', batchWithLimitsResult)
+
+          // Si funciona con límites, usar ese enfoque
+          if (batchWithLimitsResult.success) {
+            console.log('✅ P3.1: Batch funciona respetando límites PocketBase!')
+            return {
+              success: true,
+              collections: this.processBatchResults(batchWithLimitsResult.data),
+              metrics: {
+                ...batchWithLimitsResult.metrics,
+                method: 'batch_with_limits'
+              }
+            }
+          }
+        }
+
+        // Si el batch simple falla, usar parallel requests optimizado
+        if (!simpleBatchResult.success) {
+          console.warn('🚨 P3.1: Batch API no disponible, usando parallel requests optimizado')
+
+          // Usar método parallel requests como optimización P3.1
+          const parallelResult = await this.loadDashboardWithParallelRequests()
+
+          if (parallelResult.success) {
+            console.log('✅ P3.1: Parallel requests exitoso como alternativa al batch')
+            return {
+              success: true,
+              collections: parallelResult.collections,
+              metrics: {
+                ...parallelResult.metrics,
+                method: 'parallel_requests_fallback'
+              },
+              diagnostics: { individualResults, simpleBatchResult, parallelResult }
+            }
+          }
+
+          return {
+            success: false,
+            error: 'Todas las optimizaciones P3.1 fallaron',
+            collections: {},
+            metrics: { duration: performance.now() - startTime, collectionsLoaded: 0, recordsLoaded: 0 },
+            diagnostics: { individualResults, simpleBatchResult, parallelResult }
+          }
+        }
+
+        // Si llegamos aquí, procedemos con el batch completo pero con logging mejorado
+        const collections = ['Haciendas', 'recordatorios', 'siembras', 'actividades', 'zonas']
+
+        // Crear array de requests SIN headers por request (usar solo headers globales)
+        const batchPayload = {
+          requests: collections.map(collection => ({
+            method: 'GET',
+            url: `/api/collections/${collection}/records?page=1&perPage=500&skipTotal=1`
+            // ✅ NO incluir headers por request - usar headers globales en fetch
+          }))
+        }
+
+        // 🔍 DEBUG: Log del payload optimizado
+        console.log('P3.1 DEBUG: Batch payload optimizado:', JSON.stringify(batchPayload, null, 2))
+        console.log('P3.1 DEBUG: PocketBase baseUrl:', pb.baseUrl)
+        console.log('P3.1 DEBUG: Auth token present:', !!pb.authStore.token)
+
+        // Ejecutar batch request manual con headers globales únicamente
+        console.log('P3.1: Ejecutando batch request optimizado para', collections.length, 'colecciones...')
+
+        const response = await fetch(`${pb.baseUrl}/api/batch`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': pb.authStore.token ? `Bearer ${pb.authStore.token}` : ''
+          },
+          body: JSON.stringify(batchPayload)
+        })
+
+        // 🔍 DEBUG: Log de la respuesta
+        console.log('P3.1 DEBUG: Response status:', response.status)
+        console.log('P3.1 DEBUG: Response headers:', Object.fromEntries(response.headers.entries()))
+
+        if (!response.ok) {
+          // 🔍 DEBUG: Log detallado del error
+          const errorText = await response.text()
+          console.error('P3.1 DEBUG: Error response body:', errorText)
+          try {
+            const errorJson = JSON.parse(errorText)
+            console.error('P3.1 DEBUG: Error JSON:', JSON.stringify(errorJson, null, 2))
+          } catch (parseError) {
+            console.error('P3.1 DEBUG: Error body is not JSON')
+          }
+          throw new Error(`Batch request failed: ${response.status} ${response.statusText}`)
+        }
+
+        const batchResponse = await response.json()
+
+        // 🔍 DEBUG: Log de la respuesta exitosa
+        console.log('P3.1 DEBUG: Batch response received:', JSON.stringify(batchResponse, null, 2))
+        // La respuesta de batch es un array con {status, body} para cada request
+        const results = batchResponse.map(item => {
+          if (item.status >= 200 && item.status < 300) {
+            return item.body?.items || item.body || []
+          } else {
+            console.warn('P3.1: Error en request batch:', item.status, item.body)
+            return []
+          }
+        })
+
+        // Procesar resultados
+        const processedResults = {}
+        let totalRecords = 0
+
+        results.forEach((result, index) => {
+          const collectionName = collections[index]
+          if (result && Array.isArray(result)) {
+            processedResults[collectionName] = result
+            totalRecords += result.length
+            console.log(`P3.1: ${collectionName} cargada:`, result.length, 'registros')
+          } else {
+            console.warn(`P3.1: Error cargando ${collectionName}:`, result)
+            processedResults[collectionName] = []
+          }
+        })
+
+        const endTime = performance.now()
+        const duration = endTime - startTime
+
+        // Métricas de performance
+        const metrics = {
+          duration: Math.round(duration),
+          collectionsLoaded: Object.keys(processedResults).length,
+          recordsLoaded: totalRecords,
+          averageTimePerCollection: Math.round(duration / collections.length),
+          recordsPerSecond: Math.round(totalRecords / (duration / 1000))
+        }
+
+        console.log('P3.1: Batch processing completado:', metrics)
+
+        return {
+          success: true,
+          collections: processedResults,
+          metrics
+        }
+
+      } catch (error) {
+        console.error('P3.1: Error en batch processing Dashboard:', error)
+        return {
+          success: false,
+          error: error.message,
+          collections: {},
+          metrics: { duration: 0, collectionsLoaded: 0, recordsLoaded: 0 }
+        }
+      }
+    },
+
+    // P3.1: Método auxiliar para aplicar datos batch a stores específicos
+    async applyBatchDataToStores(batchData) {
+      try {
+        if (!batchData.success || !batchData.collections) {
+          console.warn('P3.1: Datos batch inválidos para aplicar a stores')
+          return false
+        }
+
+        const { collections } = batchData
+        let storesUpdated = 0
+
+        // Mapeo de collections a stores
+        const storeMap = {
+          'Haciendas': useHaciendaStore,
+          'recordatorios': useRecordatoriosStore,
+          'siembras': useSiembrasStore,
+          'actividades': useActividadesStore,
+          'zonas': useZonasStore
+        }
+
+        // Aplicar datos a cada store
+        for (const [collectionName, storeGetter] of Object.entries(storeMap)) {
+          try {
+            const data = collections[collectionName]
+            if (data && Array.isArray(data)) {
+              const store = storeGetter()
+
+              // Aplicar datos al store según su estructura
+              if (typeof store.applyBatchData === 'function') {
+                await store.applyBatchData(data)
+              } else {
+                // Mapear la estructura correcta para cada store
+                switch (collectionName) {
+                  case 'Haciendas':
+                    // Hacienda ya fue cargada en fase 1, no sobrescribir
+                    if (!store.mi_hacienda && data.length > 0) {
+                      store.mi_hacienda = data[0]
+                    }
+                    break
+                  case 'siembras':
+                    store.siembras = data
+                    break
+                  case 'actividades':
+                    store.actividades = data
+                    break
+                  case 'recordatorios':
+                    store.recordatorios = data
+                    break
+                  case 'zonas':
+                    store.zonas = data
+                    break
+                  default:
+                    // Fallback genérico
+                    if (store.items) {
+                      store.items = data
+                    }
+                }
+
+                // Persistir en localStorage
+                this.saveToLocalStorage(collectionName, data)
+              }
+
+              console.log(`P3.1: Store ${collectionName} actualizado con`, data.length, 'registros')
+              storesUpdated++
+            }
+          } catch (storeError) {
+            console.warn(`P3.1: Error aplicando datos a store ${collectionName}:`, storeError)
+          }
+        }
+
+        console.log(`P3.1: ${storesUpdated} stores actualizados exitosamente`)
+        return storesUpdated > 0
+
+      } catch (error) {
+        console.error('P3.1: Error aplicando datos batch a stores:', error)
+        return false
+      }
+    },
+
+    // P3.1: Método principal que combina batch loading y aplicación a stores
+    async initializeDashboardWithBatch() {
+      try {
+        console.log('P3.1: Iniciando inicialización Dashboard con batch processing...')
+
+        // 1. Ejecutar batch request
+        const batchResult = await this.batchInitializeDashboard()
+
+        if (batchResult.success) {
+          // 2. Aplicar datos a stores
+          const appliedToStores = await this.applyBatchDataToStores(batchResult)
+
+          // 3. Retornar resultado combinado
+          return {
+            ...batchResult,
+            storesUpdated: appliedToStores,
+            method: 'batch_processing'
+          }
+        } else {
+          // Fallback: método tradicional si batch falla
+          console.warn('P3.1: Batch processing falló, usando método tradicional como fallback')
+          return {
+            success: false,
+            error: batchResult.error,
+            fallbackAvailable: true,
+            method: 'batch_processing_failed'
+          }
+        }
+
+      } catch (error) {
+        console.error('P3.1: Error en inicialización Dashboard con batch:', error)
+        return {
+          success: false,
+          error: error.message,
+          method: 'batch_processing_error'
+        }
+      }
+    },
+
+    // Método para limpiar recursos y prevenir memory leaks
+    cleanup() {
+      try {
+        // Limpiar interval de cleanup
+        if (this.cleanupIntervalId) {
+          clearInterval(this.cleanupIntervalId)
+          this.cleanupIntervalId = null
+        }
+
+        // Limpiar event listeners
+        window.removeEventListener('online', this.handleOnline)
+        window.removeEventListener('offline', this.handleOffline)
+
+        console.log('SyncStore cleanup completado')
+      } catch (error) {
+        console.error('Error en syncStore cleanup:', error)
+      }
+    }
   }
 })

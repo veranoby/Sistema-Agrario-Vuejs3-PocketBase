@@ -18,7 +18,7 @@ export const useProfileStore = defineStore('profile', {
 
   persist: {
     key: 'profile',
-    storage: sessionStorage,
+    storage: localStorage,
     paths: ['user']
   },
 

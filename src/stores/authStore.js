@@ -319,15 +319,12 @@ export const useAuthStore = defineStore('auth', {
 
     // Método para determinar si el token necesita ser refrescado
     tokenNeedsRefresh() {
-      console.log('[AUTH TOKEN NEEDS REFRESH] Checking if token needs refresh.')
       const syncStore = useSyncStore()
 
       // Obtener timestamp del último login exitoso
       const lastSuccess = syncStore.loadFromLocalStorage('last_auth_success')
-      console.log('[AUTH TOKEN NEEDS REFRESH] last_auth_success:', lastSuccess)
 
       if (!lastSuccess) {
-        console.log('[AUTH TOKEN NEEDS REFRESH] No last_auth_success found, returning true.')
         // Si no hay registro, asumimos que sí necesita refresco
         return true
       }
@@ -335,15 +332,18 @@ export const useAuthStore = defineStore('auth', {
       const now = Date.now()
       const timeSinceLastSuccess = now - lastSuccess
       const refreshThreshold = 20 * 60 * 1000 // 20 minutos
-      console.log(
-        '[AUTH TOKEN NEEDS REFRESH] Time since last success (ms):',
-        timeSinceLastSuccess,
-        'Threshold (ms):',
-        refreshThreshold
-      )
+
+      // Solo log si necesita refresh o si ha pasado más de 30 minutos (debug mode)
+      const shouldRefresh = timeSinceLastSuccess > refreshThreshold
+      if (shouldRefresh || import.meta.env.DEV && timeSinceLastSuccess > 30 * 60 * 1000) {
+        console.log(
+          '[AUTH] Token refresh check:',
+          shouldRefresh ? 'NEEDS REFRESH' : 'DEBUG',
+          `(${Math.round(timeSinceLastSuccess / 60000)}min ago)`
+        )
+      }
 
       // Refrescar si han pasado más de 20 minutos desde el último éxito
-      console.log('[AUTH TOKEN NEEDS REFRESH] Returning:', timeSinceLastSuccess > refreshThreshold)
       return timeSinceLastSuccess > refreshThreshold
     },
 

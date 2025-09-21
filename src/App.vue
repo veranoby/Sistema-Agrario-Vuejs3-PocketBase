@@ -1,5 +1,6 @@
 <template>
   <v-app :theme="themeStore.currentTheme">
+    <StatusBar />
     <Header
       v-if="showHeader"
       :PaginaActual="currentPage"
@@ -47,6 +48,7 @@ import { pb } from '@/utils/pocketbase'
 
 import SnackbarComponent from '@/components/SnackbarComponent.vue'
 import { useSyncStore } from '@/stores/syncStore'
+import StatusBar from '@/components/StatusBar.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -131,51 +133,55 @@ onBeforeUnmount(() => {
 })
 
 const handleWindowFocus = () => {
-  console.log('[APP] Ventana recuperó el foco')
+  // Solo log en desarrollo
+  if (import.meta.env.DEV) {
+    console.log('[APP] Ventana recuperó el foco')
+  }
   refreshTokenIfNeeded()
 }
 
 const handleVisibilityChange = () => {
-  console.log('[APP] Cambio de visibilidad:', document.visibilityState)
+  // Solo log en desarrollo
+  if (import.meta.env.DEV) {
+    console.log('[APP] Cambio de visibilidad:', document.visibilityState)
+  }
   if (document.visibilityState === 'visible') {
     refreshTokenIfNeeded()
   }
 }
 
 const refreshTokenIfNeeded = async () => {
-  console.log('[APP] Verificando si necesita refresh token...')
   if (authStore.isLoggedIn) {
     try {
-      console.log('[APP] isLoggedIn=true, verificando tokenNeedsRefresh')
       if (authStore.tokenNeedsRefresh()) {
-        console.log('[APP] Token necesita refresh, ejecutando...')
+        console.log('[APP] Ejecutando refresh token...')
         await authStore.refreshToken()
         console.log('[APP] Refresh token completado')
-      } else {
-        console.log('[APP] Token no necesita refresh aún')
       }
+      // Remover logs innecesarios para token que no necesita refresh
     } catch (error) {
       console.error('[APP] Error en refreshTokenIfNeeded:', error)
       const syncStore = useSyncStore()
       const rememberMe = syncStore.loadFromLocalStorage('rememberMe')
-      console.log('[APP] rememberMe después de error:', rememberMe)
 
       if (rememberMe) {
         authStore.showLoginDialog = true
       }
     }
-  } else {
-    console.log('[APP] No está logueado, omitiendo refresh')
   }
+  // Remover log cuando no está logueado (muy frecuente)
 }
 
-// Agregar verificación de autenticación antes de cada ruta
-router.beforeEach((to, from, next) => {
-  if (to.matched.some((record) => record.meta.requiresAuth) && !isLoggedIn.value) {
-    showAuthModal.value = true // Mostrar el modal de autenticación
-  } else {
-    next()
-  }
+// Configurar navegación guards en onMounted
+onMounted(() => {
+  // Agregar verificación de autenticación antes de cada ruta
+  router.beforeEach((to, from, next) => {
+    if (to.matched.some((record) => record.meta.requiresAuth) && !isLoggedIn.value) {
+      showAuthModal.value = true // Mostrar el modal de autenticación
+    } else {
+      next()
+    }
+  })
 })
 </script>
 

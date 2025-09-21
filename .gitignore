@@ -15,9 +15,8 @@ dist-ssr
 .env
 .DS_Store
 
-# Excluir directorio pocketbase y brain
+# Excluir directorio pocketbase
 /pocketbase/
-/brain/
 
 coverage
 *.local
@@ -37,3 +36,18 @@ coverage
 
 *.tsbuildinfo
 
+# sistema brain 
+brain/*
+
+# sistema qwen */
+.qwen/*
+qwen*.*
+
+# sistema gemini */
+.gemini/*
+gemini*.*
+
+# sistema superclaude */   
+.claude/*
+claude*.*
+.serena/*

@@ -68,7 +68,16 @@
               <v-icon class="mr-2">mdi-information</v-icon>
               <span>Información de la Siembra</span>
             </div>
-            <v-btn color="green-lighten-2" @click="openEditDialog" icon>
+            <v-btn
+              class="agricultural-btn agricultural-btn--edit"
+              @click="openEditDialog"
+              @keydown.enter="openEditDialog"
+              @keydown.space.prevent="openEditDialog"
+              icon
+              size="large"
+              :aria-label="`Editar información de siembra ${siembraInfo.nombre}`"
+              tabindex="0"
+            >
               <v-icon>mdi-pencil</v-icon>
             </v-btn>
           </v-card-title>
@@ -88,7 +97,15 @@
         <v-card class="bitacora-embedded-section mb-4" elevation="2">
           <v-card-title class="d-flex justify-space-between align-center">
             <span>Bitácora Reciente</span>
-            <v-btn color="primary" @click="openNewBitacoraEntryDialog" size="small">
+            <v-btn
+              class="agricultural-btn agricultural-btn--primary"
+              @click="openNewBitacoraEntryDialog"
+              @keydown.enter="openNewBitacoraEntryDialog"
+              @keydown.space.prevent="openNewBitacoraEntryDialog"
+              size="large"
+              :aria-label="'Crear nueva entrada de bitácora'"
+              tabindex="0"
+            >
               <v-icon start>mdi-plus-circle-outline</v-icon>
               Nueva Entrada
             </v-btn>
@@ -108,8 +125,17 @@
         <v-card class="zonas-section mb-4" elevation="2">
           <v-card-title class="d-flex justify-space-between align-center">
             Zonas Registradas (Lotes)
-            <v-btn size="x-small" color="green-lighten-2" @click="openAddZonaDialog" icon>
-              <v-icon class="mt-1">mdi-plus</v-icon>
+            <v-btn
+              class="agricultural-btn agricultural-btn--primary"
+              @click="openAddZonaDialog"
+              @keydown.enter="openAddZonaDialog"
+              @keydown.space.prevent="openAddZonaDialog"
+              icon
+              size="large"
+              :aria-label="'Agregar nueva zona de trabajo'"
+              tabindex="0"
+            >
+              <v-icon>mdi-plus</v-icon>
             </v-btn>
           </v-card-title>
           <v-card-text class="px-2 py-0">
@@ -233,8 +259,17 @@
         <v-card class="zonas-section mb-4" elevation="2">
           <v-card-title class="d-flex justify-space-between align-center">
             Actividades relacionadas
-            <v-btn size="x-small" color="green-lighten-2" @click="dialogNuevaActividad = true" icon>
-              <v-icon class="mt-1">mdi-plus</v-icon>
+            <v-btn
+              class="agricultural-btn agricultural-btn--primary"
+              @click="dialogNuevaActividad = true"
+              @keydown.enter="dialogNuevaActividad = true"
+              @keydown.space.prevent="dialogNuevaActividad = true"
+              icon
+              size="large"
+              :aria-label="'Agregar nueva actividad'"
+              tabindex="0"
+            >
+              <v-icon>mdi-plus</v-icon>
             </v-btn>
           </v-card-title>
           <v-card-text class="px-2 py-0">
@@ -433,23 +468,33 @@
           <v-card-actions>
             <v-spacer></v-spacer>
             <v-btn
-              size="small"
-              variant="flat"
+              size="large"
+              variant="elevated"
               rounded="lg"
-              prepend-icon="mdi-check"
-              color="green-lighten-3"
+              prepend-icon="mdi-check-circle"
+              class="agricultural-btn agricultural-btn--primary"
               @click="saveSiembraEdit"
-              >Guardar</v-btn
+              @keydown.enter="saveSiembraEdit"
+              @keydown.space.prevent="saveSiembraEdit"
+              :aria-label="'Guardar cambios de la siembra'"
+              tabindex="0"
             >
+              Guardar
+            </v-btn>
             <v-btn
-              size="small"
-              variant="flat"
+              size="large"
+              variant="elevated"
               rounded="lg"
               prepend-icon="mdi-cancel"
-              color="red-lighten-3"
+              class="agricultural-btn agricultural-btn--secondary"
               @click="editSiembraDialog = false"
-              >Cancelar</v-btn
+              @keydown.enter="editSiembraDialog = false"
+              @keydown.space.prevent="editSiembraDialog = false"
+              :aria-label="'Cancelar edición de siembra'"
+              tabindex="0"
             >
+              Cancelar
+            </v-btn>
           </v-card-actions>
         </v-form>
       </v-card>
@@ -632,7 +677,7 @@ const itemsPerPage = ref(10) // This might be used by other tables, keeping for 
 const editSiembraDialog = ref(false)
 const editedSiembra = ref({})
 
-// const addBitacoraDialog = ref(false) // Removed
+const addBitacoraDialog = ref(false) // Restaurado para evitar errores de template
 const addZonaDialog = ref(false) // Keep for ZonaForm
 
 // const newBitacora = ref({ // Removed
@@ -1004,4 +1049,90 @@ async function handleBitacoraSave() {
 }
 </script>
 
-<style scoped></style>
+<style scoped>
+/* Agricultural Color Palette */
+:root {
+  --agri-green-primary: #2e7d32;
+  --agri-green-light: #4caf50;
+  --agri-earth-brown: #5d4037;
+  --agri-soil-dark: #3e2723;
+  --agri-sunshine-yellow: #ffd54f;
+  --agri-sky-blue: #1976d2;
+  --agri-harvest-orange: #f57c00;
+  --agri-warning-red: #d32f2f;
+  --agri-surface-light: #f8f9fa;
+  --agri-surface-card: #ffffff;
+}
+
+/* Agricultural Buttons */
+.agricultural-btn {
+  border-radius: 8px;
+  font-weight: 500;
+  letter-spacing: 0.025em;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 44px; /* Touch-friendly size */
+}
+
+.agricultural-btn--primary {
+  background: linear-gradient(45deg, var(--agri-green-primary), var(--agri-green-light));
+  border: none;
+  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+  color: white;
+}
+
+.agricultural-btn--primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(46, 125, 50, 0.4);
+}
+
+.agricultural-btn--edit {
+  border: 2px solid var(--agri-green-primary);
+  color: var(--agri-green-primary);
+  background: transparent;
+}
+
+.agricultural-btn--edit:hover {
+  background: var(--agri-green-primary);
+  color: white;
+  transform: translateY(-1px);
+}
+
+.agricultural-btn--secondary {
+  background: linear-gradient(45deg, var(--agri-warning-red), #e57373);
+  border: none;
+  box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3);
+  color: white;
+}
+
+.agricultural-btn--secondary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(211, 47, 47, 0.4);
+}
+
+.agricultural-btn:focus-visible {
+  outline: 3px solid var(--agri-sky-blue);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--agri-surface-card), 0 0 0 5px var(--agri-sky-blue);
+}
+
+.agricultural-btn:active {
+  transform: translateY(0);
+  transition: transform 0.1s;
+}
+
+/* Responsive Design for Tablet Field Use */
+@media (max-width: 1024px) {
+  .agricultural-btn {
+    min-height: 48px; /* Larger touch targets for tablets */
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .agricultural-btn {
+    min-height: 52px; /* Even larger for mobile */
+    width: 100%;
+    margin-bottom: 8px;
+  }
+}
+</style>

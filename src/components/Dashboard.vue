@@ -18,6 +18,14 @@
         </div>
       </div>
     </header>
+
+    <!-- P3.1: Panel de métricas de performance (solo en modo desarrollo) -->
+    <div v-if="loadingMetrics && isDevelopment" class="bg-green-50 border-l-4 border-green-400 p-2 m-4">
+      <div class="text-sm text-green-700">
+        <strong>P3.1:</strong> {{ loadingMetrics.duration }}ms | {{ loadingMetrics.recordsLoaded }} registros | {{ loadingMetrics.recordsPerSecond }} rec/s
+      </div>
+    </div>
+
     <main class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-8 p-6">
       <div class="bg-card text-card-foreground">
         <v-btn
@@ -174,6 +182,7 @@ import { useActividadesStore } from '@/stores/actividadesStore'
 import { useZonasStore } from '@/stores/zonasStore'
 import { handleError } from '@/utils/errorHandler'
 import { useSnackbarStore } from '@/stores/snackbarStore'
+import { useSyncStore } from '@/stores/syncStore'
 
 import StatusPanel from '@/components/RecordatoriosStatusPanel.vue'
 import RecordatorioForm from '@/components/forms/RecordatorioForm.vue'
@@ -186,9 +195,61 @@ const siembrasStore = useSiembrasStore()
 const actividadesStore = useActividadesStore()
 const zonasStore = useZonasStore()
 const snackbarStore = useSnackbarStore()
+const syncStore = useSyncStore()
 
-// Cargar datos iniciales
+// P3.1: Variable para medir performance
+const loadingMetrics = ref(null)
+const isDevelopment = computed(() => import.meta.env.DEV)
+
+// Cargar datos iniciales con P3.1 optimización
 onMounted(async () => {
+  console.log('Dashboard: Iniciando carga de datos...')
+  const startTime = performance.now()
+
+  try {
+    // P3.1: Usar optimización con parallel requests
+    const optimizedResult = await syncStore.loadDashboardWithParallelRequests()
+
+    if (optimizedResult.success) {
+      loadingMetrics.value = {
+        method: 'parallel_requests_optimized',
+        ...optimizedResult.metrics
+      }
+
+      // Aplicar datos a stores
+      await syncStore.applyBatchDataToStores(optimizedResult)
+    } else {
+      // Fallback al método tradicional
+      await loadWithTraditionalMethod()
+      const endTime = performance.now()
+      loadingMetrics.value = {
+        method: 'traditional_fallback',
+        duration: Math.round(endTime - startTime)
+      }
+    }
+
+    const totalTime = performance.now() - startTime
+    console.log('Dashboard: Carga completada en', Math.round(totalTime), 'ms')
+
+  } catch (error) {
+    console.error('Dashboard: Error cargando datos:', error)
+    handleError(error, 'Error cargando Dashboard')
+
+    // Intentar fallback si no es método tradicional
+    if (useBatchProcessing.value) {
+      console.log('Dashboard: Intentando fallback al método tradicional...')
+      try {
+        await loadWithTraditionalMethod()
+        loadingMetrics.value = { method: 'error_fallback' }
+      } catch (fallbackError) {
+        console.error('Dashboard: Error en fallback:', fallbackError)
+      }
+    }
+  }
+})
+
+// Método tradicional como fallback
+async function loadWithTraditionalMethod() {
   await Promise.all([
     haciendaStore.init(),
     recordatoriosStore.cargarRecordatorios(),
@@ -196,7 +257,7 @@ onMounted(async () => {
     actividadesStore.cargarActividades(),
     zonasStore.cargarZonas()
   ])
-})
+}
 
 // Destructurar stores reactivos
 const { fullName, userRole, avatarUrl } = storeToRefs(profileStore)

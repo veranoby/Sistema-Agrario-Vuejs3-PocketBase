@@ -29,7 +29,7 @@ export const useFinanzaStore = defineStore('finanzas', {
 
   persist: {
     key: 'finanzas',
-    storage: sessionStorage,
+    storage: localStorage,
     paths: ['registros', 'currentMonth', 'filterStatus', 'cachedMonths']
   },
 

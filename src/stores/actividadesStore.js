@@ -10,6 +10,7 @@ export const useActividadesStore = defineStore('actividades', {
     actividades: [],
     tiposActividades: [],
     loading: false,
+    loadingTipos: false, // Flag específico para prevenir requests duplicadas
     error: null,
     version: 1,
     lastSync: null
@@ -17,7 +18,7 @@ export const useActividadesStore = defineStore('actividades', {
 
   persist: {
     key: 'actividades',
-    storage: sessionStorage,
+    storage: localStorage,
     paths: ['actividades', 'tiposActividades']
   },
 
@@ -392,15 +393,24 @@ export const useActividadesStore = defineStore('actividades', {
     },
 
     async cargarTiposActividades() {
-      // Local storage loading is now handled by initFromLocalStorage.
-      // This method will now primarily focus on fetching from the server if data isn't already populated.
-      const syncStore = useSyncStore(); // keep for saving later
-
-      if (this.tiposActividades.length > 0 && !navigator.onLine) { // Example: only fetch if online and empty
-          return this.tiposActividades;
+      // Prevenir requests duplicadas
+      if (this.loadingTipos) {
+        console.log('[ACTIVIDADES] Ya hay una carga de tipos en progreso, esperando...')
+        return this.tiposActividades
       }
-      // If online, proceed to fetch from server.
-      // The original logic to check 'tiposActividadesLocal' first is removed.
+
+      // Si ya tenemos datos y estamos offline, usar cache
+      if (this.tiposActividades.length > 0 && !navigator.onLine) {
+        return this.tiposActividades
+      }
+
+      // Si ya tenemos datos y estamos online, solo refresh si es necesario
+      if (this.tiposActividades.length > 0) {
+        return this.tiposActividades
+      }
+
+      const syncStore = useSyncStore()
+      this.loadingTipos = true
 
       try {
         const records = await pb.collection('tipo_actividades').getFullList({
@@ -417,6 +427,8 @@ export const useActividadesStore = defineStore('actividades', {
         useSyncStore().saveToLocalStorage('tiposActividades', this.tiposActividades)
       } catch (error) {
         handleError(error, 'Error al cargar tipos de actividades')
+      } finally {
+        this.loadingTipos = false
       }
     },
 

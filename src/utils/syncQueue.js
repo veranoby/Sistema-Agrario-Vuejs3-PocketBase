@@ -54,8 +54,18 @@ export class SyncQueue {
     }
     this.metricsHistory = [] // Store historical metrics for trend analysis
 
+    // FASE 3: Historial de cambios para resolución avanzada de conflictos
+    this.changeHistory = {
+      changes: [], // Array de cambios locales con timestamp
+      maxHistorySize: 1000, // Máximo número de cambios a mantener
+      conflictResolutions: [] // Historial de resoluciones de conflictos
+    }
+
     // Bind methods para evitar problemas de contexto
     // this.sortByCollectionPriority = this.sortByCollectionPriority.bind(this) // Removed
+
+    // FASE 3: Cargar historial de cambios existente
+    this.loadChangeHistory()
   }
 
   // Carga inicial
@@ -973,5 +983,268 @@ export class SyncQueue {
       recordatorios: useRecordatoriosStore()
     }
     return stores[collection]
+  }
+
+  // FASE 3: Métodos para gestión de historial de cambios y resolución de conflictos
+
+  // Trackear cambio local
+  trackLocalChange(entityId, collection, operation, oldData, newData) {
+    try {
+      const change = {
+        id: `change_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        entityId,
+        collection,
+        operation, // 'create', 'update', 'delete'
+        oldData: oldData ? JSON.parse(JSON.stringify(oldData)) : null,
+        newData: newData ? JSON.parse(JSON.stringify(newData)) : null,
+        timestamp: Date.now(),
+        userId: this.getCurrentUserId(),
+        context: {
+          userAgent: navigator.userAgent,
+          url: window.location.href
+        }
+      }
+
+      this.changeHistory.changes.push(change)
+
+      // Limpiar historial si excede el tamaño máximo
+      if (this.changeHistory.changes.length > this.changeHistory.maxHistorySize) {
+        this.changeHistory.changes = this.changeHistory.changes.slice(-this.changeHistory.maxHistorySize)
+      }
+
+      // Guardar en localStorage
+      this.saveChangeHistory()
+
+      console.log('Cambio local trackeado:', change)
+      return change.id
+    } catch (error) {
+      console.error('Error trackeando cambio local:', error)
+      return null
+    }
+  }
+
+  // Obtener historial de cambios para una entidad específica
+  getChangeHistory(entityId, collection = null, limit = 50) {
+    try {
+      let filteredChanges = this.changeHistory.changes
+
+      if (entityId) {
+        filteredChanges = filteredChanges.filter(change => change.entityId === entityId)
+      }
+
+      if (collection) {
+        filteredChanges = filteredChanges.filter(change => change.collection === collection)
+      }
+
+      // Ordenar por timestamp descendente (más reciente primero)
+      return filteredChanges
+        .sort((a, b) => b.timestamp - a.timestamp)
+        .slice(0, limit)
+    } catch (error) {
+      console.error('Error obteniendo historial de cambios:', error)
+      return []
+    }
+  }
+
+  // Resolver conflicto con contexto histórico
+  resolveConflictWithContext(localData, remoteData, entityId, collection) {
+    try {
+      const history = this.getChangeHistory(entityId, collection)
+
+      const resolution = {
+        id: `resolution_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        entityId,
+        collection,
+        localData: JSON.parse(JSON.stringify(localData)),
+        remoteData: JSON.parse(JSON.stringify(remoteData)),
+        history: history.slice(0, 10), // Últimos 10 cambios para contexto
+        timestamp: Date.now(),
+        userId: this.getCurrentUserId(),
+        resolution: null, // Se completará con la resolución final
+        strategy: 'auto' // 'auto', 'manual', 'latest_wins', 'merge'
+      }
+
+      // Estrategia automática de resolución basada en historial
+      const resolvedData = this.autoResolveWithHistory(localData, remoteData, history)
+
+      if (resolvedData) {
+        resolution.resolution = resolvedData
+        resolution.strategy = 'auto'
+      } else {
+        // Si no se puede resolver automáticamente, usar datos más recientes
+        const localTimestamp = localData.updated || localData.created || 0
+        const remoteTimestamp = remoteData.updated || remoteData.created || 0
+
+        resolution.resolution = localTimestamp > remoteTimestamp ? localData : remoteData
+        resolution.strategy = 'latest_wins'
+      }
+
+      // Guardar resolución en historial
+      this.changeHistory.conflictResolutions.push(resolution)
+      this.saveChangeHistory()
+
+      console.log('Conflicto resuelto con contexto:', resolution)
+      return resolution.resolution
+    } catch (error) {
+      console.error('Error resolviendo conflicto con contexto:', error)
+      // Fallback: devolver datos remotos
+      return remoteData
+    }
+  }
+
+  // Auto-resolución inteligente basada en historial
+  autoResolveWithHistory(localData, remoteData, history) {
+    try {
+      // Si no hay historial, no se puede auto-resolver
+      if (!history || history.length === 0) {
+        return null
+      }
+
+      // Crear objeto merged iniciando con datos remotos
+      const merged = JSON.parse(JSON.stringify(remoteData))
+
+      // Aplicar cambios locales recientes que no están en los datos remotos
+      const recentLocalChanges = history
+        .filter(change => change.operation === 'update')
+        .slice(0, 5) // Últimos 5 cambios
+
+      recentLocalChanges.forEach(change => {
+        if (change.newData) {
+          // Aplicar campos que fueron cambiados localmente
+          Object.keys(change.newData).forEach(field => {
+            if (change.oldData && change.oldData[field] !== change.newData[field]) {
+              // Este campo fue cambiado localmente, preservar si no conflicta gravemente
+              if (!this.isFieldCriticalConflict(field, change.newData[field], remoteData[field])) {
+                merged[field] = change.newData[field]
+              }
+            }
+          })
+        }
+      })
+
+      return merged
+    } catch (error) {
+      console.error('Error en auto-resolución:', error)
+      return null
+    }
+  }
+
+  // Verificar si un campo tiene conflicto crítico
+  isFieldCriticalConflict(field, localValue, remoteValue) {
+    // Campos críticos que no deberían ser sobrescritos automáticamente
+    const criticalFields = ['id', 'created', 'collectionId', 'collectionName']
+
+    if (criticalFields.includes(field)) {
+      return true
+    }
+
+    // Si los valores son muy diferentes, considerar conflicto crítico
+    if (typeof localValue !== typeof remoteValue) {
+      return true
+    }
+
+    return false
+  }
+
+  // Guardar historial de cambios en localStorage
+  saveChangeHistory() {
+    try {
+      localStorage.setItem('syncQueue_changeHistory', JSON.stringify(this.changeHistory))
+    } catch (error) {
+      console.error('Error guardando historial de cambios:', error)
+    }
+  }
+
+  // Cargar historial de cambios desde localStorage
+  loadChangeHistory() {
+    try {
+      const saved = localStorage.getItem('syncQueue_changeHistory')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        this.changeHistory = {
+          ...this.changeHistory,
+          ...parsed
+        }
+      }
+    } catch (error) {
+      console.error('Error cargando historial de cambios:', error)
+    }
+  }
+
+  // Obtener ID del usuario actual
+  getCurrentUserId() {
+    try {
+      // Intentar obtener desde AuthStore
+      const authStore = useAuthStore()
+      return authStore?.user?.id || 'anonymous'
+    } catch (error) {
+      return 'anonymous'
+    }
+  }
+
+  // Limpiar historial antiguo
+  cleanupOldHistory(maxAgeMs = 30 * 24 * 60 * 60 * 1000) { // 30 días por defecto
+    try {
+      const cutoffTime = Date.now() - maxAgeMs
+
+      this.changeHistory.changes = this.changeHistory.changes.filter(
+        change => change.timestamp > cutoffTime
+      )
+
+      this.changeHistory.conflictResolutions = this.changeHistory.conflictResolutions.filter(
+        resolution => resolution.timestamp > cutoffTime
+      )
+
+      this.saveChangeHistory()
+    } catch (error) {
+      console.error('Error limpiando historial:', error)
+    }
+  }
+
+  // FASE 2: Método para filtrar operaciones por prioridad de sincronización selectiva
+  filterOperationsByPriority(operations, syncStore) {
+    if (!syncStore || !syncStore.selectiveSyncConfig.enabled) {
+      return operations // Si no está habilitada la sincronización selectiva, devolver todas
+    }
+
+    const priorityOrder = { high: 1, medium: 2, low: 3 }
+
+    return operations
+      .filter(op => {
+        // Filtrar operaciones habilitadas
+        return syncStore.isCollectionSyncEnabled(op.collection)
+      })
+      .sort((a, b) => {
+        // Ordenar por prioridad
+        const priorityA = priorityOrder[syncStore.getCollectionPriority(a.collection)] || 2
+        const priorityB = priorityOrder[syncStore.getCollectionPriority(b.collection)] || 2
+
+        if (priorityA !== priorityB) {
+          return priorityA - priorityB // Prioridad primero
+        }
+
+        // Si tienen la misma prioridad, ordenar por timestamp
+        return a.createdAt - b.createdAt
+      })
+  }
+
+  // FASE 2: Método para obtener operaciones inmediatas vs diferidas
+  separateOperationsByUrgency(operations, syncStore) {
+    if (!syncStore || !syncStore.selectiveSyncConfig.enabled) {
+      return { immediate: operations, deferred: [] }
+    }
+
+    const immediate = []
+    const deferred = []
+
+    operations.forEach(op => {
+      if (syncStore.shouldSyncImmediately(op.collection)) {
+        immediate.push(op)
+      } else {
+        deferred.push(op)
+      }
+    })
+
+    return { immediate, deferred }
   }
 }

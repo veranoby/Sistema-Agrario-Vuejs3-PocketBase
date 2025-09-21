@@ -61,8 +61,8 @@
             v-for="(grupo, nombreSiembra) in groupedProgramaciones.siembras"
             :key="'siembra-' + nombreSiembra"
           >
-            <v-card-title class="font-bold text-sm text-white p-2 pb-1 bg-green">
-              <v-chip color="#001f2f94" size="small" variant="flat" class="mr-2">
+            <v-card-title class="font-bold text-sm text-white p-2 pb-1">
+              <v-chip color="light-green" size="small" variant="flat" class="mr-2">
                 <v-icon class="mr-2 text-white">mdi-sprout</v-icon>
                 <span
                   ><router-link

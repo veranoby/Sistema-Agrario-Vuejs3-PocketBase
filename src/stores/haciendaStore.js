@@ -22,7 +22,7 @@ export const useHaciendaStore = defineStore('hacienda', {
 
   persist: {
     key: 'hacienda',
-    storage: sessionStorage,
+    storage: localStorage,
     paths: ['mi_hacienda', 'haciendaUsers']
   },
 

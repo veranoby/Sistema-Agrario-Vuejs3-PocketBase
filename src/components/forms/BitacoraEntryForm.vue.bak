@@ -294,19 +294,15 @@ async function loadActividadDetails(actividadId) {
   }
 
   try {
+    // Fetch full actividad details including its 'metricas' definition and expanded 'tipo_actividades' (for formato_reporte)
     const actividad = await actividadesStore.fetchActividadById(actividadId, { expand: 'tipo_actividades' });
-    
-    if (!actividad) {
-      throw new Error(`No se encontró la actividad con ID: ${actividadId}`);
-    }
-    if (!actividad.expand?.tipo_actividades) {
-      console.warn(`[BitacoraEntryForm] La actividad ${actividadId} no tiene 'tipo_actividades' expandido. La generación de métricas y observaciones puede fallar.`);
-    }
-
     selectedActividadDetalles.value = actividad;
 
+    // Initialize metric values based on actividad.metricas (user customized values)
     initializeMetricasValues();
 
+    // If not prefilling from a programacion, then populate observations from activity details.
+    // If prefilling from programacion, observations are set from pendingData.observacionesPreload.
     if (!isPrefillingMetrics.value) {
       await populateObservationsFromActivityDetails(selectedActividadDetalles.value);
     }
@@ -316,17 +312,18 @@ async function loadActividadDetails(actividadId) {
     selectedActividadDetalles.value = null;
     formData.metricas_values = {};
     formData.notas = '';
-    snackbarStore.showSnackbar(`No se pudieron cargar los detalles de la actividad.`, 'error');
   }
 }
 
 // Populates formData.notas with unmapped metrics
 async function populateObservationsFromActivityDetails(activityDetails) {
   if (!activityDetails) {
+    formData.notas = '';
     return;
   }
   let observacionesContent = '';
   try {
+    // Ensure tipo_actividades is available, might need to await if not always expanded
     const tipoActividad = activityDetails.expand?.tipo_actividades;
     if (tipoActividad && tipoActividad.formato_reporte && tipoActividad.formato_reporte.columnas) {
       const mappedMetricaKeys = new Set();
@@ -342,6 +339,7 @@ async function populateObservationsFromActivityDetails(activityDetails) {
           if (Object.prototype.hasOwnProperty.call(activityDetails.metricas, metricaKey) && !mappedMetricaKeys.has(metricaKey)) {
             const metrica = activityDetails.metricas[metricaKey];
             const desc = metrica.descripcion || metricaKey.replace(/_/g, ' ');
+            // Use the actual 'valor' for observations, not 'defaultValue'
             const val = metrica.valor !== undefined && metrica.valor !== null ? metrica.valor : null;
             if (val !== null && val !== '') {
               const unit = metrica.unidad || '';
@@ -353,56 +351,42 @@ async function populateObservationsFromActivityDetails(activityDetails) {
       observacionesContent = unmappedMetricasContent.join('\n');
     }
   } catch (error) {
-    console.error('[BitacoraEntryForm] Error generating automatic observations from activity details:', error);
+    console.error('[BitacoraEntryForm] Error generating observacionesContent from activity details:', error);
   }
-
-  if (observacionesContent) {
-    const existingNotes = formData.notas ? formData.notas.trim() : '';
-    formData.notas = [existingNotes, observacionesContent].filter(Boolean).join('\n\n');
-  }
+  formData.notas = observacionesContent;
 }
 
 
 function initializeMetricasValues() {
   const newMetricasValues = {};
+
   try {
-    if (!selectedActividadDetalles.value?.metricas || typeof selectedActividadDetalles.value.metricas !== 'object') {
-      formData.metricas_values = {};
-      return;
-    }
+    if (selectedActividadDetalles.value?.metricas && typeof selectedActividadDetalles.value.metricas === 'object') {
+      for (const key in selectedActividadDetalles.value.metricas) {
+        if (Object.prototype.hasOwnProperty.call(selectedActividadDetalles.value.metricas, key)) {
+          const metricaDef = selectedActividadDetalles.value.metricas[key];
 
-    const actividadMetricas = JSON.parse(JSON.stringify(selectedActividadDetalles.value.metricas));
+          // Gracefully handle null/undefined metricaDef
+          if (!metricaDef || typeof metricaDef !== 'object') {
+            console.warn(`[BitacoraEntryForm] Invalid metric definition for key: ${key}`);
+            continue;
+          }
 
-    // Objective 1 Critical Requirement: Handle mapping inconsistencies
-    if (actividadMetricas.producto_fertilizante && actividadMetricas.producto_fertilizante.valor) {
-      if (actividadMetricas.producto_fertilizante_1 && (actividadMetricas.producto_fertilizante_1.valor === null || actividadMetricas.producto_fertilizante_1.valor === undefined || actividadMetricas.producto_fertilizante_1.valor === '')) {
-        console.log('[BitacoraEntryForm] Applying metric mapping: producto_fertilizante -> producto_fertilizante_1');
-        actividadMetricas.producto_fertilizante_1.valor = actividadMetricas.producto_fertilizante.valor;
-      }
-    }
-
-    for (const key in actividadMetricas) {
-      if (Object.prototype.hasOwnProperty.call(actividadMetricas, key)) {
-        const metricaDef = actividadMetricas[key];
-
-        if (!metricaDef || typeof metricaDef !== 'object') {
-          console.warn(`[BitacoraEntryForm] Invalid metric definition for key: ${key}. Skipping.`);
-          continue;
-        }
-
-        const valorCustomizado = metricaDef.valor;
-
-        if (valorCustomizado !== undefined && valorCustomizado !== null) {
-          newMetricasValues[key] = valorCustomizado;
-        } else {
-          const tipoActividades = selectedActividadDetalles.value.expand?.tipo_actividades;
-          const tipoMetricaDef = tipoActividades?.metricas?.metricas?.[key];
-
-          if (tipoMetricaDef?.defaultValue !== undefined) {
-            newMetricasValues[key] = tipoMetricaDef.defaultValue;
-            console.log(`[BitacoraEntryForm] Metric '${key}' using fallback default value.`);
+          // Use actividad.metricas[key].valor (user customized values) instead of defaultValue
+          const valorCustomizado = metricaDef.valor;
+          if (valorCustomizado !== undefined && valorCustomizado !== null) {
+            newMetricasValues[key] = valorCustomizado;
           } else {
-            newMetricasValues[key] = metricaDef.tipo === 'boolean' ? false : null;
+            // Fallback to tipo_actividades defaults when actividad values are missing
+            const tipoActividades = selectedActividadDetalles.value.expand?.tipo_actividades;
+            const tipoMetricaDef = tipoActividades?.metricas?.metricas?.[key];
+
+            if (tipoMetricaDef?.defaultValue !== undefined) {
+              newMetricasValues[key] = tipoMetricaDef.defaultValue;
+            } else {
+              // Final fallback based on field type
+              newMetricasValues[key] = metricaDef.tipo === 'boolean' ? false : null;
+            }
           }
         }
       }
@@ -411,6 +395,7 @@ function initializeMetricasValues() {
     console.error('[BitacoraEntryForm] Error initializing metric values:', error);
     snackbarStore.showSnackbar('Error inicializando métricas de la actividad', 'warning');
   }
+
   formData.metricas_values = newMetricasValues;
 }
 

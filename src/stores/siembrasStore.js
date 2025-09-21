@@ -17,7 +17,7 @@ export const useSiembrasStore = defineStore('siembras', {
 
   persist: {
     key: 'siembras',
-    storage: sessionStorage,
+    storage: localStorage,
     paths: ['siembras']
   },
 

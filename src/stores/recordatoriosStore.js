@@ -59,7 +59,7 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
 
   persist: {
     key: 'recordatorios',
-    storage: sessionStorage,
+    storage: localStorage,
     paths: ['recordatorios']
   },
 

@@ -237,9 +237,8 @@ const commonErrorTypes = computed(() => {
 // Actualizar métricas
 const updateMetrics = async () => {
   try {
-    // En una implementación real, esto obtendría las métricas del syncStore
-    // const newMetrics = await syncStore.getPerformanceMetrics()
-    // metrics.value = newMetrics
+    const newMetrics = syncStore.getPerformanceMetrics()
+    metrics.value = newMetrics
   } catch (error) {
     console.error('Error actualizando métricas:', error)
   }
