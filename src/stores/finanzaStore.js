@@ -62,6 +62,35 @@ export const useFinanzaStore = defineStore('finanzas', {
 
     mesActual: (state) => {
       return format(state.currentMonth, 'MMMM yyyy')
+    },
+
+    totalesPorUsuario: (state) => {
+      const totales = {}
+      state.registrosPorMes.forEach((registro) => {
+        const userId = registro.pagado_por
+        const userName = registro.expand?.pagado_por?.name || 'Usuario sin nombre'
+
+        if (!totales[userId]) {
+          totales[userId] = {
+            nombre: userName,
+            total: 0,
+            registros: 0
+          }
+        }
+
+        totales[userId].total += registro.monto || 0
+        totales[userId].registros += 1
+      })
+
+      // Convertir a array y ordenar por total descendente
+      return Object.entries(totales)
+        .map(([userId, data]) => ({
+          userId,
+          nombre: data.nombre,
+          total: data.total,
+          registros: data.registros
+        }))
+        .sort((a, b) => b.total - a.total)
     }
   },
 
@@ -510,12 +539,38 @@ export const useFinanzaStore = defineStore('finanzas', {
           totalsPorCategoria[categoria] = (totalsPorCategoria[categoria] || 0) + (reg.monto || 0)
         })
 
+        // Agrupar montos por usuario
+        const totalsPorUsuario = {}
+        registrosDelMes.forEach((reg) => {
+          const userId = reg.pagado_por
+          const pagadoPorUser = haciendaStore.haciendaUsers.find((u) => u.id === userId)
+          const nombrePagadoPor = pagadoPorUser
+            ? `${pagadoPorUser.name || ''} ${pagadoPorUser.lastname || ''}`.trim()
+            : reg.expand?.pagado_por?.name || 'Usuario sin nombre'
+
+          if (!totalsPorUsuario[nombrePagadoPor]) {
+            totalsPorUsuario[nombrePagadoPor] = 0
+          }
+          totalsPorUsuario[nombrePagadoPor] += reg.monto || 0
+        })
+
         // Convertir los totales a un formato para Excel
         const totalesData = [[''], ['TOTALES POR CATEGORÍA'], ['']]
 
         Object.entries(totalsPorCategoria).forEach(([categoria, monto]) => {
-          totalesData.push([categoria, '', '', '', '', monto])
+          totalesData.push([categoria, '', '', '', '', '', monto])
         })
+
+        // Agregar sección de totales por usuario
+        totalesData.push([''])
+        totalesData.push(['TOTALES POR USUARIO'])
+        totalesData.push([''])
+
+        Object.entries(totalsPorUsuario)
+          .sort(([,a], [,b]) => b - a) // Ordenar por monto descendente
+          .forEach(([usuario, monto]) => {
+            totalesData.push([usuario, '', '', '', '', '', monto])
+          })
 
         totalesData.push([''])
         totalesData.push([

@@ -93,7 +93,22 @@
               <v-col cols="12" sm="6" md="3" class="d-flex align-center justify-center">
                 <div class="text-center">
                   <div class="text-subtitle-2">Total del mes</div>
-                  <div class="text-h5">{{ formatCurrency(finanzaStore.totalMes) }}</div>
+                  <div class="text-h5 mb-2">{{ formatCurrency(finanzaStore.totalMes) }}</div>
+
+                  <!-- Totales por usuario -->
+                  <div class="d-flex flex-wrap gap-1 justify-center" v-if="finanzaStore.totalesPorUsuario.length > 0">
+                    <v-chip
+                      v-for="usuario in finanzaStore.totalesPorUsuario"
+                      :key="usuario.userId"
+                      size="x-small"
+                      variant="tonal"
+                      color="primary"
+                      class="ma-1"
+                    >
+                      <v-icon start size="x-small">mdi-account</v-icon>
+                      {{ usuario.nombre }}: {{ formatCurrency(usuario.total) }}
+                    </v-chip>
+                  </div>
                 </div>
               </v-col>
 
