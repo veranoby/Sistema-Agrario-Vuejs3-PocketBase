@@ -27,6 +27,7 @@ import '@fontsource/plus-jakarta-sans/600.css'
 import '@fontsource/plus-jakarta-sans/700.css'
 import '@fontsource/plus-jakarta-sans/800.css'
 import { useVuelidate } from '@vuelidate/core'
+import i18n from './i18n'; // Import the I18n instance
 
 import { QuillEditor } from '@vueup/vue-quill'
 import '@vueup/vue-quill/dist/vue-quill.snow.css'
@@ -95,6 +96,7 @@ pinia.use(piniaPersist)
 app.use(pinia)
 app.use(router)
 app.use(vuetify)
+app.use(i18n)
 app.use(useVuelidate)
 app.component('QuillEditor', QuillEditor)
 

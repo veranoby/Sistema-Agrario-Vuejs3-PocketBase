@@ -3,14 +3,14 @@
     <header class="bg-background shadow-sm">
       <div class="profile-container">
         <h3 class="profile-title">
-          Bienvenido de nuevo, {{ fullName }}!
+          {{ t('dashboard.welcome_back', { fullName: fullName }) }}
           <v-chip variant="flat" size="x-small" color="grey-lighten-2" class="mx-1" pill>
             <v-avatar start> <v-img :src="avatarUrl" alt="Avatar"></v-img> </v-avatar>
             {{ userRole }}
           </v-chip>
           <v-chip variant="flat" size="x-small" color="green-lighten-3" class="mx-1" pill>
             <v-avatar start> <v-img :src="avatarHaciendaUrl" alt="Avatar"></v-img> </v-avatar>
-            HACIENDA: {{ mi_hacienda.name }}
+            {{ t('dashboard.hacienda') }}: {{ mi_hacienda.name }}
           </v-chip>
         </h3>
         <div class="avatar-container">
@@ -19,7 +19,6 @@
       </div>
     </header>
 
-    <!-- P3.1: Panel de métricas de performance (solo en modo desarrollo) -->
     <div v-if="loadingMetrics && isDevelopment" class="bg-green-50 border-l-4 border-green-400 p-2 m-4">
       <div class="text-sm text-green-700">
         <strong>P3.1:</strong> {{ loadingMetrics.duration }}ms | {{ loadingMetrics.recordsLoaded }} registros | {{ loadingMetrics.recordsPerSecond }} rec/s
@@ -39,10 +38,9 @@
           @click="recordatoriosStore.abrirNuevoRecordatorio"
           class="min-w-[210px] mt-0 m-1 mb-4"
         >
-          Nuevo recordatorio
+          {{ t('dashboard.new_reminder') }}
         </v-btn>
 
-        <!-- Panel de editar recordatorios -->
         <RecordatorioForm
           :model-value="recordatoriosStore.dialog"
           @update:modelValue="recordatoriosStore.dialog = $event"
@@ -51,10 +49,9 @@
           @submit="handleFormSubmit"
         />
 
-        <!-- Panel de Pendientes -->
         <StatusPanel
           v-if="recordatoriosStore.recordatoriosPendientes().length > 0"
-          title="Pendientes"
+          :title="t('dashboard.pending')"
           color="red"
           :items="recordatoriosStore.recordatoriosPendientes()"
           @update-status="recordatoriosStore.actualizarEstado"
@@ -62,10 +59,9 @@
           @delete="recordatoriosStore.eliminarRecordatorio"
         />
         <br />
-        <!-- Panel En Progreso -->
         <StatusPanel
           v-if="recordatoriosStore.recordatoriosEnProgreso().length > 0"
-          title="En Progreso"
+          :title="t('dashboard.in_progress')"
           color="amber"
           :items="recordatoriosStore.recordatoriosEnProgreso()"
           @update-status="recordatoriosStore.actualizarEstado"
@@ -77,7 +73,7 @@
       <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
         <div class="flex flex-col space-y-1.5 p-6">
           <h3 class="whitespace-nowrap text-2xl font-semibold leading-none tracking-tight">
-            Last Activities
+            {{ t('dashboard.last_activities') }}
           </h3>
         </div>
         <div class="p-6">
@@ -104,9 +100,9 @@
               <div class="grid gap-1">
                 <div class="flex items-center gap-2">
                   <div class="font-medium">John Doe</div>
-                  <div class="text-xs text-muted-foreground">Edited a post</div>
+                  <div class="text-xs text-muted-foreground">{{ t('dashboard.edited_a_post') }}</div>
                 </div>
-                <p class="text-sm">Updated the team's project roadmap.</p>
+                <p class="text-sm">{{ t('dashboard.updated_roadmap') }}</p>
               </div>
             </div>
             <div class="flex items-start gap-4">
@@ -131,9 +127,9 @@
               <div class="grid gap-1">
                 <div class="flex items-center gap-2">
                   <div class="font-medium">Jane Smith</div>
-                  <div class="text-xs text-muted-foreground">Uploaded a file</div>
+                  <div class="text-xs text-muted-foreground">{{ t('dashboard.uploaded_a_file') }}</div>
                 </div>
-                <p class="text-sm">Shared the latest design mockups.</p>
+                <p class="text-sm">{{ t('dashboard.shared_mockups') }}</p>
               </div>
             </div>
             <div class="flex items-start gap-4">
@@ -159,9 +155,9 @@
               <div class="grid gap-1">
                 <div class="flex items-center gap-2">
                   <div class="font-medium">Sarah Lee</div>
-                  <div class="text-xs text-muted-foreground">Created an event</div>
+                  <div class="text-xs text-muted-foreground">{{ t('dashboard.created_an_event') }}</div>
                 </div>
-                <p class="text-sm">Scheduled a team meeting for next week.</p>
+                <p class="text-sm">{{ t('dashboard.scheduled_meeting') }}</p>
               </div>
             </div>
           </div>
@@ -173,6 +169,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useProfileStore } from '@/stores/profileStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
@@ -187,7 +184,7 @@ import { useSyncStore } from '@/stores/syncStore'
 import StatusPanel from '@/components/RecordatoriosStatusPanel.vue'
 import RecordatorioForm from '@/components/forms/RecordatorioForm.vue'
 
-// Stores
+const { t } = useI18n()
 const profileStore = useProfileStore()
 const haciendaStore = useHaciendaStore()
 const recordatoriosStore = useRecordatoriosStore()
@@ -197,29 +194,20 @@ const zonasStore = useZonasStore()
 const snackbarStore = useSnackbarStore()
 const syncStore = useSyncStore()
 
-// P3.1: Variable para medir performance
 const loadingMetrics = ref(null)
 const isDevelopment = computed(() => import.meta.env.DEV)
 
-// Cargar datos iniciales con P3.1 optimización
 onMounted(async () => {
-  console.log('Dashboard: Iniciando carga de datos...')
   const startTime = performance.now()
-
   try {
-    // P3.1: Usar optimización con parallel requests
     const optimizedResult = await syncStore.loadDashboardWithParallelRequests()
-
     if (optimizedResult.success) {
       loadingMetrics.value = {
         method: 'parallel_requests_optimized',
         ...optimizedResult.metrics
       }
-
-      // Aplicar datos a stores
       await syncStore.applyBatchDataToStores(optimizedResult)
     } else {
-      // Fallback al método tradicional
       await loadWithTraditionalMethod()
       const endTime = performance.now()
       loadingMetrics.value = {
@@ -227,28 +215,11 @@ onMounted(async () => {
         duration: Math.round(endTime - startTime)
       }
     }
-
-    const totalTime = performance.now() - startTime
-    console.log('Dashboard: Carga completada en', Math.round(totalTime), 'ms')
-
   } catch (error) {
-    console.error('Dashboard: Error cargando datos:', error)
-    handleError(error, 'Error cargando Dashboard')
-
-    // Intentar fallback si no es método tradicional
-    if (useBatchProcessing.value) {
-      console.log('Dashboard: Intentando fallback al método tradicional...')
-      try {
-        await loadWithTraditionalMethod()
-        loadingMetrics.value = { method: 'error_fallback' }
-      } catch (fallbackError) {
-        console.error('Dashboard: Error en fallback:', fallbackError)
-      }
-    }
+    handleError(error, t('dashboard.error_loading_dashboard'))
   }
 })
 
-// Método tradicional como fallback
 async function loadWithTraditionalMethod() {
   await Promise.all([
     haciendaStore.init(),
@@ -259,11 +230,8 @@ async function loadWithTraditionalMethod() {
   ])
 }
 
-// Destructurar stores reactivos
 const { fullName, userRole, avatarUrl } = storeToRefs(profileStore)
 const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
-
-// Métodos
 
 async function handleFormSubmit(data) {
   try {
@@ -274,9 +242,9 @@ async function handleFormSubmit(data) {
       await recordatoriosStore.crearRecordatorio(data)
     }
     recordatoriosStore.dialog = false
-    snackbarStore.showSnackbar('Recordatorio guardado')
+    snackbarStore.showSnackbar(t('dashboard.reminder_saved'))
   } catch (error) {
-    handleError(error, 'Error al guardar recordatorio')
+    handleError(error, t('dashboard.error_saving_reminder'))
   }
 }
 </script>

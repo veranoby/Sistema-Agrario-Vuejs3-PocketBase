@@ -4,10 +4,9 @@
       <header class="col-span-4 bg-background shadow-sm p-0">
         <div class="profile-container mt-0 ml-0">
           <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <!-- Title and Chips Section -->
             <div class="w-full sm:flex-grow">
               <h3 class="profile-title text-sm sm:text-lg mb-2 sm:mb-0">
-                Gestión Financiera
+                {{ t('finance.financial_management') }}
                 <v-chip variant="flat" size="x-small" color="grey-lighten-2" class="mx-1" pill>
                   <v-avatar start>
                     <v-img :src="avatarUrl" alt="Avatar"></v-img>
@@ -23,7 +22,6 @@
               </h3>
             </div>
 
-            <!-- Button Section -->
             <div class="w-full sm:w-auto z-10">
               <v-btn
                 block
@@ -36,7 +34,7 @@
                 @click="openNuevoItem"
                 class="min-w-[210px]"
               >
-                Nuevo Registro
+                {{ t('finance.new_record') }}
               </v-btn>
             </div>
           </div>
@@ -50,11 +48,9 @@
 
     <main class="flex-1 py-2">
       <v-container>
-        <!-- Panel de control mejorado -->
         <v-card class="mb-4">
           <v-card-text>
             <v-row align="center">
-              <!-- Navegación de meses mejorada -->
               <v-col cols="12" sm="7" md="5" class="d-flex align-center">
                 <v-btn icon variant="text" @click="finanzaStore.changeMonth('prev')">
                   <v-icon>mdi-chevron-left-circle</v-icon>
@@ -64,7 +60,7 @@
                   <v-select
                     v-model="selectedMonth"
                     :items="months"
-                    label="Mes"
+                    :label="t('finance.month')"
                     density="compact"
                     variant="outlined"
                     hide-details
@@ -75,7 +71,7 @@
                   <v-select
                     v-model="selectedYear"
                     :items="years"
-                    label="Año"
+                    :label="t('finance.year')"
                     density="compact"
                     variant="outlined"
                     hide-details
@@ -89,13 +85,11 @@
                 </v-btn>
               </v-col>
 
-              <!-- Totales -->
               <v-col cols="12" sm="6" md="3" class="d-flex align-center justify-center">
                 <div class="text-center">
-                  <div class="text-subtitle-2">Total del mes</div>
+                  <div class="text-subtitle-2">{{ t('finance.total_of_the_month') }}</div>
                   <div class="text-h5 mb-2">{{ formatCurrency(finanzaStore.totalMes) }}</div>
 
-                  <!-- Totales por usuario -->
                   <div class="d-flex flex-wrap gap-1 justify-center" v-if="finanzaStore.totalesPorUsuario.length > 0">
                     <v-chip
                       v-for="usuario in finanzaStore.totalesPorUsuario"
@@ -112,7 +106,6 @@
                 </div>
               </v-col>
 
-              <!-- Botones de acción -->
               <v-col cols="12" md="4" class="d-flex gap-2 justify-end">
                 <v-btn
                   variant="tonal"
@@ -121,7 +114,7 @@
                   @click="finanzaStore.exportToExcel"
                   size="small"
                 >
-                  Exportar
+                  {{ t('finance.export') }}
                 </v-btn>
                 <v-btn
                   variant="tonal"
@@ -130,21 +123,20 @@
                   @click="importExcel"
                   size="small"
                 >
-                  Importar
+                  {{ t('finance.import') }}
                 </v-btn>
               </v-col>
             </v-row>
           </v-card-text>
         </v-card>
 
-        <!-- Filtros mejorados -->
         <v-card class="mb-4">
           <v-card-text>
             <v-row>
               <v-col cols="12" sm="6">
                 <v-text-field
                   v-model="filters.razonSocial"
-                  label="Filtrar por Razón Social"
+                  :label="t('finance.filter_by_business_name')"
                   density="compact"
                   compact
                   variant="outlined"
@@ -170,7 +162,7 @@
                     'MOVILIZACION',
                     'MATERIALES'
                   ]"
-                  label="Filtrar por Categoría"
+                  :label="t('finance.filter_by_category')"
                   density="compact"
                   compact
                   variant="outlined"
@@ -186,7 +178,7 @@
                 <v-select
                   v-model="filters.pagadoPor"
                   :items="usuariosItems"
-                  label="Filtrar por Pagado Por"
+                  :label="t('finance.filter_by_paid_by')"
                   density="compact"
                   compact
                   variant="outlined"
@@ -199,12 +191,11 @@
                 ></v-select>
               </v-col>
             </v-row>
-            <!-- Nueva fila para filtros adicionales -->
             <v-row class="mt-2">
               <v-col cols="12" sm="6">
                 <v-text-field
                   v-model="filters.detalle"
-                  label="Filtrar por Detalle"
+                  :label="t('finance.filter_by_detail')"
                   density="compact"
                   compact
                   variant="outlined"
@@ -219,7 +210,7 @@
               <v-col cols="12" sm="6">
                 <v-text-field
                   v-model="filters.comentarios"
-                  label="Filtrar por Comentarios"
+                  :label="t('finance.filter_by_comments')"
                   density="compact"
                   compact
                   variant="outlined"
@@ -235,7 +226,6 @@
           </v-card-text>
         </v-card>
 
-        <!-- Tabla de registros financieros mejorada -->
         <v-card>
           <v-data-table
             v-model:items-per-page="itemsPerPage"
@@ -245,40 +235,30 @@
             item-value="id"
             class="elevation-0"
           >
-            <!-- Formato de fecha -->
             <template v-slot:item.fecha="{ item }">
               {{ formatDate(item.fecha) }}
             </template>
-
-            <!-- Formato de monto -->
             <template v-slot:item.monto="{ item }">
               {{ formatCurrency(item.monto) }}
             </template>
-
-            <!-- Categoría con chip -->
             <template v-slot:item.costo="{ item }">
               <v-chip size="small" :color="getCategoryColor(item.costo)" label>
                 {{ item.costo }}
               </v-chip>
             </template>
-
-            <!-- Registrado por / Pagado por -->
             <template v-slot:item.registro_por="{ item }">
               {{ getUsuarioNombre(item.registro_por) }}
             </template>
-
             <template v-slot:item.pagado_por="{ item }">
               {{ getUsuarioNombre(item.pagado_por) }}
             </template>
-
-            <!-- Acciones por item -->
             <template v-slot:item.actions="{ item }">
               <div class="d-flex gap-2">
                 <v-tooltip
                   :text="
                     item.registro_por === authStore.user.id || userRole === 'administrador'
-                      ? 'Editar'
-                      : 'Solo el creador o administrador puede editar'
+                      ? t('finance.edit')
+                      : t('finance.edit_error')
                   "
                 >
                   <template v-slot:activator="{ props }">
@@ -305,7 +285,7 @@
                     </v-btn>
                   </template>
                 </v-tooltip>
-                <v-tooltip text="Duplicar">
+                <v-tooltip :text="t('finance.duplicate')">
                   <template v-slot:activator="{ props }">
                     <v-btn
                       icon
@@ -322,8 +302,8 @@
                 <v-tooltip
                   :text="
                     item.registro_por === authStore.user.id || userRole === 'administrador'
-                      ? 'Eliminar'
-                      : 'Solo el creador o administrador puede eliminar'
+                      ? t('finance.delete')
+                      : t('finance.delete_error')
                   "
                 >
                   <template v-slot:activator="{ props }">
@@ -352,16 +332,12 @@
                 </v-tooltip>
               </div>
             </template>
-
-            <!-- Mensaje cuando no hay datos -->
             <template v-slot:no-data>
               <div class="d-flex flex-column align-center pa-4">
                 <v-icon size="large" color="grey-lighten-1">mdi-database-off</v-icon>
-                <span class="text-grey-lighten-1 mt-2"
-                  >No hay registros financieros para este mes</span
-                >
+                <span class="text-grey-lighten-1 mt-2">{{ t('finance.no_records') }}</span>
                 <v-btn class="mt-4" variant="tonal" color="primary" @click="openNuevoItem">
-                  Agregar registro
+                  {{ t('finance.add_record') }}
                 </v-btn>
               </div>
             </template>
@@ -370,7 +346,6 @@
       </v-container>
     </main>
 
-    <!-- Usar el componente FinanzasForm -->
     <FinanzasForm
       v-model="showForm"
       :itemEditando="itemEditando"
@@ -378,31 +353,27 @@
       @guardado="handleGuardado"
     />
 
-    <!-- Diálogo de confirmación para eliminar -->
     <v-dialog v-model="confirmDeleteDialog" max-width="400">
       <v-card>
-        <v-card-title class="text-h5">Confirmar eliminación</v-card-title>
+        <v-card-title class="text-h5">{{ t('finance.confirm_delete') }}</v-card-title>
         <v-card-text>
-          ¿Está seguro que desea eliminar este registro financiero? Esta acción no se puede
-          deshacer.
+          {{ t('finance.confirm_delete_text') }}
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="primary" variant="text" @click="confirmDeleteDialog = false"
-            >Cancelar</v-btn
-          >
-          <v-btn color="error" variant="text" @click="eliminarRegistro">Eliminar</v-btn>
+          <v-btn color="primary" variant="text" @click="confirmDeleteDialog = false">{{ t('finance.cancel') }}</v-btn>
+          <v-btn color="error" variant="text" @click="eliminarRegistro">{{ t('finance.delete') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
-    <!-- En el template, agrega el componente: -->
     <FinanzasImportExcel ref="importExcelDialog" />
   </v-container>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSyncStore } from '@/stores/syncStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import { useProfileStore } from '@/stores/profileStore'
@@ -410,10 +381,10 @@ import { useFinanzaStore } from '@/stores/finanzaStore'
 import { useAuthStore } from '@/stores/authStore'
 import { storeToRefs } from 'pinia'
 import { format, parseISO, getMonth, getYear, setMonth, setYear } from 'date-fns'
-import { es } from 'date-fns/locale'
 import FinanzasForm from '@/components/forms/FinanzasForm.vue'
 import FinanzasImportExcel from '@/components/forms/FinanzasImportExcel.vue'
 
+const { t } = useI18n()
 const profileStore = useProfileStore()
 const haciendaStore = useHaciendaStore()
 const finanzaStore = useFinanzaStore()
@@ -429,11 +400,9 @@ const confirmDeleteDialog = ref(false)
 const itemToDelete = ref(null)
 const itemsPerPage = ref(50)
 
-// Selección de mes y año
 const selectedMonth = ref(getMonth(finanzaStore.currentMonth))
 const selectedYear = ref(getYear(finanzaStore.currentMonth))
 
-// Lista de meses y años para los selectores
 const months = [
   { title: 'Enero', value: 0 },
   { title: 'Febrero', value: 1 },
@@ -449,14 +418,12 @@ const months = [
   { title: 'Diciembre', value: 11 }
 ]
 
-// Generar años (desde hace 5 años hasta 5 años adelante)
 const currentYear = new Date().getFullYear()
 const years = Array.from({ length: 11 }, (_, i) => ({
   title: String(currentYear - 5 + i),
   value: currentYear - 5 + i
 }))
 
-// Filtros
 const filters = ref({
   razonSocial: '',
   categoria: '',
@@ -465,16 +432,11 @@ const filters = ref({
   comentarios: ''
 })
 
-// Lista de usuarios para el filtro - Utilizando haciendaUsers del localStorage
 const usuariosItems = computed(() => {
   try {
-    // Obtener usuarios de la hacienda desde el store
     const haciendaUsers = haciendaStore.haciendaUsers
-    console.log('Usuarios de la hacienda cargados en FinanzasConfig:', haciendaUsers)
-
-    // Convertir a formato para v-select
     return [
-      { title: 'Todos', value: '' },
+      { title: t('finance.all'), value: '' },
       ...haciendaUsers.map((user) => ({
         title: `${user.name} ${user.lastname}` || user.username || 'Usuario ' + user.id,
         value: user.id
@@ -482,91 +444,63 @@ const usuariosItems = computed(() => {
     ]
   } catch (error) {
     console.error('Error cargando usuarios de hacienda:', error)
-    return [{ title: 'Todos', value: '' }]
+    return [{ title: t('finance.all'), value: '' }]
   }
 })
 
-// Filtrar registros según los filtros aplicados
 const filteredRegistros = computed(() => {
   return finanzaStore.registros
     .filter((reg) => {
-      // Filtro por mes y año
       const regDate = parseISO(reg.fecha)
       if (getMonth(regDate) !== selectedMonth.value || getYear(regDate) !== selectedYear.value) {
         return false
       }
-
-      // Filtro por razón social
       if (
         filters.value.razonSocial &&
         !reg.razon_social?.toLowerCase().includes(filters.value.razonSocial.toLowerCase())
       ) {
         return false
       }
-
-      // Filtro por categoría
       if (filters.value.categoria && reg.costo !== filters.value.categoria) {
         return false
       }
-
-      // Filtro por pagado por
       if (filters.value.pagadoPor && reg.pagado_por !== filters.value.pagadoPor) {
         return false
       }
-
-      // Filtro por detalle
       if (
         filters.value.detalle &&
         !reg.detalle?.toLowerCase().includes(filters.value.detalle.toLowerCase())
       ) {
         return false
       }
-
-      // Filtro por comentarios
       if (
         filters.value.comentarios &&
         !reg.comentarios?.toLowerCase().includes(filters.value.comentarios.toLowerCase())
       ) {
         return false
       }
-
       return true
     })
     .sort((a, b) => {
-      // Sort by date in ascending order
       return new Date(a.fecha) - new Date(b.fecha)
     })
 })
 
 const syncStore = useSyncStore()
-const form = ref(null)
 
-// Headers mejorados para la tabla - Agregar comentarios
 const headers = [
-  { title: 'Fecha', key: 'fecha', sortable: true, width: '100px' },
-  { title: 'Detalle', key: 'detalle' },
-  { title: 'Razón Social', key: 'razon_social' },
-  { title: 'N° Factura', key: 'factura', width: '120px' },
-  { title: 'Categoría', key: 'costo', align: 'center', width: '150px' },
-  { title: 'Monto', key: 'monto', sortable: true, align: 'end', width: '120px' },
-  { title: 'Comentarios', key: 'comentarios' },
-  { title: 'Registrado por', key: 'registro_por', width: '150px' },
-  { title: 'Pagado por', key: 'pagado_por', width: '150px' },
-  { title: 'Acciones', key: 'actions', sortable: false, align: 'center', width: '100px' }
+  { title: t('finance.date'), key: 'fecha', sortable: true, width: '100px' },
+  { title: t('finance.detail'), key: 'detalle' },
+  { title: t('finance.business_name'), key: 'razon_social' },
+  { title: t('finance.invoice_no'), key: 'factura', width: '120px' },
+  { title: t('finance.category'), key: 'costo', align: 'center', width: '150px' },
+  { title: t('finance.amount'), key: 'monto', sortable: true, align: 'end', width: '120px' },
+  { title: t('finance.comments'), key: 'comentarios' },
+  { title: t('finance.registered_by'), key: 'registro_por', width: '150px' },
+  { title: t('finance.paid_by'), key: 'pagado_por', width: '150px' },
+  { title: t('finance.actions'), key: 'actions', sortable: false, align: 'center', width: '100px' }
 ]
 
-const formData = ref({
-  fecha: format(new Date(), 'yyyy-MM-dd'),
-  detalle: '',
-  razon_social: '',
-  factura: '',
-  costo: '',
-  monto: null,
-  registro_por: '',
-  pagado_por: ''
-})
-
-// Actualizar mes/año cuando cambia currentMonth en el store
 watch(
   () => finanzaStore.currentMonth,
   () => {
@@ -576,19 +510,13 @@ watch(
 )
 
 onMounted(async () => {
-  // Inicializar syncStore
   await syncStore.init()
-
-  // Establecer el mes actual al cargar la página
   finanzaStore.currentMonth = new Date()
   selectedMonth.value = getMonth(finanzaStore.currentMonth)
   selectedYear.value = getYear(finanzaStore.currentMonth)
-
-  // Cargar registros financieros
   await finanzaStore.cargarRegistros()
 })
 
-// Funciones para actualizar mes/año
 function updateMonth() {
   const newDate = setMonth(finanzaStore.currentMonth, selectedMonth.value)
   finanzaStore.currentMonth = newDate
@@ -599,7 +527,6 @@ function updateYear() {
   finanzaStore.currentMonth = newDate
 }
 
-// Asignar colores a las categorías
 function getCategoryColor(categoria) {
   const colors = {
     'SERVICIOS LEGALES': 'blue-lighten-1',
@@ -630,7 +557,8 @@ function formatCurrency(amount) {
   }).format(amount || 0)
 }
 
-// Función para duplicar un item
+const itemDuplicado = ref(null)
+
 function duplicarItem(item) {
   itemEditando.value = null
   itemDuplicado.value = item
@@ -640,47 +568,13 @@ function duplicarItem(item) {
 function openNuevoItem() {
   itemEditando.value = null
   itemDuplicado.value = null
-
-  formData.value = {
-    fecha: format(new Date(), 'yyyy-MM-dd'),
-    detalle: '',
-    razon_social: '',
-    factura: '',
-    costo: '',
-    monto: null,
-    comentarios: '',
-    registro_por: authStore.user.id,
-    pagado_por: ''
-  }
   showForm.value = true
 }
 
 function openEditarItem(item) {
   itemEditando.value = item
-  formData.value = {
-    fecha: item.fecha ? format(parseISO(item.fecha), 'yyyy-MM-dd') : '',
-    detalle: item.detalle || '',
-    razon_social: item.razon_social || '',
-    factura: item.factura || '',
-    costo: item.costo || '',
-    monto: item.monto || 0,
-    registro_por: item.registro_por || authStore.user.id,
-    pagado_por: item.pagado_por || ''
-  }
+  itemDuplicado.value = null
   showForm.value = true
-}
-
-async function guardarRegistro() {
-  try {
-    if (itemEditando.value) {
-      await finanzaStore.updateRegistro(itemEditando.value.id, formData.value)
-    } else {
-      await finanzaStore.crearRegistro(formData.value)
-    }
-    handleGuardado()
-  } catch (error) {
-    console.error('Error al guardar registro:', error)
-  }
 }
 
 function confirmDelete(item) {
@@ -690,7 +584,6 @@ function confirmDelete(item) {
 
 async function eliminarRegistro() {
   if (!itemToDelete.value) return
-
   try {
     await finanzaStore.eliminarRegistro(itemToDelete.value.id)
     confirmDeleteDialog.value = false
@@ -709,22 +602,20 @@ function importExcel() {
 const handleGuardado = () => {
   showForm.value = false
   itemEditando.value = null
+  itemDuplicado.value = null
 }
 
-// Function to get user name and last name from haciendaUsers
 function getUsuarioNombre(userId) {
   const user = haciendaStore.haciendaUsers.find((u) => u.id === userId)
   return user ? `${user.name || ''} ${user.lastname || ''}`.trim() || '-' : '-'
 }
 
-const itemDuplicado = ref(null)
-
 function showEditError() {
-  alert('Solo el usuario que creó este registro o un administrador puede editar')
+  alert(t('finance.edit_not_allowed'))
 }
 
 function showDeleteError() {
-  alert('Solo el usuario que creó este registro o un administrador puede eliminar')
+  alert(t('finance.delete_not_allowed'))
 }
 </script>
 
@@ -736,7 +627,7 @@ function showDeleteError() {
   min-width: 100px;
 }
 .filter-active {
-  border-color: #4caf50; /* Cambia este color según tu preferencia */
-  background-color: rgba(76, 175, 80, 0.1); /* Color de fondo suave */
+  border-color: #4caf50;
+  background-color: rgba(76, 175, 80, 0.1);
 }
 </style>

@@ -1,12 +1,12 @@
 <template>
   <div class="bg-dinamico border-1 m-5 mt-0 px-4 py-4 shadow-md hover:shadow-xl">
-    <h2 class="text-xl font-bold mb-4">Mis Usuarios</h2>
+    <h2 class="text-xl font-bold mb-4">{{ t('user_management.my_users') }}</h2>
 
     <div class="mb-6">
       <h3 class="text-l font-semibold mb-2">
-        <v-icon color="success" class="mr-2">mdi-account-hard-hat-outline</v-icon> Auditores
+        <v-icon color="success" class="mr-2">mdi-account-hard-hat-outline</v-icon> {{ t('user_management.auditors') }}
       </h3>
-      <div v-if="auditores.length === 0" class="text-xs">No hay auditores registrados.</div>
+      <div v-if="auditores.length === 0" class="text-xs">{{ t('user_management.no_auditors') }}</div>
       <ul v-else>
         <li
           v-for="auditor in auditores"
@@ -36,7 +36,7 @@
         color="green-lighten-3"
         @click="openCreateUserModal('auditor')"
       >
-        Agregar Auditor
+        {{ t('user_management.add_auditor') }}
       </v-btn>
 
       <v-chip
@@ -47,15 +47,15 @@
         prepend-icon="mdi-alert-octagon"
         class="mt-2"
       >
-        Límite de Auditores Alcanzado
+        {{ t('user_management.auditor_limit_reached') }}
       </v-chip>
     </div>
 
     <div class="mb-6">
       <h3 class="text-l font-semibold mb-2">
-        <v-icon color="success" class="mr-2">mdi-account-cowboy-hat-outline</v-icon> Operadores
+        <v-icon color="success" class="mr-2">mdi-account-cowboy-hat-outline</v-icon> {{ t('user_management.operators') }}
       </h3>
-      <div v-if="operadores.length === 0" class="text-xs">No hay operadores registrados.</div>
+      <div v-if="operadores.length === 0" class="text-xs">{{ t('user_management.no_operators') }}</div>
       <ul v-else>
         <li
           v-for="operador in operadores"
@@ -85,7 +85,7 @@
         color="green-lighten-3"
         @click="openCreateUserModal('operador')"
       >
-        Agregar Operador
+        {{ t('user_management.add_operator') }}
       </v-btn>
 
       <v-chip
@@ -96,7 +96,7 @@
         prepend-icon="mdi-alert-octagon"
         class="mt-2"
       >
-        Límite de Operadores Alcanzado
+        {{ t('user_management.operator_limit_reached') }}
       </v-chip>
     </div>
 
@@ -110,14 +110,14 @@
       <v-card>
         <v-form @submit.prevent="createUser">
           <v-toolbar color="success" dark>
-            <v-toolbar-title>Crear nuevo Usuario</v-toolbar-title>
+            <v-toolbar-title>{{ t('user_management.create_new_user') }}</v-toolbar-title>
             <v-spacer></v-spacer>
           </v-toolbar>
 
           <v-card-text>
             <div class="grid grid-cols-2 gap-1">
               <v-text-field
-                label="Nombre"
+                :label="t('user_management.name')"
                 color="primary"
                 v-model="newUser.name"
                 variant="outlined"
@@ -128,7 +128,7 @@
               ></v-text-field>
               <v-text-field
                 v-model="newUser.lastname"
-                label="Apellido"
+                :label="t('user_management.lastname')"
                 variant="outlined"
                 required
                 density="compact"
@@ -138,7 +138,7 @@
 
               <v-text-field
                 v-model="newUser.username"
-                label="Nombre de Usuario"
+                :label="t('user_management.username')"
                 variant="outlined"
                 required
                 density="compact"
@@ -151,7 +151,7 @@
 
               <v-text-field
                 v-model="newUser.email"
-                label="Email"
+                :label="t('user_management.email')"
                 type="email"
                 variant="outlined"
                 required
@@ -165,7 +165,7 @@
 
               <v-text-field
                 v-model="newUser.password"
-                label="Password"
+                :label="t('user_management.password')"
                 variant="outlined"
                 required
                 :error-messages="v$.password.$errors.map((e) => e.$message)"
@@ -180,7 +180,7 @@
 
               <v-text-field
                 v-model="newUser.passwordConfirm"
-                label="Confirm Password"
+                :label="t('user_management.confirm_password')"
                 variant="outlined"
                 required
                 :error-messages="v$.passwordConfirm.$errors.map((e) => e.$message)"
@@ -196,8 +196,6 @@
             </div>
           </v-card-text>
 
-          <!-- campo role escondido -->
-
           <v-text-field hidden v-model="newUser.role"></v-text-field>
 
           <v-card-actions>
@@ -212,7 +210,7 @@
               color="green-lighten-3"
               @click="createUser"
               :disabled="!formValid"
-              >Crear Usuario</v-btn
+              >{{ t('user_management.create_user') }}</v-btn
             >
 
             <v-btn
@@ -222,7 +220,7 @@
               prepend-icon="mdi-cancel"
               color="red-lighten-3"
               @click="createUserModalOpen = false"
-              >Cancelar</v-btn
+              >{{ t('user_management.cancel') }}</v-btn
             >
           </v-card-actions>
         </v-form>
@@ -233,6 +231,7 @@
 
 <script>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import { usePlanStore } from '@/stores/planStore'
 import { storeToRefs } from 'pinia'
@@ -248,6 +247,7 @@ export default {
   name: 'UserManagement',
 
   setup() {
+    const { t } = useI18n()
     const haciendaStore = useHaciendaStore()
     const planStore = usePlanStore()
     const { mi_hacienda } = storeToRefs(haciendaStore)
@@ -357,7 +357,7 @@ export default {
         auditores.value = users.filter((user) => user.role === 'auditor')
         operadores.value = users.filter((user) => user.role === 'operador')
       } catch (error) {
-        handleError(error, 'Error recopilando usuarios..')
+        snackbarStore.showSnackbar(t('user_management.error_fetching_users'), 'error')
       }
     }
 
@@ -366,7 +366,7 @@ export default {
         (userType === 'auditor' && !canAddAuditor.value) ||
         (userType === 'operador' && !canAddOperador.value)
       ) {
-        console.error(`No puede agregar más ${userType}es. Limite del plan alcanzado.`)
+        snackbarStore.showSnackbar(t('user_management.cannot_add_more_users', { userType }), 'error')
         return
       }
 
@@ -377,7 +377,7 @@ export default {
         username: '',
         password: '',
         passwordConfirm: '',
-        role: userType // Set role when opening the modal
+        role: userType
       }
 
       userTypeToCreate.value = userType
@@ -389,15 +389,13 @@ export default {
         (userTypeToCreate.value === 'auditor' && !canAddAuditor.value) ||
         (userTypeToCreate.value === 'operador' && !canAddOperador.value)
       ) {
-        console.error(
-          `No puede agregar más ${userTypeToCreate.value}es. Limite del plan alcanzado.`
-        )
+        snackbarStore.showSnackbar(t('user_management.cannot_add_more_users', { userType: userTypeToCreate.value }), 'error')
         return
       }
 
       const isValid = await v$.value.$validate()
       if (!isValid) {
-        snackbarStore.showSnackbar('Please correct the errors in the form', 'error')
+        snackbarStore.showSnackbar(t('user_management.form_errors'), 'error')
         return
       }
 
@@ -409,29 +407,25 @@ export default {
           lastname: newUser.value.lastname,
           password: newUser.value.password,
           hacienda: mi_hacienda.value.id,
-          role: newUser.value.role // Include role in registration data
+          role: newUser.value.role
         }
-
-        console.log('newUser.value.role:', newUser.value.role)
-        console.log('registrationData:', registrationData)
 
         await authStore.register(registrationData, newUser.value.role)
 
         createUserModalOpen.value = false
-        //      newUser.value = { name: '', lastname: '', email: '', username: '', password: '' }
         await fetchHaciendaUsers()
       } catch (error) {
-        console.error('Error al crear el usuario:', error.message)
+        snackbarStore.showSnackbar(t('user_management.error_creating_user') + ': ' + error.message, 'error')
       }
     }
 
     const deleteUser = async (userId) => {
-      if (confirm('¿Está seguro de que desea eliminar este usuario?')) {
+      if (confirm(t('user_management.confirm_delete'))) {
         try {
           await haciendaStore.deleteHaciendaUser(userId)
           await fetchHaciendaUsers()
         } catch (error) {
-          console.error('Error al eliminar el usuario:', error.message)
+          snackbarStore.showSnackbar(t('user_management.error_deleting_user') + ': ' + error.message, 'error')
         }
       }
     }
@@ -442,20 +436,18 @@ export default {
     })
 
     return {
+      t,
       auditores,
       operadores,
       createUserModalOpen,
       userTypeToCreate,
-
       v$,
       formValid,
-
       usernameAvailable,
       emailAvailable,
       checkUsername,
       checkEmail,
       visible,
-
       newUser,
       canAddAuditor,
       canAddOperador,

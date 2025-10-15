@@ -1,11 +1,11 @@
 <template>
   <div class="flex flex-col border-1 m-5 px-6 pb-0 pt-4 bg-dinamico shadow-md hover:shadow-xl">
     <div class="flex items-center justify-between mb-4">
-      <h2 class="text-l font-bold">Plan Actual</h2>
+      <h2 class="text-l font-bold">{{ t('plan_management.current_plan') }}</h2>
       <v-chip :color="getPlanColor" variant="flat" size="small">
         {{ currentPlan.nombre.toUpperCase() }}
         <v-tooltip class="text-sm font-bold" activator="parent" location="bottom">
-          PLAN: Auditores {{ currentPlan.auditores }} / Operadores {{ currentPlan.operadores }}
+          {{ t('plan_management.plan_tooltip', { auditores: currentPlan.auditores, operadores: currentPlan.operadores }) }}
         </v-tooltip>
       </v-chip>
 
@@ -24,7 +24,7 @@
   >
     <v-card elevation="3" class="plan-dialog">
       <v-toolbar color="success" dark>
-        <v-toolbar-title>Seleccione su Plan</v-toolbar-title>
+        <v-toolbar-title>{{ t('plan_management.select_your_plan') }}</v-toolbar-title>
         <v-spacer></v-spacer>
       </v-toolbar>
 
@@ -49,11 +49,11 @@
                   <ul class="plan-features space-y-3 mb-6">
                     <li class="flex items-center text-sm">
                       <v-icon color="success" class="mr-2">mdi-account-hard-hat-outline</v-icon>
-                      Auditores: {{ plan.auditores }}
+                      {{ t('plan_management.auditors') }}: {{ plan.auditores }}
                     </li>
                     <li class="flex items-center text-sm">
                       <v-icon color="success" class="mr-2">mdi-account-cowboy-hat-outline</v-icon>
-                      Operadores: {{ plan.operadores }}
+                      {{ t('plan_management.operators') }}: {{ plan.operadores }}
                     </li>
                   </ul>
                   <v-icon
@@ -80,7 +80,7 @@
           color="red-lighten-3"
           @click="changePlanModalOpen = false"
         >
-          Cancelar
+          {{ t('plan_management.cancel') }}
         </v-btn>
         <v-btn
           size="small"
@@ -90,7 +90,7 @@
           color="green-lighten-3"
           @click="changePlan"
         >
-          Confirmar
+          {{ t('plan_management.confirm') }}
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -99,16 +99,20 @@
 
 <script>
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { usePlanStore } from '@/stores/planStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
+import { useSnackbarStore } from '@/stores/snackbarStore'
 import { storeToRefs } from 'pinia'
 
 export default {
   name: 'PlanManagement',
 
   setup() {
+    const { t } = useI18n()
     const planStore = usePlanStore()
     const haciendaStore = useHaciendaStore()
+    const snackbarStore = useSnackbarStore()
     const { currentPlan } = storeToRefs(planStore)
 
     const changePlanModalOpen = ref(false)
@@ -134,6 +138,7 @@ export default {
         selectedPlan.value = haciendaStore.mi_hacienda.plan
         changePlanModalOpen.value = true
       } catch (error) {
+        snackbarStore.showSnackbar(t('plan_management.error_loading_plans'), 'error')
         console.error('Error al cargar los planes disponibles:', error)
       }
     }
@@ -149,11 +154,13 @@ export default {
         await haciendaStore.fetchHacienda(haciendaStore.mi_hacienda.id)
         changePlanModalOpen.value = false
       } catch (error) {
+        snackbarStore.showSnackbar(t('plan_management.error_changing_plan'), 'error')
         console.error('Error al cambiar el plan:', error)
       }
     }
 
     return {
+      t,
       currentPlan,
       getPlanColor,
       changePlanModalOpen,

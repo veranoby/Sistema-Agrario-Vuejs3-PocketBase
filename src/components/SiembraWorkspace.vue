@@ -13,7 +13,7 @@
                   <router-link
                     to="/siembras"
                     class="ml-3 text-sm font-extrabold hover:text-gray-700"
-                    >MIS SIEMBRAS/PROYECTOS</router-link
+                    >{{ t('sowing_workspace.my_sowings') }}</router-link
                   >
                 </div>
               </li>
@@ -37,7 +37,7 @@
 
           <v-chip variant="flat" size="x-small" color="green-lighten-3" class="mx-1" pill>
             <v-avatar start> <v-img :src="avatarHaciendaUrl" alt="Avatar"></v-img> </v-avatar>
-            HACIENDA: {{ mi_hacienda.name }}
+            {{ t('sowing_workspace.hacienda') }}: {{ mi_hacienda.name }}
           </v-chip>
 
           <v-chip variant="flat" size="x-small" color="grey-lighten-2" class="mx-1" pill>
@@ -50,7 +50,7 @@
           </v-chip>
 
           <v-chip variant="flat" size="x-small" color="grey-lighten-2" class="mx-1" pill>
-            INICIO: {{ formatDate(siembraInfo.fecha_inicio) }}
+            {{ t('sowing_workspace.start') }}: {{ formatDate(siembraInfo.fecha_inicio) }}
           </v-chip>
         </h3>
         <div class="avatar-container">
@@ -66,7 +66,7 @@
           <v-card-title class="headline d-flex justify-between align-center">
             <div class="d-flex align-center">
               <v-icon class="mr-2">mdi-information</v-icon>
-              <span>Información de la Siembra</span>
+              <span>{{ t('sowing_workspace.sowing_information') }}</span>
             </div>
             <v-btn
               class="agricultural-btn agricultural-btn--edit"
@@ -75,7 +75,7 @@
               @keydown.space.prevent="openEditDialog"
               icon
               size="large"
-              :aria-label="`Editar información de siembra ${siembraInfo.nombre}`"
+              :aria-label="t('sowing_workspace.edit_sowing_info')"
               tabindex="0"
             >
               <v-icon>mdi-pencil</v-icon>
@@ -86,45 +86,40 @@
               <v-col cols="12">
                 <div
                   class="flex-1 rounded-lg border-2 p-4 mt-2 mb-4 rich-text-content"
-                  v-html="siembraInfo.info || 'No disponible'"
+                  v-html="siembraInfo.info || t('sowing_workspace.not_available')"
                 ></div>
               </v-col>
             </v-row>
           </v-card-text>
         </v-card>
 
-        <!-- Nueva Bitácora Section using EmbeddedBitacoraList -->
         <v-card class="bitacora-embedded-section mb-4" elevation="2">
           <v-card-title class="d-flex justify-space-between align-center">
-            <span>Bitácora Reciente</span>
+            <span>{{ t('sowing_workspace.recent_log') }}</span>
             <v-btn
               class="agricultural-btn agricultural-btn--primary"
               @click="openNewBitacoraEntryDialog"
               @keydown.enter="openNewBitacoraEntryDialog"
               @keydown.space.prevent="openNewBitacoraEntryDialog"
               size="large"
-              :aria-label="'Crear nueva entrada de bitácora'"
+              :aria-label="t('sowing_workspace.new_entry')"
               tabindex="0"
             >
               <v-icon start>mdi-plus-circle-outline</v-icon>
-              Nueva Entrada
+              {{ t('sowing_workspace.new_entry') }}
             </v-btn>
           </v-card-title>
           <v-card-text>
             <EmbeddedBitacoraList :siembraId="siembraId" title="" :itemLimit="5" />
           </v-card-text>
         </v-card>
-
-        <!-- The old commented-out Bitácora section is now completely removed. -->
       </v-col>
 
       <!-- Sidebar -->
       <v-col cols="12" md="4" class="px-0 py-4">
-        <!-- SECCION de zonas-->
-
         <v-card class="zonas-section mb-4" elevation="2">
           <v-card-title class="d-flex justify-space-between align-center">
-            Zonas Registradas (Lotes)
+            {{ t('sowing_workspace.registered_zones') }}
             <v-btn
               class="agricultural-btn agricultural-btn--primary"
               @click="openAddZonaDialog"
@@ -132,7 +127,7 @@
               @keydown.space.prevent="openAddZonaDialog"
               icon
               size="large"
-              :aria-label="'Agregar nueva zona de trabajo'"
+              :aria-label="t('sowing_workspace.add_new_zone')"
               tabindex="0"
             >
               <v-icon>mdi-plus</v-icon>
@@ -154,14 +149,12 @@
               class="mx-1"
               pill
             >
-              ÁREA ACTUAL: {{ totalArea }} {{ areaUnit }}
+              {{ t('sowing_workspace.current_area') }}: {{ totalArea }} {{ areaUnit }}
             </v-chip>
 
             <v-chip variant="flat" size="x-small" color="green" class="mx-1" pill>
-              ÁREA OBEJTIVO: {{ siembraInfo.area_total }} ha
+              {{ t('sowing_workspace.target_area') }}: {{ siembraInfo.area_total }} ha
             </v-chip>
-
-            <!-- v-data-table de zonas-->
 
             <v-data-table
               :headers="headers"
@@ -195,7 +188,6 @@
               </template>
 
               <template v-slot:bottom> </template>
-              <!-- eliminar el footer de la tabla-->
 
               <template #expanded-row="{ columns, item }">
                 <td :colspan="columns.length" class="border-2 border-b-gray-400">
@@ -204,19 +196,17 @@
                       <v-col cols="9" class="pr-4">
                         <p v-if="item.gps" class="ml-2 mr-0 p-0 text-xs">
                           <v-icon>mdi-map-marker-radius</v-icon>
-
-                          Lat: {{ item.gps.lat }}, Lng: {{ item.gps.lng }}
+                          {{ t('sowing_workspace.gps_info', { lat: item.gps.lat, lng: item.gps.lng }) }}
                         </p>
                         <p v-else class="ml-2 mr-0 mb-2 p-0 text-xs">
-                          <v-icon>mdi-map-marker-radius</v-icon> No disponible
+                          <v-icon>mdi-map-marker-radius</v-icon> {{ t('sowing_workspace.not_available') }}
                         </p>
                         <p class="ml-2 mr-0 mb-2 p-0 text-xs">
-                          <v-icon>mdi-information-outline</v-icon> INFORMACION:<label
+                          <v-icon>mdi-information-outline</v-icon> {{ t('sowing_workspace.information') }}:<label
                             class="rich-text-content"
-                            v-html="item.info || 'No disponible'"
+                            v-html="item.info || t('sowing_workspace.not_available')"
                           ></label>
                         </p>
-
                         <p>
                           <v-chip
                             v-for="(metrica, key) in item.metricas"
@@ -249,16 +239,12 @@
                 </td>
               </template>
             </v-data-table>
-
-            <!-- fin v-data table-->
           </v-card-text>
         </v-card>
 
-        <!-- SECCION de ACTIVIDADES-->
-
         <v-card class="zonas-section mb-4" elevation="2">
           <v-card-title class="d-flex justify-space-between align-center">
-            Actividades relacionadas
+            {{ t('sowing_workspace.related_activities') }}
             <v-btn
               class="agricultural-btn agricultural-btn--primary"
               @click="dialogNuevaActividad = true"
@@ -266,15 +252,13 @@
               @keydown.space.prevent="dialogNuevaActividad = true"
               icon
               size="large"
-              :aria-label="'Agregar nueva actividad'"
+              :aria-label="t('sowing_workspace.add_new_activity')"
               tabindex="0"
             >
               <v-icon>mdi-plus</v-icon>
             </v-btn>
           </v-card-title>
           <v-card-text class="px-2 py-0">
-            <!-- v-data-table de ACTIVIDADES-->
-
             <v-data-table
               :headers="headers_actividades"
               :items="actividadesfiltradas"
@@ -309,14 +293,12 @@
               </template>
 
               <template v-slot:bottom> </template>
-              <!-- eliminar el footer de la tabla-->
 
               <template #expanded-row="{ columns, item }">
                 <td :colspan="columns.length" class="border-2 border-b-gray-400">
                   <v-card flat class="p-2 bg-transparent">
                     <v-row no-gutters>
                       <v-col cols="9" class="pr-4">
-                        <!-- CHIPS DE METRICAS-->
                         <p>
                           <v-chip
                             v-for="(metrica, key) in item.metricas"
@@ -330,11 +312,10 @@
                           </v-chip>
                         </p>
                         <hr />
-                        <!-- info de campos grabados-->
                         <p class="ml-2 mr-0 mb-2 p-0 text-xs">
-                          <v-icon>mdi-information-outline</v-icon> INFORMACION:<label
+                          <v-icon>mdi-information-outline</v-icon> {{ t('sowing_workspace.information') }}:<label
                             class="rich-text-content"
-                            v-html="item.descripcion || 'No disponible'"
+                            v-html="item.descripcion || t('sowing_workspace.not_available')"
                           ></label>
                         </p>
                       </v-col>
@@ -357,16 +338,10 @@
                 </td>
               </template>
             </v-data-table>
-
-            <!-- fin v-data table-->
           </v-card-text>
         </v-card>
       </v-col>
     </v-row>
-
-    <!-- Dialogs -->
-
-    <!-- Editar Siembra -->
 
     <v-dialog
       v-model="editSiembraDialog"
@@ -377,7 +352,7 @@
     >
       <v-card>
         <v-toolbar color="success" dark>
-          <v-toolbar-title>Editar Siembra</v-toolbar-title>
+          <v-toolbar-title>{{ t('sowing_workspace.edit_sowing') }}</v-toolbar-title>
           <v-spacer></v-spacer>
         </v-toolbar>
 
@@ -387,14 +362,14 @@
               <div>
                 <v-text-field
                   v-model="editedSiembra.nombre"
-                  label="Nombre"
+                  :label="t('sowing_workspace.name')"
                   variant="outlined"
                   density="compact"
                   class="compact-form"
                 ></v-text-field>
                 <v-text-field
                   v-model="editedSiembra.tipo"
-                  label="Tipo"
+                  :label="t('sowing_workspace.type')"
                   variant="outlined"
                   density="compact"
                   class="compact-form"
@@ -402,14 +377,14 @@
                 <v-select
                   v-model="editedSiembra.estado"
                   :items="estadosSiembra"
-                  label="Estado"
+                  :label="t('sowing_workspace.state')"
                   variant="outlined"
                   density="compact"
                   class="compact-form"
                 ></v-select>
                 <v-text-field
                   v-model="editedSiembra.area_total"
-                  label="Área Objetivo (ha)"
+                  :label="t('sowing_workspace.objective_area')"
                   type="number"
                   variant="outlined"
                   density="compact"
@@ -417,7 +392,7 @@
                 ></v-text-field>
                 <v-text-field
                   v-model="editedSiembra.fecha_inicio"
-                  label="Fecha de Inicio"
+                  :label="t('sowing_workspace.start_date')"
                   type="date"
                   variant="outlined"
                   density="compact"
@@ -425,7 +400,6 @@
                 ></v-text-field>
               </div>
               <div>
-                <!-- Selector de Avatar -->
                 <AvatarForm
                   v-model="showAvatarDialog"
                   collection="Siembras"
@@ -438,7 +412,6 @@
                   <v-avatar size="192">
                     <v-img :src="siembraAvatarUrl" alt="Avatar de Siembra"></v-img>
                   </v-avatar>
-                  <!-- Botón para abrir el diálogo de avatar -->
                   <v-btn
                     icon
                     size="small"
@@ -454,7 +427,7 @@
             <div class="mt-4">
               <div class="mb-2">
                 <v-icon class="mr-2">mdi-information</v-icon>
-                Mi Info
+                {{ t('sowing_workspace.my_info') }}
               </div>
               <QuillEditor
                 v-model:content="editedSiembra.info"
@@ -476,10 +449,10 @@
               @click="saveSiembraEdit"
               @keydown.enter="saveSiembraEdit"
               @keydown.space.prevent="saveSiembraEdit"
-              :aria-label="'Guardar cambios de la siembra'"
+              :aria-label="t('sowing_workspace.save')"
               tabindex="0"
             >
-              Guardar
+              {{ t('sowing_workspace.save') }}
             </v-btn>
             <v-btn
               size="large"
@@ -490,70 +463,66 @@
               @click="editSiembraDialog = false"
               @keydown.enter="editSiembraDialog = false"
               @keydown.space.prevent="editSiembraDialog = false"
-              :aria-label="'Cancelar edición de siembra'"
+              :aria-label="t('sowing_workspace.cancel')"
               tabindex="0"
             >
-              Cancelar
+              {{ t('sowing_workspace.cancel') }}
             </v-btn>
           </v-card-actions>
         </v-form>
       </v-card>
     </v-dialog>
 
-    <!--editar bitacora-->
-
     <v-dialog v-model="addBitacoraDialog" max-width="600px">
       <v-card>
         <v-toolbar color="success" dark>
-          <v-toolbar-title>Agregar a Bitácora</v-toolbar-title>
+          <v-toolbar-title>{{ t('sowing_workspace.add_to_log') }}</v-toolbar-title>
           <v-spacer></v-spacer>
         </v-toolbar>
 
         <v-card-text>
           <v-form ref="addBitacoraForm">
-            <v-text-field v-model="newBitacora.fecha" label="Fecha" type="date"></v-text-field>
-
+            <v-text-field v-model="newBitacora.fecha" :label="t('sowing_workspace.date')" type="date"></v-text-field>
             <v-select
               v-model="newBitacora.actividad"
               :items="actividades"
               item-text="nombre"
               item-value="id"
-              label="Actividad"
+              :label="t('sowing_workspace.activity')"
             ></v-select>
             <v-select
               v-model="newBitacora.zonas"
               :items="zonas"
               item-text="nombre"
               item-value="id"
-              label="Zonas"
+              :label="t('sowing_workspace.zones')"
               multiple
               chips
             ></v-select>
-            <v-textarea v-model="newBitacora.descripcion" label="Descripción"></v-textarea>
+            <v-textarea v-model="newBitacora.descripcion" :label="t('sowing_workspace.description')"></v-textarea>
             <v-select
               v-model="newBitacora.responsable"
               :items="usuarios"
               item-text="name"
               item-value="id"
-              label="Responsable"
+              :label="t('sowing_workspace.responsible')"
             ></v-select>
             <v-select
               v-model="newBitacora.estado"
               :items="estadosBitacora"
-              label="Estado"
+              :label="t('sowing_workspace.state')"
             ></v-select>
-            <v-textarea v-model="newBitacora.notas" label="Notas"></v-textarea>
+            <v-textarea v-model="newBitacora.notas" :label="t('sowing_workspace.notes')"></v-textarea>
           </v-form>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="primary" text @click="saveBitacoraEntry">Guardar</v-btn>
-          <v-btn color="error" text @click="addBitacoraDialog = false">Cancelar</v-btn>
+          <v-btn color="primary" text @click="saveBitacoraEntry">{{ t('sowing_workspace.save') }}</v-btn>
+          <v-btn color="error" text @click="addBitacoraDialog = false">{{ t('sowing_workspace.cancel') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
-    <!-- CREAR ZONAS EN ESTA SIEMBRA-->
     <v-dialog v-model="addZonaDialog" persistent max-width="1000px">
       <ZonaForm
         :modo-edicion="modoEdicionZona"
@@ -566,14 +535,12 @@
       />
     </v-dialog>
 
-    <!-- ... V-dialog de crear actividades ... -->
     <ActividadForm
       v-model="dialogNuevaActividad"
       :siembra-preseleccionada="siembraId"
       @actividad-creada="loadActividades"
     />
 
-    <!-- Dialog for BitacoraEntryForm -->
     <v-dialog v-model="showBitacoraFormDialog" max-width="800px" persistent scrollable>
       <BitacoraEntryForm
         v-if="showBitacoraFormDialog"
@@ -589,6 +556,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useBitacoraStore } from '@/stores/bitacoraStore'
 import { useProfileStore } from '@/stores/profileStore'
@@ -596,21 +564,18 @@ import { useHaciendaStore } from '@/stores/haciendaStore'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 import { handleError } from '@/utils/errorHandler'
 import { storeToRefs } from 'pinia'
-
 import { useZonasStore } from '@/stores/zonasStore'
 import ZonaForm from '@/components/forms/ZonaForm.vue'
-
 import AvatarForm from '@/components/forms/AvatarForm.vue'
 import { useAvatarStore } from '@/stores/avatarStore'
 import { useActividadesStore } from '@/stores/actividadesStore'
-
 import ActividadForm from '@/components/forms/ActividadForm.vue'
 import EmbeddedBitacoraList from './EmbeddedBitacoraList.vue'
 import BitacoraEntryForm from '@/components/forms/BitacoraEntryForm.vue'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
-
 const siembrasStore = useSiembrasStore()
 const bitacoraStore = useBitacoraStore()
 const profileStore = useProfileStore()
@@ -622,18 +587,13 @@ const actividadesStore = useActividadesStore()
 
 const siembraId = ref(route.params.id)
 const siembraInfo = ref({})
-// const bitacora = ref([]) // Removed
-
 const dialogNuevaActividad = ref(false)
 const showBitacoraFormDialog = ref(false)
 
 const { zonas, tiposZonas } = storeToRefs(zonasStore)
-
 const { user } = storeToRefs(profileStore)
 const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
-
 const userRole = computed(() => user.value?.role || '')
-
 const avatarUrl = computed(() => profileStore.avatarUrl)
 
 const siembraAvatarUrl = computed(() => {
@@ -641,9 +601,7 @@ const siembraAvatarUrl = computed(() => {
 })
 
 const { actividades } = storeToRefs(actividadesStore)
-
 const usuarios = ref([])
-
 const isLoading = ref(true)
 
 const totalArea = computed(() => {
@@ -654,41 +612,26 @@ const totalArea = computed(() => {
 })
 
 const headers = [
-  { title: 'Nombre', align: 'start', key: 'nombre' },
-  { title: 'Área', align: 'center', key: 'area' },
-  { title: 'BPA', align: 'center', key: 'bpa_estado' },
-  { title: 'Acciones', key: 'actions', sortable: false, align: 'end' }
+  { title: t('sowing_workspace.name'), align: 'start', key: 'nombre' },
+  { title: t('sowing_workspace.area'), align: 'center', key: 'area' },
+  { title: t('sowing_workspace.bpa'), align: 'center', key: 'bpa_estado' },
+  { title: t('sowing_workspace.actions'), key: 'actions', sortable: false, align: 'end' }
 ]
 
 const headers_actividades = [
-  { title: 'Nombre', align: 'start', key: 'nombre' },
-  { title: 'Tipo', align: 'center', key: 'tipo' },
-  { title: 'BPA', align: 'center', key: 'bpa_estado' },
-  { title: 'Acciones', key: 'actions', sortable: false, align: 'end' }
+  { title: t('sowing_workspace.name'), align: 'start', key: 'nombre' },
+  { title: t('sowing_workspace.type'), align: 'center', key: 'tipo' },
+  { title: t('sowing_workspace.bpa'), align: 'center', key: 'bpa_estado' },
+  { title: t('sowing_workspace.actions'), key: 'actions', sortable: false, align: 'end' }
 ]
 
 const expanded = ref([])
-
 const areaUnit = ref('ha')
-const itemsPerPage = ref(10) // This might be used by other tables, keeping for now unless confirmed otherwise.
-// const selectedZonas = ref([]) // Removed
-// const selectedActividades = ref([]) // Removed
-
+const itemsPerPage = ref(10)
 const editSiembraDialog = ref(false)
 const editedSiembra = ref({})
-
-const addBitacoraDialog = ref(false) // Restaurado para evitar errores de template
-const addZonaDialog = ref(false) // Keep for ZonaForm
-
-// const newBitacora = ref({ // Removed
-//   fecha: new Date().toISOString().split('T')[0],
-//   actividad: '',
-//   zonas: [],
-//   descripcion: '',
-//   responsable: '',
-//   estado: 'planificada',
-//   notas: ''
-// })
+const addBitacoraDialog = ref(false)
+const addZonaDialog = ref(false)
 
 const estadosSiembra = ['planificada', 'en_crecimiento', 'cosechada', 'finalizada']
 const getStatusColor = (status) => {
@@ -701,29 +644,6 @@ const getStatusColor = (status) => {
   return colors[status] || 'gray'
 }
 
-// const estadosBitacora = ['planificada', 'en_progreso', 'completada', 'cancelada'] // Removed
-
-// const bitacoraHeaders = [ // Removed
-//   { text: 'Fecha', value: 'fecha' },
-//   { text: 'Actividad', value: 'actividad.nombre' },
-//   { text: 'Zona', value: 'zona.nombre' },
-//   { text: 'Responsable', value: 'responsable.name' },
-//   { text: 'Estado', value: 'estado' },
-//   { text: 'Acciones', value: 'actions', sortable: false }
-// ]
-
-// const filteredBitacora = computed(() => { // Removed
-//   return bitacora.value.filter((entry) => {
-//     const zonaMatch =
-//       selectedZonas.value.length === 0 ||
-//       entry.zonas.some((zona) => selectedZonas.value.includes(zona.id))
-//     const actividadMatch =
-//       selectedActividades.value.length === 0 ||
-//       selectedActividades.value.includes(entry.actividad.id)
-//     return zonaMatch && actividadMatch
-//   })
-// })
-
 const modoEdicionZona = ref(false)
 const zonaEditando = ref({
   nombre: '',
@@ -735,7 +655,6 @@ const zonaEditando = ref({
   metricas: {}
 })
 const avatarFileZona = ref(null)
-
 const tipoZonaActual = ref(null)
 
 const zonasfiltradas = computed(() => {
@@ -744,9 +663,7 @@ const zonasfiltradas = computed(() => {
 
 const actividadesfiltradas = computed(() => {
   if (!actividades.value || !siembraId.value) return []
-
   return actividades.value.filter((actividad) => {
-    // Asegurarse de que actividad.siembra es un array
     const siembras = Array.isArray(actividad.siembras) ? actividad.siembras : []
     return siembras.includes(siembraId.value)
   })
@@ -754,32 +671,23 @@ const actividadesfiltradas = computed(() => {
 
 const cerrarDialogoZona = () => {
   addZonaDialog.value = false
-  avatarFileZona.value = null // Limpiar el archivo después de la actualización
+  avatarFileZona.value = null
 }
 
-// En la función loadSiembraInfo, no es necesario forzar la actualización del avatar
 async function loadSiembraInfo() {
   try {
     const siembra = await siembrasStore.fetchSiembraById(siembraId.value)
     siembraInfo.value = siembra
   } catch (error) {
-    handleError(error, 'Error al cargar la información de la siembra')
+    handleError(error, t('sowing_workspace.error_loading_sowing_info'))
   }
 }
-
-// async function loadBitacora() { // Removed
-//   try {
-//     bitacora.value = await bitacoraStore.fetchBitacoraBySiembraId(siembraId.value)
-//   } catch (error) {
-//     handleError(error, 'Error al cargar la bitácora')
-//   }
-// }
 
 async function loadHacienda() {
   try {
     await haciendaStore.fetchHacienda(siembraInfo.value.hacienda)
   } catch (error) {
-    handleError(error, 'Error al cargar la información de la hacienda')
+    handleError(error, t('sowing_workspace.error_loading_hacienda_info'))
   }
 }
 
@@ -787,7 +695,7 @@ async function loadUsuarios() {
   try {
     usuarios.value = await haciendaStore.fetchHaciendaUsers()
   } catch (error) {
-    handleError(error, 'Error al cargar los usuarios')
+    handleError(error, t('sowing_workspace.error_loading_users'))
   }
 }
 
@@ -805,24 +713,10 @@ function openEditDialog() {
   editSiembraDialog.value = true
 }
 
-// function openAddBitacoraDialog() { // Removed
-//   newBitacora.value = {
-//     fecha: new Date().toISOString().split('T')[0],
-//     actividad: '',
-//     zonas: [],
-//     descripcion: '',
-//     responsable: '',
-//     estado: 'planificada',
-//     notas: ''
-//   }
-//   addBitacoraDialog.value = true
-// }
-
 function openAddZonaDialog() {
   modoEdicionZona.value = false
   const tipoLote = tiposZonas.value.find((tipo) => tipo.nombre === 'Lotes')
   tipoZonaActual.value = tipoLote
-
   zonaEditando.value = {
     nombre: '',
     area: { area: null, unidad: 'ha' },
@@ -835,20 +729,16 @@ function openAddZonaDialog() {
     siembra: siembraId.value,
     hacienda: mi_hacienda.value?.id
   }
-
   addZonaDialog.value = true
 }
 
 async function saveSiembraEdit() {
   try {
     if (!editedSiembra.value.nombre || !editedSiembra.value.estado) {
-      throw new Error('Nombre y estado son campos requeridos')
+      throw new Error(t('sowing_workspace.required_fields'))
     }
-
     editedSiembra.value.nombre = editedSiembra.value.nombre.toUpperCase()
     editedSiembra.value.tipo = editedSiembra.value.tipo.toUpperCase()
-
-    // Crear un nuevo objeto con solo los campos necesarios
     const siembraToUpdate = {
       nombre: editedSiembra.value.nombre,
       tipo: editedSiembra.value.tipo,
@@ -859,62 +749,16 @@ async function saveSiembraEdit() {
         : null,
       info: editedSiembra.value.info
     }
-
-    // Actualizar la siembra sin incluir información del avatar
     await siembrasStore.updateSiembra(siembraId.value, siembraToUpdate)
-
-    // Recargar la información de la siembra
     siembraInfo.value = await siembrasStore.fetchSiembraById(siembraId.value)
     editSiembraDialog.value = false
-    snackbarStore.showSnackbar('Siembra actualizada con éxito', 'success')
+    snackbarStore.showSnackbar(t('sowing_workspace.sowing_updated_successfully'), 'success')
   } catch (error) {
-    handleError(error, 'Error al actualizar la siembra')
+    handleError(error, t('sowing_workspace.error_updating_sowing'))
   }
 }
 
-// async function saveBitacoraEntry() { // Removed
-//   try {
-//     const entry = {
-//       ...newBitacora.value,
-//       siembra: siembraId.value,
-//       hacienda: mi_hacienda.value.id
-//     }
-//     await bitacoraStore.addBitacoraEntry(entry)
-//     addBitacoraDialog.value = false
-//     loadBitacora()
-//     snackbarStore.showSnackbar('Entrada de bitácora agregada con éxito', 'success')
-//   } catch (error) {
-//     handleError(error, 'Error al agregar entrada de bitácora')
-//   }
-// }
-
-// async function editBitacoraItem(item) { // Removed
-//   try {
-//     const updatedItem = await bitacoraStore.updateBitacoraEntry(item.id, item)
-//     const index = bitacora.value.findIndex((entry) => entry.id === item.id)
-//     if (index !== -1) {
-//       bitacora.value[index] = updatedItem
-//     }
-//     snackbarStore.showSnackbar('Entrada de bitácora actualizada con éxito', 'success')
-//   } catch (error) {
-//     handleError(error, 'Error al actualizar entrada de bitácora')
-//   }
-// }
-
-// async function deleteBitacoraItem(item) { // Removed
-//   if (confirm('¿Está seguro de que desea eliminar esta entrada de la bitácora?')) {
-//     try {
-//       await bitacoraStore.deleteBitacoraEntry(item.id)
-//       bitacora.value = bitacora.value.filter((entry) => entry.id !== item.id)
-//       snackbarStore.showSnackbar('Entrada de bitácora eliminada con éxito', 'success')
-//     } catch (error) {
-//       handleError(error, 'Error al eliminar entrada de bitácora')
-//     }
-//   }
-// }
-
 const editActividad = (item) => {
-  // Redirigir a la página de actividades con el ID de la actividad
   router.push(`/Actividades/${item.id}`)
 }
 
@@ -922,8 +766,6 @@ function editZona(zona) {
   modoEdicionZona.value = true
   const tipoZona = tiposZonas.value.find((tipo) => tipo.id === zona.tipo)
   tipoZonaActual.value = tipoZona
-
-  // Inicializar métricas
   const metricasInicializadas = {}
   if (tipoZona?.metricas?.metricas) {
     Object.entries(tipoZona.metricas.metricas).forEach(([key, value]) => {
@@ -947,13 +789,10 @@ function editZona(zona) {
       }
     })
   }
-
   zonaEditando.value = {
     ...zona,
     datos_bpa: zona.datos_bpa || []
-    //   metricas: metricasInicializadas
   }
-
   addZonaDialog.value = true
 }
 
@@ -961,30 +800,28 @@ async function loadActividades() {
   try {
     await actividadesStore.cargarActividades()
   } catch (error) {
-    handleError(error, 'Error al cargar las actividades')
+    handleError(error, t('sowing_workspace.error_loading_activities'))
   }
 }
 
 async function deleteZona(zona) {
-  if (confirm('¿Está seguro de que desea eliminar esta Zona de trabajo?')) {
+  if (confirm(t('sowing_workspace.confirm_delete_zone'))) {
     try {
       await zonasStore.eliminarZona(zona.id)
-      //       zonas.value = zonas.value.filter((z) => z.id !== zona.id)
-      snackbarStore.showSnackbar('Zona eliminada con éxito', 'success')
+      snackbarStore.showSnackbar(t('sowing_workspace.zone_deleted_successfully'), 'success')
     } catch (error) {
-      handleError(error, 'Error al eliminar zona')
+      handleError(error, t('sowing_workspace.error_deleting_zone'))
     }
   }
 }
 
 async function deleteActividad(actividad) {
-  if (confirm('¿Está seguro de que desea eliminar esta Actividad?')) {
+  if (confirm(t('sowing_workspace.confirm_delete_activity'))) {
     try {
       await actividadesStore.deleteActividad(actividad.id)
-      //       zonas.value = zonas.value.filter((z) => z.id !== zona.id)
-      snackbarStore.showSnackbar('Actividad eliminada con éxito', 'success')
+      snackbarStore.showSnackbar(t('sowing_workspace.activity_deleted_successfully'), 'success')
     } catch (error) {
-      handleError(error, 'Error al eliminar Actividad')
+      handleError(error, t('sowing_workspace.error_deleting_activity'))
     }
   }
 }
@@ -992,15 +829,10 @@ async function deleteActividad(actividad) {
 import placeholderZonas from '@/assets/placeholder-zonas.png'
 
 const getAvatarUrl = (zonaId) => {
-  console.log('checando cargaimagenzona', zonaId)
   const zona = zonas.value.find((s) => s.id === zonaId)
   if (!zona) return placeholderZonas
   return avatarStore.getAvatarUrl({ ...zona, type: 'zona' }, 'zonas')
 }
-
-// watch([selectedZonas, selectedActividades], () => { // Removed
-//   loadBitacora()
-// })
 
 onMounted(async () => {
   try {
@@ -1008,13 +840,12 @@ onMounted(async () => {
     await Promise.all([
       zonasStore.cargarZonas(),
       zonasStore.cargarTiposZonas(),
-      // loadBitacora(), // Removed
       loadActividades(),
       loadUsuarios(),
       loadHacienda()
     ])
   } catch (error) {
-    handleError(error, 'Error al cargar los datos iniciales')
+    handleError(error, t('sowing_workspace.error_loading_initial_data'))
   } finally {
     isLoading.value = false
   }
@@ -1022,8 +853,7 @@ onMounted(async () => {
 
 const onZonaSaved = async () => {
   addZonaDialog.value = false
-  // await loadBitacora() // Removed
-  snackbarStore.showSnackbar('Zona guardada exitosamente', 'success')
+  snackbarStore.showSnackbar(t('sowing_workspace.zone_saved_successfully'), 'success')
 }
 
 const handleAvatarUpdated = (updatedRecord) => {
@@ -1044,13 +874,10 @@ function openNewBitacoraEntryDialog() {
 
 async function handleBitacoraSave() {
   showBitacoraFormDialog.value = false
-  // EmbeddedBitacoraList should update reactively via store changes.
-  // snackbarStore.showSnackbar('Entrada de bitácora guardada.', 'success'); // Form handles its own snackbar
 }
 </script>
 
 <style scoped>
-/* Agricultural Color Palette */
 :root {
   --agri-green-primary: #2e7d32;
   --agri-green-light: #4caf50;
@@ -1063,74 +890,61 @@ async function handleBitacoraSave() {
   --agri-surface-light: #f8f9fa;
   --agri-surface-card: #ffffff;
 }
-
-/* Agricultural Buttons */
 .agricultural-btn {
   border-radius: 8px;
   font-weight: 500;
   letter-spacing: 0.025em;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  min-height: 44px; /* Touch-friendly size */
+  min-height: 44px;
 }
-
 .agricultural-btn--primary {
   background: linear-gradient(45deg, var(--agri-green-primary), var(--agri-green-light));
   border: none;
   box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
   color: white;
 }
-
 .agricultural-btn--primary:hover {
   transform: translateY(-1px);
   box-shadow: 0 6px 16px rgba(46, 125, 50, 0.4);
 }
-
 .agricultural-btn--edit {
   border: 2px solid var(--agri-green-primary);
   color: var(--agri-green-primary);
   background: transparent;
 }
-
 .agricultural-btn--edit:hover {
   background: var(--agri-green-primary);
   color: white;
   transform: translateY(-1px);
 }
-
 .agricultural-btn--secondary {
   background: linear-gradient(45deg, var(--agri-warning-red), #e57373);
   border: none;
   box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3);
   color: white;
 }
-
 .agricultural-btn--secondary:hover {
   transform: translateY(-1px);
   box-shadow: 0 6px 16px rgba(211, 47, 47, 0.4);
 }
-
 .agricultural-btn:focus-visible {
   outline: 3px solid var(--agri-sky-blue);
   outline-offset: 2px;
   box-shadow: 0 0 0 2px var(--agri-surface-card), 0 0 0 5px var(--agri-sky-blue);
 }
-
 .agricultural-btn:active {
   transform: translateY(0);
   transition: transform 0.1s;
 }
-
-/* Responsive Design for Tablet Field Use */
 @media (max-width: 1024px) {
   .agricultural-btn {
-    min-height: 48px; /* Larger touch targets for tablets */
+    min-height: 48px;
     font-size: 0.95rem;
   }
 }
-
 @media (max-width: 768px) {
   .agricultural-btn {
-    min-height: 52px; /* Even larger for mobile */
+    min-height: 52px;
     width: 100%;
     margin-bottom: 8px;
   }

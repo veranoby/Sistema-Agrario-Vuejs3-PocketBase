@@ -10,10 +10,10 @@
     <v-card>
       <v-tabs v-model="tab" fixed-tabs hide-slider>
         <v-tab value="login" :class="tab === 'login' ? 'bg-green-lighten-1' : 'bg-white'">
-          <v-icon icon="mdi-login"></v-icon> &nbsp; INGRESAR
+          <v-icon icon="mdi-login"></v-icon> &nbsp; {{ t('auth.login') }}
         </v-tab>
         <v-tab value="register" :class="tab === 'register' ? 'bg-cyan-darken-1' : 'bg-white'">
-          <v-icon icon="mdi-account-plus"></v-icon> &nbsp; USUARIO NUEVO
+          <v-icon icon="mdi-account-plus"></v-icon> &nbsp; {{ t('auth.register') }}
         </v-tab>
       </v-tabs>
 
@@ -28,14 +28,13 @@
             <v-row class="m-2 p-2">
               <v-col class="m-2 p-2">
                 <v-form @submit.prevent="login">
-                  <!--     <v-form @submit.prevent="handleLogin"> -->
                   <v-row justify="center">
                     <v-col cols="6">
-                      INGRESE POR USUARIO...
+                      {{ t('auth.login_by_user') }}
                       <v-text-field
                         v-model="loginForm.username"
                         class="pt-4"
-                        label="Nombre de usuario"
+                        :label="t('auth.username')"
                         variant="outlined"
                         required
                         color="success"
@@ -44,12 +43,12 @@
                         @input="loginForm.username = loginForm.username.toUpperCase()"
                       ></v-text-field>
                     </v-col>
-                    <v-col cols="6"
-                      >... O POR EMAIL
+                    <v-col cols="6">
+                      {{ t('auth.login_by_email') }}
                       <v-text-field
                         v-model="loginForm.email"
                         class="pt-4"
-                        label="Email"
+                        :label="t('auth.email')"
                         variant="outlined"
                         type="email"
                         required
@@ -62,7 +61,7 @@
                       <v-text-field
                         v-model="loginForm.password"
                         class=""
-                        label="Password"
+                        :label="t('auth.password')"
                         variant="outlined"
                         required
                         color="success"
@@ -79,21 +78,20 @@
                       <v-checkbox
                         class=""
                         v-model="loginForm.rememberMe"
-                        label="RECORDARME"
-                      ></v-checkbox
-                    ></v-col>
+                        :label="t('auth.remember_me')"
+                      ></v-checkbox>
+                    </v-col>
                     <v-col class="pt-4">
                       <a
                         class="text-caption text-decoration-none text-green"
                         href="#"
                         rel="noopener noreferrer"
                         @click.prevent="openForgotPasswordDialog"
-                        ><strong class="">OLVIDO SU CONTRASEÑA?</strong></a
+                        ><strong>{{ t('auth.forgot_password') }}</strong></a
                       >
                     </v-col>
                   </v-row>
-
-                  <v-btn type="submit" @click="login" color="green" block>INGRESAR</v-btn>
+                  <v-btn type="submit" @click="login" color="green" block>{{ t('auth.login') }}</v-btn>
                 </v-form>
               </v-col>
             </v-row>
@@ -109,12 +107,12 @@
               <v-col class="m-2 p-2">
                 <v-form @submit.prevent="register">
                   <v-row justify="center" v-if="!authStore.registrationSuccess">
-                    <v-col cols="12"> REGISTRESE POR FAVOR.. </v-col>
+                    <v-col cols="12"> {{ t('auth.please_register') }} </v-col>
                     <v-col cols="6">
                       <v-text-field
                         v-model="registerForm.username"
                         class="p-0"
-                        label="Nombre de usuario"
+                        :label="t('auth.username')"
                         variant="outlined"
                         required
                         :error="v$.username.$error"
@@ -129,7 +127,7 @@
                       <v-text-field
                         v-model="registerForm.email"
                         class="p-0"
-                        label="Email"
+                        :label="t('auth.email')"
                         variant="outlined"
                         type="email"
                         required
@@ -144,7 +142,7 @@
                       <v-text-field
                         v-model="registerForm.firstname"
                         class="p-0"
-                        label="Nombre"
+                        :label="t('auth.firstname')"
                         variant="outlined"
                         required
                         :error-messages="v$.firstname.$errors.map((e) => e.$message)"
@@ -159,7 +157,7 @@
                       <v-text-field
                         v-model="registerForm.lastname"
                         class="p-0"
-                        label="Apellido"
+                        :label="t('auth.lastname')"
                         variant="outlined"
                         required
                         :error-messages="v$.lastname.$errors.map((e) => e.$message)"
@@ -174,7 +172,7 @@
                       <v-text-field
                         v-model="registerForm.hacienda"
                         class="p-0"
-                        label="Hacienda"
+                        :label="t('auth.hacienda')"
                         variant="outlined"
                         required
                         :error-messages="v$.hacienda.$errors.map((e) => e.$message)"
@@ -187,7 +185,7 @@
                       <v-text-field
                         v-model="registerForm.password"
                         class="p-0"
-                        label="Password"
+                        :label="t('auth.password')"
                         variant="outlined"
                         required
                         :error-messages="v$.password.$errors.map((e) => e.$message)"
@@ -204,7 +202,7 @@
                       <v-text-field
                         v-model="registerForm.passwordConfirm"
                         class="p-0"
-                        label="Confirm Password"
+                        :label="t('auth.confirm_password')"
                         variant="outlined"
                         required
                         :error-messages="v$.passwordConfirm.$errors.map((e) => e.$message)"
@@ -217,22 +215,22 @@
                         @click:append-inner="visible = !visible"
                       ></v-text-field>
                     </v-col>
-                    <v-btn type="submit" @click="register" color="blue" block :disabled="!formValid"
-                      >REGISTRARME</v-btn
-                    >
+                    <v-btn type="submit" @click="register" color="blue" block :disabled="!formValid">{{
+                      t('auth.register_now')
+                    }}</v-btn>
                   </v-row>
                   <v-row justify="center" no-gutters v-else>
                     <v-col cols="12"
                       ><br />
-                      <h3 class="text-center text-primary">¡Registro exitoso!</h3>
+                      <h3 class="text-center text-primary">{{ t('auth.registration_success_title') }}</h3>
                       <br />
                       <p class="text-center text-sm">
-                        Por favor, revise su correo electrónico para confirmar su cuenta.
+                        {{ t('auth.registration_success_message') }}
                       </p>
                       <br />
                     </v-col>
                     <v-btn @click="closeModalAndNavigate" color="primary" size="small" block>
-                      Verificar Email
+                      {{ t('auth.verify_email') }}
                     </v-btn>
                   </v-row>
                 </v-form>
@@ -248,7 +246,7 @@
   <v-dialog v-model="forgotPasswordDialog" max-width="500px" transition="dialog-bottom-transition">
     <v-card>
       <v-toolbar color="success" dark>
-        <v-toolbar-title>Recuperar Contraseña</v-toolbar-title>
+        <v-toolbar-title>{{ t('auth.recover_password_title') }}</v-toolbar-title>
         <v-spacer></v-spacer>
         <v-btn icon @click="forgotPasswordDialog = false">
           <v-icon>mdi-close</v-icon>
@@ -258,19 +256,19 @@
       <v-card-text class="pt-6">
         <div v-if="!passwordResetSent">
           <p class="text-body-1 mb-4">
-            Ingrese su correo electrónico y le enviaremos un enlace para restablecer su contraseña.
+            {{ t('auth.recover_password_instructions') }}
           </p>
 
           <v-form @submit.prevent="sendPasswordReset" ref="resetForm">
             <v-text-field
               v-model="resetEmail"
-              label="Email"
+              :label="t('auth.email')"
               variant="outlined"
               type="email"
               required
               :rules="[
-                (v) => !!v || 'Email es requerido',
-                (v) => /.+@.+\..+/.test(v) || 'Email debe ser válido'
+                (v) => !!v || t('auth.required_field', { field: 'Email' }),
+                (v) => /.+@.+\..+/.test(v) || t('auth.invalid_email')
               ]"
               color="success"
               density="compact"
@@ -289,19 +287,18 @@
               :loading="resetLoading"
               :disabled="!resetEmail || resetLoading"
             >
-              Enviar Enlace de Recuperación
+              {{ t('auth.send_recovery_link') }}
             </v-btn>
           </v-form>
         </div>
 
         <div v-else class="text-center py-6">
           <v-icon color="success" size="64" class="mb-4">mdi-email-check-outline</v-icon>
-          <h3 class="text-h5 mb-2">¡Correo Enviado!</h3>
+          <h3 class="text-h5 mb-2">{{ t('auth.email_sent_title') }}</h3>
           <p class="text-body-1 mb-6">
-            Hemos enviado un enlace de recuperación a <strong>{{ resetEmail }}</strong
-            >. Por favor revise su bandeja de entrada y siga las instrucciones.
+            {{ t('auth.email_sent_message', { email: resetEmail }) }}
           </p>
-          <v-btn color="success" @click="forgotPasswordDialog = false"> Entendido </v-btn>
+          <v-btn color="success" @click="forgotPasswordDialog = false"> {{ t('auth.got_it') }} </v-btn>
         </div>
       </v-card-text>
     </v-card>
@@ -311,6 +308,7 @@
 <script setup>
 //import { ref, computed, watch, onMounted } from 'vue'
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/authStore'
 
 import { useValidationStore } from '../stores/validationStore'
@@ -334,7 +332,7 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:isOpen', 'loginSuccess', 'HandleDrawer'])
-
+const { t } = useI18n()
 const authStore = useAuthStore()
 const validationStore = useValidationStore()
 const snackbarStore = useSnackbarStore()
@@ -397,31 +395,31 @@ const registerForm = ref({
   hacienda: ''
 })
 
-const rules = {
+const rules = computed(() => ({
   username: {
-    required: helpers.withMessage('El nombre de usuario es requerido', required),
+    required: helpers.withMessage(t('auth.required_field', { field: t('auth.username') }), required),
     noSpecialChars: helpers.withMessage(
-      'No se permiten caracteres especiales',
+      t('auth.no_special_chars'),
       (value) => !/["'`!@#$%^&*()+=<>?\/\\{}[\]|~:;]/.test(value)
     )
   },
   email: {
-    required: helpers.withMessage('El email es requerido', required),
-    email: helpers.withMessage('Debe ser un email válido', (value) =>
+    required: helpers.withMessage(t('auth.required_field', { field: t('auth.email') }), required),
+    email: helpers.withMessage(t('auth.invalid_email'), (value) =>
       /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
     )
   },
   firstname: {
-    required: helpers.withMessage('El nombre es requerido', required),
+    required: helpers.withMessage(t('auth.required_field', { field: t('auth.firstname') }), required),
     noSpecialChars: helpers.withMessage(
-      'No se permiten caracteres especiales',
+      t('auth.no_special_chars'),
       (value) => !/["'`!@#$%^&*()+=<>?\/\\{}[\]|~:;]/.test(value)
     )
   },
   lastname: {
-    required: helpers.withMessage('El apellido es requerido', required),
+    required: helpers.withMessage(t('auth.required_field', { field: t('auth.lastname') }), required),
     noSpecialChars: helpers.withMessage(
-      'No se permiten caracteres especiales',
+      t('auth.no_special_chars'),
       (value) => !/["'`!@#$%^&*()+=<>?\/\\{}[\]|~:;]/.test(value)
     )
   },
@@ -431,15 +429,15 @@ const rules = {
     sameAsPassword: sameAs(computed(() => registerForm.value.password))
   },
   hacienda: {
-    required: helpers.withMessage('El apellido es requerido', required),
+    required: helpers.withMessage(t('auth.required_field', { field: t('auth.hacienda') }), required),
     noSpecialChars: helpers.withMessage(
-      'No se permiten caracteres especiales',
+      t('auth.no_special_chars'),
       (value) => !/["'`!@#$%^&*()+=<>?\/\\{}[\]|~:;]/.test(value)
     )
   }
-}
+}));
 
-const v$ = useVuelidate(rules, registerForm)
+const v$ = useVuelidate(rules, registerForm);
 
 const formValid = computed(() => {
   return (
@@ -469,7 +467,7 @@ const checkFields = async () => {
 const register = async () => {
   const isValid = await v$.value.$validate()
   if (!isValid) {
-    snackbarStore.showSnackbar('Por favor corrija los errores en el formulario', 'error')
+    snackbarStore.showSnackbar(t('auth.registration_error', { message: 'Please correct the errors in the form' }), 'error')
     return
   }
 
@@ -495,15 +493,15 @@ const register = async () => {
 
     // Mostrar errores específicos
     if (!fieldsAvailable.username) {
-      snackbarStore.showSnackbar('El nombre de usuario ya está en uso', 'error')
+      snackbarStore.showSnackbar(t('auth.username_in_use'), 'error')
       return
     }
     if (!fieldsAvailable.email) {
-      snackbarStore.showSnackbar('El email ya está registrado', 'error')
+      snackbarStore.showSnackbar(t('auth.email_in_use'), 'error')
       return
     }
     if (!fieldsAvailable.name) {
-      snackbarStore.showSnackbar('El nombre de la hacienda ya existe', 'error')
+      snackbarStore.showSnackbar(t('auth.hacienda_in_use'), 'error')
       return
     }
 
@@ -519,14 +517,14 @@ const register = async () => {
     await authStore.register(registrationData, 'administrador')
   } catch (error) {
     console.log('Registration error from Authmodal:', error.message)
-    snackbarStore.showSnackbar('Error en el registro: ' + error.message, 'error')
+    snackbarStore.showSnackbar(t('auth.registration_error', { message: error.message }), 'error')
   }
 }
 
 const login = async () => {
   // Validar que al menos uno de los campos esté presente
   if (!loginForm.value.username && !loginForm.value.email) {
-    snackbarStore.showSnackbar('Por favor ingrese su nombre de usuario o email', 'error')
+    snackbarStore.showSnackbar(t('auth.enter_username_or_email'), 'error')
     return
   }
 
@@ -537,7 +535,7 @@ const login = async () => {
 
   // Validar que el password esté presente
   if (!loginForm.value.password) {
-    snackbarStore.showSnackbar('Por favor ingrese su contraseña', 'error')
+    snackbarStore.showSnackbar(t('auth.enter_password'), 'error')
     return
   }
 
@@ -556,7 +554,7 @@ const login = async () => {
     }
   } catch (error) {
     console.log('Login error from authmodal:', error)
-    snackbarStore.showSnackbar('Error al iniciar sesión. Verifique sus credenciales.', 'error')
+    snackbarStore.showSnackbar(t('auth.login_error'), 'error')
   }
 }
 
@@ -604,9 +602,9 @@ const sendPasswordReset = async () => {
   try {
     await authStore.requestPasswordReset(resetEmail.value)
     passwordResetSent.value = true
-    snackbarStore.showSnackbar('Enlace de recuperación enviado', 'success')
+    snackbarStore.showSnackbar(t('auth.send_recovery_link'), 'success')
   } catch (error) {
-    resetError.value = 'No pudimos procesar su solicitud. Verifique su email e intente nuevamente.'
+    resetError.value = t('auth.recover_password_error')
   } finally {
     resetLoading.value = false
   }

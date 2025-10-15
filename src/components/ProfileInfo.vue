@@ -3,7 +3,7 @@
     <div class="flex justify-between items-start">
       <div>
         <h3 class="profile-title">
-          Perfil Social
+          {{ t('profile.social_profile') }}
           <v-chip variant="flat" size="x-small" color="grey-lighten-2" class="mx-1" pill>
             <v-avatar start> <v-img :src="avatarUrl" alt="Avatar"></v-img> </v-avatar>
             {{ userRole }}
@@ -33,7 +33,7 @@
   <div class="mx-4 p-2 my-2 flex items-center justify-between">
     <div class="flex items-center">
       <v-icon class="mr-2">mdi-information</v-icon>
-      <strong>Mi Información:</strong>
+      <strong>{{ t('profile.my_information') }}</strong>
     </div>
     <v-btn color="green-lighten-2" @click="openDialog" icon size="x-small">
       <v-icon>mdi-pencil</v-icon>
@@ -42,7 +42,7 @@
 
   <div
     class="bg-dinamico ml-6 flex-1 p-4 rich-text-content"
-    v-html="user?.info || 'No disponible'"
+    v-html="user?.info || t('profile.not_available')"
   ></div>
 
   <!-- Diálogo para editar el perfil -->
@@ -56,7 +56,7 @@
     <v-card>
       <v-form @submit.prevent="saveProfileChanges">
         <v-toolbar color="success" dark>
-          <v-toolbar-title>Editar Perfil</v-toolbar-title>
+          <v-toolbar-title>{{ t('profile.edit_profile') }}</v-toolbar-title>
           <v-spacer></v-spacer>
           <v-chip variant="outlined" size="small" color="white" class="mr-6">
             {{ userRole }}
@@ -68,21 +68,21 @@
             <div class="m-0 mt-4">
               <v-text-field
                 v-model="name"
-                label="Nombre"
+                :label="t('profile.name')"
                 variant="outlined"
                 density="compact"
                 prepend-icon="mdi-account"
               ></v-text-field>
               <v-text-field
                 v-model="lastname"
-                label="Apellido"
+                :label="t('profile.lastname')"
                 variant="outlined"
                 density="compact"
                 prepend-icon="mdi-account-details"
               ></v-text-field>
               <v-text-field
                 v-model="username"
-                label="Nombre de Usuario"
+                :label="t('profile.username')"
                 variant="outlined"
                 density="compact"
                 prepend-icon="mdi-account-circle"
@@ -91,7 +91,7 @@
                 v-model="email"
                 variant="solo"
                 disabled
-                label="Email"
+                :label="t('profile.email')"
                 density="compact"
                 type="email"
                 prepend-icon="mdi-email"
@@ -99,7 +99,7 @@
 
               <v-text-field
                 v-model="cedula"
-                label="Cedula/ID"
+                :label="t('profile.cedula')"
                 variant="outlined"
                 density="compact"
                 prepend-icon="mdi-account"
@@ -107,7 +107,7 @@
 
               <v-text-field
                 v-model="direccion"
-                label="Direccion/Hogar"
+                :label="t('profile.address')"
                 variant="outlined"
                 density="compact"
                 prepend-icon="mdi-map"
@@ -142,7 +142,7 @@
           <div class="mt-4">
             <div class="mb-2">
               <v-icon class="mr-2">mdi-information</v-icon>
-              Mi Info
+              {{ t('profile.my_info') }}
             </div>
             <QuillEditor
               contentType="html"
@@ -163,7 +163,7 @@
             color="red-lighten-3"
             @click="dialogOpen = false"
           >
-            Cancelar
+            {{ t('profile.cancel') }}
           </v-btn>
           <v-btn
             size="small"
@@ -174,7 +174,7 @@
             type="submit"
             :loading="isLoading"
           >
-            Guardar
+            {{ t('profile.save') }}
           </v-btn>
         </v-card-actions>
       </v-form>
@@ -184,6 +184,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useProfileStore } from '@/stores/profileStore'
 import { useSnackbarStore } from '@/stores/snackbarStore'
@@ -191,6 +192,7 @@ import AvatarForm from '@/components/forms/AvatarForm.vue'
 
 const profileStore = useProfileStore()
 const snackbarStore = useSnackbarStore()
+const { t } = useI18n()
 const { user } = storeToRefs(profileStore)
 
 const name = ref('')
@@ -236,10 +238,10 @@ const saveProfileChanges = async () => {
 
       info: info.value
     })
-    snackbarStore.showSnackbar('Profile updated successfully', 'success')
+    snackbarStore.showSnackbar(t('profile.profile_updated_successfully'), 'success')
     dialogOpen.value = false
   } catch (error) {
-    snackbarStore.showSnackbar('Failed to update profile', 'error')
+    snackbarStore.showSnackbar(t('profile.failed_to_update_profile'), 'error')
   } finally {
     isLoading.value = false
   }
