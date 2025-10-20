@@ -11,10 +11,9 @@
       <header class="col-span-4 bg-background shadow-sm p-0">
         <div class="profile-container mt-0 ml-0">
           <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <!-- Title and Chips Section -->
             <div class="w-full sm:flex-grow">
               <h3 class="profile-title text-sm sm:text-lg mb-2 sm:mb-0">
-                Gestión de Recordatorios
+                {{ t('reminders.reminder_management') }}
                 <v-chip variant="flat" size="x-small" color="grey-lighten-2" class="mx-1" pill>
                   <v-avatar start>
                     <v-img :src="avatarUrl" alt="Avatar"></v-img>
@@ -29,8 +28,6 @@
                 </v-chip>
               </h3>
             </div>
-
-            <!-- Button Section -->
             <div class="w-full sm:w-auto z-10">
               <v-btn
                 block
@@ -43,11 +40,10 @@
                 @click="recordatoriosStore.abrirNuevoRecordatorio"
                 class="min-w-[210px]"
               >
-                Nuevo recordatorio
+                {{ t('reminders.new_reminder') }}
               </v-btn>
             </div>
           </div>
-
           <div class="avatar-container">
             <img :src="avatarHaciendaUrl" alt="Avatar de hacienda" class="avatar-image" />
           </div>
@@ -55,31 +51,25 @@
       </header>
     </div>
 
-    <!-- Paneles de Estado -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-      <!-- Panel de Pendientes -->
       <StatusPanel
-        title="Pendientes"
+        :title="t('reminders.pending')"
         color="red"
         :items="recordatoriosStore.recordatoriosPendientes()"
         @update-status="recordatoriosStore.actualizarEstado"
         @edit="recordatoriosStore.editarRecordatorio"
         @delete="recordatoriosStore.eliminarRecordatorio"
       />
-
-      <!-- Panel En Progreso -->
       <StatusPanel
-        title="En Progreso"
+        :title="t('reminders.in_progress')"
         color="amber"
         :items="recordatoriosStore.recordatoriosEnProgreso()"
         @update-status="recordatoriosStore.actualizarEstado"
         @edit="recordatoriosStore.editarRecordatorio"
         @delete="recordatoriosStore.eliminarRecordatorio"
       />
-
-      <!-- Panel Completados -->
       <StatusPanel
-        title="Completados"
+        :title="t('reminders.completed')"
         color="green"
         :items="recordatoriosStore.recordatoriosCompletados()"
         @update-status="recordatoriosStore.actualizarEstado"
@@ -91,9 +81,8 @@
 </template>
 
 <script setup>
-//import { ref, computed, onMounted } from 'vue'
-
 import { computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useProfileStore } from '@/stores/profileStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
@@ -101,13 +90,12 @@ import { useRecordatoriosStore } from '@/stores/recordatoriosStore'
 import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useActividadesStore } from '@/stores/actividadesStore'
 import { useZonasStore } from '@/stores/zonasStore'
-//import { useSyncStore } from '@/stores/syncStore'
 import { handleError } from '@/utils/errorHandler'
 import StatusPanel from '@/components/RecordatoriosStatusPanel.vue'
-//import { useAvatarStore } from '@/stores/avatarStore'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 import RecordatorioForm from '@/components/forms/RecordatorioForm.vue'
 
+const { t } = useI18n()
 const profileStore = useProfileStore()
 const haciendaStore = useHaciendaStore()
 const recordatoriosStore = useRecordatoriosStore()
@@ -120,13 +108,6 @@ const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
 const userRole = computed(() => profileStore.user.role)
 const avatarUrl = computed(() => profileStore.avatarUrl)
 
-// Estados del componente
-// const dialog = ref(false)
-//const guardando = ref(false)
-// const editando = ref(false)
-// const recordatorioEdit = ref(crearRecordatorioVacio())
-
-// Cargar datos iniciales
 onMounted(async () => {
   await Promise.all([
     recordatoriosStore.cargarRecordatorios(),
@@ -135,20 +116,6 @@ onMounted(async () => {
     zonasStore.cargarZonas()
   ])
 })
-
-/* Métodos
-function crearRecordatorioVacio() {
-  return {
-    titulo: '',
-    descripcion: '',
-    fecha_recordatorio: new Date().toISOString().substr(0, 10),
-    prioridad: 'media',
-    estado: 'pendiente',
-    siembras: [],
-    actividades: [],
-    zonas: []
-  }
-} */
 
 async function handleFormSubmit(data) {
   try {
@@ -159,9 +126,9 @@ async function handleFormSubmit(data) {
       await recordatoriosStore.crearRecordatorio(data)
     }
     recordatoriosStore.dialog = false
-    snackbarStore.showSnackbar('Recordatorio guardado')
+    snackbarStore.showSnackbar(t('reminders.reminder_saved'))
   } catch (error) {
-    handleError(error, 'Error al guardar recordatorio')
+    handleError(error, t('reminders.error_saving_reminder'))
   }
 }
 </script>
@@ -176,18 +143,15 @@ export default {
 .list-move {
   transition: all 0.5s ease;
 }
-
 .list-enter-active,
 .list-leave-active {
   transition: all 0.5s ease;
 }
-
 .list-enter-from,
 .list-leave-to {
   opacity: 0;
   transform: translateY(30px);
 }
-
 .fab-button {
   bottom: 80px;
   right: 20px;

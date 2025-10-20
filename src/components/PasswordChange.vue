@@ -9,7 +9,7 @@
       prepend-icon="mdi-lock"
       @click="openDialog"
     >
-      Cambiar Contraseña
+      {{ t('password_change.change_password') }}
     </v-btn>
 
     <!-- Diálogo para cambiar la contraseña -->
@@ -22,7 +22,7 @@
     >
       <v-card>
         <v-toolbar color="success" dark>
-          <v-toolbar-title>Cambiar contraseña</v-toolbar-title>
+          <v-toolbar-title>{{ t('password_change.change_password') }}</v-toolbar-title>
           <v-spacer></v-spacer>
         </v-toolbar>
         <v-card-text>
@@ -30,7 +30,7 @@
             <v-text-field
               class=""
               v-model="oldPassword"
-              label="Contraseña actual"
+              :label="t('password_change.current_password')"
               variant="outlined"
               type="password"
               density="compact"
@@ -41,7 +41,7 @@
             <v-text-field
               class=""
               v-model="newPassword"
-              label="Nueva contraseña"
+              :label="t('password_change.new_password')"
               variant="outlined"
               type="password"
               density="compact"
@@ -52,7 +52,7 @@
             <v-text-field
               v-model="confirmPassword"
               class=""
-              label="Confirmar nueva contraseña"
+              :label="t('password_change.confirm_new_password')"
               variant="outlined"
               type="password"
               density="compact"
@@ -70,7 +70,7 @@
             color="red-lighten-3"
             @click="dialogOpen = false"
           >
-            Cancelar
+            {{ t('password_change.cancel') }}
           </v-btn>
           <v-btn
             size="small"
@@ -81,7 +81,7 @@
             @click="changePassword"
             :loading="isLoading"
           >
-            Cambiar contraseña
+            {{ t('password_change.change_password') }}
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -91,14 +91,16 @@
 
 <script>
 import { defineComponent, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useProfileStore } from '@/stores/profileStore'
-// import { useSnackbarStore } from '@/stores/snackbarStore'
+import { useSnackbarStore } from '@/stores/snackbarStore'
 
 export default defineComponent({
   name: 'PasswordChange',
   setup() {
     const profileStore = useProfileStore()
-    //   const snackbarStore = useSnackbarStore()
+    const snackbarStore = useSnackbarStore()
+    const { t } = useI18n()
 
     const dialogOpen = ref(false)
     const oldPassword = ref('')
@@ -119,19 +121,19 @@ export default defineComponent({
       }
 
       if (!oldPassword.value) {
-        errors.value.oldPassword = 'La contraseña actual es requerida'
+        errors.value.oldPassword = t('password_change.current_password_required')
       }
 
       if (!newPassword.value) {
-        errors.value.newPassword = 'La nueva contraseña es requerida'
+        errors.value.newPassword = t('password_change.new_password_required')
       } else if (newPassword.value.length < 8) {
-        errors.value.newPassword = 'La nueva contraseña debe tener al menos 8 caracteres'
+        errors.value.newPassword = t('password_change.new_password_min_length')
       }
 
       if (!confirmPassword.value) {
-        errors.value.confirmPassword = 'Confirmar la nueva contraseña es requerido'
+        errors.value.confirmPassword = t('password_change.confirm_password_required')
       } else if (newPassword.value !== confirmPassword.value) {
-        errors.value.confirmPassword = 'Las contraseñas no coinciden'
+        errors.value.confirmPassword = t('password_change.passwords_do_not_match')
       }
 
       return Object.values(errors.value).every((error) => !error)
@@ -145,13 +147,13 @@ export default defineComponent({
       isLoading.value = true
       try {
         await profileStore.changePassword(oldPassword.value, newPassword.value)
-        //  snackbarStore.showSnackbar('Contraseña cambiada exitosamente', 'success')
+        snackbarStore.showSnackbar(t('password_change.password_changed_successfully'), 'success')
         oldPassword.value = ''
         newPassword.value = ''
         confirmPassword.value = ''
-        dialogOpen.value = false // Cerrar el diálogo después de cambiar la contraseña
+        dialogOpen.value = false
       } catch (error) {
-        //  snackbarStore.showSnackbar('Error al cambiar la contraseña: ' + error.message, 'error')
+        snackbarStore.showSnackbar(t('password_change.failed_to_change_password') + ': ' + error.message, 'error')
       } finally {
         isLoading.value = false
       }

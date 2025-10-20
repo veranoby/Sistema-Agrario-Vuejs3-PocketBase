@@ -3,26 +3,22 @@
     <div class="flex justify-between items-start">
       <div>
         <h3 class="profile-title">
-          Perfil de la Hacienda
+          {{ t('hacienda_info.hacienda_profile') }}
           <v-chip variant="flat" size="x-small" color="green-lighten-2" class="mx-1" pill>
             <v-avatar start> <v-img :src="avatarHaciendaUrl" alt="Avatar"></v-img> </v-avatar>
             {{ mi_hacienda.name }}
           </v-chip>
           <v-chip variant="flat" size="small" color="green-lighten-2" class="m-0 p-2">
             <v-icon class="m-0">mdi-map-marker-radius</v-icon>
-            {{ mi_hacienda?.location || 'No disponible' }}
+            {{ mi_hacienda?.location || t('hacienda_info.not_available') }}
           </v-chip>
           <v-chip variant="flat" size="small" color="green-lighten-2" class="m-0 p-2">
-            <v-icon class="m-0">mdi-map-marker-multiple</v-icon><strong>GPS:</strong>
+            <v-icon class="m-0">mdi-map-marker-multiple</v-icon><strong>{{ t('hacienda_info.gps') }}:</strong>
             {{ formatGPS(mi_hacienda?.gps) }}
           </v-chip>
         </h3>
 
         <div class="mt-3 mb-1 text-xs">
-          <!-- Segunda línea: Chips -->
-
-          <!--METRICAS-->
-
           <v-tooltip v-for="(metrica, key) in mi_hacienda.metricas" :key="key" location="bottom">
             <template v-slot:activator="{ props }">
               <v-chip variant="flat" size="small" color="green-lighten-3" class="m-0 p-2" pill>
@@ -43,7 +39,7 @@
   <div class="mx-4 p-2 my-2 flex items-center justify-between">
     <div class="flex items-center">
       <v-icon class="mr-2">mdi-information</v-icon>
-      <strong>Información de {{ mi_hacienda.name }}:</strong>
+      <strong>{{ t('hacienda_info.information_of', { hacienda_name: mi_hacienda.name }) }}</strong>
     </div>
     <v-btn color="green-lighten-2" @click="openEditDialog" icon size="x-small">
       <v-icon>mdi-pencil</v-icon>
@@ -51,7 +47,7 @@
   </div>
   <div
     class="bg-dinamico ml-6 flex-1 p-4 rich-text-content"
-    v-html="mi_hacienda?.info || 'No disponible'"
+    v-html="mi_hacienda?.info || t('hacienda_info.not_available')"
   ></div>
 
   <v-dialog
@@ -63,7 +59,7 @@
   >
     <v-card v-if="editedHacienda">
       <v-toolbar color="success" dark>
-        <v-toolbar-title>Editar Hacienda</v-toolbar-title>
+        <v-toolbar-title>{{ t('hacienda_info.edit_hacienda') }}</v-toolbar-title>
         <v-spacer></v-spacer>
       </v-toolbar>
       <v-card-text>
@@ -75,7 +71,7 @@
               density="compact"
               variant="outlined"
               v-model="editedHacienda.name"
-              label="Nombre"
+              :label="t('hacienda_info.name')"
             ></v-text-field>
             <v-text-field
               class="compact-form"
@@ -83,14 +79,14 @@
               density="compact"
               variant="outlined"
               v-model="editedHacienda.location"
-              label="Localización"
+              :label="t('hacienda_info.location')"
             ></v-text-field>
             <v-text-field
               class="compact-form"
               density="compact"
               variant="outlined"
               v-model="editedHacienda.gps.lat"
-              label="Latitud"
+              :label="t('hacienda_info.latitude')"
               type="number"
             ></v-text-field>
             <v-text-field
@@ -98,7 +94,7 @@
               variant="outlined"
               density="compact"
               v-model="editedHacienda.gps.lng"
-              label="Longitud"
+              :label="t('hacienda_info.longitude')"
               type="number"
             ></v-text-field>
           </div>
@@ -128,12 +124,11 @@
           </div>
         </div>
 
-        <!-- Sección de Métricas -->
         <div class="mt-4">
           <div class="flex justify-between items-center mb-2">
             <div class="flex items-center">
               <v-icon class="mr-2">mdi-chart-box</v-icon>
-              <span class="font-bold">Métricas</span>
+              <span class="font-bold">{{ t('hacienda_info.metrics') }}</span>
             </div>
             <v-btn
               size="small"
@@ -143,7 +138,7 @@
               color="green-lighten-3"
               @click="addMetricaDialog = true"
             >
-              Agregar Métrica
+              {{ t('hacienda_info.add_metric') }}
             </v-btn>
           </div>
 
@@ -152,7 +147,6 @@
               <v-tooltip location="bottom">
                 <template v-slot:activator="{ props }">
                   <div v-bind="props">
-                    <!-- Select para tipo "select" -->
                     <v-select
                       v-if="metrica.tipo === 'select'"
                       v-model="metrica.valor"
@@ -166,8 +160,6 @@
                         <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
                       </template>
                     </v-select>
-
-                    <!-- Input date para tipo "date" -->
                     <v-text-field
                       v-else-if="metrica.tipo === 'date'"
                       v-model="metrica.valor"
@@ -181,8 +173,6 @@
                         <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
                       </template>
                     </v-text-field>
-
-                    <!-- Input text para tipo "text" -->
                     <v-text-field
                       v-else-if="metrica.tipo === 'text'"
                       v-model="metrica.valor"
@@ -195,8 +185,6 @@
                         <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
                       </template>
                     </v-text-field>
-
-                    <!-- Input number para tipo "number" -->
                     <v-text-field
                       v-else-if="metrica.tipo === 'number'"
                       v-model.number="metrica.valor"
@@ -210,8 +198,6 @@
                         <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
                       </template>
                     </v-text-field>
-
-                    <!-- Checkbox para tipo "boolean" -->
                     <v-checkbox
                       v-else-if="metrica.tipo === 'boolean'"
                       v-model="metrica.valor"
@@ -223,8 +209,6 @@
                         <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
                       </template>
                     </v-checkbox>
-
-                    <!-- Checkbox para tipo "checkbox" -->
                     <v-checkbox
                       v-else-if="metrica.tipo === 'checkbox'"
                       v-model="metrica.valor"
@@ -244,11 +228,10 @@
           </div>
         </div>
 
-        <!-- Información adicional -->
         <div class="mt-4">
           <div class="mb-2">
             <v-icon class="mr-2">mdi-information</v-icon>
-            Mi Info
+            {{ t('hacienda_info.my_info') }}
           </div>
           <QuillEditor
             contentType="html"
@@ -267,7 +250,7 @@
           prepend-icon="mdi-cancel"
           color="red-lighten-3"
           @click="closeEditDialog"
-          >Cancelar</v-btn
+          >{{ t('hacienda_info.cancel') }}</v-btn
         >
         <v-btn
           size="small"
@@ -277,17 +260,16 @@
           color="green-lighten-3"
           @click="saveHacienda"
         >
-          Guardar
+          {{ t('hacienda_info.save') }}
         </v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
 
-  <!-- Diálogo para agregar métrica personalizada -->
   <v-dialog v-model="addMetricaDialog" persistent max-width="300px">
     <v-card>
       <v-toolbar color="success" dark>
-        <v-toolbar-title>Agregar Métrica</v-toolbar-title>
+        <v-toolbar-title>{{ t('hacienda_info.add_metric') }}</v-toolbar-title>
         <v-spacer></v-spacer>
       </v-toolbar>
       <v-card-text class="m-1 p-0 pl-2">
@@ -296,14 +278,14 @@
           variant="outlined"
           class="compact-form"
           v-model="newMetrica.titulo"
-          label="Título"
+          :label="t('hacienda_info.title')"
         />
         <v-textarea
           density="compact"
           variant="outlined"
           class="compact-form"
           v-model="newMetrica.descripcion"
-          label="Descripción"
+          :label="t('hacienda_info.description')"
         />
         <v-select
           density="compact"
@@ -311,7 +293,7 @@
           class="compact-form"
           v-model="newMetrica.tipo"
           :items="['checkbox', 'number', 'text', 'date', 'boolean', 'select']"
-          label="Tipo"
+          :label="t('hacienda_info.type')"
         />
       </v-card-text>
       <v-card-actions>
@@ -322,7 +304,7 @@
           prepend-icon="mdi-cancel"
           color="red-lighten-3"
           @click="addMetricaDialog = false"
-          >Cancelar</v-btn
+          >{{ t('hacienda_info.cancel') }}</v-btn
         >
         <v-btn
           size="small"
@@ -331,7 +313,7 @@
           prepend-icon="mdi-check"
           color="green-lighten-3"
           @click="addMetrica"
-          >Agregar</v-btn
+          >{{ t('hacienda_info.add') }}</v-btn
         >
       </v-card-actions>
     </v-card>
@@ -351,10 +333,12 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import AvatarForm from '@/components/forms/AvatarForm.vue'
 
+const { t } = useI18n()
 const haciendaStore = useHaciendaStore()
 const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
 
@@ -410,7 +394,6 @@ const formatMetricValue = (value) => {
   return Array.isArray(value) ? value[0] : value
 }
 
-// Función para agregar una nueva métrica
 const addMetrica = async () => {
   if (!newMetrica.value.titulo) return
 
@@ -426,7 +409,6 @@ const addMetrica = async () => {
     descripcion: newMetrica.value.descripcion
   }
 
-  // Limpiar el formulario
   newMetrica.value = {
     titulo: '',
     descripcion: '',
@@ -436,7 +418,6 @@ const addMetrica = async () => {
   addMetricaDialog.value = false
 }
 
-// Función para eliminar una métrica
 const removeMetrica = (key) => {
   if (editedHacienda.value && editedHacienda.value.metricas) {
     const metricas = { ...editedHacienda.value.metricas }
@@ -445,9 +426,8 @@ const removeMetrica = (key) => {
   }
 }
 
-// Agregar la función formatGPS
 const formatGPS = (gps) => {
-  if (!gps || !gps.lat || !gps.lng) return 'No disponible'
+  if (!gps || !gps.lat || !gps.lng) return t('hacienda_info.not_available')
   return `Lat: ${gps.lat}, Lng: ${gps.lng}`
 }
 </script>

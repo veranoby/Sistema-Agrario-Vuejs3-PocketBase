@@ -7,7 +7,7 @@
             <!-- Title and Chips Section -->
             <div class="w-full sm:flex-grow">
               <h3 class="profile-title text-sm sm:text-lg mb-2 sm:mb-0">
-                Zonas y logística de trabajo
+                {{ t('zones.zones_and_logistics') }}
                 <v-chip variant="flat" size="x-small" color="grey-lighten-2" class="mx-1" pill>
                   <v-avatar start>
                     <v-img :src="avatarUrl" alt="Avatar"></v-img>
@@ -25,7 +25,6 @@
 
             <!-- EXTRAS Section -->
             <div class="w-full sm:w-auto z-10 text-center">
-              <!-- circular progress control-->
               <h4
                 :class="{
                   'text-red font-extrabold pt-0 pb-2 text-xs sm:text-sm': promedioBpaEstado < 40,
@@ -34,10 +33,9 @@
                   'text-green font-extrabold pt-0 pb-2 text-xs sm:text-sm': promedioBpaEstado >= 80
                 }"
               >
-                Avance BPA:
-                <span class="hidden sm:inline">Zonas y logística</span>
+                {{ t('zones.bpa_progress') }}:
+                <span class="hidden sm:inline">{{ t('zones.zones_and_logistics_progress') }}</span>
               </h4>
-              <!-- Título agregado -->
               <v-progress-circular
                 :model-value="promedioBpaEstado"
                 :size="78"
@@ -87,7 +85,7 @@
                 <span
                   class="hidden sm:inline text-sm truncate text-green-600"
                   style="max-width: 80%; white-space: normal"
-                  v-html="tipoZona.descripcion || 'Sin descripcion disponible'"
+                  v-html="tipoZona.descripcion || t('zones.no_description_available')"
                 ></span>
 
                 <v-btn
@@ -97,11 +95,6 @@
                   @click="abrirDialogoCrear(tipoZona)"
                 ></v-btn>
               </v-card-title>
-              <!--
-                                :items="getZonasPorTipo(tipoZona.id)"
-                  :search="search"
-
-              -->
               <v-card-text>
                 <v-data-table
                   :headers="headers"
@@ -121,7 +114,7 @@
                         prepend-inner-icon="mdi-map"
                         clearable
                         v-model="search.nombre"
-                        label="BUSCAR NOMBRE"
+                        :label="t('zones.search_name')"
                         variant="outlined"
                         class="compact-form-2"
                       ></v-text-field>
@@ -129,7 +122,7 @@
                         clearable
                         prepend-inner-icon="mdi-sprout"
                         v-model="search.siembra"
-                        label="BUSCAR SIEMBRA"
+                        :label="t('zones.search_sowing')"
                         variant="outlined"
                         class="compact-form-2"
                       ></v-text-field>
@@ -171,14 +164,14 @@
                                 {{
                                   item.area
                                     ? `${item.area.area} ${item.area.unidad}`
-                                    : 'Área no especificada'
+                                    : t('zones.area_not_specified')
                                 }}
                               </v-col>
                               <v-col cols="auto" class="ml-4" v-if="item.gps">
                                 <v-icon>mdi-crosshairs-gps</v-icon>
                               </v-col>
                               <v-col v-if="item.gps">
-                                Lat: {{ item.gps.lat }}, Lng: {{ item.gps.lng }}
+                                {{ t('zones.gps_info', { lat: item.gps.lat, lng: item.gps.lng }) }}
                               </v-col>
                             </v-row>
                             <v-row no-gutters align="center">
@@ -188,7 +181,7 @@
                               <v-col>
                                 <p
                                   class="ml-2 mr-0 p-0 text-xs"
-                                  v-html="item.info || 'No disponible'"
+                                  v-html="item.info || t('zones.not_available')"
                                 ></p>
                               </v-col>
                             </v-row>
@@ -241,11 +234,10 @@
         @saved="onZonaSaved"
       />
     </v-dialog>
-    <!-- Diálogo para mostrar la imagen en grande -->
     <v-dialog v-model="dialogoImagenGrande" max-width="800px">
       <v-img :src="getAvatarUrl(zonaEditando)" />
       <v-card-actions>
-        <v-btn @click="dialogoImagenGrande = false">Cerrar</v-btn>
+        <v-btn @click="dialogoImagenGrande = false">{{ t('zones.close') }}</v-btn>
       </v-card-actions>
     </v-dialog>
   </v-container>
@@ -253,6 +245,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useZonasStore } from '@/stores/zonasStore'
 import { useProfileStore } from '@/stores/profileStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
@@ -260,9 +253,9 @@ import { useSiembrasStore } from '@/stores/siembrasStore'
 import { storeToRefs } from 'pinia'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 import { useAvatarStore } from '@/stores/avatarStore'
-
 import ZonaForm from '@/components/forms/ZonaForm.vue'
 
+const { t } = useI18n()
 const zonasStore = useZonasStore()
 const siembrasStore = useSiembrasStore()
 const snackbarStore = useSnackbarStore()
@@ -272,15 +265,10 @@ const avatarStore = useAvatarStore()
 
 const { user } = storeToRefs(profileStore)
 const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
-
 const userRole = computed(() => user.value.role)
 const avatarUrl = computed(() => profileStore.avatarUrl)
-//const getSiembraAvatarUrl = siembrasStore.getSiembraAvatarUrl
 
-// Computed para obtener el promedio de bpa_estado
 const promedioBpaEstado = computed(() => zonasStore.promedioBpaEstado)
-
-// Computed para determinar el color basado en el promedio
 const colorBpaEstado = computed(() => {
   if (promedioBpaEstado.value < 40) return 'red'
   if (promedioBpaEstado.value < 80) return 'orange'
@@ -289,7 +277,6 @@ const colorBpaEstado = computed(() => {
 
 const { zonas, tiposZonas } = storeToRefs(zonasStore)
 const { cargarZonas, cargarTiposZonas, eliminarZona } = zonasStore
-/*const { cargarZonas, cargarTiposZonas, crearZona, eliminarZona } = zonasStore*/
 const { siembras } = storeToRefs(siembrasStore)
 
 const dialogoCrear = ref(false)
@@ -303,10 +290,8 @@ const zonaEditando = ref({
   siembra: null,
   avatar: null,
   datos_bpa: [],
-  metricas: {} // Añadimos este campo
+  metricas: {}
 })
-/*const formularioValido = ref(true)
-const form = ref(null)*/
 const expanded = ref([])
 
 const siembrasActivas = computed(() => {
@@ -324,19 +309,18 @@ const search = ref({
 })
 
 const headers = [
-  { title: 'Nombre', align: 'start', key: 'nombre' },
-  { title: 'BPA', align: 'center', key: 'bpa_estado' },
-  { title: 'Siembra', align: 'start', key: 'siembra' },
-  { title: 'Acciones', key: 'actions', sortable: false, align: 'end' }
+  { title: t('zones.name'), align: 'start', key: 'nombre' },
+  { title: t('zones.bpa'), align: 'center', key: 'bpa_estado' },
+  { title: t('zones.sowing'), align: 'start', key: 'siembra' },
+  { title: t('zones.actions'), key: 'actions', sortable: false, align: 'end' }
 ]
 
-// Initialize tab with null or the first tipoZona id if available
 const tab = ref(null)
 
 const getSiembraNombre = (siembraId) => {
-  if (!siembraId) return 'General'
+  if (!siembraId) return t('zones.general')
   const siembra = siembras.value.find((s) => s.id === siembraId)
-  return siembra ? `${siembra.nombre} ${siembra.tipo}` : 'Siembra no encontrada'
+  return siembra ? `${siembra.nombre} ${siembra.tipo}` : t('zones.sowing_not_found')
 }
 
 const getSiembraId = (siembraNombre) => {
@@ -345,7 +329,7 @@ const getSiembraId = (siembraNombre) => {
       s.nombre.toUpperCase().includes(siembraNombre.toUpperCase()) ||
       s.tipo.toUpperCase().includes(siembraNombre.toUpperCase())
   )
-  return siembrasEncontradas.map((siembra) => siembra.id) // Devuelve un array de IDs
+  return siembrasEncontradas.map((siembra) => siembra.id)
 }
 
 const tipoZonaActual = ref({})
@@ -357,22 +341,18 @@ const getAvatarUrl = (zona) => {
 onMounted(async () => {
   try {
     await Promise.all([cargarTiposZonas(), cargarZonas(), siembrasStore.cargarSiembras()])
-
-    // Set initial tab value to the first tipoZona id if available
     if (tiposZonas.value.length > 0) {
       tab.value = tiposZonas.value[0].id
     }
   } catch (error) {
     console.error('Error loading data:', error)
-    snackbarStore.showError('Error al cargar los datos')
+    snackbarStore.showError(t('zones.error_loading_data'))
   }
 })
 
 const abrirDialogoCrear = (tipoZona) => {
   modoEdicion.value = false
   tipoZonaActual.value = tipoZona
-
-  // Inicializar métricas correctamente
   const metricasInicializadas = {}
   if (tipoZona?.metricas?.metricas) {
     Object.entries(tipoZona.metricas.metricas).forEach(([key, value]) => {
@@ -382,7 +362,6 @@ const abrirDialogoCrear = (tipoZona) => {
       }
     })
   }
-
   zonaEditando.value = {
     nombre: '',
     area: { area: null, unidad: '' },
@@ -394,7 +373,6 @@ const abrirDialogoCrear = (tipoZona) => {
     datos_bpa: tipoZona.datos_bpa?.preguntas_bpa?.map(() => ({ respuesta: null })) || [],
     metricas: metricasInicializadas
   }
-
   dialogoCrear.value = true
 }
 
@@ -422,74 +400,57 @@ function getDefaultMetricaValue(tipo) {
 const editarZona = (zona) => {
   modoEdicion.value = true
   tipoZonaActual.value = tiposZonas.value.find((tipo) => tipo.id === zona.tipos_zonas)
-
   zonaEditando.value = {
     ...zona,
     datos_bpa: zona.datos_bpa || [],
     metricas: zona.metricas || {}
   }
-
-  console.log('metricas cargadas para edición:', zonaEditando.value.metricas)
   dialogoCrear.value = true
 }
 
 const cerrarDialogo = () => {
   dialogoCrear.value = false
-  // form.value.reset()
-  avatarFile.value = null // Limpiar el archivo después de la actualización
+  avatarFile.value = null
 }
 
 const confirmarEliminarZona = (zona) => {
-  if (confirm(`¿Estás seguro de que quieres eliminar la zona "${zona.nombre}"?`)) {
+  if (confirm(t('zones.confirm_delete_zone', { zoneName: zona.nombre }))) {
     eliminarZona(zona.id)
       .then(() => cargarZonas())
-      .catch(() => snackbarStore.showError('Error al eliminar la zona'))
+      .catch(() => snackbarStore.showError(t('zones.error_deleting_zone')))
   }
 }
 
-const avatarFile = ref(null) // Agregar ref para manejar el archivo del avatar
-
+const avatarFile = ref(null)
 const dialogoImagenGrande = ref(false)
 
-// Usar watch para observar cambios en zonas
 watch(
   () => zonasStore.zonas,
   (newZonas) => {
     const updatedZona = newZonas.find((z) => z.id === zonaEditando.value.id)
     if (updatedZona) {
-      zonaEditando.value = updatedZona // Actualiza zonaEditando si hay cambios
+      zonaEditando.value = updatedZona
     }
   }
 )
 
 const onZonaSaved = async () => {
   dialogoCrear.value = false
-  await cargarZonas() // Recargar zonas para reflejar los cambios
-  snackbarStore.showSnackbar('Zona guardada exitosamente', 'success')
+  await cargarZonas()
+  snackbarStore.showSnackbar(t('zones.zone_saved_successfully'), 'success')
 }
-
-/*
-const getZonasPorTipo = (tipoId) => {
-  return zonas.value.filter((zona) => zona && zona.tipo === tipoId)
-}
-*/
 
 const filteredZonas = (tipoId) => {
   let zonastemp = zonas.value.filter((zona) => zona && zona.tipos_zonas === tipoId)
-
-  // Obtener los IDs de siembras que coinciden
   const siembraIdsTemp = search.value.siembra ? getSiembraId(search.value.siembra) : []
-
   return zonastemp.filter((zona) => {
     const matchesNombre = search.value.nombre
       ? zona.nombre.includes(search.value.nombre.toUpperCase())
-      : true // Si no hay búsqueda, siempre coincide
-
+      : true
     const matchesSiembra =
       siembraIdsTemp.length > 0
-        ? siembraIdsTemp.includes(zona.siembra) // Verifica si el ID de la zona está en los IDs encontrados
-        : true // Si no hay búsqueda, siempre coincide
-
+        ? siembraIdsTemp.includes(zona.siembra)
+        : true
     return matchesNombre && matchesSiembra
   })
 }
@@ -499,7 +460,6 @@ const filteredZonas = (tipoId) => {
 .v-tabs-window {
   @apply w-full;
 }
-
 .v-tabs-window-item {
   @apply w-full;
 }

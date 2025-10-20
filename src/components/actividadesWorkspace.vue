@@ -18,7 +18,7 @@
                         <router-link
                           to="/actividades"
                           class="ml-3 text-sm font-extrabold hover:text-gray-700"
-                          >MIS ACTIVIDADES</router-link
+                          >{{ t('activity_workspace.my_activities') }}</router-link
                         >
                       </div>
                     </li>
@@ -37,7 +37,7 @@
 
                 <v-chip variant="flat" size="x-small" color="green-lighten-3" class="mx-1" pill>
                   <v-avatar start> <v-img :src="avatarHaciendaUrl" alt="Avatar"></v-img> </v-avatar>
-                  HACIENDA: {{ mi_hacienda.name }}
+                  {{ t('activity_workspace.hacienda') }}: {{ mi_hacienda.name }}
                 </v-chip>
 
                 <v-chip variant="flat" size="x-small" color="grey-lighten-2" class="mx-1" pill>
@@ -50,7 +50,7 @@
                 </v-chip>
 
                 <v-chip variant="flat" size="x-small" color="grey-lighten-2" class="mx-1" pill>
-                  TIPO:{{
+                  {{ t('activity_workspace.type') }}:{{
                     actividadesStore.getActividadTipo(actividadInfo.tipo_actividades).toUpperCase()
                   }}
                 </v-chip>
@@ -59,7 +59,6 @@
 
             <!-- EXTRAS Section -->
             <div class="w-full sm:w-auto z-10 text-center">
-              <!-- circular progress control-->
               <h4
                 :class="{
                   'text-red font-extrabold pt-0 pb-2 text-xs sm:text-sm':
@@ -70,9 +69,8 @@
                     actividadInfo.bpa_estado >= 80
                 }"
               >
-                Avance BPA:
+                {{ t('activity_workspace.bpa_progress') }}:
               </h4>
-              <!-- Título agregado -->
               <v-progress-circular
                 :model-value="actividadInfo.bpa_estado"
                 :size="78"
@@ -94,19 +92,15 @@
     <v-row no-gutters>
       <v-col cols="9" class="pa-4 pt-2">
         <v-row no-gutters>
-          <!-- Datos Actividad -->
           <v-col cols="6" class="pr-2">
             <v-card class="actividad-info mb-4" elevation="2">
               <v-card-title class="headline d-flex flex-column">
-                <!-- Primera línea: Título y botón -->
                 <div class="d-flex justify-space-between align-center w-100">
-                  <span>Información de la Actividad</span>
+                  <span>{{ t('activity_workspace.activity_information') }}</span>
                   <v-btn color="green-lighten-2" @click="openEditDialog" icon>
                     <v-icon>mdi-pencil</v-icon>
                   </v-btn>
                 </div>
-
-                <!-- Segunda línea: Chips -->
                 <div class="w-100 mt-2 flex flex-wrap gap-1">
                   <v-tooltip
                     v-for="(metrica, key) in actividadInfo.metricas"
@@ -132,18 +126,17 @@
               <v-card-text>
                 <div
                   class="rich-text-content"
-                  v-html="actividadInfo.descripcion || 'No disponible'"
+                  v-html="actividadInfo.descripcion || t('activity_workspace.not_available')"
                 ></div>
               </v-card-text>
             </v-card>
           </v-col>
 
           <v-col cols="6" class="pl-2">
-            <!-- Siembras y Zonas -->
             <div class="siembra-info mt-0 p-0">
               <v-card-title class="headline d-flex justify-between">
                 <h2 class="text-md font-bold mt-2">
-                  <span v-if="actividadInfo.siembras.length > 0">Siembras/Proyectos Asociados</span>
+                  <span v-if="actividadInfo.siembras.length > 0">{{ t('activity_workspace.associated_sowings') }}</span>
                 </h2>
                 <v-btn size="x-small" color="green-lighten-2" @click="openAddSiembrasZonas" icon>
                   <v-icon>mdi-pencil</v-icon>
@@ -171,7 +164,7 @@
                   v-if="actividadInfo.zonas & (actividadInfo.zonas.length > 0)"
                   class="text-l font-bold mt-2 mb-2"
                 >
-                  Otras Zonas Asociadas
+                  {{ t('activity_workspace.other_associated_zones') }}
                 </h2>
 
                 <div class="flex flex-wrap">
@@ -194,11 +187,10 @@
               </v-card-text>
             </div>
 
-            <!-- SECCION PROGRAMACIONES -->
             <div class="siembra-info mt-4 p-0">
               <v-card-title class="headline d-flex justify-between">
                 <h2 class="text-md font-bold mt-2">
-                  <span>Programaciones</span>
+                  <span>{{ t('activity_workspace.schedules') }}</span>
                 </h2>
                 <v-btn
                   size="x-small"
@@ -227,13 +219,11 @@
           </v-col>
         </v-row>
 
-        <!-- Bitácora Section using EmbeddedBitacoraList -->
         <v-row no-gutters>
           <v-col cols="12" class="mt-4">
-            <!-- Added mt-4 for spacing -->
             <v-card class="bitacora-embedded-section" elevation="2">
               <v-card-title class="d-flex justify-space-between align-center text-body-1">
-                <span>Bitácora Reciente</span>
+                <span>{{ t('activity_workspace.recent_log') }}</span>
                 <v-btn
                   color="secondary"
                   @click="openNewBitacoraEntryDialogActividad"
@@ -241,11 +231,10 @@
                   variant="elevated"
                 >
                   <v-icon start>mdi-plus-box-outline</v-icon>
-                  Nueva Entrada
+                  {{ t('activity_workspace.new_entry') }}
                 </v-btn>
               </v-card-title>
               <v-card-text class="pa-2">
-                <!-- Adjusted padding -->
                 <EmbeddedBitacoraList :actividadId="actividadId" title="" :itemLimit="5" />
               </v-card-text>
             </v-card>
@@ -253,13 +242,10 @@
         </v-row>
       </v-col>
 
-      <!-- SIDEBAR  -->
       <v-col cols="3" class="p-0 pr-4">
-        <!-- RECORDATORIOS -->
-
         <div class="siembra-info mt-2 p-2">
           <v-card-title class="headline d-flex justify-between">
-            <h2 class="text-md font-bold mt-2">Recordatorios</h2>
+            <h2 class="text-md font-bold mt-2">{{ t('activity_workspace.reminders') }}</h2>
             <v-btn
               size="x-small"
               color="green-lighten-2"
@@ -272,7 +258,6 @@
             </v-btn>
           </v-card-title>
 
-          <!-- Panel de editar recordatorios -->
           <RecordatorioForm
             :model-value="recordatoriosStore.dialog"
             @update:modelValue="recordatoriosStore.dialog = $event"
@@ -281,9 +266,8 @@
             @submit="handleFormSubmit"
           />
 
-          <!-- Panel de Pendientes -->
           <StatusPanel
-            title="Pendientes"
+            :title="t('activity_workspace.pending')"
             color="red"
             :items="recordatoriosStore.recordatoriosPendientes(actividadId)"
             @update-status="recordatoriosStore.actualizarEstado"
@@ -291,9 +275,8 @@
             @delete="recordatoriosStore.eliminarRecordatorio"
           />
           <br />
-          <!-- Panel En Progreso -->
           <StatusPanel
-            title="En Progreso"
+            :title="t('activity_workspace.in_progress')"
             color="amber"
             :items="recordatoriosStore.recordatoriosEnProgreso(actividadId)"
             @update-status="recordatoriosStore.actualizarEstado"
@@ -304,12 +287,11 @@
       </v-col>
     </v-row>
 
-    <!-- Dialogo de Edición de Actividad -->
     <v-dialog v-model="editActividadDialog" persistent max-width="900px">
       <v-form ref="editActividadForm">
         <v-card>
           <v-toolbar color="success" dark>
-            <v-toolbar-title>Editar Actividad</v-toolbar-title>
+            <v-toolbar-title>{{ t('activity_workspace.edit_activity') }}</v-toolbar-title>
             <v-spacer></v-spacer>
           </v-toolbar>
 
@@ -319,7 +301,7 @@
                 <div class="col-span-2">
                   <v-text-field
                     v-model="editedActividad.nombre"
-                    label="Nombre"
+                    :label="t('activity_workspace.name')"
                     class="compact-form"
                     variant="outlined"
                     density="compact"
@@ -330,14 +312,13 @@
                     v-model="editedActividad.activa"
                     density="compact"
                     class="compact-form"
-                    label="estado activo"
+                    :label="t('activity_workspace.active_state')"
                   ></v-checkbox>
                 </div>
 
-                <!-- Sección para métricas -->
                 <div class="siembra-info col-span-3" v-if="tipoActividadActual?.metricas?.metricas">
                   <v-card-title class="headline d-flex justify-between">
-                    <h2 class="text-xl font-bold mt-2">Métricas</h2>
+                    <h2 class="text-xl font-bold mt-2">{{ t('activity_workspace.metrics') }}</h2>
                     <v-btn
                       size="x-small"
                       color="green-lighten-2"
@@ -353,7 +334,6 @@
                         <v-tooltip location="bottom">
                           <template v-slot:activator="{ props }">
                             <div v-bind="props">
-                              <!-- Select para tipo "select" -->
                               <v-select
                                 v-if="metrica.tipo === 'select'"
                                 v-model="metrica.valor"
@@ -367,8 +347,6 @@
                                   <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
                                 </template>
                               </v-select>
-
-                              <!-- Input number para tipo "date" -->
                               <v-text-field
                                 v-else-if="metrica.tipo === 'date'"
                                 v-model="metrica.valor"
@@ -383,8 +361,6 @@
                                   <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
                                 </template>
                               </v-text-field>
-
-                              <!-- Input number para tipo "string" -->
                               <v-text-field
                                 v-else-if="metrica.tipo === 'string'"
                                 v-model.number="metrica.valor"
@@ -397,8 +373,6 @@
                                   <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
                                 </template>
                               </v-text-field>
-
-                              <!-- Input number para tipo "number" -->
                               <v-text-field
                                 v-else-if="metrica.tipo === 'number'"
                                 v-model.number="metrica.valor"
@@ -412,8 +386,6 @@
                                   <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
                                 </template>
                               </v-text-field>
-
-                              <!-- Input number para tipo "boolean" -->
                               <v-checkbox
                                 v-else-if="metrica.tipo === 'boolean'"
                                 v-model.number="metrica.valor"
@@ -425,8 +397,6 @@
                                   <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
                                 </template>
                               </v-checkbox>
-
-                              <!-- Multi-select para tipo "multi-select" -->
                               <v-select
                                 v-else-if="metrica.tipo === 'multi-select'"
                                 v-model="metrica.valor"
@@ -442,8 +412,6 @@
                                   <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
                                 </template>
                               </v-select>
-
-                              <!-- Input number para tipo "checkbox" -->
                               <v-checkbox
                                 v-else-if="metrica.tipo === 'checkbox'"
                                 v-model.number="metrica.valor"
@@ -465,7 +433,6 @@
                 </div>
               </div>
               <div>
-                <!-- Componente para editar el avatar -->
                 <AvatarForm
                   v-model="showAvatarDialog"
                   collection="actividades"
@@ -478,7 +445,6 @@
                   <v-avatar size="192">
                     <v-img :src="actividadAvatarUrl" alt="Avatar de Actividad"></v-img>
                   </v-avatar>
-                  <!-- Botón para abrir el diálogo de avatar -->
                   <v-btn
                     icon
                     size="small"
@@ -492,11 +458,10 @@
               </div>
             </div>
 
-            <!-- Diálogo para agregar métrica personalizada -->
             <v-dialog v-model="addMetricaDialog" persistent max-width="400px">
               <v-card>
                 <v-toolbar color="success" dark>
-                  <v-toolbar-title>Agregar Métrica</v-toolbar-title>
+                  <v-toolbar-title>{{ t('activity_workspace.add_metric') }}</v-toolbar-title>
                   <v-spacer></v-spacer>
                 </v-toolbar>
                 <v-card-text>
@@ -504,31 +469,30 @@
                     density="compact"
                     variant="outlined"
                     v-model="newMetrica.titulo"
-                    label="Título"
+                    :label="t('activity_workspace.title')"
                   />
                   <v-textarea
                     density="compact"
                     variant="outlined"
                     v-model="newMetrica.descripcion"
-                    label="Descripción"
+                    :label="t('activity_workspace.description')"
                   />
                   <v-select
                     density="compact"
                     variant="outlined"
                     v-model="newMetrica.tipo"
                     :items="['checkbox', 'number', 'string', 'select', 'multi-select']"
-                    label="Tipo"
+                    :label="t('activity_workspace.type')"
                     @update:model-value="handleTipoChange"
                   />
-                  <!-- Campo de opciones que aparece solo para tipos específicos -->
                   <v-textarea
                     v-if="showOpcionesField"
                     density="compact"
                     variant="outlined"
                     v-model="newMetrica.opcionesText"
-                    label="Opciones (separadas por coma)"
-                    placeholder="Opción 1, Opción 2, Opción 3"
-                    hint="*INGRESA LAS OPCIONES SEPARADAS POR COMAS"
+                    :label="t('activity_workspace.options_placeholder')"
+                    :placeholder="t('activity_workspace.options_placeholder')"
+                    :hint="t('activity_workspace.options_hint')"
                     persistent-hint
                   />
                 </v-card-text>
@@ -540,7 +504,7 @@
                     prepend-icon="mdi-cancel"
                     color="red-lighten-3"
                     @click="addMetricaDialog = false"
-                    >Cancelar</v-btn
+                    >{{ t('activity_workspace.cancel') }}</v-btn
                   >
                   <v-btn
                     size="small"
@@ -549,17 +513,16 @@
                     prepend-icon="mdi-check"
                     color="green-lighten-3"
                     @click="addMetrica"
-                    >Agregar</v-btn
+                    >{{ t('activity_workspace.add') }}</v-btn
                   >
                 </v-card-actions>
               </v-card>
             </v-dialog>
 
-            <!-- Información Adicional -->
             <div class="mt-2">
               <div class="mb-2">
                 <v-icon class="mr-2">mdi-information</v-icon>
-                Detalles
+                {{ t('activity_workspace.details') }}
               </div>
               <div class="document-editor">
                 <div ref="toolbar"></div>
@@ -573,11 +536,9 @@
               </div>
             </div>
 
-            <!-- Formulario de Seguimiento BPA -->
-
             <div class="siembra-info mt-4">
               <v-card-title class="headline">
-                <h2 class="text-xl font-bold mt-2">Seguimiento BPA</h2>
+                <h2 class="text-xl font-bold mt-2">{{ t('activity_workspace.bpa_tracking') }}</h2>
               </v-card-title>
               <v-card-text>
                 <div class="grid grid-cols-3 gap-2">
@@ -625,7 +586,7 @@
               prepend-icon="mdi-cancel"
               color="red-lighten-3"
               @click="editActividadDialog = false"
-              >Cancelar</v-btn
+              >{{ t('activity_workspace.cancel') }}</v-btn
             >
             <v-btn
               size="small"
@@ -634,21 +595,20 @@
               prepend-icon="mdi-check"
               color="green-lighten-3"
               @click="saveActividad"
-              >Guardar</v-btn
+              >{{ t('activity_workspace.save') }}</v-btn
             >
           </v-card-actions>
         </v-card>
       </v-form>
     </v-dialog>
 
-    <!-- Dialogo para seleccionar Siembras y Zonas -->
     <v-dialog v-model="dialogSiembrasZonas" persistent max-width="900px">
       <div class="grid grid-cols-2 gap-2 p-0 m-2 bg-white">
         <v-card>
           <v-toolbar color="success" dark density="compact">
             <v-toolbar-title small
               ><span class="text-sm"
-                ><v-icon class="mr-2">mdi-sprout</v-icon>Siembras/Proyectos</span
+                ><v-icon class="mr-2">mdi-sprout</v-icon>{{ t('activity_workspace.sowings_projects') }}</span
               ></v-toolbar-title
             >
             <v-spacer></v-spacer>
@@ -671,7 +631,7 @@
           <v-toolbar color="primary" dark density="compact">
             <v-toolbar-title
               ><span class="text-sm"
-                ><v-icon class="mr-2">mdi-map</v-icon>Zonas disponibles</span
+                ><v-icon class="mr-2">mdi-map</v-icon>{{ t('activity_workspace.available_zones') }}</span
               ></v-toolbar-title
             >
             <v-spacer></v-spacer>
@@ -700,7 +660,7 @@
               rounded="lg"
               prepend-icon="mdi-cancel"
               color="red-lighten-3"
-              >Cancelar</v-btn
+              >{{ t('activity_workspace.cancel') }}</v-btn
             >
             <v-btn
               @click="saveSelection"
@@ -709,7 +669,7 @@
               rounded="lg"
               prepend-icon="mdi-check"
               color="green-lighten-3"
-              >Guardar</v-btn
+              >{{ t('activity_workspace.save') }}</v-btn
             >
           </v-card-actions>
         </v-card>
@@ -723,7 +683,6 @@
       @guardado="handleGuardado"
     />
 
-    <!-- Dialog for BitacoraEntryForm -->
     <v-dialog v-model="showBitacoraFormDialogActividad" max-width="800px" persistent scrollable>
       <BitacoraEntryForm
         v-if="showBitacoraFormDialogActividad"
@@ -737,7 +696,8 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router' // Added useRouter
+import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useActividadesStore } from '@/stores/actividadesStore'
 import { handleError } from '@/utils/errorHandler'
 import { useProfileStore } from '@/stores/profileStore'
@@ -745,11 +705,9 @@ import { useAvatarStore } from '@/stores/avatarStore'
 import { storeToRefs } from 'pinia'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import AvatarForm from '@/components/forms/AvatarForm.vue'
-
 import StatusPanel from '@/components/RecordatoriosStatusPanel.vue'
 import RecordatorioForm from '@/components/forms/RecordatorioForm.vue'
 import { useRecordatoriosStore } from '@/stores/recordatoriosStore'
-
 import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useZonasStore } from '@/stores/zonasStore'
 import { useProgramacionesStore } from '@/stores/programacionesStore'
@@ -759,8 +717,9 @@ import { useSnackbarStore } from '@/stores/snackbarStore'
 import EmbeddedBitacoraList from './EmbeddedBitacoraList.vue'
 import BitacoraEntryForm from '@/components/forms/BitacoraEntryForm.vue'
 
+const { t } = useI18n()
 const route = useRoute()
-const router = useRouter() // Added
+const router = useRouter()
 const actividadesStore = useActividadesStore()
 const avatarStore = useAvatarStore()
 const profileStore = useProfileStore()
@@ -796,18 +755,16 @@ const programacionEdit = ref(null)
 
 const isLoading = ref(true)
 const showBitacoraFormDialogActividad = ref(false)
-// const itemsPerPage = ref(10); // Removed as it was likely for the old table
 
 const { user } = storeToRefs(profileStore)
 const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
 const { tiposActividades } = storeToRefs(actividadesStore)
 
 const { siembras } = storeToRefs(siembrasStore)
-const { zonas, tiposZonas } = storeToRefs(zonasStore)
+const { zonas } = storeToRefs(zonasStore)
 
 const userRole = computed(() => user.value?.role || '')
 
-// Computed para determinar el color basado en el promedio
 const colorBpaEstado = computed(() => {
   if (actividadInfo.value.bpa_estado < 40) return 'red'
   if (actividadInfo.value.bpa_estado < 80) return 'orange'
@@ -821,8 +778,6 @@ const actividadAvatarUrl = computed(() => {
 const tipoActividadActual = computed(() => {
   return tiposActividades.value.find((tipo) => tipo.id === actividadInfo.value.tipo_actividades)
 })
-
-//const tipoActividadNombre = computed(() => actividadInfo.value.expand.tipo_actividades.nombre)
 
 const getBpaPreguntas = computed(() => {
   const tipoActividadFiltrar = actividadesStore.tiposActividades.find(
@@ -846,36 +801,17 @@ const getStatusMsg = (status) => {
   return colors[status] || 'gray'
 }
 
-/*
-// These were related to the old bitacora table and are no longer needed.
-const estadosBitacora = ['planificada', 'en_progreso', 'completada', 'cancelada']
-
-const bitacoraHeaders = [
-  { text: 'Fecha', value: 'fecha' },
-  { text: 'Actividad', value: 'actividad.nombre' },
-  { text: 'Zona', value: 'zona.nombre' },
-  { text: 'Responsable', value: 'responsable.name' },
-  { text: 'Estado', value: 'estado' },
-  { text: 'Acciones', value: 'actions', sortable: false }
-]
-
-const filteredBitacora = computed(() => {
-  // Implementar lógica para filtrar la bitácora según la actividad
-  return [] // Placeholder
-})
-*/
-
 onMounted(async () => {
   try {
     await loadActividadInfo()
     await actividadesStore.cargarTiposActividades()
     await siembrasStore.cargarSiembras()
     await zonasStore.cargarZonas()
-    await zonasStore.cargarTiposZonas() // Asegúrate de cargar los tipos de zonas
+    await zonasStore.cargarTiposZonas()
     await recordatoriosStore.cargarRecordatorios()
     await programacionesStore.cargarProgramaciones()
   } catch (error) {
-    handleError(error, 'Error al cargar la información de la actividad')
+    handleError(error, t('activity_workspace.error_loading_activity_info'))
   } finally {
     isLoading.value = false
   }
@@ -886,34 +822,25 @@ const loadActividadInfo = async () => {
     actividadInfo.value = await actividadesStore.fetchActividadById(actividadId.value, {
       expand: 'tipo_actividades, zonas.tipos_zonas'
     })
-
-    // Inicializar datos_bpa si no existe
     if (!actividadInfo.value.datos_bpa) {
       actividadInfo.value.datos_bpa = []
     }
-
-    // Inicializar métricas si no existe
     if (!actividadInfo.value.metricas) {
       actividadInfo.value.metricas = {}
     }
   } catch (error) {
     console.error('Error cargando actividad:', error)
-    // Fallback para modo offline
     const actividadLocal = actividadesStore.actividades.find((a) => a.id === actividadId.value)
     if (actividadLocal) {
       actividadInfo.value = { ...actividadLocal }
-
-      // Asegurar que datos_bpa existe
       if (!actividadInfo.value.datos_bpa) {
         actividadInfo.value.datos_bpa = []
       }
-
-      // Asegurar que métricas existe
       if (!actividadInfo.value.metricas) {
         actividadInfo.value.metricas = {}
       }
     } else {
-      snackbarStore.showError('No se pudo cargar la actividad')
+      snackbarStore.showError(t('activity_workspace.activity_not_loaded'))
     }
   }
 }
@@ -930,16 +857,12 @@ function openAddMetricaDialog() {
 }
 
 function handleTipoChange(value) {
-  // Mostrar campo de opciones solo para estos tipos
   showOpcionesField.value = ['checkbox', 'select', 'multi-select'].includes(value)
-
-  // Limpiar opciones si se cambia a un tipo que no las necesita
   if (!showOpcionesField.value) {
     newMetrica.value.opcionesText = ''
   }
 }
 
-// Optimizar manejo de métricas
 const metricasHandler = {
   getInitialValue(tipo) {
     const initialValues = {
@@ -950,7 +873,6 @@ const metricasHandler = {
     }
     return initialValues[tipo] ?? ''
   },
-
   validateMetrica(metrica) {
     return metrica.titulo && metrica.descripcion && metrica.tipo
   }
@@ -958,10 +880,7 @@ const metricasHandler = {
 
 function addMetrica() {
   if (newMetrica.value.titulo && newMetrica.value.tipo) {
-    // Reemplazar espacios en blanco por guiones bajos en el título
     const sanitizedTitulo = newMetrica.value.titulo.toUpperCase().replace(/\s+/g, '_')
-
-    // Procesar opciones si existen
     let opciones = []
     if (
       newMetrica.value.opcionesText &&
@@ -972,48 +891,19 @@ function addMetrica() {
         .map((opt) => opt.trim())
         .filter((opt) => opt)
     }
-
     editedActividad.value.metricas[sanitizedTitulo] = {
       descripcion: newMetrica.value.descripcion,
       tipo: newMetrica.value.tipo,
-      valor: newMetrica.value.tipo === 'multi-select' ? [] : null, // Array vacío para multi-select
+      valor: newMetrica.value.tipo === 'multi-select' ? [] : null,
       opciones: opciones.length > 0 ? opciones : undefined
     }
-
-    console.log('editedActividad:', editedActividad.value.metricas)
-
-    // Restablecer el formulario
     newMetrica.value = { titulo: '', descripcion: '', tipo: '', opcionesText: '' }
     showOpcionesField.value = false
     addMetricaDialog.value = false
   } else {
-    snackbarStore.showError('Título y tipo son requeridos para agregar una métrica')
+    snackbarStore.showError(t('activity_workspace.required_field', { field: 'Título y tipo' }))
   }
 }
-
-/* Optimizar addMetrica
-function addMetrica() {
-  if (!metricasHandler.validateMetrica(newMetrica.value)) {
-    snackbarStore.showError('Título y tipo son requeridos para agregar una métrica')
-    return
-  }
-
-  const metricaKey = newMetrica.value.titulo.toUpperCase().replace(/ /g, '_')
-  const valorInicial = metricasHandler.getInitialValue(newMetrica.value.tipo)
-
-  editedActividad.value.metricas = {
-    ...editedActividad.value.metricas,
-    [metricaKey]: {
-      descripcion: newMetrica.value.descripcion,
-      tipo: newMetrica.value.tipo,
-      valor: valorInicial
-    }
-  }
-
-  addMetricaDialog.value = false
-  newMetrica.value = { titulo: '', descripcion: '', tipo: '' }
-}
-*/
 
 function removeMetrica(index) {
   delete editedActividad.value.metricas[index]
@@ -1022,12 +912,9 @@ function removeMetrica(index) {
 async function saveActividad() {
   try {
     if (!editedActividad.value.nombre) {
-      throw new Error('Nombre es un campo requerido')
+      throw new Error(t('activity_workspace.required_field', { field: 'Nombre' }))
     }
-
     editedActividad.value.nombre = editedActividad.value.nombre.toUpperCase()
-
-    // Crear un nuevo objeto con solo los campos necesarios
     const actividadToUpdate = {
       nombre: editedActividad.value.nombre,
       activa: editedActividad.value.activa,
@@ -1036,25 +923,14 @@ async function saveActividad() {
       datos_bpa: editedActividad.value.datos_bpa,
       bpa_estado: editedActividad.value.bpa_estado
     }
-
-    // Actualizar la siembra sin incluir información del avatar
-
     await actividadesStore.updateActividad(actividadId.value, actividadToUpdate)
-
-    // Recargar la información de la siembra
     actividadInfo.value = await actividadesStore.fetchActividadById(actividadId.value)
     editActividadDialog.value = false
-    await loadActividadInfo() // Reload the activity info
+    await loadActividadInfo()
   } catch (error) {
-    handleError(error, 'Error al guardar la actividad')
+    handleError(error, t('activity_workspace.error_saving_activity'))
   }
 }
-
-/* Function to get the activity type based on the activity ID
-const getActividadTipo = (tipoId) => {
-  const tipoActividad = actividadesStore.tiposActividades.find((tipo) => tipo.id === tipoId)
-  return tipoActividad ? tipoActividad.nombre.toUpperCase() : 'Desconocido'
-}*/
 
 const handleAvatarUpdated = (updatedRecord) => {
   actividadesStore.$patch((state) => {
@@ -1067,23 +943,19 @@ const handleAvatarUpdated = (updatedRecord) => {
 }
 
 const filteredZonas = computed(() => {
-  const zonastemp = zonas.value.filter((zona) => !zona.siembra) // Filtrar zonas sin siembra
-  return zonastemp
+  return zonas.value.filter((zona) => !zona.siembra)
 })
 
-// Función para abrir el diálogo
 const openAddSiembrasZonas = () => {
   dialogSiembrasZonas.value = true
-  selectedSiembras.value = actividadInfo.value.siembras || [] // Asignar siembras existentes
-  selectedZonas.value = actividadInfo.value.zonas || [] // Asignar zonas existentes
+  selectedSiembras.value = actividadInfo.value.siembras || []
+  selectedZonas.value = actividadInfo.value.zonas || []
 }
 
 const saveSelection = async () => {
-  actividadInfo.value.siembras = selectedSiembras.value // Guardar las siembras seleccionadas en la actividad
-  actividadInfo.value.zonas = selectedZonas.value // Guardar las zonas seleccionadas en la actividad
-  dialogSiembrasZonas.value = false // Cerrar el diálogo
-
-  // Llama a updateActividad para guardar los cambios
+  actividadInfo.value.siembras = selectedSiembras.value
+  actividadInfo.value.zonas = selectedZonas.value
+  dialogSiembrasZonas.value = false
   try {
     await actividadesStore.updateActividad(actividadId.value, {
       siembras: actividadInfo.value.siembras,
@@ -1098,7 +970,7 @@ const saveSelection = async () => {
 const validateDate = (value) => {
   if (!value) return true
   const dateRegex = /^\d{4}-\d{2}-\d{2}$/
-  return dateRegex.test(value) || 'Formato inválido (yyyy-MM-dd)'
+  return dateRegex.test(value) || t('activity_workspace.invalid_date_format')
 }
 
 const formatMetricValue = (value) => {
@@ -1115,18 +987,8 @@ async function handleFormSubmit(data) {
     }
     recordatoriosStore.dialog = false
   } catch (error) {
-    handleError(error, 'Error al guardar recordatorio')
+    handleError(error, t('activity_workspace.error_saving_reminder'))
   }
-}
-
-const onEditorReady = (editor) => {
-  // Insert the toolbar before the editable area
-  document
-    .querySelector('.document-editor')
-    .insertBefore(
-      editor.ui.view.toolbar.element,
-      document.querySelector('.document-editor .ck-editor__editable')
-    )
 }
 
 const programacionesActividad = computed(() => {
@@ -1143,11 +1005,6 @@ const editarProgramacion = (programacion) => {
   mostrarFormProgramacion.value = true
 }
 
-const ejecutarProgramacion = async (id) => {
-  await programacionesStore.ejecutarProgramacion(id)
-  await cargarProgramaciones()
-}
-
 const cargarProgramaciones = async () => {
   await programacionesStore.cargarProgramaciones()
 }
@@ -1158,11 +1015,6 @@ const handleGuardado = async () => {
   await cargarProgramaciones()
 }
 
-// const ejecutarProgramacion = async (id) => { // Old method, replaced by handleRequestSingleExecution
-//   await programacionesStore.ejecutarProgramacion(id)
-//   await cargarProgramaciones()
-// }
-
 async function handleRequestSingleExecution(programacion) {
   if (!programacionesStore) {
     console.error("Programaciones store is not available.");
@@ -1172,8 +1024,7 @@ async function handleRequestSingleExecution(programacion) {
   try {
     const success = await programacionesStore.prepareForBitacoraEntryFromProgramacion(programacion);
     if (success) {
-      // Using 'Dashboard de Inicio' as the placeholder route, as done in ProgramacionesList.vue
-      router.push({ name: 'Dashboard de Inicio' }); 
+      router.push({ name: 'Dashboard de Inicio' });
     } else {
       snackbarStore.showSnackbar('No se pudo preparar la entrada de bitácora desde la programación.', 'warning');
     }
@@ -1189,8 +1040,6 @@ function openNewBitacoraEntryDialogActividad() {
 
 async function handleBitacoraSaveActividad() {
   showBitacoraFormDialogActividad.value = false
-  // Store reactivity should update EmbeddedBitacoraList.
-  // snackbarStore.showSnackbar('Entrada de bitácora guardada.', 'success'); // Form handles its own success snackbar
 }
 </script>
 
@@ -1200,7 +1049,6 @@ async function handleBitacoraSaveActividad() {
   border-radius: 0.375rem;
   padding: 1rem;
 }
-
 .document-editor .ck-editor__editable {
   min-height: 200px;
   max-height: 400px;

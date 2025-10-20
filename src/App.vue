@@ -19,11 +19,6 @@
       @HandleDrawer="handleLoginSuccess"
     />
 
-    <AuthModal
-      v-model:isOpen="authStore.showLoginDialog"
-      @update:isOpen="authStore.showLoginDialog = $event"
-    />
-
     <v-main>
       <router-view v-slot="{ Component }">
         <transition name="fade" mode="out-in">
@@ -90,16 +85,14 @@ watch(
 
 watch(
   isLoggedIn,
-  (newValue, oldValue) => {
+  (newValue) => {
     if (newValue) {
       handleLoginSuccess()
-    } else if (oldValue) {
-      nextTick(() => {
-        navigationLinks.value = []
-        if (router.currentRoute.value.meta.requiresAuth) {
-          router.push('/')
-        }
-      })
+    } else {
+      navigationLinks.value = []
+      if (router.currentRoute.value.meta.requiresAuth) {
+        router.push('/')
+      }
     }
   },
   { immediate: true }
@@ -172,16 +165,13 @@ const refreshTokenIfNeeded = async () => {
   // Remover log cuando no está logueado (muy frecuente)
 }
 
-// Configurar navegación guards en onMounted
-onMounted(() => {
-  // Agregar verificación de autenticación antes de cada ruta
-  router.beforeEach((to, from, next) => {
-    if (to.matched.some((record) => record.meta.requiresAuth) && !isLoggedIn.value) {
-      showAuthModal.value = true // Mostrar el modal de autenticación
-    } else {
-      next()
-    }
-  })
+// Agregar verificación de autenticación antes de cada ruta
+router.beforeEach((to, from, next) => {
+  if (to.matched.some((record) => record.meta.requiresAuth) && !isLoggedIn.value) {
+    showAuthModal.value = true // Mostrar el modal de autenticación
+  } else {
+    next()
+  }
 })
 </script>
 

@@ -4,10 +4,9 @@
       <header class="col-span-4 bg-background shadow-sm p-0">
         <div class="profile-container mt-0 ml-0">
           <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <!-- Title and Chips Section -->
             <div class="w-full sm:flex-grow">
               <h3 class="profile-title text-sm sm:text-lg mb-2 sm:mb-0">
-                Gestión de Programaciones
+                {{ t('schedules.schedule_management') }}
                 <v-chip variant="flat" size="x-small" color="grey-lighten-2" class="mx-1" pill>
                   <v-avatar start>
                     <v-img :src="avatarUrl" alt="Avatar"></v-img>
@@ -22,8 +21,6 @@
                 </v-chip>
               </h3>
             </div>
-
-            <!-- Button Section -->
             <div class="w-full sm:w-auto z-10" v-if="actividadesStore.actividades.length > 0">
               <v-btn
                 block
@@ -36,11 +33,10 @@
                 @click="openNuevaProgramacion"
                 class="min-w-[210px]"
               >
-                Nueva Programacion
+                {{ t('schedules.new_schedule') }}
               </v-btn>
             </div>
           </div>
-
           <div class="avatar-container">
             <img :src="avatarHaciendaUrl" alt="Avatar de hacienda" class="avatar-image" />
           </div>
@@ -51,7 +47,6 @@
     <main class="flex-1 py-2">
       <v-container class="p-0">
         <v-row>
-          <!-- Grupo por Siembras -->
           <v-col
             cols="12"
             sm="6"
@@ -72,7 +67,7 @@
                     }"
                     class="text-white"
                   >
-                    Siembra/Proyecto: {{ nombreSiembra }}
+                    {{ t('schedules.sowing_project') }}: {{ nombreSiembra }}
                   </router-link></span
                 >
               </v-chip>
@@ -90,7 +85,6 @@
             />
           </v-col>
 
-          <!-- Grupo por Actividades sin Siembra -->
           <v-col
             cols="12"
             sm="6"
@@ -106,7 +100,7 @@
                 :to="{ name: 'Ver Actividad', params: { id: grupo[0].actividades[0] } }"
                 class="text-inherit hover:text-primary"
               >
-                Actividad: {{ nombreActividad }}
+                {{ t('schedules.activity') }}: {{ nombreActividad }}
               </router-link>
             </v-card-title>
 
@@ -130,7 +124,7 @@
             type="info"
             class="mt-4"
           >
-            No hay Programaciones de actividades registradas
+            {{ t('schedules.no_schedules') }}
           </v-alert>
         </v-row>
       </v-container>
@@ -147,6 +141,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useProgramacionesStore } from '@/stores/programacionesStore'
 import { useActividadesStore } from '@/stores/actividadesStore'
 import { useSyncStore } from '@/stores/syncStore'
@@ -157,6 +152,7 @@ import { useProfileStore } from '@/stores/profileStore'
 import { storeToRefs } from 'pinia'
 import { useSiembrasStore } from '@/stores/siembrasStore'
 
+const { t } = useI18n()
 const profileStore = useProfileStore()
 const haciendaStore = useHaciendaStore()
 const siembrasStore = useSiembrasStore()
@@ -172,16 +168,9 @@ const syncStore = useSyncStore()
 const showForm = ref(false)
 const programacionEditando = ref(null)
 
-//const { tiposActividades } = storeToRefs(actividadesStore)
-
 onMounted(async () => {
-  // Asegurar que syncStore está inicializado
   await syncStore.init()
-
-  // Intentar cargar desde caché primero
   await programacionesStore.cargarProgramaciones()
-
-  // Cargar actividades si no están en caché
   if (!actividadesStore.actividades.length) {
     await actividadesStore.cargarActividades()
   }
@@ -194,7 +183,6 @@ const groupedProgramaciones = computed(() => {
     siembras: {},
     actividades: {}
   }
-
   programacionesPorHacienda.value?.forEach((programacion) => {
     if (programacion.siembras?.length > 0) {
       programacion.siembras.forEach((siembraId) => {
@@ -208,7 +196,6 @@ const groupedProgramaciones = computed(() => {
       ;(grupos.actividades[actividadesNames] ??= []).push(programacion)
     }
   })
-
   return grupos
 })
 
@@ -232,14 +219,7 @@ const handleGuardado = () => {
 }
 
 const handleRequestSingleExecution = async (programacion) => {
-  // This action will be created in the next step.
-  // It will store the programacion data in the programacionesStore
-  // so that BitacoraEntryForm can access it.
   await programacionesStore.prepareForBitacoraEntryFromProgramacion(programacion)
-  
-  // Navigate to the view where the user can fill the bitacora entry.
-  // Assuming 'Dashboard de Inicio' provides access to Bitacora functionality.
-  // This might need adjustment if a more specific route for BitacoraEntryForm exists.
   router.push({ name: 'Dashboard de Inicio' })
 }
 </script>
