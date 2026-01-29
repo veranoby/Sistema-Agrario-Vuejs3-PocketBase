@@ -17,7 +17,7 @@ import { logger, logP3, logSync, logError } from '@/utils/logger'
 export const useSyncStore = defineStore('sync', {
   state: () => ({
     isOnline: navigator.onLine,
-    queue: new SyncQueue(),
+    queue: new SyncQueue((conflict) => this.addConflict(conflict)), // Pasar callback de conflicto
     lastSyncTime: null,
     syncStatus: 'idle',
     errors: [],
@@ -64,7 +64,11 @@ export const useSyncStore = defineStore('sync', {
         weeklyStats: new Map(),
         monthlyStats: new Map()
       }
-    }
+    },
+    // UI de resolución de conflictos
+    conflicts: [],
+    conflictDialog: false,
+    conflictResolution: 'user-choice' // 'local' | 'server' | 'user-choice'
   }),
 
   actions: {
@@ -99,6 +103,9 @@ export const useSyncStore = defineStore('sync', {
         if (savedQueue) {
           this.queue.queue = savedQueue
         }
+
+        // Cargar conflictos pendientes desde localStorage
+        this.loadConflictsFromStorage()
 
         // FASE 2: Inicializar configuración selectiva
         this.initSelectiveSyncConfig()
@@ -1937,6 +1944,400 @@ export const useSyncStore = defineStore('sync', {
           method: 'batch_processing_error'
         }
       }
+    },
+
+    // ============================================
+    // GESTIÓN DE CONFLICTOS (UI Resolution)
+    // ============================================
+
+    /**
+     * Agrega un conflicto a la lista y abre el dialog
+     */
+    addConflict(conflict) {
+      const existingIndex = this.conflicts.findIndex(
+        c => (c.id === conflict.id || c.tempId === conflict.tempId)
+      )
+
+      if (existingIndex === -1) {
+        this.conflicts.push({
+          ...conflict,
+          resolved: false,
+          resolution: null
+        })
+
+        console.log(`[SyncStore] Conflicto agregado: ${conflict.collection} - ${conflict.id || conflict.tempId}`)
+
+        // Abrir dialog automáticamente si hay conflictos
+        if (this.conflicts.length > 0) {
+          this.conflictDialog = true
+        }
+
+        // Guardar en localStorage para persistencia
+        this.saveConflictsToStorage()
+      }
+    },
+
+    /**
+     * Resuelve un conflicto específico
+     */
+    resolveConflict(conflictId, resolution, serverData = null) {
+      const index = this.conflicts.findIndex(c => c.id === conflictId || c.tempId === conflictId)
+
+      if (index !== -1) {
+        const conflict = this.conflicts[index]
+
+        // Actualizar estado del conflicto
+        conflict.resolved = true
+        conflict.resolution = resolution
+
+        console.log(`[SyncStore] Conflicto resuelto: ${conflict.collection} - resolución: ${resolution}`)
+
+        // Ejecutar acción correspondiente
+        if (resolution === 'local') {
+          this.forceLocalVersion(conflict)
+        } else if (resolution === 'server') {
+          this.acceptServerVersion(conflict, serverData)
+        }
+
+        // Si no hay más conflictos sin resolver, cerrar dialog
+        const hasUnresolved = this.conflicts.some(c => !c.resolved)
+        if (!hasUnresolved) {
+          this.conflictDialog = false
+        }
+
+        // Guardar estado
+        this.saveConflictsToStorage()
+      }
+    },
+
+    /**
+     * Resuelve múltiples conflictos a la vez
+     */
+    resolveMultipleConflicts(resolutions) {
+      resolutions.forEach(resolution => {
+        this.resolveConflict(
+          resolution.id || resolution.tempId,
+          resolution.resolution,
+          resolution.serverData
+        )
+      })
+
+      // Limpiar conflictos resueltos
+      this.cleanupResolvedConflicts()
+
+      useSnackbarStore().showSnackbar(
+        `${resolutions.length} conflictos resueltos`,
+        'success'
+      )
+    },
+
+    /**
+     * Fuerza la versión local de un conflicto
+     */
+    async forceLocalVersion(conflict) {
+      console.log(`[SyncStore] Forzando versión local para ${conflict.collection} - ${conflict.id || conflict.tempId}`)
+
+      try {
+        // La versión local ya está en el store local
+        // Solo necesitamos marcar el conflicto como resuelto
+        // y reintentar la sincronización
+
+        // Reintentar sincronización de esta operación específica
+        if (conflict.operation) {
+          const opIndex = this.queue.queue.findIndex(
+            op => op.tempId === conflict.tempId || op.id === conflict.id
+          )
+
+          if (opIndex !== -1) {
+            const operation = this.queue.queue[opIndex]
+            operation.status = 'pending'
+            operation.retryCount = 0 // Resetear contador de reintentos
+
+            // Guardar estado
+            this.queue.saveState()
+
+            // Programar sincronización
+            setTimeout(() => {
+              this.processPendingQueue()
+            }, 1000)
+          }
+        }
+      } catch (error) {
+        console.error('[SyncStore] Error forzando versión local:', error)
+        handleError(error, 'Error forzando versión local')
+      }
+    },
+
+    /**
+     * Acepta la versión del servidor para un conflicto
+     */
+    async acceptServerVersion(conflict, serverData) {
+      console.log(`[SyncStore] Aceptando versión servidor para ${conflict.collection} - ${conflict.id || conflict.tempId}`)
+
+      try {
+        const store = this.getStoreByCollectionName(conflict.collection)
+
+        if (!store) {
+          console.warn(`[SyncStore] No se encontró store para ${conflict.collection}`)
+          return
+        }
+
+        // Actualizar store con datos del servidor
+        if (conflict.type === 'update') {
+          // Para actualizaciones, reemplazar con versión del servidor
+          if (typeof store.applySyncedUpdate === 'function') {
+            await store.applySyncedUpdate(conflict.id, serverData || conflict.server)
+          }
+        } else if (conflict.type === 'create') {
+          // Para creaciones, usar ID del servidor
+          if (typeof store.applySyncedCreate === 'function') {
+            await store.applySyncedCreate(conflict.tempId, serverData || conflict.server)
+          }
+        }
+
+        // Remover operación de la cola (ya fue resuelta por el servidor)
+        this.queue.queue = this.queue.queue.filter(
+          op => (op.tempId !== conflict.tempId && op.id !== conflict.id)
+        )
+        this.queue.saveState()
+
+        console.log(`[SyncStore] Versión servidor aplicada exitosamente`)
+      } catch (error) {
+        console.error('[SyncStore] Error aceptando versión servidor:', error)
+        handleError(error, 'Error aceptando versión del servidor')
+      }
+    },
+
+    /**
+     * Limpia conflictos resueltos
+     */
+    cleanupResolvedConflicts() {
+      this.conflicts = this.conflicts.filter(c => !c.resolved)
+      this.saveConflictsToStorage()
+    },
+
+    /**
+     * Guarda conflictos en localStorage
+     */
+    saveConflictsToStorage() {
+      try {
+        const conflictsToSave = this.conflicts.map(c => ({
+          id: c.id,
+          tempId: c.tempId,
+          collection: c.collection,
+          type: c.type,
+          local: c.local,
+          server: c.server,
+          resolved: c.resolved,
+          resolution: c.resolution
+        }))
+        localStorage.setItem('sync_conflicts', JSON.stringify(conflictsToSave))
+      } catch (error) {
+        console.error('[SyncStore] Error guardando conflictos:', error)
+      }
+    },
+
+    /**
+     * Carga conflictos desde localStorage
+     */
+    loadConflictsFromStorage() {
+      try {
+        const saved = localStorage.getItem('sync_conflicts')
+        if (saved) {
+          const conflicts = JSON.parse(saved)
+          // Solo cargar conflictos no resueltos
+          this.conflicts = conflicts.filter(c => !c.resolved)
+
+          if (this.conflicts.length > 0) {
+            console.log(`[SyncStore] ${this.conflicts.length} conflictos pendientes cargados`)
+            this.conflictDialog = true
+          }
+        }
+      } catch (error) {
+        console.error('[SyncStore] Error cargando conflictos:', error)
+      }
+    },
+
+    /**
+     * Cierra el dialog de conflictos
+     */
+    closeConflictDialog() {
+      this.conflictDialog = false
+    },
+
+    /**
+     * Abre el dialog de conflictos
+     */
+    openConflictDialog() {
+      this.conflictDialog = true
+    },
+
+    // ============================================
+    // PREFETCH INTELIGENTE - Performance
+    // ============================================
+
+    /**
+     * Registra una acción del usuario para análisis de patrones
+     */
+    trackUserAction(action) {
+      try {
+        const recentActions = JSON.parse(localStorage.getItem('recent_actions') || '[]')
+
+        // Agregar nueva acción al inicio
+        recentActions.unshift({
+          action: action.type,
+          collection: action.collection,
+          timestamp: Date.now(),
+          route: action.route || window.location.pathname
+        })
+
+        // Mantener solo últimas 50 acciones
+        const limitedActions = recentActions.slice(0, 50)
+
+        localStorage.setItem('recent_actions', JSON.stringify(limitedActions))
+      } catch (error) {
+        console.error('[SyncStore] Error registrando acción:', error)
+      }
+    },
+
+    /**
+     * Analiza patrones de uso y precarga datos probables
+     */
+    async prefetchBasedOnPatterns() {
+      try {
+        if (!navigator.onLine || !pb.authStore.isValid) {
+          return
+        }
+
+        const recentActions = JSON.parse(localStorage.getItem('recent_actions') || '[]')
+
+        if (recentActions.length < 3) {
+          return // No hay suficientes datos para análisis
+        }
+
+        // Analizar frecuencias de colecciones accedidas
+        const collectionFrequency = {}
+        const now = Date.now()
+        const oneHourAgo = now - (60 * 60 * 1000)
+
+        recentActions.forEach(action => {
+          if (action.timestamp > oneHourAgo) {
+            collectionFrequency[action.collection] = (collectionFrequency[action.collection] || 0) + 1
+          }
+        })
+
+        // Obtener la colección más usada
+        const mostUsedCollection = Object.keys(collectionFrequency)
+          .sort((a, b) => collectionFrequency[b] - collectionFrequency[a])[0]
+
+        if (!mostUsedCollection) {
+          return
+        }
+
+        console.log(`[SyncStore] Prefetch: Colección más usada = ${mostUsedCollection} (${collectionFrequency[mostUsedCollection]} accesos/hora)`)
+
+        // Precargar datos de la colección más usada si no está cacheada
+        const prefetchKey = `prefetch_${mostUsedCollection}`
+        const lastPrefetch = localStorage.getItem(prefetchKey)
+        const prefetchCooldown = 5 * 60 * 1000 // 5 minutos
+
+        if (!lastPrefetch || (now - parseInt(lastPrefetch)) > prefetchCooldown) {
+          await this.prefetchCollection(mostUsedCollection)
+          localStorage.setItem(prefetchKey, now.toString())
+        }
+      } catch (error) {
+        console.error('[SyncStore] Error en prefetch basado en patrones:', error)
+      }
+    },
+
+    /**
+     * Precarga una colección específica
+     */
+    async prefetchCollection(collectionName) {
+      try {
+        const startTime = performance.now()
+        const haciendaStore = useHaciendaStore()
+        const haciendaId = haciendaStore.mi_hacienda?.id
+
+        if (!haciendaId) {
+          return
+        }
+
+        // Mapeo de colecciones a sus filtros
+        const collectionConfigs = {
+          'recordatorios': {
+            collection: 'recordatorios',
+            filter: `hacienda="${haciendaId}"`
+          },
+          'siembras': {
+            collection: 'siembras',
+            filter: `hacienda="${haciendaId}"`
+          },
+          'actividades': {
+            collection: 'actividades',
+            filter: `hacienda="${haciendaId}"`
+          },
+          'zonas': {
+            collection: 'zonas',
+            filter: `hacienda="${haciendaId}"`
+          },
+          'programaciones': {
+            collection: 'programaciones',
+            filter: `hacienda="${haciendaId}"`
+          },
+          'bitacora': {
+            collection: 'bitacora',
+            filter: `hacienda="${haciendaId}"`
+          }
+        }
+
+        const config = collectionConfigs[collectionName]
+
+        if (!config) {
+          console.warn(`[SyncStore] No hay configuración de prefetch para ${collectionName}`)
+          return
+        }
+
+        // Precargar con parámetros optimizados
+        const records = await pb.collection(config.collection).getFullList({
+          filter: config.filter,
+          fields: 'id,nombre,estado,created', // Solo campos esenciales para prefetch
+          skipTotal: true
+        })
+
+        const duration = performance.now() - startTime
+        console.log(`[SyncStore] Prefetch completado: ${collectionName} (${records.length} registros) en ${duration.toFixed(0)}ms`)
+
+        // Guardar en caché inteligente
+        this.intelligentCache.frequentData.set(`${config.collection}_prefetch`, {
+          data: records,
+          timestamp: Date.now(),
+          duration
+        })
+
+      } catch (error) {
+        console.error(`[SyncStore] Error prefetching ${collectionName}:`, error)
+      }
+    },
+
+    /**
+     * Obtiene datos precargados del caché inteligente
+     */
+    getPrefetchedData(collectionName) {
+      const cacheKey = `${collectionName}_prefetch`
+      const cached = this.intelligentCache.frequentData.get(cacheKey)
+
+      if (cached && cached.data) {
+        const age = Date.now() - cached.timestamp
+        const maxAge = 10 * 60 * 1000 // 10 minutos
+
+        if (age < maxAge) {
+          console.log(`[SyncStore] Usando datos precargados para ${collectionName} (${(age / 1000).toFixed(0)}s antiguo)`)
+          return cached.data
+        }
+      }
+
+      return null
     },
 
     // Método para limpiar recursos y prevenir memory leaks

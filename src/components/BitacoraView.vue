@@ -3,7 +3,31 @@
     <v-row>
       <v-col cols="12">
         <v-card>
-          <v-card-title class="headline">Bitácora General de Actividades</v-card-title>
+          <v-card-title class="d-flex align-center">
+            <span class="headline">Bitácora General de Actividades</span>
+            <v-spacer />
+            <v-btn
+              v-if="!isLoading && displayedEntries.length > 0"
+              prepend-icon="mdi-file-pdf"
+              color="error"
+              variant="tonal"
+              @click="exportToPDF"
+              :loading="exportingPDF"
+              class="mr-2"
+            >
+              Exportar PDF
+            </v-btn>
+            <v-btn
+              v-if="!isLoading && displayedEntries.length > 0"
+              prepend-icon="mdi-file-excel"
+              color="success"
+              variant="tonal"
+              @click="exportToExcel"
+              :loading="exportingExcel"
+            >
+              Exportar Excel
+            </v-btn>
+          </v-card-title>
           <v-card-subtitle>Todas las entradas registradas para la hacienda actual.</v-card-subtitle>
         </v-card>
       </v-col>
@@ -110,12 +134,20 @@ import { useBitacoraStore } from '@/stores/bitacoraStore';
 import { useHaciendaStore } from '@/stores/haciendaStore';
 import { useSiembrasStore } from '@/stores/siembrasStore'; // For filter
 import { useActividadesStore } from '@/stores/actividadesStore'; // For filter
+// No hay store separado para tipos, están en actividadesStore.tiposActividades
 import BitacoraEntryCard from './BitacoraEntryCard.vue'; // Import the new card component
+import { pdfExporter } from '@/utils/exporters/pdfExporter';
+import { excelExporter } from '@/utils/exporters/excelExporter';
+import { useSnackbarStore } from '@/stores/snackbarStore';
 
 const bitacoraStore = useBitacoraStore();
 const haciendaStore = useHaciendaStore();
 const siembrasStore = useSiembrasStore();
 const actividadesStore = useActividadesStore();
+const snackbarStore = useSnackbarStore();
+
+const exportingPDF = ref(false);
+const exportingExcel = ref(false);
 
 const isLoading = ref(false);
 const error = ref(null);
@@ -203,6 +235,56 @@ function loadMore() {
     currentPage.value += 1;
 }
 
+// Export functions
+async function exportToPDF() {
+  if (exportingPDF.value) return;
+
+  exportingPDF.value = true;
+  try {
+    // Export all filtered entries to PDF
+    await pdfExporter.exportBitacorasMultiple(
+      filteredEntries.value,
+      actividadesStore.actividades,
+      actividadesStore.tiposActividades || [],
+      haciendaStore.mi_hacienda
+    );
+
+    snackbarStore.showSnackbar('PDF exportado correctamente', 'success');
+  } catch (error) {
+    console.error('Error exporting PDF:', error);
+    snackbarStore.showSnackbar(`Error exportando PDF: ${error.message}`, 'error');
+  } finally {
+    exportingPDF.value = false;
+  }
+}
+
+async function exportToExcel() {
+  if (exportingExcel.value) return;
+
+  exportingExcel.value = true;
+  try {
+    // Export filtered entries to Excel with summary
+    await excelExporter.exportBitacorasWithSummary(
+      filteredEntries.value,
+      actividadesStore.actividades,
+      actividadesStore.tiposActividades || [],
+      {
+        filtros: {
+          siembra: filterSiembraId.value,
+          actividad: filterActividadId.value,
+          fecha: filterDate.value
+        }
+      }
+    );
+
+    snackbarStore.showSnackbar('Excel exportado correctamente', 'success');
+  } catch (error) {
+    console.error('Error exporting Excel:', error);
+    snackbarStore.showSnackbar(`Error exportando Excel: ${error.message}`, 'error');
+  } finally {
+    exportingExcel.value = false;
+  }
+}
 </script>
 
 <style scoped>

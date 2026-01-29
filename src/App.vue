@@ -28,6 +28,13 @@
     </v-main>
 
     <SnackbarComponent />
+
+    <!-- Conflict Resolution Dialog -->
+    <ConflictResolutionDialog
+      v-model="syncStore.conflictDialog"
+      :conflicts="syncStore.conflicts"
+      @resolve="handleConflictResolution"
+    />
   </v-app>
 </template>
 
@@ -39,17 +46,20 @@ import { useAuthStore } from '@/stores/authStore'
 import Header from './components/Header.vue'
 import Sidebar from './components/Sidebar.vue'
 import AuthModal from './components/AuthModal.vue'
+import ConflictResolutionDialog from './components/ConflictResolutionDialog.vue'
 import { pb } from '@/utils/pocketbase'
 
 import SnackbarComponent from '@/components/SnackbarComponent.vue'
 import { useSyncStore } from '@/stores/syncStore'
 import StatusBar from '@/components/StatusBar.vue'
+import { useSchedulerStore } from '@/stores/schedulerStore'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
 const syncStore = useSyncStore()
+const schedulerStore = useSchedulerStore()
 
 const drawer = ref(true)
 const showAuthModal = ref(false)
@@ -85,11 +95,17 @@ watch(
 
 watch(
   isLoggedIn,
-  (newValue) => {
+  async (newValue) => {
     if (newValue) {
       handleLoginSuccess()
+      // Iniciar scheduler cuando usuario se loguea
+      if (!schedulerStore.initialized) {
+        await schedulerStore.init()
+      }
     } else {
       navigationLinks.value = []
+      // Detener scheduler cuando usuario hace logout
+      schedulerStore.reset()
       if (router.currentRoute.value.meta.requiresAuth) {
         router.push('/')
       }
@@ -123,6 +139,9 @@ onBeforeUnmount(() => {
   if (authStore.isLoggedIn) {
     authStore.stopRefreshTimer()
   }
+
+  // Detener scheduler al desmontar
+  schedulerStore.reset()
 })
 
 const handleWindowFocus = () => {
@@ -163,6 +182,12 @@ const refreshTokenIfNeeded = async () => {
     }
   }
   // Remover log cuando no está logueado (muy frecuente)
+}
+
+// Manejar resolución de conflictos desde el dialog
+function handleConflictResolution(resolvedConflicts) {
+  console.log('[APP] Resolviendo conflictos:', resolvedConflicts)
+  syncStore.resolveMultipleConflicts(resolvedConflicts)
 }
 
 // Agregar verificación de autenticación antes de cada ruta

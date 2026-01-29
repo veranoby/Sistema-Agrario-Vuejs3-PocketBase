@@ -10,9 +10,10 @@ import { useRecordatoriosStore } from '@/stores/recordatoriosStore'
 import { useAuthStore } from '@/stores/authStore'
 
 export class SyncQueue {
-  constructor() {
+  constructor(onConflictCallback = null) {
     this.queue = []
     this.tempToRealIdMap = this.loadIdMappings()
+    this.onConflictCallback = onConflictCallback // Callback para conflictos
     this.config = {
       maxRetries: 5, // Increased from 3 to 5 for better retry handling
       batchSize: 10,
@@ -561,13 +562,45 @@ export class SyncQueue {
     // Track error metrics
     this.trackError(error.name || 'batch_error')
 
+    // Detectar errores 409 (Conflict)
+    const isConflictError = error.status === 409
+
     // Intentar obtener más detalles del error si es una instancia de ClientResponseError de PocketBase
     if (error && error.isAbort === false && error.status !== 0 && typeof error.data === 'object') {
       console.error('Detalles del error de batch (PocketBase ClientResponseError):', error.data)
-      // TODO: Considerar si el error.data de PocketBase puede indicar qué operaciones específicas del batch fallaron.
-      // Si es así, se podría aplicar retryCount/failed status solo a esas. Por ahora, se aplica a todas en el batch.
     }
 
+    // Si es un error 409, crear conflictos en lugar de reintentar automáticamente
+    if (isConflictError && this.onConflictCallback) {
+      console.log('[SyncQueue] Detectado error 409, creando conflictos para resolución de usuario')
+
+      operationsInFailedBatch.forEach((op) => {
+        // Crear objeto de conflicto
+        const conflict = {
+          id: op.id,
+          tempId: op.tempId,
+          collection: op.collection,
+          type: op.type,
+          local: op.data,
+          server: error.data?.serverVersion || null,
+          operation: op,
+          timestamp: new Date().toISOString()
+        }
+
+        // Llamar al callback de conflicto
+        if (typeof this.onConflictCallback === 'function') {
+          this.onConflictCallback(conflict)
+        }
+
+        // Marcar operación como en conflicto (no reintentar automáticamente)
+        op.status = 'conflict'
+        op.conflictDetected = true
+      })
+
+      return
+    }
+
+    // Para otros errores, aplicar lógica normal de reintentos
     operationsInFailedBatch.forEach((op) => {
       op.retryCount = (op.retryCount || 0) + 1
       console.log(
@@ -575,21 +608,21 @@ export class SyncQueue {
           op.collection
         }) a ${op.retryCount}. Status actual: ${op.status}`
       )
-      
+
       // Check if we should retry with exponential backoff
-      if (op.retryCount < this.config.maxRetries && op.status !== 'completed') {
+      if (op.retryCount < this.config.maxRetries && op.status !== 'completed' && op.status !== 'conflict') {
         // Set status to 'retrying' so it gets picked up again
         op.status = 'retrying';
-        
+
         // Calculate delay with exponential backoff and jitter
         const delay = this.calculateBackoffDelay(op.retryCount - 1); // retryCount-1 because we just incremented
-        
+
         console.log(
           `Programando reintento para operación ${op.type} en ${op.collection} ID ${
             op.id || op.tempId
           } después de ${delay}ms`
         )
-        
+
         // Schedule retry with delay
         setTimeout(() => {
           console.log(

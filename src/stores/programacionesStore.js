@@ -16,6 +16,7 @@ import { useActividadesStore } from '@/stores/actividadesStore';
 import { useHaciendaStore } from './haciendaStore';
 import { useSnackbarStore } from './snackbarStore';
 import { useBitacoraStore } from './bitacoraStore';
+import { saveToLocalStorage, loadFromLocalStorage } from '@/utils/localStorageUtils';
 
 export const useProgramacionesStore = defineStore('programaciones', {
   state: () => ({
@@ -25,14 +26,9 @@ export const useProgramacionesStore = defineStore('programaciones', {
     lastCalculated: null,
     version: 1,
     lastSync: null,
-    pendingBitacoraFromProgramacionData: null
+    pendingBitacoraFromProgramacionData: null,
+    loaded: false
   }),
-
-  persist: {
-    key: 'programaciones',
-    storage: sessionStorage,
-    paths: ['programaciones']
-  },
 
   getters: {
     programacionesPorHacienda: (state) => {
@@ -99,11 +95,8 @@ export const useProgramacionesStore = defineStore('programaciones', {
       this.error = null
       this.loading = true
 
-      // Cargar datos locales primero
-      const programacionesLocal = syncStore.loadFromLocalStorage('programaciones')
-      if (programacionesLocal && Array.isArray(programacionesLocal)) {
-        this.programaciones = programacionesLocal.map(this.enriquecerProgramacion)
-
+      // Cargar datos locales primero usando el método del store
+      if (this.loadFromStorage()) {
         this.loading = false
         return this.programaciones
       }
@@ -117,8 +110,8 @@ export const useProgramacionesStore = defineStore('programaciones', {
         this.lastSync = Date.now()
 
         this.programaciones = records.map(this.enriquecerProgramacion)
-        // Guardar zonas en localStorage para uso offline
-        syncStore.saveToLocalStorage('programaciones', this.programaciones)
+        // Guardar en localStorage usando el método del store
+        this.saveToStorage()
       } catch (error) {
         handleError(error, 'Error al cargar programaciones')
       } finally {
@@ -1199,8 +1192,30 @@ export const useProgramacionesStore = defineStore('programaciones', {
         return { valid: true, message: 'Siembra context validated successfully' }
       },
 
-      // Aquí se pueden agregar más acciones si es necesario
-      
+      // Métodos de localStorage manual (reemplazando persist plugin)
+      saveToStorage() {
+        try {
+          saveToLocalStorage('programaciones', this.programaciones)
+        } catch (error) {
+          console.error('[ProgramacionesStore] Error guardando en localStorage:', error)
+        }
+      },
+
+      loadFromStorage() {
+        try {
+          const data = loadFromLocalStorage('programaciones')
+          if (data && Array.isArray(data)) {
+            this.programaciones = data.map(this.enriquecerProgramacion)
+            this.loaded = true
+            return true
+          }
+          return false
+        } catch (error) {
+          console.error('[ProgramacionesStore] Error cargando desde localStorage:', error)
+          return false
+        }
+      }
+
     } // Fin del objeto actions
   }) // Fin de defineStore
 

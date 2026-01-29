@@ -350,5 +350,29 @@
     "all": "TODOS",
     "edit_not_allowed": "SOLO EL USUARIO QUE CREÓ ESTE REGISTRO O UN ADMINISTRADOR PUEDE EDITAR",
     "delete_not_allowed": "SOLO EL USUARIO QUE CREÓ ESTE REGISTRO O UN ADMINISTRADOR PUEDE ELIMINAR"
+  },
+  "bitacora": {
+    "general_title": "BITÁCORA GENERAL DE ACTIVIDADES",
+    "subtitle": "Todas las entradas registradas para la hacienda actual",
+    "export_pdf": "Exportar PDF",
+    "export_excel": "Exportar Excel",
+    "exporting": "Exportando...",
+    "export_success": "Exportación completada",
+    "export_error": "Error en exportación",
+    "no_entries": "No hay entradas en la bitácora que coincidan con los filtros aplicados",
+    "loading": "Cargando bitácora...",
+    "filters": "Filtros",
+    "filter_by_sowing": "Filtrar por Siembra",
+    "filter_by_activity": "Filtrar por Actividad",
+    "filter_by_date": "Filtrar por Fecha",
+    "load_more": "Cargar Más"
+  },
+  "scheduler": {
+    "status_on": "Scheduler ON",
+    "status_off": "Scheduler OFF",
+    "status_stopped": "Scheduler DETENIDO",
+    "notification_title": "Programación ejecutada automáticamente",
+    "notification_error": "Error ejecutando programación",
+    "pending_tasks": "Tareas pendientes"
   }
 }

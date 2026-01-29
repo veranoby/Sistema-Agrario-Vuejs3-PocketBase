@@ -350,5 +350,29 @@
     "all": "ALL",
     "edit_not_allowed": "ONLY THE USER WHO CREATED THIS RECORD OR AN ADMINISTRATOR CAN EDIT",
     "delete_not_allowed": "ONLY THE USER WHO CREATED THIS RECORD OR AN ADMINISTRATOR CAN DELETE"
+  },
+  "bitacora": {
+    "general_title": "GENERAL ACTIVITY LOG",
+    "subtitle": "All registered entries for the current farm",
+    "export_pdf": "Export PDF",
+    "export_excel": "Export Excel",
+    "exporting": "Exporting...",
+    "export_success": "Export completed",
+    "export_error": "Export error",
+    "no_entries": "No log entries match the applied filters",
+    "loading": "Loading log...",
+    "filters": "Filters",
+    "filter_by_sowing": "Filter by Sowing",
+    "filter_by_activity": "Filter by Activity",
+    "filter_by_date": "Filter by Date",
+    "load_more": "Load More"
+  },
+  "scheduler": {
+    "status_on": "Scheduler ON",
+    "status_off": "Scheduler OFF",
+    "status_stopped": "Scheduler STOPPED",
+    "notification_title": "Schedule executed automatically",
+    "notification_error": "Error executing schedule",
+    "pending_tasks": "Pending tasks"
   }
 }
