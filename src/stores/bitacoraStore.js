@@ -11,6 +11,22 @@ export const useBitacoraStore = defineStore('bitacora', {
     bitacoraEntries: [],
     isLoading: false,
     lastSync: null, // Timestamp of last successful fetch from server
+    // Pagination state
+    pagination: {
+      page: 1,
+      perPage: 50,
+      totalItems: 0,
+      totalPages: 0,
+      hasMore: false
+    },
+    filters: {
+      hacienda: null,
+      siembra_asociada: null,
+      programacion_origen: null,
+      actividad_realizada: null,
+      fecha_desde: null,
+      fecha_hasta: null
+    }
   }),
 
   getters: {
@@ -91,30 +107,126 @@ export const useBitacoraStore = defineStore('bitacora', {
       console.log('[BITACORA_STORE] Initialization complete.');
     },
 
-    // Fetch entries from PocketBase for the current hacienda
+    // Fetch entries from PocketBase for the current hacienda with pagination
     async cargarBitacoraEntries(haciendaId) {
-      if (!haciendaId) {
-        console.warn('[BITACORA_STORE] No haciendaId provided to cargarBitacoraEntries.');
-        return;
+      // Delegate to fetchPage for backward compatibility
+      return this.fetchPage(1, 100, { hacienda: haciendaId });
+    },
+
+    // Fetch a specific page of bitacora entries with filters
+    async fetchPage(page = 1, perPage = 50, filters = {}) {
+      const syncStore = useSyncStore();
+      const haciendaStore = useHaciendaStore();
+      
+      const targetHacienda = filters.hacienda || haciendaStore.mi_hacienda?.id;
+      
+      if (!targetHacienda) {
+        console.warn('[BITACORA_STORE] No haciendaId provided to fetchPage.');
+        return { items: [], pagination: this.pagination };
       }
-      console.log(`[BITACORA_STORE] Fetching entries for hacienda: ${haciendaId}`);
+      
+      console.log(`[BITACORA_STORE] Fetching page ${page} with ${perPage} items per page for hacienda: ${targetHacienda}`);
       this.isLoading = true;
+      
       try {
-        // Simplificar consulta para debug - remover expand problemático
-        const records = await pb.collection('bitacora').getFullList({
-          filter: `hacienda="${haciendaId}"`,
-          sort: '-created' // usar created en lugar de fecha_ejecucion por si no existe
-          // expand: "actividad_realizada,actividad_realizada.tipo_actividades,siembra_asociada,user_responsable" // Comentado temporalmente
+        // Build filter string
+        const filterParts = [`hacienda="${targetHacienda}"`];
+        
+        if (filters.siembra_asociada) {
+          filterParts.push(`siembra_asociada="${filters.siembra_asociada}"`);
+        }
+        if (filters.programacion_origen) {
+          filterParts.push(`programacion_origen="${filters.programacion_origen}"`);
+        }
+        if (filters.actividad_realizada) {
+          filterParts.push(`actividad_realizada="${filters.actividad_realizada}"`);
+        }
+        if (filters.fecha_desde) {
+          filterParts.push(`fecha_ejecucion>="${filters.fecha_desde}"`);
+        }
+        if (filters.fecha_hasta) {
+          filterParts.push(`fecha_ejecucion<="${filters.fecha_hasta}"`);
+        }
+        
+        const filterString = filterParts.join(' && ');
+        
+        // Use PocketBase getList for pagination
+        const result = await pb.collection('bitacora').getList(page, perPage, {
+          filter: filterString,
+          sort: '-created',
+          expand: "actividad_realizada,actividad_realizada.tipo_actividades,siembra_asociada,user_responsable"
         });
-        this.bitacoraEntries = records.map(entry => ({...entry, _isTemp: false })); 
+        
+        // Update pagination state
+        this.pagination = {
+          page: result.page,
+          perPage: result.perPage,
+          totalItems: result.totalItems,
+          totalPages: result.totalPages,
+          hasMore: result.page < result.totalPages
+        };
+        
+        // Update filters state
+        this.filters = { ...this.filters, ...filters };
+        
+        // For page 1, replace entries; for other pages, append
+        const entries = result.items.map(entry => ({...entry, _isTemp: false }));
+        
+        if (page === 1) {
+          this.bitacoraEntries = entries;
+        } else {
+          this.bitacoraEntries = [...this.bitacoraEntries, ...entries];
+        }
+        
         this.lastSync = Date.now();
-        useSyncStore().saveToLocalStorage('bitacoraEntries', this.bitacoraEntries);
-        console.log('[BITACORA_STORE] Fetched and saved to localStorage:', this.bitacoraEntries.length, 'entries.');
+        syncStore.saveToLocalStorage('bitacoraEntries', this.bitacoraEntries);
+        console.log(`[BITACORA_STORE] Fetched page ${page}: ${entries.length} items (Total: ${result.totalItems})`);
+        
+        return {
+          items: entries,
+          pagination: this.pagination
+        };
       } catch (error) {
-        handleError(error, 'Error cargando entradas de bitácora desde PocketBase');
+        handleError(error, 'Error cargando página de bitácora');
+        return { items: [], pagination: this.pagination };
       } finally {
         this.isLoading = false;
       }
+    },
+
+    // Load next page
+    async loadNextPage() {
+      if (!this.pagination.hasMore || this.isLoading) {
+        return { items: [], pagination: this.pagination };
+      }
+      
+      const nextPage = this.pagination.page + 1;
+      return this.fetchPage(nextPage, this.pagination.perPage, this.filters);
+    },
+
+    // Refresh current page
+    async refreshPage() {
+      return this.fetchPage(1, this.pagination.perPage, this.filters);
+    },
+
+    // Clear all entries and reset pagination
+    clearEntries() {
+      this.bitacoraEntries = [];
+      this.pagination = {
+        page: 1,
+        perPage: 50,
+        totalItems: 0,
+        totalPages: 0,
+        hasMore: false
+      };
+      this.filters = {
+        hacienda: null,
+        siembra_asociada: null,
+        programacion_origen: null,
+        actividad_realizada: null,
+        fecha_desde: null,
+        fecha_hasta: null
+      };
     },
 
     // Create a new bitacora entry

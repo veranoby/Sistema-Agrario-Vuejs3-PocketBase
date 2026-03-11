@@ -27,7 +27,21 @@ export const useProgramacionesStore = defineStore('programaciones', {
     version: 1,
     lastSync: null,
     pendingBitacoraFromProgramacionData: null,
-    loaded: false
+    loaded: false,
+    // Pagination state
+    pagination: {
+      page: 1,
+      perPage: 50,
+      totalItems: 0,
+      totalPages: 0,
+      hasMore: false
+    },
+    filters: {
+      hacienda: null,
+      actividad: null,
+      siembra: null,
+      estado: null // 'vencida', 'proxima', 'al-dia'
+    }
   }),
 
   getters: {
@@ -89,34 +103,119 @@ export const useProgramacionesStore = defineStore('programaciones', {
       }
     },
 
+    // Cargar programaciones con paginación (backward compatible)
     async cargarProgramaciones() {
+      // Delegate to fetchPage for backward compatibility
+      return this.fetchPage(1, 100, {});
+    },
+
+    // Fetch a specific page of programaciones with filters
+    async fetchPage(page = 1, perPage = 50, filters = {}) {
       const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore()
-      this.error = null
-      this.loading = true
-
-      // Cargar datos locales primero usando el método del store
-      if (this.loadFromStorage()) {
-        this.loading = false
-        return this.programaciones
+      
+      const targetHacienda = filters.hacienda || haciendaStore.mi_hacienda?.id;
+      
+      if (!targetHacienda) {
+        console.warn('[PROGRAMACIONES_STORE] No haciendaId provided to fetchPage.');
+        return { items: [], pagination: this.pagination };
       }
-
+      
+      this.error = null;
+      this.loading = true;
+      
+      console.log(`[PROGRAMACIONES_STORE] Fetching page ${page} with ${perPage} items per page for hacienda: ${targetHacienda}`);
+      
       try {
-        const records = await pb.collection('programaciones').getFullList({
-          filter: `hacienda="${haciendaStore.mi_hacienda?.id}"`,
+        // Build filter string
+        const filterParts = [`hacienda="${targetHacienda}"`];
+        
+        if (filters.actividad) {
+          filterParts.push(`actividad="${filters.actividad}"`);
+        }
+        if (filters.siembra) {
+          filterParts.push(`siembras ~ "${filters.siembra}"`);
+        }
+        
+        const filterString = filterParts.join(' && ');
+        
+        // Use PocketBase getList for pagination
+        const result = await pb.collection('programaciones').getList(page, perPage, {
+          filter: filterString,
+          sort: '-created',
           expand: 'actividad,siembras'
-        })
-
-        this.lastSync = Date.now()
-
-        this.programaciones = records.map(this.enriquecerProgramacion)
-        // Guardar en localStorage usando el método del store
-        this.saveToStorage()
+        });
+        
+        // Update pagination state
+        this.pagination = {
+          page: result.page,
+          perPage: result.perPage,
+          totalItems: result.totalItems,
+          totalPages: result.totalPages,
+          hasMore: result.page < result.totalPages
+        };
+        
+        // Update filters state
+        this.filters = { ...this.filters, ...filters };
+        
+        // Enriquecer programaciones
+        const programaciones = result.items.map(this.enriquecerProgramacion.bind(this));
+        
+        // For page 1, replace entries; for other pages, append
+        if (page === 1) {
+          this.programaciones = programaciones;
+        } else {
+          this.programaciones = [...this.programaciones, ...programaciones];
+        }
+        
+        this.lastSync = Date.now();
+        this.saveToStorage();
+        
+        console.log(`[PROGRAMACIONES_STORE] Fetched page ${page}: ${programaciones.length} items (Total: ${result.totalItems})`);
+        
+        return {
+          items: programaciones,
+          pagination: this.pagination
+        };
       } catch (error) {
-        handleError(error, 'Error al cargar programaciones')
+        handleError(error, 'Error cargando página de programaciones');
+        return { items: [], pagination: this.pagination };
       } finally {
-        this.loading = false
+        this.loading = false;
       }
+    },
+
+    // Load next page
+    async loadNextPage() {
+      if (!this.pagination.hasMore || this.loading) {
+        return { items: [], pagination: this.pagination };
+      }
+      
+      const nextPage = this.pagination.page + 1;
+      return this.fetchPage(nextPage, this.pagination.perPage, this.filters);
+    },
+
+    // Refresh current page
+    async refreshPage() {
+      return this.fetchPage(1, this.pagination.perPage, this.filters);
+    },
+
+    // Clear all entries and reset pagination
+    clearProgramaciones() {
+      this.programaciones = [];
+      this.pagination = {
+        page: 1,
+        perPage: 50,
+        totalItems: 0,
+        totalPages: 0,
+        hasMore: false
+      };
+      this.filters = {
+        hacienda: null,
+        actividad: null,
+        siembra: null,
+        estado: null
+      };
     },
 
     enriquecerProgramacion(programacion) {
