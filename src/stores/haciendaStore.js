@@ -35,6 +35,27 @@ export const useHaciendaStore = defineStore('hacienda', {
   },
 
   actions: {
+    // Check if a marketplace module is active for current hacienda
+    isModuleActive(moduleName) {
+      // If no hacienda loaded, assume module is inactive
+      if (!this.mi_hacienda) return false
+      
+      // If hacienda has active_modules array, check it
+      if (this.mi_hacienda.active_modules && Array.isArray(this.mi_hacienda.active_modules)) {
+        return this.mi_hacienda.active_modules.includes(moduleName)
+      }
+      
+      // If hacienda has plan with module info, check plan
+      if (this.mi_hacienda.plan && typeof this.mi_hacienda.plan === 'object') {
+        // Future: Check plan modules
+        // For now, assume all modules active if no active_modules field
+        return true
+      }
+      
+      // Default: assume all modules active for backward compatibility
+      return true
+    },
+
     async init() {
       if (!this.haciendaUsers.length) {
         await this.fetchHaciendaUsers()

@@ -17,6 +17,32 @@ import ProgramacionesList from '@/components/ProgramacionesList.vue'
 import Recordatorios from '@/components/Recordatorios.vue'
 import Finanzas from '@/components/FinanzasConfig.vue'
 
+// Role definitions
+const ROLES = {
+  SUPERADMIN: 'superadmin', // Future: multi-tenant admin
+  ADMINISTRADOR: 'administrador', // Hacienda admin
+  AUDITOR: 'auditor', // Read-only with BPA audit permissions
+  OPERADOR: 'operador' // Field worker, limited permissions
+}
+
+// Route access matrix by role
+const ROUTE_ROLE_MATRIX = {
+  // Public routes - no auth required
+  public: ['/', '/about', '/plans', '/documentation', '/contact', '/faq'],
+  
+  // Admin-only routes
+  admin: ['/admin'], // Future: Super admin panel
+  
+  // Hacienda management - administrador + auditor
+  hacienda: ['/siembras', '/zonas', '/actividades', '/programaciones', '/recordatorios'],
+  
+  // Financial management - administrador only
+  finanzas: ['/finanzas'],
+  
+  // User profile - all authenticated users
+  profile: ['/profile', '/dashboard']
+}
+
 const routes = [
   { path: '/', component: HomeComp },
   { path: '/about', component: AboutUs },
@@ -24,7 +50,15 @@ const routes = [
   { path: '/documentation', component: DocumentationComponent },
   { path: '/contact', component: ContactUs },
   { path: '/faq', component: FAQ },
-  { path: '/profile', component: ProfileComponent, meta: { requiresAuth: true } },
+  { 
+    path: '/profile', 
+    component: ProfileComponent, 
+    name: 'Perfil de Usuario',
+    meta: { 
+      requiresAuth: true,
+      roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR, ROLES.OPERADOR]
+    }
+  },
   {
     path: '/auth/confirm-verification/:token?',
     component: EmailConfirmation,
@@ -34,57 +68,96 @@ const routes = [
     path: '/dashboard',
     component: () => import('@/components/Dashboard.vue'),
     name: 'Dashboard de Inicio',
-    meta: { requiresAuth: true }
+    meta: { 
+      requiresAuth: true,
+      roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR, ROLES.OPERADOR]
+    }
   },
   {
     path: '/siembras',
     component: SiembrasConfig,
     name: 'Gestion de Siembras y Proyectos',
-    meta: { requiresAuth: true }
+    meta: { 
+      requiresAuth: true,
+      roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR, ROLES.OPERADOR]
+    }
   },
   {
     path: '/siembras/:id',
     component: SiembraWorkspace,
     name: 'Ver Siembra/Proyecto',
-    meta: { requiresAuth: true }
+    meta: { 
+      requiresAuth: true,
+      roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR, ROLES.OPERADOR]
+    }
   },
   {
     path: '/actividades',
     component: ActividadesConfig,
     name: 'Gestion de Actividades',
-    meta: { requiresAuth: true }
+    meta: { 
+      requiresAuth: true,
+      roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR, ROLES.OPERADOR]
+    }
   },
   {
     path: '/actividades/:id',
     component: ActividadesWorkspace,
     name: 'Ver Actividad',
-    meta: { requiresAuth: true }
+    meta: { 
+      requiresAuth: true,
+      roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR, ROLES.OPERADOR]
+    }
   },
 
   {
     path: '/programaciones',
     component: ProgramacionesList,
     name: 'Gestion de Programas de Actividades',
-    meta: { requiresAuth: true }
+    meta: { 
+      requiresAuth: true,
+      roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR, ROLES.OPERADOR]
+    }
   },
   {
     path: '/zonas',
     component: ZonasConfig,
     name: 'Gestion de Zonas de trabajo',
-    meta: { requiresAuth: true }
+    meta: { 
+      requiresAuth: true,
+      roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR, ROLES.OPERADOR]
+    }
   },
   {
     path: '/finanzas',
     component: Finanzas,
     name: 'Gestion rapida financiera',
-    meta: { requiresAuth: true }
+    meta: { 
+      requiresAuth: true,
+      roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR], // Operador NO puede ver finanzas
+      module: 'finanzas' // For module-based access control
+    }
   },
   {
     path: '/recordatorios',
     component: Recordatorios,
     name: 'Gestion de Recordatorios y Emergencias',
-    meta: { requiresAuth: true }
+    meta: { 
+      requiresAuth: true,
+      roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR, ROLES.OPERADOR]
+    }
   }
+  // Future: Super Admin Dashboard
+  // {
+  //   path: '/admin',
+  //   component: () => import('@/components/admin/SuperAdminDashboard.vue'),
+  //   name: 'Super Admin Dashboard',
+  //   meta: { 
+  //     requiresAuth: true,
+  //     requiresSuperAdmin: true,
+  //     roles: [ROLES.SUPERADMIN]
+  //   }
+  // }
 ]
 
 const router = createRouter({
@@ -92,4 +165,75 @@ const router = createRouter({
   routes
 })
 
+// Router Guard - Role Based Access Control
+router.beforeEach(async (to, from, next) => {
+  const { useAuthStore } = await import('@/stores/authStore')
+  const authStore = useAuthStore()
+  
+  // Ensure auth is initialized
+  await authStore.ensureAuthInitialized()
+  
+  const isAuthenticated = authStore.isLoggedIn
+  const user = authStore.user
+  const userRole = user?.role
+  
+  // Check if route requires authentication
+  if (to.meta.requiresAuth) {
+    if (!isAuthenticated) {
+      // Redirect to home with login prompt
+      next({ 
+        path: '/', 
+        query: { redirect: to.fullPath, loginRequired: 'true' }
+      })
+      return
+    }
+    
+    // Check if route requires specific roles
+    if (to.meta.roles && Array.isArray(to.meta.roles)) {
+      if (!to.meta.roles.includes(userRole)) {
+        // User doesn't have required role
+        next({ 
+          path: '/dashboard', 
+          query: { accessDenied: 'role' }
+        })
+        return
+      }
+    }
+    
+    // Check if route requires super admin
+    if (to.meta.requiresSuperAdmin) {
+      if (userRole !== ROLES.SUPERADMIN) {
+        next({ 
+          path: '/dashboard', 
+          query: { accessDenied: 'superadmin' }
+        })
+        return
+      }
+    }
+    
+    // Check module-based access (for marketplace modules)
+    if (to.meta.module) {
+      const { useHaciendaStore } = await import('@/stores/haciendaStore')
+      const haciendaStore = useHaciendaStore()
+      
+      const moduleActive = haciendaStore.isModuleActive(to.meta.module)
+      if (!moduleActive) {
+        // Module not active for this hacienda
+        next({ 
+          path: '/dashboard', 
+          query: { moduleDisabled: to.meta.module }
+        })
+        return
+      }
+    }
+  }
+  
+  // Prevent authenticated users from accessing auth pages (login/register)
+  // if we had dedicated auth pages
+  
+  // All checks passed
+  next()
+})
+
 export default router
+export { ROLES, ROUTE_ROLE_MATRIX }
