@@ -374,5 +374,15 @@
     "notification_title": "Programación ejecutada automáticamente",
     "notification_error": "Error ejecutando programación",
     "pending_tasks": "Tareas pendientes"
+  },
+  "ai_assistant": {
+    "title": "Asistente de IA Agri",
+    "open_assistant": "Abrir Asistente de IA",
+    "analyzing_context": "Analizando contexto de siembra: {name}",
+    "consulting": "Consultando con expertos agrícolas...",
+    "generate": "Generar Recomendación de IA",
+    "regenerate": "Actualizar Recomendación",
+    "welcome_msg": "Pulsa el botón para obtener recomendaciones personalizadas basadas en tus datos actuales.",
+    "disclaimer": "Sugerencia basada en promedios; valide con un técnico agrícola calificado antes de tomar decisiones críticas."
   }
 }

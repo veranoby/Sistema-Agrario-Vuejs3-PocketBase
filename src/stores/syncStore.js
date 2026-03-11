@@ -17,7 +17,7 @@ import { logger, logP3, logSync, logError } from '@/utils/logger'
 export const useSyncStore = defineStore('sync', {
   state: () => ({
     isOnline: navigator.onLine,
-    queue: new SyncQueue((conflict) => this.addConflict(conflict)), // Pasar callback de conflicto
+    queue: new SyncQueue(), // Se inicializará el callback en init()
     lastSyncTime: null,
     syncStatus: 'idle',
     errors: [],
@@ -90,6 +90,9 @@ export const useSyncStore = defineStore('sync', {
       if (this.initialized) return
 
       try {
+        // Inicializar callback de conflictos
+        this.queue.onConflictCallback = (conflict) => this.addConflict(conflict)
+
         // Limpiar listeners previos para evitar duplicados
         window.removeEventListener('online', this.handleOnline)
         window.removeEventListener('offline', this.handleOffline)

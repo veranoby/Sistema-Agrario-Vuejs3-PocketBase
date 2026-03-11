@@ -86,7 +86,6 @@ export default defineConfig({
       reporter: ['text', 'json', 'html'],
       exclude: [
         'node_modules/',
-        'src/stores/',
         'src/router/',
         'src/main.js',
         'src/i18n.js',

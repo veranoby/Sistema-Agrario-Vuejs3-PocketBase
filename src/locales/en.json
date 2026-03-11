@@ -374,5 +374,15 @@
     "notification_title": "Schedule executed automatically",
     "notification_error": "Error executing schedule",
     "pending_tasks": "Pending tasks"
+  },
+  "ai_assistant": {
+    "title": "Agri AI Assistant",
+    "open_assistant": "Open AI Assistant",
+    "analyzing_context": "Analyzing sowing context: {name}",
+    "consulting": "Consulting with agricultural experts...",
+    "generate": "Generate AI Recommendation",
+    "regenerate": "Update Recommendation",
+    "welcome_msg": "Click the button to get personalized recommendations based on your current data.",
+    "disclaimer": "Suggestion based on averages; validate with a qualified agricultural technician before making critical decisions."
   }
 }

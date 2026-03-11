@@ -549,6 +549,13 @@
         @save="handleBitacoraSave"
       />
     </v-dialog>
+
+    <AiAssistant
+      v-if="!isLoading"
+      :siembra="siembraInfo"
+      :actividades="actividadesfiltradas"
+      :zonas="zonasfiltradas"
+    />
   </v-container>
   <v-progress-circular v-else indeterminate color="primary"></v-progress-circular>
 </template>
@@ -572,6 +579,7 @@ import { useActividadesStore } from '@/stores/actividadesStore'
 import ActividadForm from '@/components/forms/ActividadForm.vue'
 import EmbeddedBitacoraList from './EmbeddedBitacoraList.vue'
 import BitacoraEntryForm from '@/components/forms/BitacoraEntryForm.vue'
+import AiAssistant from '@/components/AiAssistant.vue'
 
 const { t } = useI18n()
 const route = useRoute()
