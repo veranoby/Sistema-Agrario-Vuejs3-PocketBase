@@ -342,7 +342,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/authStore'
 
@@ -356,6 +356,7 @@ import { required, minLength, sameAs, helpers } from '@vuelidate/validators'
 import { useSyncStore } from '@/stores/syncStore'
 import { debounce } from 'lodash'
 import { useRouter } from 'vue-router'
+import { calculatePasswordStrength, getPasswordStrengthColor, getPasswordStrengthLabel } from '@/utils/validationUtils'
 
 const props = defineProps({
   isOpen: Boolean,
@@ -385,6 +386,11 @@ const checkingHacienda = ref(false)
 const usernameChecked = ref(false)
 const emailChecked = ref(false)
 const haciendaChecked = ref(false)
+
+// Store debounced function references for cleanup
+let debouncedUsernameCheck = null
+let debouncedEmailCheck = null
+let debouncedHaciendaCheck = null
 
 const dialogModel = computed({
   get: () => props.isOpen,
@@ -487,41 +493,18 @@ const formValid = computed(() => {
   )
 })
 
-// Password strength calculation
-const passwordStrength = computed(() => {
-  if (!registerForm.value.password) return 0
+// Password strength calculation (using shared utility)
+const passwordStrength = computed(() =>
+  calculatePasswordStrength(registerForm.value.password)
+)
 
-  let strength = 0
+const strengthColor = computed(() =>
+  getPasswordStrengthColor(passwordStrength.value)
+)
 
-  // Longitud mínima
-  if (registerForm.value.password.length >= 8) strength += 25
-  if (registerForm.value.password.length >= 12) strength += 15
-
-  // Contiene números
-  if (/\d/.test(registerForm.value.password)) strength += 20
-
-  // Contiene minúsculas y mayúsculas
-  if (/[a-z]/.test(registerForm.value.password) && /[A-Z]/.test(registerForm.value.password)) strength += 20
-
-  // Contiene caracteres especiales
-  if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(registerForm.value.password)) strength += 20
-
-  return Math.min(strength, 100)
-})
-
-const strengthColor = computed(() => {
-  const strength = passwordStrength.value
-  if (strength < 40) return 'error'
-  if (strength < 70) return 'warning'
-  return 'success'
-})
-
-const strengthLabel = computed(() => {
-  const strength = passwordStrength.value
-  if (strength < 40) return t('auth.password_weak')
-  if (strength < 70) return t('auth.password_medium')
-  return t('auth.password_strong')
-})
+const strengthLabel = computed(() =>
+  getPasswordStrengthLabel(passwordStrength.value, t)
+)
 
 const checkFields = async () => {
   try {
@@ -605,6 +588,18 @@ const checkHaciendaAvailability = debounce(async (hacienda) => {
     checkingHacienda.value = false
   }
 }, 500)
+
+// Store references for cleanup
+debouncedUsernameCheck = checkUsernameAvailability
+debouncedEmailCheck = checkEmailAvailability
+debouncedHaciendaCheck = checkHaciendaAvailability
+
+// Cleanup on unmount
+onUnmounted(() => {
+  if (debouncedUsernameCheck) debouncedUsernameCheck.cancel()
+  if (debouncedEmailCheck) debouncedEmailCheck.cancel()
+  if (debouncedHaciendaCheck) debouncedHaciendaCheck.cancel()
+})
 
 // Watchers para validación en tiempo real
 watch(() => registerForm.value.username, (newUsername) => {

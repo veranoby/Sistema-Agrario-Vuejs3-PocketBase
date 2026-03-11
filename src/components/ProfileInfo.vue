@@ -256,8 +256,8 @@ const openDialog = () => {
     username.value = user.value.username
     email.value = user.value.email
     info.value = user.value.info
-    cedula.value = cedula.value.info
-    direccion.value = direccion.value.info
+    cedula.value = user.value.cedula || ''
+    direccion.value = user.value.direccion || ''
   }
   dialogOpen.value = true
 }

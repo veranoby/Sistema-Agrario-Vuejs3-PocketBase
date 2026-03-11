@@ -117,11 +117,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { pb } from '@/utils/pocketbase'
 import { useSnackbarStore } from '@/stores/snackbarStore'
+import { calculatePasswordStrength, getPasswordStrengthColor, getPasswordStrengthLabel } from '@/utils/validationUtils'
 
 const route = useRoute()
 const router = useRouter()
@@ -140,6 +141,9 @@ const tokenError = ref('')
 const resetSuccess = ref(false)
 const resetForm = ref(null)
 
+// Store timer reference for cleanup
+let redirectTimer = null
+
 // Validar que el token esté presente
 onMounted(() => {
   token.value = route.params.token
@@ -149,41 +153,25 @@ onMounted(() => {
   }
 })
 
-// Calcular fuerza de contraseña
-const passwordStrength = computed(() => {
-  if (!password.value) return 0
-
-  let strength = 0
-
-  // Longitud mínima
-  if (password.value.length >= 8) strength += 25
-  if (password.value.length >= 12) strength += 15
-
-  // Contiene números
-  if (/\d/.test(password.value)) strength += 20
-
-  // Contiene minúsculas y mayúsculas
-  if (/[a-z]/.test(password.value) && /[A-Z]/.test(password.value)) strength += 20
-
-  // Contiene caracteres especiales
-  if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password.value)) strength += 20
-
-  return Math.min(strength, 100)
+// Cleanup on unmount
+onUnmounted(() => {
+  if (redirectTimer) {
+    clearTimeout(redirectTimer)
+  }
 })
 
-const strengthColor = computed(() => {
-  const strength = passwordStrength.value
-  if (strength < 40) return 'error'
-  if (strength < 70) return 'warning'
-  return 'success'
-})
+// Calcular fuerza de contraseña (using shared utility)
+const passwordStrength = computed(() =>
+  calculatePasswordStrength(password.value)
+)
 
-const strengthLabel = computed(() => {
-  const strength = passwordStrength.value
-  if (strength < 40) return t('auth.password_weak')
-  if (strength < 70) return t('auth.password_medium')
-  return t('auth.password_strong')
-})
+const strengthColor = computed(() =>
+  getPasswordStrengthColor(passwordStrength.value)
+)
+
+const strengthLabel = computed(() =>
+  getPasswordStrengthLabel(passwordStrength.value, t)
+)
 
 // Verificar si el formulario puede ser enviado
 const canSubmit = computed(() => {
@@ -213,7 +201,7 @@ const handlePasswordReset = async () => {
     snackbarStore.showSnackbar(t('auth.password_reset_success'), 'success')
 
     // Redirigir a login después de 3 segundos
-    setTimeout(() => {
+    redirectTimer = setTimeout(() => {
       router.push('/')
     }, 3000)
   } catch (error) {
