@@ -90,7 +90,6 @@ export default defineConfig({
         'src/main.js',
         'src/i18n.js',
         '**/*.d.ts',
-        '**/*.vue',
         '**/dist/'
       ],
       thresholds: {
