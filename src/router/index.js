@@ -160,6 +160,21 @@ const routes = [
   // }
 ]
 
+// Enable /admin route for superadmin
+const adminRoute = {
+  path: '/admin',
+  component: () => import('@/components/admin/SuperAdminDashboard.vue'),
+  name: 'Super Admin Dashboard',
+  meta: { 
+    requiresAuth: true,
+    requiresSuperAdmin: true,
+    roles: [ROLES.SUPERADMIN]
+  }
+}
+
+// Add admin route to routes array
+routes.push(adminRoute)
+
 const router = createRouter({
   history: createWebHistory(),
   routes
