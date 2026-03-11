@@ -115,13 +115,20 @@
                         :label="t('auth.username')"
                         variant="outlined"
                         required
-                        :error="v$.username.$error"
-                        :error-messages="v$.username.$errors.map((e) => e.$message)"
+                        :error="v$.username.$error || (usernameChecked && !usernameAvailable)"
+                        :error-messages="[
+                          ...v$.username.$errors.map((e) => e.$message),
+                          ...(usernameChecked && !usernameAvailable ? [t('auth.username_in_use')] : [])
+                        ]"
                         color="primary"
                         density="compact"
                         prepend-inner-icon="mdi-account-circle-outline"
-                        @input="handleNameInput('username')"
-                      ></v-text-field>
+                        :loading="checkingUsername"
+                      >
+                        <template v-if="usernameChecked && usernameAvailable && !checkingUsername" v-slot:append-inner>
+                          <v-icon color="success">mdi-check-circle</v-icon>
+                        </template>
+                      </v-text-field>
                     </v-col>
                     <v-col cols="6">
                       <v-text-field
@@ -131,12 +138,20 @@
                         variant="outlined"
                         type="email"
                         required
-                        :error-messages="v$.email.$errors.map((e) => e.$message)"
+                        :error="v$.email.$error || (emailChecked && !emailAvailable)"
+                        :error-messages="[
+                          ...v$.email.$errors.map((e) => e.$message),
+                          ...(emailChecked && !emailAvailable ? [t('auth.email_in_use')] : [])
+                        ]"
                         color="primary"
                         density="compact"
                         prepend-inner-icon="mdi-email-outline"
-                        @input="validateEmail"
-                      ></v-text-field>
+                        :loading="checkingEmail"
+                      >
+                        <template v-if="emailChecked && emailAvailable && !checkingEmail" v-slot:append-inner>
+                          <v-icon color="success">mdi-check-circle</v-icon>
+                        </template>
+                      </v-text-field>
                     </v-col>
                     <v-col cols="6">
                       <v-text-field
@@ -175,11 +190,19 @@
                         :label="t('auth.hacienda')"
                         variant="outlined"
                         required
-                        :error-messages="v$.hacienda.$errors.map((e) => e.$message)"
+                        :error="v$.hacienda.$error || (haciendaChecked && !haciendaAvailable)"
+                        :error-messages="[
+                          ...v$.hacienda.$errors.map((e) => e.$message),
+                          ...(haciendaChecked && !haciendaAvailable ? [t('auth.hacienda_in_use')] : [])
+                        ]"
                         density="compact"
                         prepend-inner-icon="mdi-home-outline"
-                        @input="handleNameInput('hacienda')"
-                      ></v-text-field>
+                        :loading="checkingHacienda"
+                      >
+                        <template v-if="haciendaChecked && haciendaAvailable && !checkingHacienda" v-slot:append-inner>
+                          <v-icon color="success">mdi-check-circle</v-icon>
+                        </template>
+                      </v-text-field>
                     </v-col>
                     <v-col cols="6">
                       <v-text-field
@@ -319,8 +342,7 @@
 </template>
 
 <script setup>
-//import { ref, computed, watch, onMounted } from 'vue'
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/authStore'
 
@@ -331,9 +353,8 @@ import loginLogo from '../assets/login-logo.png'
 import registerLogo from '../assets/register-logo.png'
 import { useVuelidate } from '@vuelidate/core'
 import { required, minLength, sameAs, helpers } from '@vuelidate/validators'
-//import { required, email, minLength, sameAs, helpers } from '@vuelidate/validators'
 import { useSyncStore } from '@/stores/syncStore'
-//import { debounce } from 'lodash'
+import { debounce } from 'lodash'
 import { useRouter } from 'vue-router'
 
 const props = defineProps({
@@ -356,6 +377,14 @@ const emailAvailable = ref(true)
 const haciendaAvailable = ref(true)
 const syncStore = useSyncStore()
 const router = useRouter()
+
+// Estado para validación en tiempo real
+const checkingUsername = ref(false)
+const checkingEmail = ref(false)
+const checkingHacienda = ref(false)
+const usernameChecked = ref(false)
+const emailChecked = ref(false)
+const haciendaChecked = ref(false)
 
 const dialogModel = computed({
   get: () => props.isOpen,
@@ -512,6 +541,91 @@ const checkFields = async () => {
     return false
   }
 }
+
+// Funciones debounced para validación en tiempo real
+const checkUsernameAvailability = debounce(async (username) => {
+  if (!username || username.length < 3) {
+    usernameAvailable.value = true
+    usernameChecked.value = false
+    return
+  }
+
+  checkingUsername.value = true
+  try {
+    const result = await validationStore.checkFieldsTaken([
+      { collection: 'users', field: 'username', value: username.toUpperCase() }
+    ])
+    usernameAvailable.value = result.username
+    usernameChecked.value = true
+  } catch (error) {
+    console.error('Error checking username:', error)
+  } finally {
+    checkingUsername.value = false
+  }
+}, 500)
+
+const checkEmailAvailability = debounce(async (email) => {
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    emailAvailable.value = true
+    emailChecked.value = false
+    return
+  }
+
+  checkingEmail.value = true
+  try {
+    const result = await validationStore.checkFieldsTaken([
+      { collection: 'users', field: 'email', value: email }
+    ])
+    emailAvailable.value = result.email
+    emailChecked.value = true
+  } catch (error) {
+    console.error('Error checking email:', error)
+  } finally {
+    checkingEmail.value = false
+  }
+}, 500)
+
+const checkHaciendaAvailability = debounce(async (hacienda) => {
+  if (!hacienda || hacienda.length < 3) {
+    haciendaAvailable.value = true
+    haciendaChecked.value = false
+    return
+  }
+
+  checkingHacienda.value = true
+  try {
+    const result = await validationStore.checkFieldsTaken([
+      { collection: 'Haciendas', field: 'name', value: hacienda.toUpperCase() }
+    ])
+    haciendaAvailable.value = result.name
+    haciendaChecked.value = true
+  } catch (error) {
+    console.error('Error checking hacienda:', error)
+  } finally {
+    checkingHacienda.value = false
+  }
+}, 500)
+
+// Watchers para validación en tiempo real
+watch(() => registerForm.value.username, (newUsername) => {
+  if (newUsername) {
+    const upperUsername = newUsername.toUpperCase()
+    registerForm.value.username = upperUsername
+    checkUsernameAvailability(upperUsername)
+  }
+})
+
+watch(() => registerForm.value.email, (newEmail) => {
+  checkEmailAvailability(newEmail)
+})
+
+watch(() => registerForm.value.hacienda, (newHacienda) => {
+  if (newHacienda) {
+    const upperHacienda = newHacienda.toUpperCase()
+    registerForm.value.hacienda = upperHacienda
+    checkHaciendaAvailability(upperHacienda)
+  }
+})
 
 const register = async () => {
   const isValid = await v$.value.$validate()
