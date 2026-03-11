@@ -40,7 +40,23 @@
     "enter_password": "POR FAVOR INGRESE SU CONTRASEÑA",
     "required_field": "EL {field} ES REQUERIDO",
     "no_special_chars": "NO SE PERMITEN CARACTERES ESPECIALES",
-    "invalid_email": "DEBE SER UN EMAIL VÁLIDO"
+    "invalid_email": "DEBE SER UN EMAIL VÁLIDO",
+    "recover_password_error": "ERROR AL SOLICITAR LA RECUPERACIÓN DE CONTRASEÑA. VERIFIQUE SU EMAIL E INTENTE NUEVAMENTE.",
+    "enter_new_password": "INGRESE SU NUEVA CONTRASEÑA A CONTINUACIÓN:",
+    "new_password": "NUEVA CONTRASEÑA",
+    "confirm_new_password": "CONFIRMAR NUEVA CONTRASEÑA",
+    "new_password_min_length": "LA NUEVA CONTRASEÑA DEBE TENER AL MENOS 8 CARACTERES",
+    "passwords_do_not_match": "LAS CONTRASEÑAS NO COINCIDEN",
+    "password_weak": "Débil",
+    "password_medium": "Media",
+    "password_strong": "Fuerte",
+    "invalid_reset_token": "EL ENLACE DE RESTABLECIMIENTO NO ES VÁLIDO O HA EXPIRADO",
+    "expired_reset_token": "EL ENLACE DE RESTABLECIMIENTO HA EXPIRADO. SOLICITE UNO NUEVO",
+    "reset_password": "RESTABLECER CONTRASEÑA",
+    "password_reset_success_title": "¡CONTRASEÑA RESTABLECIDA!",
+    "password_reset_success_message": "SU CONTRASEÑA HA SIDO ACTUALIZADA EXITOSAMENTE. AHORA PUEDE INICIAR SESIÓN CON SU NUEVA CONTRASEÑA.",
+    "password_reset_success": "CONTRASEÑA RESTABLECIDA EXITOSAMENTE",
+    "back_to_login": "VOLVER AL INICIO DE SESIÓN"
   },
   "profile": {
     "social_profile": "PERFIL SOCIAL",
@@ -57,7 +73,13 @@
     "cancel": "CANCELAR",
     "save": "GUARDAR",
     "profile_updated_successfully": "PERFIL ACTUALIZADO EXITOSAMENTE",
-    "failed_to_update_profile": "FALLO AL ACTUALIZAR EL PERFIL"
+    "failed_to_update_profile": "FALLO AL ACTUALIZAR EL PERFIL",
+    "email_verified": "Email verificado",
+    "email_not_verified": "Email no verificado",
+    "verification_required_message": "TU EMAIL NO HA SIDO VERIFICADO. POR FAVOR VERIFICA TU EMAIL PARA ACCEDER A TODAS LAS FUNCIONALIDADES.",
+    "resend_verification": "REENVIAR EMAIL DE VERIFICACIÓN",
+    "verification_email_sent": "EMAIL DE VERIFICACIÓN ENVIADO EXITOSAMENTE",
+    "verification_email_error": "ERROR AL ENVIAR EMAIL DE VERIFICACIÓN"
   },
   "password_change": {
     "change_password": "CAMBIAR CONTRASEÑA",

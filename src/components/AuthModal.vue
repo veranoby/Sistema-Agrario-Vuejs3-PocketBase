@@ -197,6 +197,19 @@
                         @input="v$.password.$touch()"
                         @click:append-inner="visible = !visible"
                       ></v-text-field>
+
+                      <!-- Password Strength Indicator -->
+                      <v-progress-linear
+                        v-if="registerForm.password"
+                        :model-value="passwordStrength"
+                        :color="strengthColor"
+                        :height="6"
+                        rounded
+                        class="mt-2"
+                      ></v-progress-linear>
+                      <p v-if="registerForm.password" class="text-caption mt-1" :class="`text-${strengthColor}`">
+                        {{ strengthLabel }}
+                      </p>
                     </v-col>
                     <v-col cols="6">
                       <v-text-field
@@ -443,6 +456,42 @@ const formValid = computed(() => {
   return (
     !v$.value.$invalid && usernameAvailable.value && emailAvailable.value && haciendaAvailable.value
   )
+})
+
+// Password strength calculation
+const passwordStrength = computed(() => {
+  if (!registerForm.value.password) return 0
+
+  let strength = 0
+
+  // Longitud mínima
+  if (registerForm.value.password.length >= 8) strength += 25
+  if (registerForm.value.password.length >= 12) strength += 15
+
+  // Contiene números
+  if (/\d/.test(registerForm.value.password)) strength += 20
+
+  // Contiene minúsculas y mayúsculas
+  if (/[a-z]/.test(registerForm.value.password) && /[A-Z]/.test(registerForm.value.password)) strength += 20
+
+  // Contiene caracteres especiales
+  if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(registerForm.value.password)) strength += 20
+
+  return Math.min(strength, 100)
+})
+
+const strengthColor = computed(() => {
+  const strength = passwordStrength.value
+  if (strength < 40) return 'error'
+  if (strength < 70) return 'warning'
+  return 'success'
+})
+
+const strengthLabel = computed(() => {
+  const strength = passwordStrength.value
+  if (strength < 40) return t('auth.password_weak')
+  if (strength < 70) return t('auth.password_medium')
+  return t('auth.password_strong')
 })
 
 const checkFields = async () => {

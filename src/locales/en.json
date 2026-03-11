@@ -40,7 +40,23 @@
     "enter_password": "PLEASE ENTER YOUR PASSWORD",
     "required_field": "{field} IS REQUIRED",
     "no_special_chars": "NO SPECIAL CHARACTERS ALLOWED",
-    "invalid_email": "MUST BE A VALID EMAIL"
+    "invalid_email": "MUST BE A VALID EMAIL",
+    "recover_password_error": "ERROR REQUESTING PASSWORD RECOVERY. PLEASE CHECK YOUR EMAIL AND TRY AGAIN.",
+    "enter_new_password": "ENTER YOUR NEW PASSWORD BELOW:",
+    "new_password": "NEW PASSWORD",
+    "confirm_new_password": "CONFIRM NEW PASSWORD",
+    "new_password_min_length": "NEW PASSWORD MUST BE AT LEAST 8 CHARACTERS",
+    "passwords_do_not_match": "PASSWORDS DO NOT MATCH",
+    "password_weak": "Weak",
+    "password_medium": "Medium",
+    "password_strong": "Strong",
+    "invalid_reset_token": "THE RESET LINK IS INVALID OR HAS EXPIRED",
+    "expired_reset_token": "THE RESET LINK HAS EXPIRED. REQUEST A NEW ONE",
+    "reset_password": "RESET PASSWORD",
+    "password_reset_success_title": "PASSWORD RESET SUCCESSFUL!",
+    "password_reset_success_message": "YOUR PASSWORD HAS BEEN SUCCESSFULLY UPDATED. YOU CAN NOW LOG IN WITH YOUR NEW PASSWORD.",
+    "password_reset_success": "PASSWORD RESET SUCCESSFUL",
+    "back_to_login": "BACK TO LOGIN"
   },
   "profile": {
     "social_profile": "SOCIAL PROFILE",
@@ -57,7 +73,13 @@
     "cancel": "CANCEL",
     "save": "SAVE",
     "profile_updated_successfully": "PROFILE UPDATED SUCCESSFULLY",
-    "failed_to_update_profile": "FAILED TO UPDATE PROFILE"
+    "failed_to_update_profile": "FAILED TO UPDATE PROFILE",
+    "email_verified": "Email verified",
+    "email_not_verified": "Email not verified",
+    "verification_required_message": "YOUR EMAIL HAS NOT BEEN VERIFIED. PLEASE VERIFY YOUR EMAIL TO ACCESS ALL FEATURES.",
+    "resend_verification": "RESEND VERIFICATION EMAIL",
+    "verification_email_sent": "VERIFICATION EMAIL SENT SUCCESSFULLY",
+    "verification_email_error": "ERROR SENDING VERIFICATION EMAIL"
   },
   "password_change": {
     "change_password": "CHANGE PASSWORD",

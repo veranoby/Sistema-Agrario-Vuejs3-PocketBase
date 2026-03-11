@@ -65,6 +65,11 @@ const routes = [
     name: 'EmailConfirmation'
   },
   {
+    path: '/auth/reset-password/:token',
+    component: () => import('@/components/PasswordReset.vue'),
+    name: 'PasswordReset'
+  },
+  {
     path: '/dashboard',
     component: () => import('@/components/Dashboard.vue'),
     name: 'Dashboard de Inicio',

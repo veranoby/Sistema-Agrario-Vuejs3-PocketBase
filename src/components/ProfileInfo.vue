@@ -21,7 +21,43 @@
           <v-chip variant="flat" size="small" color="teal-lighten-3" class="mx-1 mb-2 mt-2">
             <v-icon class="mr-1">mdi-email</v-icon>
             {{ user?.email }}
+            <v-icon
+              v-if="user?.verified"
+              class="ml-1"
+              color="success"
+              size="small"
+              :title="t('profile.email_verified')"
+            >mdi-check-circle</v-icon>
+            <v-icon
+              v-else
+              class="ml-1"
+              color="warning"
+              size="small"
+              :title="t('profile.email_not_verified')"
+            >mdi-alert-circle</v-icon>
           </v-chip>
+        </div>
+
+        <!-- Email Verification Status -->
+        <div v-if="!user?.verified" class="mt-2">
+          <v-alert
+            type="warning"
+            variant="tonal"
+            density="compact"
+            class="mb-2"
+            :text="t('profile.verification_required_message')"
+          ></v-alert>
+          <v-btn
+            size="small"
+            color="success"
+            variant="outlined"
+            :loading="resendingEmail"
+            @click="resendVerificationEmail"
+            class="ml-1"
+          >
+            <v-icon start>mdi-email-sync</v-icon>
+            {{ t('profile.resend_verification') }}
+          </v-btn>
         </div>
       </div>
       <div class="avatar-container">
@@ -188,12 +224,16 @@ import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useProfileStore } from '@/stores/profileStore'
 import { useSnackbarStore } from '@/stores/snackbarStore'
+import { useAuthStore } from '@/stores/authStore'
 import AvatarForm from '@/components/forms/AvatarForm.vue'
 
 const profileStore = useProfileStore()
 const snackbarStore = useSnackbarStore()
+const authStore = useAuthStore()
 const { t } = useI18n()
 const { user } = storeToRefs(profileStore)
+
+const resendingEmail = ref(false)
 
 const name = ref('')
 const lastname = ref('')
@@ -244,6 +284,18 @@ const saveProfileChanges = async () => {
     snackbarStore.showSnackbar(t('profile.failed_to_update_profile'), 'error')
   } finally {
     isLoading.value = false
+  }
+}
+
+const resendVerificationEmail = async () => {
+  resendingEmail.value = true
+  try {
+    await authStore.sendVerificationEmail(user.value.email)
+    snackbarStore.showSnackbar(t('profile.verification_email_sent'), 'success')
+  } catch (error) {
+    snackbarStore.showSnackbar(t('profile.verification_email_error'), 'error')
+  } finally {
+    resendingEmail.value = false
   }
 }
 </script>
