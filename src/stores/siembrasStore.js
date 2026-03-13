@@ -6,10 +6,7 @@ import { useSyncStore } from './syncStore'
 import { useHaciendaStore } from './haciendaStore'
 //import { useAvatarStore } from './avatarStore'
 import { computed } from 'vue'
-
-// Constantes de paginación
-const MAX_PAGE_SIZE = 100 // Límite máximo para paginación (evita cargar todos los items)
-const DEFAULT_PAGE_SIZE = 20 // Tamaño de página predeterminado
+import { MAX_PAGE_SIZE, DEFAULT_PAGE_SIZE } from '@/constants/pagination'
 
 export const useSiembrasStore = defineStore('siembras', {
   state: () => ({

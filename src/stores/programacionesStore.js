@@ -444,18 +444,17 @@ export const useProgramacionesStore = defineStore('programaciones', {
         }
       }
 
-      // Batch fetch: obtener todas las actividades faltantes en una sola query
+      // Batch fetch: obtener todas las actividades faltantes usando getFullList
       if (missingIds.length > 0) {
         try {
-          // Usar PocketBase filter con IN para obtener todos los registros de una vez
-          const filter = missingIds.map((id, idx) =>
-            idx === 0 ? `id="${id}"` : ` || id="${id}"`
-          ).join('')
+          // Usar PocketBase filter con OR para obtener todos los registros
+          // getFullList maneja automáticamente la paginación interna
+          const filter = missingIds.map(id => `id="${id}"`).join(' || ')
 
-          const result = await pb.collection('actividades')
-            .getList(1, Math.min(missingIds.length, 50), { filter })
+          const actividades = await pb.collection('actividades')
+            .getFullList({ filter, batch: 100 })
 
-          for (const actividad of result.items) {
+          for (const actividad of actividades) {
             if (actividad?.siembras) {
               actividad.siembras.forEach((siembraId) => siembras.add(siembraId))
             }
@@ -463,6 +462,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
         } catch (error) {
           console.error('Error obteniendo actividades faltantes en batch:', error)
           // Fallback: intentar individualmente si el batch falla
+          const failedIds = []
           for (const id of missingIds) {
             try {
               const actividad = await actividadesStore.fetchActividadById(id)
@@ -470,8 +470,12 @@ export const useProgramacionesStore = defineStore('programaciones', {
                 actividad.siembras.forEach((siembraId) => siembras.add(siembraId))
               }
             } catch (err) {
+              failedIds.push(id)
               console.error(`Error procesando actividad ${id}:`, err)
             }
+          }
+          if (failedIds.length > 0) {
+            console.warn(`[obtenerSiembrasRelacionadas] No se pudieron obtener ${failedIds.length} de ${missingIds.length} actividades`)
           }
         }
       }

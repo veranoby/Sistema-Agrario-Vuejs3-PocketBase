@@ -178,7 +178,10 @@ const router = createRouter({
 })
 
 // Route validation cache to avoid repeated checks
+// Using FIFO with bulk eviction to prevent unbounded growth
 const routeValidationCache = new Map()
+const MAX_CACHE_SIZE = 100
+const CACHE_EVICTION_BATCH = 20 // Remove 20 entries when over limit
 
 /**
  * Generates a cache key based on path and user role
@@ -196,16 +199,16 @@ function getCachedValidation(path, userRole) {
 }
 
 /**
- * Caches route validation result
+ * Caches route validation result with bulk eviction to prevent unbounded growth
  */
 function setCachedValidation(path, userRole, result) {
   const key = getCacheKey(path, userRole)
   routeValidationCache.set(key, result)
 
-  // Limit cache size to prevent memory leaks
-  if (routeValidationCache.size > 100) {
-    const firstKey = routeValidationCache.keys().next().value
-    routeValidationCache.delete(firstKey)
+  // Bulk eviction when over limit to prevent unbounded growth in high-traffic scenarios
+  if (routeValidationCache.size > MAX_CACHE_SIZE) {
+    const keysToDelete = Array.from(routeValidationCache.keys()).slice(0, CACHE_EVICTION_BATCH)
+    keysToDelete.forEach(k => routeValidationCache.delete(k))
   }
 }
 

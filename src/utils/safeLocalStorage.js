@@ -12,9 +12,33 @@ const MAX_ITEM_SIZE = 4 * 1024 * 1024 // 4MB por item
 const MAX_TOTAL_SIZE = 8 * 1024 * 1024 // 8MB total aproximado
 const MAX_AGE = 7 * 24 * 60 * 60 * 1000 // 7 días
 
+/**
+ * Calcula el tamaño de un string de manera más eficiente
+ * Usando Blob como fallback pero con menor frecuencia
+ */
+function getStringSize(str) {
+  // Aproximación rápida: longitud * 2 (UTF-16)
+  // Para UTF-8 promedio, esto es una estimación razonable
+  let size = 0
+  for (let i = 0; i < str.length; i++) {
+    const code = str.charCodeAt(i)
+    if (code < 0x80) {
+      size += 1 // ASCII: 1 byte en UTF-8
+    } else if (code < 0x800) {
+      size += 2 // 2 bytes en UTF-8
+    } else {
+      size += 3 // 3 bytes en UTF-8 (caracteres Unicode comunes)
+    }
+  }
+  return size
+}
+
 class SafeLocalStorage {
   constructor() {
     this.prefix = 'app_'
+    // Caché de tamaño total para evitar recalcular en cada operación
+    this._cachedTotalSize = null
+    this._sizeDirty = true
   }
 
   /**
@@ -22,20 +46,40 @@ class SafeLocalStorage {
    */
   getSize(data) {
     const serialized = JSON.stringify(data)
-    return new Blob([serialized]).size
+    return getStringSize(serialized)
   }
 
   /**
-   * Estima el tamaño total usado en localStorage
+   * Obtiene el tamaño de un item específico en localStorage
+   */
+  getItemSize(key) {
+    const value = localStorage.getItem(key)
+    if (value === null) return 0
+    return getStringSize(key) + getStringSize(value)
+  }
+
+  /**
+   * Estima el tamaño total usado en localStorage con caché
    */
   getEstimatedTotalSize() {
-    let total = 0
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i)
-      const value = localStorage.getItem(key)
-      total += new Blob([key + value]).size
+    if (this._sizeDirty || this._cachedTotalSize === null) {
+      let total = 0
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        const value = localStorage.getItem(key)
+        total += getStringSize(key) + getStringSize(value)
+      }
+      this._cachedTotalSize = total
+      this._sizeDirty = false
     }
-    return total
+    return this._cachedTotalSize
+  }
+
+  /**
+   * Marca el caché de tamaño como sucio (llamar cuando se modifica localStorage externamente)
+   */
+  invalidateSizeCache() {
+    this._sizeDirty = true
   }
 
   /**
@@ -49,7 +93,7 @@ class SafeLocalStorage {
   saveToLocalStorage(key, data, options = {}) {
     try {
       const serialized = JSON.stringify(data)
-      const size = new Blob([serialized]).size
+      const size = getStringSize(serialized)
 
       // Verificar tamaño del item
       if (!options.skipSizeCheck && size > MAX_ITEM_SIZE) {
@@ -57,14 +101,26 @@ class SafeLocalStorage {
         return this.handleLargeData(key, data, size)
       }
 
-      // Verificar si estamos cerca del límite total
+      // Obtener tamaño anterior del item si existe (para actualización incremental del caché)
+      const oldSize = this.getItemSize(key)
+
+      // Verificar si estamos cerca del límite total (usando caché)
       const estimatedTotal = this.getEstimatedTotalSize()
-      if (estimatedTotal + size > MAX_TOTAL_SIZE) {
+      const newTotal = estimatedTotal - oldSize + size
+
+      if (newTotal > MAX_TOTAL_SIZE) {
         console.warn(`[SafeLocalStorage] Near total quota limit. Attempting cleanup...`)
         this.cleanupOldData()
+        this._sizeDirty = true // Recalcular después del cleanup
       }
 
       localStorage.setItem(key, serialized)
+
+      // Actualizar caché de tamaño incrementalmente
+      if (!this._sizeDirty) {
+        this._cachedTotalSize = newTotal
+      }
+
       return true
     } catch (error) {
       if (error.name === 'QuotaExceededError') {
@@ -97,7 +153,14 @@ class SafeLocalStorage {
    */
   removeFromLocalStorage(key) {
     try {
+      const oldSize = this.getItemSize(key)
       localStorage.removeItem(key)
+
+      // Actualizar caché de tamaño incrementalmente
+      if (!this._sizeDirty && this._cachedTotalSize !== null) {
+        this._cachedTotalSize -= oldSize
+      }
+
       return true
     } catch (error) {
       console.error(`[SafeLocalStorage] Error removing "${key}":`, error)
@@ -207,7 +270,9 @@ class SafeLocalStorage {
       console.log(`[SafeLocalStorage] Removed old data: ${key}`)
     })
 
+    // Invalidar caché después de modificar localStorage
     if (keysToRemove.length > 0) {
+      this._sizeDirty = true
       console.log(`[SafeLocalStorage] Cleaned up ${keysToRemove.length} old entries`)
     } else {
       console.log('[SafeLocalStorage] No old data to clean')
@@ -247,6 +312,8 @@ class SafeLocalStorage {
       localStorage.removeItem(key)
     })
 
+    // Invalidar caché después de modificar localStorage
+    this._sizeDirty = true
     console.log(`[SafeLocalStorage] Cleared ${keysToRemove.length} entries`)
   }
 }
