@@ -13,7 +13,12 @@ export const useActividadesStore = defineStore('actividades', {
     loadingTipos: false, // Flag específico para prevenir requests duplicadas
     error: null,
     version: 1,
-    lastSync: null
+    lastSync: null,
+    // Pagination state
+    currentPage: 1,
+    perPage: 20,
+    totalItems: 0,
+    totalPages: 0
   }),
 
   persist: {
@@ -47,7 +52,11 @@ export const useActividadesStore = defineStore('actividades', {
 
     getTiposActividades: (state) => {
       return state.tiposActividades
-    }
+    },
+
+    // Pagination getters
+    hasNextPage: (state) => state.currentPage < state.totalPages,
+    hasPrevPage: (state) => state.currentPage > 1
   },
 
   actions: {
@@ -67,9 +76,12 @@ export const useActividadesStore = defineStore('actividades', {
     },
 
     async cargarActividades() {
-      // Local storage loading is now handled by initFromLocalStorage, called by syncStore.refreshAllStores
-      // or by the store's own init if called directly.
-      // This method will now primarily focus on fetching from the server if data isn't already populated.
+      // Local storage loading is now handled by initFromLocalStorage.
+      // This method maintains backward compatibility by loading all items.
+      return this.fetchPage(1, 9999)
+    },
+
+    async fetchPage(page = 1, perPage = 20) {
       const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore()
       this.error = null
@@ -82,24 +94,42 @@ export const useActividadesStore = defineStore('actividades', {
           this.loading = false;
           return this.actividades;
       }
-      
+
       // If online, proceed to fetch from server.
       // The original logic to check 'actividadesLocal' first is removed as initFromLocalStorage handles it.
 
       try {
-        const records = await pb.collection('actividades').getFullList({
+        const resultList = await pb.collection('actividades').getList(page, perPage, {
           sort: 'nombre',
           filter: `hacienda="${haciendaStore.mi_hacienda?.id}"`,
           expand: 'tipo_actividades,siembras'
         })
-        this.actividades = records
+
+        this.actividades = resultList.items
+        this.totalItems = resultList.totalItems
+        this.currentPage = page
+        this.totalPages = resultList.totalPages
         this.lastSync = Date.now()
 
-        syncStore.saveToLocalStorage('actividades', records)
+        syncStore.saveToLocalStorage('actividades', resultList.items)
+        return resultList
       } catch (error) {
         handleError(error, 'Error al cargar actividades')
+        throw error
       } finally {
         this.loading = false
+      }
+    },
+
+    nextPage() {
+      if (this.hasNextPage) {
+        return this.fetchPage(this.currentPage + 1, this.perPage)
+      }
+    },
+
+    prevPage() {
+      if (this.hasPrevPage) {
+        return this.fetchPage(this.currentPage - 1, this.perPage)
       }
     },
 

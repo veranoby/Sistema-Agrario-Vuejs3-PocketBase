@@ -12,7 +12,12 @@ export const useSiembrasStore = defineStore('siembras', {
     siembras: [],
     loading: false,
     error: null,
-    version: 1
+    version: 1,
+    // Pagination state
+    currentPage: 1,
+    perPage: 20,
+    totalItems: 0,
+    totalPages: 0
   }),
 
   persist: {
@@ -37,7 +42,11 @@ export const useSiembrasStore = defineStore('siembras', {
     },
 
     activeSiembrasWithMemo: (state) =>
-      computed(() => state.siembras.filter((s) => s.estado !== 'finalizada'))
+      computed(() => state.siembras.filter((s) => s.estado !== 'finalizada')),
+
+    // Pagination getters
+    hasNextPage: (state) => state.currentPage < state.totalPages,
+    hasPrevPage: (state) => state.currentPage > 1
   },
 
   actions: {
@@ -53,6 +62,11 @@ export const useSiembrasStore = defineStore('siembras', {
 
     async cargarSiembras() {
       // Local storage loading is now handled by initFromLocalStorage.
+      // This method maintains backward compatibility by loading all items.
+      return this.fetchPage(1, 9999)
+    },
+
+    async fetchPage(page = 1, perPage = 20) {
       const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore()
       this.loading = true
@@ -69,17 +83,35 @@ export const useSiembrasStore = defineStore('siembras', {
           return []
         }
 
-        const records = await pb.collection('siembras').getFullList({
-          filter: `hacienda="${haciendaStore.mi_hacienda?.id}"`
+        const resultList = await pb.collection('siembras').getList(page, perPage, {
+          filter: `hacienda="${haciendaStore.mi_hacienda?.id}"`,
+          sort: '-created'
         })
-        this.siembras = records
-        syncStore.saveToLocalStorage('siembras', records)
-        return records
+
+        this.siembras = resultList.items
+        this.totalItems = resultList.totalItems
+        this.currentPage = page
+        this.totalPages = resultList.totalPages
+
+        syncStore.saveToLocalStorage('siembras', resultList.items)
+        return resultList
       } catch (error) {
         handleError(error, 'Error al cargar siembras')
-        return []
+        throw error
       } finally {
         this.loading = false
+      }
+    },
+
+    nextPage() {
+      if (this.hasNextPage) {
+        return this.fetchPage(this.currentPage + 1, this.perPage)
+      }
+    },
+
+    prevPage() {
+      if (this.hasPrevPage) {
+        return this.fetchPage(this.currentPage - 1, this.perPage)
       }
     },
 

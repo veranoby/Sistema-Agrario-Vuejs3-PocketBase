@@ -12,7 +12,12 @@ export const useZonasStore = defineStore('zonas', {
     loading: false,
     error: null,
     version: 1,
-    lastSync: null
+    lastSync: null,
+    // Pagination state
+    currentPage: 1,
+    perPage: 20,
+    totalItems: 0,
+    totalPages: 0
   }),
 
   persist: {
@@ -32,7 +37,11 @@ export const useZonasStore = defineStore('zonas', {
     },
     getZonaById: (state) => (id) => {
       return state.zonas.find((z) => z.id === id)
-    }
+    },
+
+    // Pagination getters
+    hasNextPage: (state) => state.currentPage < state.totalPages,
+    hasPrevPage: (state) => state.currentPage > 1
   },
 
   actions: {
@@ -52,6 +61,11 @@ export const useZonasStore = defineStore('zonas', {
 
     async cargarZonas() {
       // Local storage loading is now handled by initFromLocalStorage.
+      // This method maintains backward compatibility by loading all items.
+      return this.fetchPage(1, 9999)
+    },
+
+    async fetchPage(page = 1, perPage = 20) {
       const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore()
       this.error = null
@@ -65,20 +79,38 @@ export const useZonasStore = defineStore('zonas', {
 
       try {
         // Obtener solo las zonas de la hacienda actual
-        const records = await pb.collection('zonas').getFullList({
+        const resultList = await pb.collection('zonas').getList(page, perPage, {
           sort: 'nombre',
           filter: `hacienda="${haciendaStore.mi_hacienda?.id}"`,
           expand: 'tipos_zonas'
         })
-        this.zonas = records
+
+        this.zonas = resultList.items
+        this.totalItems = resultList.totalItems
+        this.currentPage = page
+        this.totalPages = resultList.totalPages
         this.lastSync = Date.now()
 
         // Guardar zonas en localStorage para uso offline
-        syncStore.saveToLocalStorage('zonas', records)
+        syncStore.saveToLocalStorage('zonas', resultList.items)
+        return resultList
       } catch (error) {
-        handleError(error, 'Error al sincronizar zonas')
+        handleError(error, 'Error al cargar zonas')
+        throw error
       } finally {
         this.loading = false
+      }
+    },
+
+    nextPage() {
+      if (this.hasNextPage) {
+        return this.fetchPage(this.currentPage + 1, this.perPage)
+      }
+    },
+
+    prevPage() {
+      if (this.hasPrevPage) {
+        return this.fetchPage(this.currentPage - 1, this.perPage)
       }
     },
 
