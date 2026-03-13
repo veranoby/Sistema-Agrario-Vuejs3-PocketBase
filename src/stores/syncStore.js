@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { SyncQueue } from '@/utils/syncQueue'
+import { safeLocalStorage } from '@/utils/safeLocalStorage'
 import { useSnackbarStore } from './snackbarStore'
 import { useZonasStore } from '@/stores/zonasStore'
 import { useSiembrasStore } from '@/stores/siembrasStore'
@@ -549,30 +550,19 @@ export const useSyncStore = defineStore('sync', {
 
     // Métodos para localStorage
     loadFromLocalStorage(key) {
-      try {
-        const data = localStorage.getItem(key)
-        return data ? JSON.parse(data) : null
-      } catch (error) {
-        this.handleSyncError(error, `Error cargando ${key} de localStorage`)
-        return null
-      }
+      return safeLocalStorage.loadFromLocalStorage(key)
     },
 
-    saveToLocalStorage(key, value) { // persistent parameter removed
-      try {
-        // Siempre utilizar localStorage por defecto para evitar problemas de sincronización
-        localStorage.setItem(key, JSON.stringify(value))
-      } catch (error) {
-        this.handleSyncError(error, `Error guardando ${key} en localStorage`)
+    saveToLocalStorage(key, value) {
+      const success = safeLocalStorage.saveToLocalStorage(key, value)
+      if (!success) {
+        console.error(`[SyncStore] Failed to save "${key}" to localStorage`)
       }
+      return success
     },
 
     removeFromLocalStorage(key) {
-      try {
-        localStorage.removeItem(key)
-      } catch (error) {
-        this.handleSyncError(error, `Error eliminando ${key} de localStorage`)
-      }
+      return safeLocalStorage.removeFromLocalStorage(key)
     },
 
     // Método público para generación de IDs temporales

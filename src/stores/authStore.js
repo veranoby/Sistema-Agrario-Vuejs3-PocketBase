@@ -33,134 +33,125 @@ export const useAuthStore = defineStore('auth', {
       // Cleanup timer when store is disposed to prevent memory leaks
       this.stopRefreshTimer()
     },
+
+    /**
+     * Intenta refrescar el token de autenticación
+     * @returns {boolean} true si el refresh fue exitoso, false en caso contrario
+     */
+    async attemptTokenRefresh() {
+      const syncStore = useSyncStore()
+      console.log('[AUTH] Attempting token refresh...')
+
+      try {
+        const freshAuthData = await pb.collection('users').authRefresh()
+        console.log('[AUTH] Token refresh successful:', freshAuthData)
+
+        this.setSession(freshAuthData.record)
+        const authDataToStore = {
+          token: pb.authStore.token,
+          model: pb.authStore.model
+        }
+        syncStore.saveToLocalStorage('pocketbase_auth', authDataToStore)
+        syncStore.saveToLocalStorage('last_auth_success', Date.now())
+
+        return true
+      } catch (error) {
+        console.error('[AUTH] Token refresh failed:', error)
+        return false
+      }
+    },
+
     async init() {
       const syncStore = useSyncStore()
-      console.log('[AUTH INIT] Starting initialization...') // New log
+      console.log('[AUTH INIT] Starting initialization...')
 
       const loadedAuthData = syncStore.loadFromLocalStorage('pocketbase_auth')
-      console.log(
-        '[AUTH INIT] Loaded pocketbase_auth (should be {token, model}):',
-        JSON.parse(JSON.stringify(loadedAuthData))
-      )
-
       const rememberMeIsActive = syncStore.loadFromLocalStorage('rememberMe_active')
-      console.log('[AUTH INIT] rememberMe_active loaded as:', rememberMeIsActive)
 
-      if (loadedAuthData && loadedAuthData.token && loadedAuthData.model) {
-        // Ensure loadedAuthData and token/model exist
-        pb.authStore.save(loadedAuthData.token, loadedAuthData.model)
-        console.log('[AUTH INIT] pb.authStore.isValid after loading model:', pb.authStore.isValid)
+      console.log('[AUTH INIT] Loaded auth data:', loadedAuthData ? 'found' : 'not found')
+      console.log('[AUTH INIT] Remember me active:', rememberMeIsActive)
 
-        if (pb.authStore.isValid) {
-          console.log('[AUTH INIT] Path A: Session is valid after loading model.')
-          if (this.tokenNeedsRefresh()) {
-            console.log('[AUTH INIT] Path A.1: Token needs refresh.')
-            try {
-              const freshAuthData = await pb.collection('users').authRefresh()
-              console.log(
-                '[AUTH INIT] authRefresh successful for Path A.1. Response:',
-                JSON.parse(JSON.stringify(freshAuthData))
-              )
-              this.setSession(freshAuthData.record)
-              const authDataToStoreOnRefresh = {
-                token: pb.authStore.token,
-                model: pb.authStore.model
-              }
-              syncStore.saveToLocalStorage('pocketbase_auth', authDataToStoreOnRefresh)
-              console.log(
-                '[AUTH INIT] Saved refreshed authDataToStore (token & model) to localStorage:',
-                JSON.parse(JSON.stringify(authDataToStoreOnRefresh))
-              )
-              syncStore.saveToLocalStorage('last_auth_success', Date.now()) // Update last success time
-            } catch (error) {
-              console.error('[AUTH INIT] Error during authRefresh for Path A.1:', error)
-              // If refresh fails, this valid-but-needs-refresh session might become invalid.
-              // Consider if logout is needed here or if setSession simply won't be called.
-              // For now, let it fall through; if setSession isn't called, isLoggedIn remains false.
-              // Or, more robustly, logout if refresh fails:
-              this.logout() // Logout if token refresh fails for an existing valid session
-              this.initialized = true
-              return false
-            }
-          } else {
-            console.log('[AUTH INIT] Path A.2: Token is fine, no refresh needed.')
-            this.setSession(pb.authStore.model)
-          }
+      // CAMINO 2: No hay auth data en localStorage
+      if (!loadedAuthData?.token || !loadedAuthData?.model) {
+        console.log('[AUTH INIT] No auth data found, clearing state')
+        this.clearAuthState()
+        this.initialized = true
+        return false
+      }
 
-          if (rememberMeIsActive) {
-            // This check should be inside the valid session path
-            console.log('[AUTH INIT] Path A: rememberMe is active, starting refresh timer.')
-            this.startRefreshTimer()
-          } else {
-            // If not rememberMe, but session was valid (e.g. from a previous non-rememberMe session that hasn't expired)
-            // ensure timer is stopped.
-            this.stopRefreshTimer()
-          }
-          this.initialized = true
-          console.log('[AUTH INIT] Path A: Initialization successful. isLoggedIn:', this.isLoggedIn)
-          return true
-        } else {
-          // pb.authStore.isValid is FALSE after loading model
-          console.log('[AUTH INIT] Path B: Session is INVALID after loading model.')
-          if (rememberMeIsActive) {
-            console.log(
-              '[AUTH INIT] Path B.1: rememberMe is active, attempting proactive authRefresh.'
-            )
-            try {
-              const freshAuthData = await pb.collection('users').authRefresh()
-              console.log(
-                '[AUTH INIT] Proactive authRefresh successful for Path B.1. Response:',
-                JSON.parse(JSON.stringify(freshAuthData))
-              )
-              this.setSession(freshAuthData.record)
-              const authDataToStoreOnRefresh = {
-                token: pb.authStore.token,
-                model: pb.authStore.model
-              }
-              syncStore.saveToLocalStorage('pocketbase_auth', authDataToStoreOnRefresh)
-              console.log(
-                '[AUTH INIT] Saved refreshed authDataToStore (token & model) to localStorage:',
-                JSON.parse(JSON.stringify(authDataToStoreOnRefresh))
-              )
-              syncStore.saveToLocalStorage('last_auth_success', Date.now())
-              this.startRefreshTimer() // Start timer as rememberMe is active
-              this.initialized = true
-              console.log(
-                '[AUTH INIT] Path B.1: Initialization successful after proactive refresh. isLoggedIn:',
-                this.isLoggedIn
-              )
-              return true
-            } catch (error) {
-              console.error('[AUTH INIT] Error during proactive authRefresh for Path B.1:', error)
-              // Proactive refresh failed, so now we must clear the invalid session.
-              this.logout()
-              this.initialized = true // Mark initialized even if logout
-              console.log('[AUTH INIT] Path B.1: Proactive refresh failed, user logged out.')
-              return false
-            }
-          } else {
-            console.log('[AUTH INIT] Path B.2: rememberMe is NOT active. Clearing invalid session.')
-            // No "Remember Me", and the loaded session is invalid. Clear it.
-            this.logout() // Perform full cleanup
-            this.initialized = true // Mark initialized even if logout
-            console.log('[AUTH INIT] Path B.2: User logged out.')
+      // Cargar auth data en PocketBase
+      pb.authStore.save(loadedAuthData.token, loadedAuthData.model)
+      console.log('[AUTH INIT] Session valid:', pb.authStore.isValid)
+
+      // CAMINO 1: Auth data existe
+      if (pb.authStore.isValid) {
+        // Session válida: setSession + refresh si es necesario
+        console.log('[AUTH INIT] Valid session, setting up user')
+
+        if (this.tokenNeedsRefresh()) {
+          console.log('[AUTH INIT] Token needs refresh, attempting...')
+          const refreshed = await this.attemptTokenRefresh()
+          if (!refreshed) {
+            console.log('[AUTH INIT] Refresh failed, logging out')
+            this.logout()
+            this.initialized = true
             return false
           }
+        } else {
+          this.setSession(pb.authStore.model)
         }
-      } else {
-        console.log(
-          '[AUTH INIT] Path C: No valid loadedAuthData (or token/model missing) found in localStorage.'
-        )
-        // No model found, so no session to restore.
-        // We shouldn't logout here as there's nothing to clear, just ensure clean state.
-        this.user = null
-        this.token = null
-        this.isLoggedIn = false
-        // this.initialized = false; // This was in logout, ensure it's handled correctly.
-        // Initialized should be true because we've completed the init process.
+
+        this.startRefreshTimerIfNeeded(rememberMeIsActive)
         this.initialized = true
-        console.log('[AUTH INIT] Path C: Initialization complete, no user session.')
-        return false
+        console.log('[AUTH INIT] Init successful, user logged in')
+        return true
+
+      } else {
+        // Session inválida: verificar rememberMe
+        console.log('[AUTH INIT] Invalid session')
+
+        if (!rememberMeIsActive) {
+          console.log('[AUTH INIT] Remember me not active, logging out')
+          this.logout()
+          this.initialized = true
+          return false
+        }
+
+        // Intentar refresh con rememberMe
+        console.log('[AUTH INIT] Remember me active, attempting refresh')
+        const refreshed = await this.attemptTokenRefresh()
+        if (!refreshed) {
+          console.log('[AUTH INIT] Refresh failed, logging out')
+          this.logout()
+          this.initialized = true
+          return false
+        }
+
+        this.startRefreshTimer()
+        this.initialized = true
+        console.log('[AUTH INIT] Init successful after refresh')
+        return true
+      }
+    },
+
+    /**
+     * Limpia el estado de autenticación sin hacer logout completo
+     */
+    clearAuthState() {
+      this.user = null
+      this.token = null
+      this.isLoggedIn = false
+      this.stopRefreshTimer()
+    },
+
+    /**
+     * Inicia el timer de refresh solo si rememberMe está activo
+     */
+    startRefreshTimerIfNeeded(rememberMeIsActive) {
+      if (rememberMeIsActive) {
+        this.startRefreshTimer()
+      } else {
+        this.stopRefreshTimer()
       }
     },
 
@@ -404,35 +395,47 @@ export const useAuthStore = defineStore('auth', {
 
       const profileStore = useProfileStore()
       const haciendaStore = useHaciendaStore()
-      const planStore = usePlanStore()
-      const actividadesStore = useActividadesStore()
-      const zonasStore = useZonasStore()
-      const siembrasStore = useSiembrasStore()
-      const recordatoriosStore = useRecordatoriosStore()
-      const programacionesStore = useProgramacionesStore()
 
-      // Load user profile
-      profileStore.setUser(authData.record)
+      // Cargar datos críticos en paralelo (bloquean UI)
+      // Estos son necesarios para mostrar el dashboard correctamente
+      await Promise.all([
+        profileStore.setUser(authData.record),
+        authData.record.hacienda
+          ? haciendaStore.fetchHacienda(authData.record.hacienda)
+          : Promise.resolve()
+      ])
 
-      // Load hacienda data
-      if (authData.record.hacienda) {
-        await haciendaStore.fetchHacienda(authData.record.hacienda)
-      }
+      console.log('[AUTH] Critical stores loaded, redirecting to dashboard')
 
-      // Load other necessary data in sequence to avoid race conditions
-      try {
-        await planStore.fetchAvailablePlans()
-        await actividadesStore.init()
-        await zonasStore.init()
-        await siembrasStore.init()
-        await recordatoriosStore.init()
-        await programacionesStore.init()
-      } catch (error) {
-        handleError(error, 'Error loading initial data')
-      }
-
-      // Redirect to dashboard
+      // Redirigir inmediatamente al dashboard
       router.push('/dashboard')
+
+      // Cargar datos diferidos después de la redirección
+      // Estos no bloquean la UI y se cargan en segundo plano
+      setTimeout(async () => {
+        console.log('[AUTH] Loading deferred stores in background')
+        const planStore = usePlanStore()
+        const actividadesStore = useActividadesStore()
+        const zonasStore = useZonasStore()
+        const siembrasStore = useSiembrasStore()
+        const recordatoriosStore = useRecordatoriosStore()
+        const programacionesStore = useProgramacionesStore()
+
+        try {
+          await Promise.all([
+            planStore.fetchAvailablePlans(),
+            actividadesStore.init(),
+            zonasStore.init(),
+            siembrasStore.init(),
+            recordatoriosStore.init(),
+            programacionesStore.init()
+          ])
+          console.log('[AUTH] Deferred stores loaded successfully')
+        } catch (error) {
+          console.error('[AUTH] Error loading deferred stores:', error)
+          handleError(error, 'Error loading initial data')
+        }
+      }, 100) // 100ms delay para no bloquear la transición de ruta
     },
 
     setSession(record) {
