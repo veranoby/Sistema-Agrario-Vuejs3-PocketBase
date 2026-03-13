@@ -1,4 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@/stores/authStore'
+import { useHaciendaStore } from '@/stores/haciendaStore'
 import HomeComp from '@/components/Home.vue'
 import AboutUs from '@/components/AboutUs.vue'
 import OurPlans from '@/components/OurPlans.vue'
@@ -6,16 +8,6 @@ import DocumentationComponent from '@/components/Documentation.vue'
 import ContactUs from '@/components/ContactUs.vue'
 import FAQ from '@/components/FAQ.vue'
 import EmailConfirmation from '@/components/Confirmation.vue'
-import ProfileComponent from '@/components/UserProfile.vue'
-import SiembrasConfig from '@/components/SiembrasConfig.vue'
-import SiembraWorkspace from '@/components/SiembraWorkspace.vue'
-import ZonasConfig from '@/components/zonasConfig.vue'
-
-import ActividadesConfig from '@/components/actividadesConfig.vue'
-import ActividadesWorkspace from '@/components/actividadesWorkspace.vue'
-import ProgramacionesList from '@/components/ProgramacionesList.vue'
-import Recordatorios from '@/components/Recordatorios.vue'
-import Finanzas from '@/components/FinanzasConfig.vue'
 
 // Role definitions
 const ROLES = {
@@ -50,11 +42,11 @@ const routes = [
   { path: '/documentation', component: DocumentationComponent },
   { path: '/contact', component: ContactUs },
   { path: '/faq', component: FAQ },
-  { 
-    path: '/profile', 
-    component: ProfileComponent, 
+  {
+    path: '/profile',
+    component: () => import('@/components/UserProfile.vue'),
     name: 'Perfil de Usuario',
-    meta: { 
+    meta: {
       requiresAuth: true,
       roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR, ROLES.OPERADOR]
     }
@@ -80,36 +72,36 @@ const routes = [
   },
   {
     path: '/siembras',
-    component: SiembrasConfig,
+    component: () => import('@/components/SiembrasConfig.vue'),
     name: 'Gestion de Siembras y Proyectos',
-    meta: { 
+    meta: {
       requiresAuth: true,
       roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR, ROLES.OPERADOR]
     }
   },
   {
     path: '/siembras/:id',
-    component: SiembraWorkspace,
+    component: () => import('@/components/SiembraWorkspace.vue'),
     name: 'Ver Siembra/Proyecto',
-    meta: { 
+    meta: {
       requiresAuth: true,
       roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR, ROLES.OPERADOR]
     }
   },
   {
     path: '/actividades',
-    component: ActividadesConfig,
+    component: () => import('@/components/actividadesConfig.vue'),
     name: 'Gestion de Actividades',
-    meta: { 
+    meta: {
       requiresAuth: true,
       roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR, ROLES.OPERADOR]
     }
   },
   {
     path: '/actividades/:id',
-    component: ActividadesWorkspace,
+    component: () => import('@/components/actividadesWorkspace.vue'),
     name: 'Ver Actividad',
-    meta: { 
+    meta: {
       requiresAuth: true,
       roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR, ROLES.OPERADOR]
     }
@@ -117,27 +109,27 @@ const routes = [
 
   {
     path: '/programaciones',
-    component: ProgramacionesList,
+    component: () => import('@/components/ProgramacionesList.vue'),
     name: 'Gestion de Programas de Actividades',
-    meta: { 
+    meta: {
       requiresAuth: true,
       roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR, ROLES.OPERADOR]
     }
   },
   {
     path: '/zonas',
-    component: ZonasConfig,
+    component: () => import('@/components/zonasConfig.vue'),
     name: 'Gestion de Zonas de trabajo',
-    meta: { 
+    meta: {
       requiresAuth: true,
       roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR, ROLES.OPERADOR]
     }
   },
   {
     path: '/finanzas',
-    component: Finanzas,
+    component: () => import('@/components/FinanzasConfig.vue'),
     name: 'Gestion rapida financiera',
-    meta: { 
+    meta: {
       requiresAuth: true,
       roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR], // Operador NO puede ver finanzas
       module: 'finanzas' // For module-based access control
@@ -145,9 +137,9 @@ const routes = [
   },
   {
     path: '/recordatorios',
-    component: Recordatorios,
+    component: () => import('@/components/Recordatorios.vue'),
     name: 'Gestion de Recordatorios y Emergencias',
-    meta: { 
+    meta: {
       requiresAuth: true,
       roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR, ROLES.OPERADOR]
     }
@@ -187,12 +179,17 @@ const router = createRouter({
 
 // Router Guard - Role Based Access Control
 router.beforeEach(async (to, from, next) => {
-  const { useAuthStore } = await import('@/stores/authStore')
+  // Short-circuit: rutas públicas no necesitan autenticación
+  if (ROUTE_ROLE_MATRIX.public.includes(to.path)) {
+    next()
+    return
+  }
+
   const authStore = useAuthStore()
-  
+
   // Ensure auth is initialized
   await authStore.ensureAuthInitialized()
-  
+
   const isAuthenticated = authStore.isLoggedIn
   const user = authStore.user
   const userRole = user?.role
@@ -233,9 +230,8 @@ router.beforeEach(async (to, from, next) => {
     
     // Check module-based access (for marketplace modules)
     if (to.meta.module) {
-      const { useHaciendaStore } = await import('@/stores/haciendaStore')
       const haciendaStore = useHaciendaStore()
-      
+
       const moduleActive = haciendaStore.isModuleActive(to.meta.module)
       if (!moduleActive) {
         // Module not active for this hacienda

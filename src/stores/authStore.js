@@ -29,6 +29,10 @@ export const useAuthStore = defineStore('auth', {
   }),
 
   actions: {
+    $dispose() {
+      // Cleanup timer when store is disposed to prevent memory leaks
+      this.stopRefreshTimer()
+    },
     async init() {
       const syncStore = useSyncStore()
       console.log('[AUTH INIT] Starting initialization...') // New log
