@@ -35,7 +35,9 @@ export const useAuthStore = defineStore('auth', {
     },
 
     /**
-     * Intenta refrescar el token de autenticación
+     * Intenta refrescar el token de autenticación (incluso si expiró)
+     * A diferencia de refreshToken(), esta función no verifica pb.authStore.isValid primero,
+     * lo que la hace adecuada para el caso de rememberMe donde el token puede haber expirado.
      * @returns {boolean} true si el refresh fue exitoso, false en caso contrario
      */
     async attemptTokenRefresh() {

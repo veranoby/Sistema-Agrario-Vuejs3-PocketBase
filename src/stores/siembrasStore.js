@@ -7,6 +7,10 @@ import { useHaciendaStore } from './haciendaStore'
 //import { useAvatarStore } from './avatarStore'
 import { computed } from 'vue'
 
+// Constantes de paginación
+const MAX_PAGE_SIZE = 9999 // Para backward compatibility - cargar todos los items
+const DEFAULT_PAGE_SIZE = 20 // Tamaño de página predeterminado
+
 export const useSiembrasStore = defineStore('siembras', {
   state: () => ({
     siembras: [],
@@ -63,7 +67,7 @@ export const useSiembrasStore = defineStore('siembras', {
     async cargarSiembras() {
       // Local storage loading is now handled by initFromLocalStorage.
       // This method maintains backward compatibility by loading all items.
-      return this.fetchPage(1, 9999)
+      return this.fetchPage(1, MAX_PAGE_SIZE)
     },
 
     async fetchPage(page = 1, perPage = 20) {
