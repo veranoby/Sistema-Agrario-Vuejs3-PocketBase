@@ -6,7 +6,7 @@ import { handleError } from '@/utils/errorHandler'
 import { useHaciendaStore } from './haciendaStore'
 
 // Constantes de paginación
-const MAX_PAGE_SIZE = 9999 // Para backward compatibility - cargar todos los items
+const MAX_PAGE_SIZE = 100 // Límite máximo para paginación (evita cargar todos los items)
 const DEFAULT_PAGE_SIZE = 20 // Tamaño de página predeterminado
 
 export const useZonasStore = defineStore('zonas', {

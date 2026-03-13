@@ -16,7 +16,7 @@ import { useActividadesStore } from '@/stores/actividadesStore';
 import { useHaciendaStore } from './haciendaStore';
 import { useSnackbarStore } from './snackbarStore';
 import { useBitacoraStore } from './bitacoraStore';
-import { saveToLocalStorage, loadFromLocalStorage } from '@/utils/localStorageUtils';
+import { safeLocalStorage } from '@/utils/safeLocalStorage';
 
 export const useProgramacionesStore = defineStore('programaciones', {
   state: () => ({
@@ -431,22 +431,48 @@ export const useProgramacionesStore = defineStore('programaciones', {
 
     async obtenerSiembrasRelacionadas(actividadesIds) {
       const actividadesStore = useActividadesStore()
-      // const siembrasStore = useSiembrasStore(); // siembrasStore no parece usarse aquí directamente
       const siembras = new Set()
 
+      // Primero, recolectar IDs de actividades que no están en el store local
+      const missingIds = []
       for (const id of actividadesIds) {
-        try {
-          let actividad = actividadesStore.actividades.find(a => a.id === id);
-          if (!actividad) {
-            console.log(`Actividad ${id} no encontrada localmente, buscando en DB...`)
-            actividad = await actividadesStore.fetchActividadById(id)
-          }
+        const actividad = actividadesStore.actividades.find(a => a.id === id)
+        if (actividad?.siembras) {
+          actividad.siembras.forEach((siembraId) => siembras.add(siembraId))
+        } else if (!actividad) {
+          missingIds.push(id)
+        }
+      }
 
-          if (actividad?.siembras) {
-            actividad.siembras.forEach((siembraId) => siembras.add(siembraId))
+      // Batch fetch: obtener todas las actividades faltantes en una sola query
+      if (missingIds.length > 0) {
+        try {
+          // Usar PocketBase filter con IN para obtener todos los registros de una vez
+          const filter = missingIds.map((id, idx) =>
+            idx === 0 ? `id="${id}"` : ` || id="${id}"`
+          ).join('')
+
+          const result = await pb.collection('actividades')
+            .getList(1, Math.min(missingIds.length, 50), { filter })
+
+          for (const actividad of result.items) {
+            if (actividad?.siembras) {
+              actividad.siembras.forEach((siembraId) => siembras.add(siembraId))
+            }
           }
         } catch (error) {
-          console.error(`Error procesando actividad ${id} para obtener siembras relacionadas:`, error)
+          console.error('Error obteniendo actividades faltantes en batch:', error)
+          // Fallback: intentar individualmente si el batch falla
+          for (const id of missingIds) {
+            try {
+              const actividad = await actividadesStore.fetchActividadById(id)
+              if (actividad?.siembras) {
+                actividad.siembras.forEach((siembraId) => siembras.add(siembraId))
+              }
+            } catch (err) {
+              console.error(`Error procesando actividad ${id}:`, err)
+            }
+          }
         }
       }
 
@@ -1294,7 +1320,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
       // Métodos de localStorage manual (reemplazando persist plugin)
       saveToStorage() {
         try {
-          saveToLocalStorage('programaciones', this.programaciones)
+          safeLocalStorage.saveToLocalStorage('programaciones', this.programaciones)
         } catch (error) {
           console.error('[ProgramacionesStore] Error guardando en localStorage:', error)
         }
@@ -1302,7 +1328,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
 
       loadFromStorage() {
         try {
-          const data = loadFromLocalStorage('programaciones')
+          const data = safeLocalStorage.loadFromLocalStorage('programaciones')
           if (data && Array.isArray(data)) {
             this.programaciones = data.map(this.enriquecerProgramacion)
             this.loaded = true

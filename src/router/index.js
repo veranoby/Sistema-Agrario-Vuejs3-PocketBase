@@ -177,6 +177,45 @@ const router = createRouter({
   routes
 })
 
+// Route validation cache to avoid repeated checks
+const routeValidationCache = new Map()
+
+/**
+ * Generates a cache key based on path and user role
+ */
+function getCacheKey(path, userRole) {
+  return `${path}:${userRole || 'anonymous'}`
+}
+
+/**
+ * Checks if route validation result is cached
+ */
+function getCachedValidation(path, userRole) {
+  const key = getCacheKey(path, userRole)
+  return routeValidationCache.get(key)
+}
+
+/**
+ * Caches route validation result
+ */
+function setCachedValidation(path, userRole, result) {
+  const key = getCacheKey(path, userRole)
+  routeValidationCache.set(key, result)
+
+  // Limit cache size to prevent memory leaks
+  if (routeValidationCache.size > 100) {
+    const firstKey = routeValidationCache.keys().next().value
+    routeValidationCache.delete(firstKey)
+  }
+}
+
+/**
+ * Clears route validation cache (call when auth state changes)
+ */
+export function clearRouteCache() {
+  routeValidationCache.clear()
+}
+
 // Router Guard - Role Based Access Control
 router.beforeEach(async (to, from, next) => {
   // Short-circuit: rutas públicas no necesitan autenticación
@@ -187,47 +226,66 @@ router.beforeEach(async (to, from, next) => {
 
   const authStore = useAuthStore()
 
-  // Ensure auth is initialized
-  await authStore.ensureAuthInitialized()
+  // Ensure auth is initialized (only if not already initialized)
+  if (!authStore.initialized) {
+    await authStore.ensureAuthInitialized()
+  }
 
   const isAuthenticated = authStore.isLoggedIn
   const user = authStore.user
   const userRole = user?.role
-  
+
+  // Check cache for public routes that don't require auth
+  if (!to.meta.requiresAuth) {
+    next()
+    return
+  }
+
+  // For protected routes, check cache if user is authenticated
+  if (isAuthenticated) {
+    const cached = getCachedValidation(to.path, userRole)
+    if (cached && cached.allowed) {
+      next()
+      return
+    }
+  }
+
   // Check if route requires authentication
   if (to.meta.requiresAuth) {
     if (!isAuthenticated) {
       // Redirect to home with login prompt
-      next({ 
-        path: '/', 
+      next({
+        path: '/',
         query: { redirect: to.fullPath, loginRequired: 'true' }
       })
       return
     }
-    
+
     // Check if route requires specific roles
     if (to.meta.roles && Array.isArray(to.meta.roles)) {
       if (!to.meta.roles.includes(userRole)) {
-        // User doesn't have required role
-        next({ 
-          path: '/dashboard', 
+        // User doesn't have required role - cache this result
+        setCachedValidation(to.path, userRole, { allowed: false })
+        next({
+          path: '/dashboard',
           query: { accessDenied: 'role' }
         })
         return
       }
     }
-    
+
     // Check if route requires super admin
     if (to.meta.requiresSuperAdmin) {
       if (userRole !== ROLES.SUPERADMIN) {
-        next({ 
-          path: '/dashboard', 
+        setCachedValidation(to.path, userRole, { allowed: false })
+        next({
+          path: '/dashboard',
           query: { accessDenied: 'superadmin' }
         })
         return
       }
     }
-    
+
     // Check module-based access (for marketplace modules)
     if (to.meta.module) {
       const haciendaStore = useHaciendaStore()
@@ -235,18 +293,19 @@ router.beforeEach(async (to, from, next) => {
       const moduleActive = haciendaStore.isModuleActive(to.meta.module)
       if (!moduleActive) {
         // Module not active for this hacienda
-        next({ 
-          path: '/dashboard', 
+        setCachedValidation(to.path, userRole, { allowed: false })
+        next({
+          path: '/dashboard',
           query: { moduleDisabled: to.meta.module }
         })
         return
       }
     }
+
+    // All checks passed - cache this result
+    setCachedValidation(to.path, userRole, { allowed: true })
   }
-  
-  // Prevent authenticated users from accessing auth pages (login/register)
-  // if we had dedicated auth pages
-  
+
   // All checks passed
   next()
 })

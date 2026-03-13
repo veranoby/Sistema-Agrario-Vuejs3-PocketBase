@@ -78,6 +78,20 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor': ['vue', 'vue-router', 'pinia'],
+          'vuetify': ['vuetify'],
+          'maps': ['leaflet'],
+          'pdf': ['jspdf', 'jspdf-autotable'],
+          'utils': ['lodash', 'date-fns']
+        }
+      }
+    },
+    chunkSizeWarningLimit: 500
+  },
   test: {
     globals: true,
     environment: 'jsdom',
