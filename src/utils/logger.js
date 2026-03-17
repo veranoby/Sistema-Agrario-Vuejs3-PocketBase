@@ -1,5 +1,8 @@
 // Logger inteligente para Sistema Agri
 // Reduce logs excesivos en production y proporciona control granular
+// Integrado con secureLogger para filtrar datos sensibles
+
+import { secureLogger } from '@/utils/secureLogger'
 
 class Logger {
   constructor() {
@@ -42,26 +45,36 @@ class Logger {
     return true
   }
 
-  // Log con nivel y anti-spam
+  // Sanitiza el mensaje usando secureLogger antes de loggear
+  sanitizeMessage(message) {
+    if (typeof message === 'string') {
+      return message
+    }
+    // Para objetos, usar secureLogger.sanitize
+    return secureLogger.sanitize(message)
+  }
+
+  // Log con nivel y anti-spam (usando secureLogger)
   log(message, level = 'info', key = null) {
     if (!this.shouldLog(key, level)) return
 
     const prefix = this.getPrefix(level)
+    const sanitized = this.sanitizeMessage(message)
 
     switch (level) {
       case 'error':
       case 'critical':
-        console.error(prefix, message)
+        secureLogger.error(prefix, sanitized)
         break
       case 'warn':
-        console.warn(prefix, message)
+        secureLogger.warn(prefix, sanitized)
         break
       case 'info':
       case 'debug':
-        console.log(prefix, message)
+        secureLogger.log(prefix, sanitized)
         break
       default:
-        console.log(prefix, message)
+        secureLogger.log(prefix, sanitized)
     }
   }
 

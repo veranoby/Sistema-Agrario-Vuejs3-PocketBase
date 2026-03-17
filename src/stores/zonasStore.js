@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { markRaw } from 'vue'
 import { pb } from '@/utils/pocketbase'
 import { useSyncStore } from './syncStore'
 import { useSnackbarStore } from './snackbarStore'
@@ -313,7 +314,8 @@ export const useZonasStore = defineStore('zonas', {
         const records = await pb.collection('tipos_zonas').getFullList({
           sort: 'nombre'
         })
-        this.tiposZonas = records
+        // markRaw: lookup data doesn't need deep reactivity
+        this.tiposZonas = markRaw(records)
         // Guardar zonas en localStorage para uso offline
         useSyncStore().saveToLocalStorage('tiposZonas', records)
       } catch (error) {
@@ -401,7 +403,7 @@ export const useZonasStore = defineStore('zonas', {
       const localZonas = syncStore.loadFromLocalStorage('zonas');
       this.zonas = localZonas || [];
       const localTiposZonas = syncStore.loadFromLocalStorage('tiposZonas');
-      this.tiposZonas = localTiposZonas || [];
+      this.tiposZonas = localTiposZonas ? markRaw(localTiposZonas) : [];
       console.log('[ZONAS_STORE] Initialized from localStorage. Zonas:', this.zonas.length, 'Tipos:', this.tiposZonas.length);
     },
 

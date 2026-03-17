@@ -17,6 +17,7 @@ import { useHaciendaStore } from './haciendaStore';
 import { useSnackbarStore } from './snackbarStore';
 import { useBitacoraStore } from './bitacoraStore';
 import { safeLocalStorage } from '@/utils/safeLocalStorage';
+import { logger } from '@/utils/logger';
 
 export const useProgramacionesStore = defineStore('programaciones', {
   state: () => ({
@@ -115,37 +116,37 @@ export const useProgramacionesStore = defineStore('programaciones', {
       const haciendaStore = useHaciendaStore()
       
       const targetHacienda = filters.hacienda || haciendaStore.mi_hacienda?.id;
-      
+
       if (!targetHacienda) {
-        console.warn('[PROGRAMACIONES_STORE] No haciendaId provided to fetchPage.');
+        logger.warn('[PROGRAMACIONES_STORE] No haciendaId provided to fetchPage.');
         return { items: [], pagination: this.pagination };
       }
-      
+
       this.error = null;
       this.loading = true;
-      
-      console.log(`[PROGRAMACIONES_STORE] Fetching page ${page} with ${perPage} items per page for hacienda: ${targetHacienda}`);
-      
+
+      logger.debug(`[PROGRAMACIONES_STORE] Fetching page ${page} with ${perPage} items per page for hacienda: ${targetHacienda}`);
+
       try {
         // Build filter string
         const filterParts = [`hacienda="${targetHacienda}"`];
-        
+
         if (filters.actividad) {
           filterParts.push(`actividad="${filters.actividad}"`);
         }
         if (filters.siembra) {
           filterParts.push(`siembras ~ "${filters.siembra}"`);
         }
-        
+
         const filterString = filterParts.join(' && ');
-        
+
         // Use PocketBase getList for pagination
         const result = await pb.collection('programaciones').getList(page, perPage, {
           filter: filterString,
           sort: '-created',
           expand: 'actividad,siembras'
         });
-        
+
         // Update pagination state
         this.pagination = {
           page: result.page,
@@ -154,25 +155,25 @@ export const useProgramacionesStore = defineStore('programaciones', {
           totalPages: result.totalPages,
           hasMore: result.page < result.totalPages
         };
-        
+
         // Update filters state
         this.filters = { ...this.filters, ...filters };
-        
+
         // Enriquecer programaciones
         const programaciones = result.items.map(this.enriquecerProgramacion.bind(this));
-        
+
         // For page 1, replace entries; for other pages, append
         if (page === 1) {
           this.programaciones = programaciones;
         } else {
           this.programaciones = [...this.programaciones, ...programaciones];
         }
-        
+
         this.lastSync = Date.now();
         this.saveToStorage();
-        
-        console.log(`[PROGRAMACIONES_STORE] Fetched page ${page}: ${programaciones.length} items (Total: ${result.totalItems})`);
-        
+
+        logger.debug(`[PROGRAMACIONES_STORE] Fetched page ${page}: ${programaciones.length} items (Total: ${result.totalItems})`);
+
         return {
           items: programaciones,
           pagination: this.pagination
@@ -370,7 +371,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
           }
         }
       } catch (error) {
-        console.error('Error calculando próxima ejecución:', error)
+        logger.error('Error calculando próxima ejecución:', error)
         proximaEjecucion = fechaActual
       }
 
@@ -460,7 +461,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
             }
           }
         } catch (error) {
-          console.error('Error obteniendo actividades faltantes en batch:', error)
+          logger.error('Error obteniendo actividades faltantes en batch:', error)
           // Fallback: intentar individualmente si el batch falla
           const failedIds = []
           for (const id of missingIds) {
@@ -471,11 +472,11 @@ export const useProgramacionesStore = defineStore('programaciones', {
               }
             } catch (err) {
               failedIds.push(id)
-              console.error(`Error procesando actividad ${id}:`, err)
+              logger.error(`Error procesando actividad ${id}:`, err)
             }
           }
           if (failedIds.length > 0) {
-            console.warn(`[obtenerSiembrasRelacionadas] No se pudieron obtener ${failedIds.length} de ${missingIds.length} actividades`)
+            logger.warn(`[obtenerSiembrasRelacionadas] No se pudieron obtener ${failedIds.length} de ${missingIds.length} actividades`)
           }
         }
       }
@@ -601,13 +602,13 @@ export const useProgramacionesStore = defineStore('programaciones', {
      const programacion = this.programaciones.find((p) => p.id === id)
 
       if (!programacion) {
-        console.error(`Programacion con ID ${id} no encontrada.`)
+        logger.error(`Programacion con ID ${id} no encontrada.`)
         return
       }
 
       const actividadesParaRegistrar = Array.isArray(programacion.actividades) ? programacion.actividades : [];
       if(actividadesParaRegistrar.length === 0) {
-        console.warn(`Programacion ${id} no tiene actividades asociadas para registrar en bitácora.`);
+        logger.warn(`Programacion ${id} no tiene actividades asociadas para registrar en bitácora.`);
         // Aún así, actualizaremos la fecha de ejecución de la programación.
       }
 
@@ -620,10 +621,10 @@ export const useProgramacionesStore = defineStore('programaciones', {
           siembra_asociada: programacion.siembras && programacion.siembras.length > 0 ? programacion.siembras[0] : null
         }
         try {
-          console.log('Creando entrada en bitácora:', entryData)
+          logger.debug('Creando entrada en bitácora:', entryData)
           await bitacoraStore.crearBitacoraEntry(entryData)
         } catch (error) {
-          console.error(`Error creando entrada en bitácora para actividad ${actividadId} de programacion ${id}:`, error)
+          logger.error(`Error creando entrada en bitácora para actividad ${actividadId} de programacion ${id}:`, error)
           // Continuar con la siguiente actividad
         }
       }
@@ -641,7 +642,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
         })
       } catch (error) {
         // handleError ya es llamado por actualizarProgramacion, pero podemos loggear contexto adicional si es necesario.
-        console.error(`Error actualizando la programacion ${id} después de la ejecución:`, error);
+        logger.error(`Error actualizando la programacion ${id} después de la ejecución:`, error);
         // No re-lanzar para no romper el flujo si la bitácora se creó parcialmente.
       }
     },
@@ -683,7 +684,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
     // Standard sync methods
     applySyncedCreate(tempId, realItem) {
       const syncStore = useSyncStore();
-      console.log(`[PROGRAMACIONES_STORE] Applying synced create: tempId ${tempId} -> realId ${realItem.id}`);
+      logger.debug(`[PROGRAMACIONES_STORE] Applying synced create: tempId ${tempId} -> realId ${realItem.id}`);
       const index = this.programaciones.findIndex(p => p.id === tempId && p._isTemp);
       if (index !== -1) {
         this.programaciones[index] = { ...realItem, _isTemp: false };
@@ -691,38 +692,38 @@ export const useProgramacionesStore = defineStore('programaciones', {
         // If not found by tempId (e.g., page reloaded), add if it's not already present by realId
         if (!this.programaciones.some(p => p.id === realItem.id)) {
             this.programaciones.unshift({ ...realItem, _isTemp: false }); // Or push, unshift to show newest first
-            console.log('[PROGRAMACIONES_STORE] Synced item added as new (was not found by tempId).');
+            logger.debug('[PROGRAMACIONES_STORE] Synced item added as new (was not found by tempId).');
         } else {
-            console.log('[PROGRAMACIONES_STORE] Synced item already exists by realId.');
+            logger.debug('[PROGRAMACIONES_STORE] Synced item already exists by realId.');
         }
       }
       syncStore.saveToLocalStorage('programaciones', this.programaciones);
-      console.log('[PROGRAMACIONES_STORE] Synced create applied, localStorage updated.');
+      logger.debug('[PROGRAMACIONES_STORE] Synced create applied, localStorage updated.');
     },
 
     applySyncedUpdate(id, updatedItemData) {
       const syncStore = useSyncStore();
-      console.log(`[PROGRAMACIONES_STORE] Applying synced update for id: ${id}`);
+      logger.debug(`[PROGRAMACIONES_STORE] Applying synced update for id: ${id}`);
       const index = this.programaciones.findIndex(p => p.id === id);
       if (index !== -1) {
         this.programaciones[index] = { ...this.programaciones[index], ...updatedItemData, _isTemp: false };
         syncStore.saveToLocalStorage('programaciones', this.programaciones);
-        console.log('[PROGRAMACIONES_STORE] Synced update applied, localStorage updated.');
+        logger.debug('[PROGRAMACIONES_STORE] Synced update applied, localStorage updated.');
       } else {
-         console.warn(`[PROGRAMACIONES_STORE] Could not find item with id ${id} to apply update.`);
+         logger.warn(`[PROGRAMACIONES_STORE] Could not find item with id ${id} to apply update.`);
       }
     },
 
     applySyncedDelete(id) {
       const syncStore = useSyncStore();
-      console.log(`[PROGRAMACIONES_STORE] Applying synced delete for id: ${id}`);
+      logger.debug(`[PROGRAMACIONES_STORE] Applying synced delete for id: ${id}`);
       const initialLength = this.programaciones.length;
       this.programaciones = this.programaciones.filter(p => p.id !== id);
       if (this.programaciones.length < initialLength) {
         syncStore.saveToLocalStorage('programaciones', this.programaciones);
-        console.log('[PROGRAMACIONES_STORE] Synced delete applied, localStorage updated.');
+        logger.debug('[PROGRAMACIONES_STORE] Synced delete applied, localStorage updated.');
       } else {
-        console.warn(`[PROGRAMACIONES_STORE] Could not find item with id ${id} to apply delete.`);
+        logger.warn(`[PROGRAMACIONES_STORE] Could not find item with id ${id} to apply delete.`);
       }}, // End of applySyncedDelete, ensure comma if more actions follow in 'actions'
 
       // === Start of moved actions ===
@@ -731,7 +732,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
         this.pendingBitacoraFromProgramacionData = null // Reset previous state
 
         if (!programacion || !programacion.actividades || programacion.actividades.length === 0) {
-          console.error('[ProgramacionesStore] No activities found in the programacion object.')
+          logger.error('[ProgramacionesStore] No activities found in the programacion object.')
           return false
         }
 
@@ -740,17 +741,17 @@ export const useProgramacionesStore = defineStore('programaciones', {
 
         if (!actividad) {
           try {
-            console.warn(`[ProgramacionesStore] Activity ${primaryActivityId} not found in store, attempting fetch.`);
+            logger.warn(`[ProgramacionesStore] Activity ${primaryActivityId} not found in store, attempting fetch.`);
             actividad = await actividadesStore.fetchActividadById(primaryActivityId); 
           } catch (error) {
-            console.error(`[ProgramacionesStore] Error fetching activity ${primaryActivityId}:`, error)
+            logger.error(`[ProgramacionesStore] Error fetching activity ${primaryActivityId}:`, error)
             handleError(error, `Error fetching activity ${primaryActivityId}`)
             return false
           }
         }
         
         if (!actividad) {
-          console.error(`[ProgramacionesStore] Activity ${primaryActivityId} could not be found or fetched.`)
+          logger.error(`[ProgramacionesStore] Activity ${primaryActivityId} could not be found or fetched.`)
           return false
         }
 
@@ -793,7 +794,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
             }
           }
         } catch (error) {
-            console.error('[ProgramacionesStore] Error generating observacionesPreload:', error);
+            logger.error('[ProgramacionesStore] Error generating observacionesPreload:', error);
         }
 
         const prefillDataObject = {
@@ -806,13 +807,13 @@ export const useProgramacionesStore = defineStore('programaciones', {
         };
 
         this.pendingBitacoraFromProgramacionData = prefillDataObject;
-        console.log('[ProgramacionesStore] Prepared data for Bitacora Entry:', this.pendingBitacoraFromProgramacionData);
+        logger.debug('[ProgramacionesStore] Prepared data for Bitacora Entry:', this.pendingBitacoraFromProgramacionData);
         return true;
       },
 
       clearPendingBitacoraData() {
         this.pendingBitacoraFromProgramacionData = null;
-        console.log('[ProgramacionesStore] Cleared pending bitacora data.');
+        logger.debug('[ProgramacionesStore] Cleared pending bitacora data.');
       },
 
       async finalizeProgramacionExecution(payload) {
@@ -820,7 +821,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
         const programacionIndex = this.programaciones.findIndex(p => p.id === programacionId);
 
         if (programacionIndex === -1) {
-          console.error(`[ProgramacionesStore] Programacion with ID ${programacionId} not found for finalization.`);
+          logger.error(`[ProgramacionesStore] Programacion with ID ${programacionId} not found for finalization.`);
           return;
         }
         
@@ -848,9 +849,9 @@ export const useProgramacionesStore = defineStore('programaciones', {
             proxima_ejecucion: proxima_ejecucion_iso, 
             ejecucionesPendientes: ejecucionesPendientes 
           });
-          console.log(`[ProgramacionesStore] Finalized execution for programacion ${programacionId}. New ultima_ejecucion: ${newUltimaEjecucionISO}, new proxima_ejecucion: ${proxima_ejecucion_iso}`);
+          logger.debug(`[ProgramacionesStore] Finalized execution for programacion ${programacionId}. New ultima_ejecucion: ${newUltimaEjecucionISO}, new proxima_ejecucion: ${proxima_ejecucion_iso}`);
         } catch (error) {
-          console.error(`[ProgramacionesStore] Error finalizing programacion execution for ${programacionId}:`, error);
+          logger.error(`[ProgramacionesStore] Error finalizing programacion execution for ${programacionId}:`, error);
           throw error; 
         }
       },
@@ -864,12 +865,12 @@ export const useProgramacionesStore = defineStore('programaciones', {
 
         // Validate siembra context to prevent cross-siembra data corruption
         if (!siembraId) {
-          console.warn('[Store] No siembraId provided for batch execution - proceeding without siembra isolation');
+          logger.warn('[Store] No siembraId provided for batch execution - proceeding without siembra isolation');
         }
 
         const programacion = this.programaciones.find(p => p.id === programacionId);
         if (!programacion) {
-          console.error(`[Store] Programacion ${programacionId} no encontrada.`);
+          logger.error(`[Store] Programacion ${programacionId} no encontrada.`);
           snackbarStore.showSnackbar(`Error: Programación ${programacionId} no encontrada.`, 'error');
           return;
         }
@@ -877,14 +878,14 @@ export const useProgramacionesStore = defineStore('programaciones', {
         // Validate siembra context against programacion's siembras
         if (siembraId && programacion.siembras && Array.isArray(programacion.siembras)) {
           if (!programacion.siembras.includes(siembraId)) {
-            console.error(`[Store] SiembraId ${siembraId} not associated with programacion ${programacionId}`);
+            logger.error(`[Store] SiembraId ${siembraId} not associated with programacion ${programacionId}`);
             snackbarStore.showSnackbar(`Error: La siembra especificada no está asociada a esta programación.`, 'error');
             return;
           }
         }
 
         if (!programacion.actividades || programacion.actividades.length === 0) {
-          console.error(`[Store] Programacion ${programacionId} no tiene actividades asociadas.`);
+          logger.error(`[Store] Programacion ${programacionId} no tiene actividades asociadas.`);
           snackbarStore.showSnackbar(`Error: Programación ${programacionId} no tiene actividades.`, 'error');
           return;
         }
@@ -894,13 +895,13 @@ export const useProgramacionesStore = defineStore('programaciones', {
         try {
           actividad = await actividadesStore.fetchActividadById(primaryActivityId, { expand: 'tipo_actividades' });
         } catch (error) {
-          console.error(`[Store] Error fetching actividad ${primaryActivityId}:`, error);
+          logger.error(`[Store] Error fetching actividad ${primaryActivityId}:`, error);
           snackbarStore.showSnackbar(`Error cargando actividad ${primaryActivityId}.`, 'error');
           return;
         }
 
         if (!actividad) {
-          console.error(`[Store] Actividad ${primaryActivityId} no pudo ser cargada.`);
+          logger.error(`[Store] Actividad ${primaryActivityId} no pudo ser cargada.`);
           snackbarStore.showSnackbar(`Error: Actividad ${primaryActivityId} no pudo ser cargada.`, 'error');
           return;
         }
@@ -948,7 +949,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
             observacionesContent = unmappedMetricasContent.join('\n');
           }
         } catch (error) {
-          console.error('[Store] Error generando observacionesContent para batch:', error);
+          logger.error('[Store] Error generando observacionesContent para batch:', error);
         }
 
         // Combine auto-generated observaciones with additional user input
@@ -981,7 +982,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
             successfulExecutions++;
             latestSuccessfullyExecutedDate = dateString;
           } catch (error) {
-            console.error(`[Store] Error creando entrada de bitácora para fecha ${dateString}:`, error);
+            logger.error(`[Store] Error creando entrada de bitácora para fecha ${dateString}:`, error);
             snackbarStore.showSnackbar(`Error registrando bitácora para ${dateString}.`, 'error');
           }
         }
@@ -1014,7 +1015,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
             const siembraContext = siembraId ? ` (Siembra: ${siembraId})` : '';
             snackbarStore.showSnackbar(`${successfulExecutions} de ${sortedDates.length} programaciones ejecutadas y registradas${siembraContext}. Programación actualizada.`, 'success');
           } catch (updateError) {
-            console.error(`[Store] Error actualizando programacion ${programacionId} post-batch:`, updateError);
+            logger.error(`[Store] Error actualizando programacion ${programacionId} post-batch:`, updateError);
             snackbarStore.showSnackbar('Bitácoras registradas, pero falló la actualización de la programación.', 'warning');
           }
         } else if (fechasEjecucion.length > 0 && successfulExecutions === 0) {
@@ -1027,7 +1028,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
       // Calculate pending execution dates based on programacion frequency with siembra context isolation
       getFechasPendientes(programacion, siembraId = null) {
         if (!programacion) {
-          console.warn('[ProgramacionesStore] No programacion provided to getFechasPendientes');
+          logger.warn('[ProgramacionesStore] No programacion provided to getFechasPendientes');
           return [];
         }
 
@@ -1077,7 +1078,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
 
           // Safety limit: don't generate more than 100 dates
           if (fechas.length >= 100) {
-            console.warn('[ProgramacionesStore] Hit safety limit generating pending dates');
+            logger.warn('[ProgramacionesStore] Hit safety limit generating pending dates');
             break;
           }
         }
@@ -1261,7 +1262,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
         try {
           // Graceful handling when programacion is null/undefined
           if (!programacion) {
-            console.warn('[ProgramacionesStore] No programacion provided to getFechasPendientesWithValidation')
+            logger.warn('[ProgramacionesStore] No programacion provided to getFechasPendientesWithValidation')
             return []
           }
 
@@ -1270,7 +1271,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
 
           // Additional validation for edge cases
           if (!Array.isArray(fechas)) {
-            console.error('[ProgramacionesStore] getFechasPendientes returned non-array result')
+            logger.error('[ProgramacionesStore] getFechasPendientes returned non-array result')
             return []
           }
 
@@ -1280,16 +1281,16 @@ export const useProgramacionesStore = defineStore('programaciones', {
               const dateObj = new Date(fecha)
               return !isNaN(dateObj.getTime())
             } catch (error) {
-              console.warn(`[ProgramacionesStore] Invalid date found: ${fecha}`)
+              logger.warn(`[ProgramacionesStore] Invalid date found: ${fecha}`)
               return false
             }
           })
 
-          console.log(`[ProgramacionesStore] Generated ${validFechas.length} valid pending dates for programacion ${programacion.id}${siembraId ? ` (siembra: ${siembraId})` : ''}`)
+          logger.debug(`[ProgramacionesStore] Generated ${validFechas.length} valid pending dates for programacion ${programacion.id}${siembraId ? ` (siembra: ${siembraId})` : ''}`)
           return validFechas
 
         } catch (error) {
-          console.error('[ProgramacionesStore] Error in getFechasPendientesWithValidation:', error)
+          logger.error('[ProgramacionesStore] Error in getFechasPendientesWithValidation:', error)
           handleError(error, 'Error calculating pending dates')
           return []
         }
@@ -1298,7 +1299,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
       // Multi-siembra isolation validation method
       validateSiembraContext(programacionId, siembraId) {
         if (!siembraId) {
-          console.warn('[ProgramacionesStore] No siembraId provided for validation')
+          logger.warn('[ProgramacionesStore] No siembraId provided for validation')
           return { valid: true, warning: 'No siembra context specified' }
         }
 
@@ -1326,7 +1327,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
         try {
           safeLocalStorage.saveToLocalStorage('programaciones', this.programaciones)
         } catch (error) {
-          console.error('[ProgramacionesStore] Error guardando en localStorage:', error)
+          logger.error('[ProgramacionesStore] Error guardando en localStorage:', error)
         }
       },
 
@@ -1340,7 +1341,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
           }
           return false
         } catch (error) {
-          console.error('[ProgramacionesStore] Error cargando desde localStorage:', error)
+          logger.error('[ProgramacionesStore] Error cargando desde localStorage:', error)
           return false
         }
       }

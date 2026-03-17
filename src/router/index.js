@@ -72,8 +72,26 @@ const routes = [
   },
   {
     path: '/siembras',
+    component: () => import('@/components/siembras/SiembrasDashboard.vue'),
+    name: 'Dashboard de Siembras',
+    meta: {
+      requiresAuth: true,
+      roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR, ROLES.OPERADOR]
+    }
+  },
+  {
+    path: '/siembras/config',
     component: () => import('@/components/SiembrasConfig.vue'),
     name: 'Gestion de Siembras y Proyectos',
+    meta: {
+      requiresAuth: true,
+      roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR, ROLES.OPERADOR]
+    }
+  },
+  {
+    path: '/siembras/nueva',
+    component: () => import('@/components/siembras/SiembraWorkspace.vue'),
+    name: 'Nueva Siembra',
     meta: {
       requiresAuth: true,
       roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR, ROLES.OPERADOR]
@@ -162,15 +180,67 @@ const adminRoute = {
   path: '/admin',
   component: () => import('@/components/admin/SuperAdminDashboard.vue'),
   name: 'Super Admin Dashboard',
-  meta: { 
+  meta: {
     requiresAuth: true,
     requiresSuperAdmin: true,
     roles: [ROLES.SUPERADMIN]
   }
 }
 
-// Add admin route to routes array
+// Add admin analytics route for superadmin
+const adminAnalyticsRoute = {
+  path: '/admin/analytics',
+  component: () => import('@/components/admin/SuperAdminAnalytics.vue'),
+  name: 'Super Admin Analytics',
+  meta: {
+    requiresAuth: true,
+    requiresSuperAdmin: true,
+    roles: [ROLES.SUPERADMIN]
+  }
+}
+
+// Add admin usage metrics route
+const adminUsageMetricsRoute = {
+  path: '/admin/metrics',
+  component: () => import('@/components/admin/UsageMetrics.vue'),
+  name: 'Usage Metrics',
+  meta: {
+    requiresAuth: true,
+    requiresSuperAdmin: true,
+    roles: [ROLES.SUPERADMIN]
+  }
+}
+
+// Add admin data mining route
+const adminDataMiningRoute = {
+  path: '/admin/data-mining',
+  component: () => import('@/components/admin/DataMiningTools.vue'),
+  name: 'Data Mining Tools',
+  meta: {
+    requiresAuth: true,
+    requiresSuperAdmin: true,
+    roles: [ROLES.SUPERADMIN]
+  }
+}
+
+// Add admin routes to routes array
 routes.push(adminRoute)
+routes.push(adminAnalyticsRoute)
+routes.push(adminUsageMetricsRoute)
+routes.push(adminDataMiningRoute)
+
+// Add reports route for authenticated users
+const reportsRoute = {
+  path: '/reports',
+  component: () => import('@/components/reports/ReportsView.vue'),
+  name: 'Reports',
+  meta: {
+    requiresAuth: true,
+    roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR, ROLES.OPERADOR]
+  }
+}
+
+routes.push(reportsRoute)
 
 const router = createRouter({
   history: createWebHistory(),

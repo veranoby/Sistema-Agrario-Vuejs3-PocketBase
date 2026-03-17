@@ -107,6 +107,12 @@
 <script setup>
 import { ref, computed, onUnmounted } from 'vue'
 import { useAvatarStore } from '@/stores/avatarStore'
+import { useSnackbarStore } from '@/stores/snackbarStore'
+
+// Importar optimizador de imágenes
+import { ImageOptimizer } from '@/utils/imageOptimizer'
+import { ExifExtractor } from '@/utils/exifExtractor'
+import { logger } from '@/utils/logger'
 
 const props = defineProps({
   modelValue: Boolean,
@@ -119,15 +125,30 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'avatar-updated'])
 
 const avatarStore = useAvatarStore()
+const snackbarStore = useSnackbarStore()
 const avatarFile = ref(null)
 const previewUrl = ref(null)
 const fileError = ref('')
 const isLoading = ref(false)
+const isCompressing = ref(false)
 const isCameraActive = ref(false)
 const videoRef = ref(null)
 const mediaStream = ref(null)
+const compressionStats = ref(null)
+const exifData = ref(null)
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+const TARGET_SIZE_MB = 2 // Tamaño objetivo después de compresión
+
+const imageOptimizer = new ImageOptimizer({
+  maxWidth: 1920,
+  maxHeight: 1080,
+  quality: 0.8,
+  maxSizeMB: TARGET_SIZE_MB,
+  format: 'image/jpeg'
+})
+
+const exifExtractor = new ExifExtractor()
 
 const dialog = computed({
   get: () => props.modelValue,
@@ -151,11 +172,54 @@ const fileRules = [
   }
 ]
 
-const handleFileChange = (file) => {
+const handleFileChange = async (file) => {
+  fileError.value = ''
+  compressionStats.value = null
+  exifData.value = null
+
   if (file) {
     if (file instanceof File) {
       if (fileRules[0](file)) {
-        previewUrl.value = URL.createObjectURL(file)
+        try {
+          // Extraer EXIF antes de comprimir
+          exifData.value = await exifExtractor.extract(file)
+          logger.debug('[AvatarForm] EXIF extraído:', exifData.value)
+
+          // Comprimir imagen
+          isCompressing.value = true
+          const result = await imageOptimizer.compress(file)
+          
+          compressionStats.value = {
+            originalSize: result.originalSize,
+            newSize: result.newSize,
+            compressionRatio: result.compressionRatio
+          }
+
+          // Usar archivo comprimido
+          avatarFile.value = result.file
+          previewUrl.value = URL.createObjectURL(result.file)
+
+          logger.debug('[AvatarForm] Imagen comprimida:', {
+            original: (result.originalSize / 1024).toFixed(2) + ' KB',
+            compressed: (result.newSize / 1024).toFixed(2) + ' KB',
+            ratio: result.compressionRatio + '%'
+          })
+
+          snackbarStore.showSuccess(
+            `Imagen optimizada: ${result.compressionRatio}% de reducción`
+          )
+        } catch (error) {
+          logger.error('[AvatarForm] Error optimizando imagen:', error)
+          fileError.value = error.message || 'Error al procesar la imagen'
+          
+          // Fallback: usar archivo original si la compresión falla
+          if (file.size <= MAX_FILE_SIZE) {
+            avatarFile.value = file
+            previewUrl.value = URL.createObjectURL(file)
+          }
+        } finally {
+          isCompressing.value = false
+        }
       }
     }
   } else {
@@ -219,17 +283,28 @@ const handleSubmit = async () => {
 
   isLoading.value = true
   try {
+    // Si hay datos EXIF con GPS, podríamos guardarlos como metadatos
+    let fileToUpload = avatarFile.value
+    
+    // Nota: El File API no permite modificar metadatos EXIF directamente
+    // Los datos EXIF se pueden guardar por separado si es necesario
+    if (exifData.value?.gps) {
+      logger.debug('[AvatarForm] Coordenadas GPS disponibles:', exifData.value.gps)
+      // Aquí se podría guardar las coordenadas GPS como metadatos adicionales
+      // dependiendo de los requerimientos del backend
+    }
+
     const operation = props.hasCurrentAvatar ? 'update' : 'create'
     const updatedRecord = await avatarStore.handleAvatarOperation(
       operation,
       props.collection,
       props.entityId,
-      avatarFile.value
+      fileToUpload
     )
     emit('avatar-updated', updatedRecord)
     closeDialog()
   } catch (error) {
-    console.error('Error handling avatar:', error)
+    logger.error('[AvatarForm] Error handling avatar:', error)
     fileError.value = 'Error al procesar la imagen'
   } finally {
     isLoading.value = false

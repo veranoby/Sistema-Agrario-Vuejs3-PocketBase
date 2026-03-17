@@ -1,15 +1,15 @@
 <template>
   <div class="flex flex-col min-h-screen">
-    <header class="bg-background shadow-sm">
+    <header role="banner" class="bg-background shadow-sm">
       <div class="profile-container">
-        <h3 class="profile-title">
+        <h3 class="profile-title" id="dashboard-welcome-title">
           {{ t('dashboard.welcome_back', { fullName: fullName }) }}
           <v-chip variant="flat" size="x-small" color="grey-lighten-2" class="mx-1" pill>
-            <v-avatar start> <v-img :src="avatarUrl" alt="Avatar"></v-img> </v-avatar>
+            <v-avatar start> <v-img :src="avatarUrl" alt="Avatar del usuario"></v-img> </v-avatar>
             {{ userRole }}
           </v-chip>
           <v-chip variant="flat" size="x-small" color="green-lighten-3" class="mx-1" pill>
-            <v-avatar start> <v-img :src="avatarHaciendaUrl" alt="Avatar"></v-img> </v-avatar>
+            <v-avatar start> <v-img :src="avatarHaciendaUrl" alt="Avatar de hacienda"></v-img> </v-avatar>
             {{ t('dashboard.hacienda') }}: {{ mi_hacienda.name }}
           </v-chip>
         </h3>
@@ -19,13 +19,13 @@
       </div>
     </header>
 
-    <div v-if="loadingMetrics && isDevelopment" class="bg-green-50 border-l-4 border-green-400 p-2 m-4">
+    <div v-if="loadingMetrics && isDevelopment" class="bg-green-50 border-l-4 border-green-400 p-2 m-4" role="status" aria-live="polite">
       <div class="text-sm text-green-700">
         <strong>P3.1:</strong> {{ loadingMetrics.duration }}ms | {{ loadingMetrics.recordsLoaded }} registros | {{ loadingMetrics.recordsPerSecond }} rec/s
       </div>
     </div>
 
-    <main class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-8 p-6">
+    <main role="main" aria-labelledby="dashboard-welcome-title" class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-8 p-6">
       <div class="bg-card text-card-foreground">
         <v-btn
           block
@@ -37,6 +37,7 @@
           prepend-icon="mdi-plus"
           @click="recordatoriosStore.abrirNuevoRecordatorio"
           class="min-w-[210px] mt-0 m-1 mb-4"
+          aria-label="Crear nuevo recordatorio"
         >
           {{ t('dashboard.new_reminder') }}
         </v-btn>
@@ -47,6 +48,8 @@
           :recordatorio="recordatoriosStore.recordatorioEdit"
           :is-editing="recordatoriosStore.editando"
           @submit="handleFormSubmit"
+          role="dialog"
+          aria-label="Formulario de recordatorio"
         />
 
         <StatusPanel
@@ -57,6 +60,7 @@
           @update-status="recordatoriosStore.actualizarEstado"
           @edit="recordatoriosStore.editarRecordatorio"
           @delete="recordatoriosStore.eliminarRecordatorio"
+          aria-label="Recordatorios pendientes"
         />
         <br />
         <StatusPanel
@@ -67,16 +71,17 @@
           @update-status="recordatoriosStore.actualizarEstado"
           @edit="recordatoriosStore.editarRecordatorio"
           @delete="recordatoriosStore.eliminarRecordatorio"
+          aria-label="Recordatorios en progreso"
         />
       </div>
 
-      <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
+      <div class="rounded-lg border bg-card text-card-foreground shadow-sm" aria-label="Últimas actividades">
         <div class="flex flex-col space-y-1.5 p-6">
-          <h3 class="whitespace-nowrap text-2xl font-semibold leading-none tracking-tight">
+          <h3 class="whitespace-nowrap text-2xl font-semibold leading-none tracking-tight" id="last-activities-title">
             {{ t('dashboard.last_activities') }}
           </h3>
         </div>
-        <div class="p-6">
+        <div class="p-6" aria-labelledby="last-activities-title">
           <div class="space-y-4">
             <div class="flex items-start gap-4">
               <div class="bg-muted rounded-md flex items-center justify-center aspect-square w-10">

@@ -107,6 +107,17 @@ app.config.globalProperties.$filters = {
   }
 }
 
+// Registrar Service Worker para mapas offline
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw-maps.js')
+    .then(registration => {
+      console.log('Map Service Worker registrado:', registration.scope)
+    })
+    .catch(error => {
+      console.error('Map Service Worker falló:', error)
+    })
+}
+
 // Inicializar stores críticos antes de montar la app
 const initApp = async () => {
   const authStore = useAuthStore()

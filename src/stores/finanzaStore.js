@@ -34,7 +34,8 @@ export const useFinanzaStore = defineStore('finanzas', {
   },
 
   getters: {
-    registrosPorMes: (state) => {
+    // Getters optimizados con caché local para evitar recálculos innecesarios
+    _registrosPorMesCache: (state) => {
       const start = startOfMonth(state.currentMonth)
       const end = endOfMonth(state.currentMonth)
 
@@ -44,19 +45,41 @@ export const useFinanzaStore = defineStore('finanzas', {
       })
     },
 
+    registrosPorMes: (state) => {
+      // Retornar el getter cacheado
+      return state._registrosPorMesCache || []
+    },
+
     totalMes: (state) => {
-      return state.registrosPorMes.reduce((total, registro) => total + (registro.monto || 0), 0)
+      // Calcular directamente desde los registros filtrados del mes actual
+      const start = startOfMonth(state.currentMonth)
+      const end = endOfMonth(state.currentMonth)
+
+      return state.registros
+        .filter((registro) => {
+          const fecha = parseISO(registro.fecha)
+          return fecha >= start && fecha <= end
+        })
+        .reduce((total, registro) => total + (registro.monto || 0), 0)
     },
 
     registrosPorCategoria: (state) => {
       const categorias = {}
-      state.registrosPorMes.forEach((registro) => {
-        const categoria = registro.costo || 'sin_categoria'
-        if (!categorias[categoria]) {
-          categorias[categoria] = 0
-        }
-        categorias[categoria] += registro.monto || 0
-      })
+      const start = startOfMonth(state.currentMonth)
+      const end = endOfMonth(state.currentMonth)
+
+      state.registros
+        .filter((registro) => {
+          const fecha = parseISO(registro.fecha)
+          return fecha >= start && fecha <= end
+        })
+        .forEach((registro) => {
+          const categoria = registro.costo || 'sin_categoria'
+          if (!categorias[categoria]) {
+            categorias[categoria] = 0
+          }
+          categorias[categoria] += registro.monto || 0
+        })
       return categorias
     },
 
@@ -66,21 +89,29 @@ export const useFinanzaStore = defineStore('finanzas', {
 
     totalesPorUsuario: (state) => {
       const totales = {}
-      state.registrosPorMes.forEach((registro) => {
-        const userId = registro.pagado_por
-        const userName = registro.expand?.pagado_por?.name || 'Usuario sin nombre'
+      const start = startOfMonth(state.currentMonth)
+      const end = endOfMonth(state.currentMonth)
 
-        if (!totales[userId]) {
-          totales[userId] = {
-            nombre: userName,
-            total: 0,
-            registros: 0
+      state.registros
+        .filter((registro) => {
+          const fecha = parseISO(registro.fecha)
+          return fecha >= start && fecha <= end
+        })
+        .forEach((registro) => {
+          const userId = registro.pagado_por
+          const userName = registro.expand?.pagado_por?.name || 'Usuario sin nombre'
+
+          if (!totales[userId]) {
+            totales[userId] = {
+              nombre: userName,
+              total: 0,
+              registros: 0
+            }
           }
-        }
 
-        totales[userId].total += registro.monto || 0
-        totales[userId].registros += 1
-      })
+          totales[userId].total += registro.monto || 0
+          totales[userId].registros += 1
+        })
 
       // Convertir a array y ordenar por total descendente
       return Object.entries(totales)
@@ -508,17 +539,24 @@ export const useFinanzaStore = defineStore('finanzas', {
           'Monto'
         ]
 
+        // Crear Map de lookup para usuarios (evita N+1 query pattern)
+        const userMap = new Map(
+          haciendaStore.haciendaUsers.map(u => [
+            u.id,
+            {
+              ...u,
+              fullName: `${u.name || ''} ${u.lastname || ''}`.trim()
+            }
+          ])
+        )
+
         // Datos de los registros
         const registrosData =
           registrosDelMes.length > 0
             ? registrosDelMes.map((reg) => {
-                // Obtener el nombre del usuario que pagó usando haciendaStore
-                const pagadoPorUser = haciendaStore.haciendaUsers.find(
-                  (u) => u.id === reg.pagado_por
-                )
-                const nombrePagadoPor = pagadoPorUser
-                  ? `${pagadoPorUser.name || ''} ${pagadoPorUser.lastname || ''}`.trim()
-                  : ''
+                // Obtener el nombre del usuario que pagó usando el Map (O(1) en lugar de O(n))
+                const pagadoPorUser = userMap.get(reg.pagado_por)
+                const nombrePagadoPor = pagadoPorUser?.fullName || reg.expand?.pagado_por?.name || ''
 
                 return {
                   Fecha: format(parseISO(reg.fecha), 'dd/MM/yyyy'),
@@ -526,7 +564,7 @@ export const useFinanzaStore = defineStore('finanzas', {
                   'Razón Social': reg.razon_social || '',
                   'Factura o Recibo': reg.factura || '',
                   'Centro de Costo': reg.costo || '',
-                  'Pagado por': nombrePagadoPor || reg.expand?.pagado_por?.name || '',
+                  'Pagado por': nombrePagadoPor,
                   Monto: reg.monto || 0
                 }
               })
@@ -539,14 +577,11 @@ export const useFinanzaStore = defineStore('finanzas', {
           totalsPorCategoria[categoria] = (totalsPorCategoria[categoria] || 0) + (reg.monto || 0)
         })
 
-        // Agrupar montos por usuario
+        // Agrupar montos por usuario (usando el Map para O(1) lookup)
         const totalsPorUsuario = {}
         registrosDelMes.forEach((reg) => {
-          const userId = reg.pagado_por
-          const pagadoPorUser = haciendaStore.haciendaUsers.find((u) => u.id === userId)
-          const nombrePagadoPor = pagadoPorUser
-            ? `${pagadoPorUser.name || ''} ${pagadoPorUser.lastname || ''}`.trim()
-            : reg.expand?.pagado_por?.name || 'Usuario sin nombre'
+          const pagadoPorUser = userMap.get(reg.pagado_por)
+          const nombrePagadoPor = pagadoPorUser?.fullName || reg.expand?.pagado_por?.name || 'Usuario sin nombre'
 
           if (!totalsPorUsuario[nombrePagadoPor]) {
             totalsPorUsuario[nombrePagadoPor] = 0

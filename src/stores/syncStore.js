@@ -12,7 +12,6 @@ import { useProgramacionesStore } from '@/stores/programacionesStore'
 import { useBitacoraStore } from '@/stores/bitacoraStore'
 import { useAuthStore } from '@/stores/authStore'
 import { pb } from '@/utils/pocketbase'
-import { debounce } from 'lodash'
 import { logger, logP3, logSync, logError } from '@/utils/logger'
 
 export const useSyncStore = defineStore('sync', {
@@ -26,7 +25,6 @@ export const useSyncStore = defineStore('sync', {
     syncInProgress: false,
     // Mapeo de IDs temporales a reales
     tempToRealIdMap: {},
-    debouncedHandleVisibilityChange: null,
     // Interval IDs para cleanup
     cleanupIntervalId: null,
     // FASE 2: Configuración de sincronización selectiva
@@ -55,6 +53,13 @@ export const useSyncStore = defineStore('sync', {
       searchIndexLastUpdate: null,
       lastReportGeneration: null
     },
+    // Límites de cache para prevenir memory leaks
+    cacheLimits: {
+      maxFrequentDataEntries: 500,
+      maxSearchIndexEntries: 1000,
+      maxReportsEntries: 100,
+      maxAnalyticsEntries: 100
+    },
     // Cache inteligente para datos frecuentes
     intelligentCache: {
       frequentData: new Map(), // Cache de datos frecuentemente accedidos
@@ -73,6 +78,27 @@ export const useSyncStore = defineStore('sync', {
   }),
 
   actions: {
+    // Helper para enforce límite de cache LRU
+    enforceCacheLimit(cacheMap, cacheName, maxEntries) {
+      if (cacheMap.size > maxEntries) {
+        // Eliminar las entradas más antiguas (primeras 20%)
+        const entriesToRemove = Math.floor(maxEntries * 0.2)
+        let removed = 0
+        for (const [key] of cacheMap.keys()) {
+          if (removed >= entriesToRemove) break
+          cacheMap.delete(key)
+          removed++
+        }
+        logSync(`[Cache] Limpiando ${cacheName}: eliminadas ${removed} entradas (tamaño: ${cacheMap.size}/${maxEntries})`)
+      }
+    },
+
+    // Helper seguro para agregar a cache
+    setWithCacheLimit(cacheMap, cacheName, key, value, maxEntries) {
+      // Verificar y enforce límite antes de agregar
+      this.enforceCacheLimit(cacheMap, cacheName, maxEntries)
+      cacheMap.set(key, value)
+    },
     getStoreByCollectionName(collectionName) {
       const storeMap = {
         zonas: useZonasStore,
@@ -127,7 +153,7 @@ export const useSyncStore = defineStore('sync', {
 
         // Verificar si hay operaciones pendientes y estamos online
         if (navigator.onLine && this.queue.queue.length > 0) {
-          console.log('Procesando cola pendiente al inicializar')
+          logSync('Procesando cola pendiente al inicializar')
           await this.processPendingQueue()
         }
       } catch (error) {
@@ -136,7 +162,7 @@ export const useSyncStore = defineStore('sync', {
     },
 
     async handleOnline() {
-      console.log('Conexión restaurada, verificando cola pendiente')
+      logSync('Conexión restaurada, verificando cola pendiente')
       this.isOnline = true
 
       // Intentar restaurar la sesión antes de procesar la cola
@@ -200,7 +226,7 @@ export const useSyncStore = defineStore('sync', {
     async processPendingQueue() {
       // Evitar procesamiento simultáneo
       if (this.syncStatus === 'syncing' || this.syncInProgress) {
-        console.log('Ya hay una sincronización en progreso, saltando...')
+        logSync('Ya hay una sincronización en progreso, saltando...')
         return
       }
 
@@ -217,8 +243,8 @@ export const useSyncStore = defineStore('sync', {
         const syncResults = await this.queue.process()
 
         if (!syncResults || typeof syncResults !== 'object') {
-          console.error('processPendingQueue: syncResults no es válido o está indefinido.')
-          // No lanzar error aquí para permitir que el finally se ejecute, 
+          logError('processPendingQueue: syncResults no es válido o está indefinido.')
+          // No lanzar error aquí para permitir que el finally se ejecute,
           // pero sí registrarlo y evitar procesamiento adicional.
           this.handleSyncError(new Error('Resultados de sincronización inválidos.'), 'Error procesando cola de sincronización')
         } else {
@@ -230,7 +256,7 @@ export const useSyncStore = defineStore('sync', {
               try {
                 const collectionName = item.realItem.collectionName || item.realItem['@collectionName']
                 if (!collectionName) {
-                  console.warn('processPendingQueue: No se pudo determinar collectionName para el item creado:', item)
+                  logger.warn('processPendingQueue: No se pudo determinar collectionName para el item creado:', item.tempId)
                   continue
                 }
                 const targetStore = this.getStoreByCollectionName(collectionName)
@@ -239,12 +265,12 @@ export const useSyncStore = defineStore('sync', {
                   // updateCrossStoreReferences se llama aquí para asegurar que el ID real está disponible
                   await this.updateCrossStoreReferences(item.tempId, item.realItem.id)
                 } else {
-                  console.warn(
+                  logger.warn(
                     `processPendingQueue: Store o método applySyncedCreate no encontrado para la colección '${collectionName}'.`
                   )
                 }
               } catch (e) {
-                console.error(`processPendingQueue: Error procesando item creado: ${item.tempId}`, e)
+                logError(`processPendingQueue: Error procesando item creado: ${item.tempId}`, e)
                 this.handleSyncError(e, `Error procesando creación para ${item.tempId}`)
               }
             }
@@ -256,19 +282,19 @@ export const useSyncStore = defineStore('sync', {
               try {
                 const collectionName = item.collection
                 if (!collectionName) {
-                  console.warn('processPendingQueue: No se pudo determinar collectionName para el item actualizado:', item)
+                  logger.warn('processPendingQueue: No se pudo determinar collectionName para el item actualizado:', item.id)
                   continue
                 }
                 const targetStore = this.getStoreByCollectionName(collectionName)
                 if (targetStore && typeof targetStore.applySyncedUpdate === 'function') {
                   await targetStore.applySyncedUpdate(item.id, item.updatedItem)
                 } else {
-                  console.warn(
+                  logger.warn(
                     `processPendingQueue: Store o método applySyncedUpdate no encontrado para la colección '${collectionName}'.`
                   )
                 }
               } catch (e) {
-                console.error(`processPendingQueue: Error procesando item actualizado: ${item.id}`, e)
+                logError(`processPendingQueue: Error procesando item actualizado: ${item.id}`, e)
                 this.handleSyncError(e, `Error procesando actualización para ${item.id}`)
               }
             }
@@ -280,19 +306,19 @@ export const useSyncStore = defineStore('sync', {
               try {
                 const collectionName = item.collection
                 if (!collectionName) {
-                  console.warn('processPendingQueue: No se pudo determinar collectionName para el item eliminado:', item)
+                  logger.warn('processPendingQueue: No se pudo determinar collectionName para el item eliminado:', item.id)
                   continue
                 }
                 const targetStore = this.getStoreByCollectionName(collectionName)
                 if (targetStore && typeof targetStore.applySyncedDelete === 'function') {
                   await targetStore.applySyncedDelete(item.id)
                 } else {
-                  console.warn(
+                  logger.warn(
                     `processPendingQueue: Store o método applySyncedDelete no encontrado para la colección '${collectionName}'.`
                   )
                 }
               } catch (e) {
-                console.error(`processPendingQueue: Error procesando item eliminado: ${item.id}`, e)
+                logError(`processPendingQueue: Error procesando item eliminado: ${item.id}`, e)
                 this.handleSyncError(e, `Error procesando eliminación para ${item.id}`)
               }
             }
@@ -314,11 +340,11 @@ export const useSyncStore = defineStore('sync', {
     // Método genérico para actualizar un elemento local
     updateLocalItem(collection, tempId, newItem, items) { // options parameter removed
       if (!tempId || !newItem || !newItem.id) {
-        console.error('Datos insuficientes para actualizar elemento local', { tempId, newItem })
+        logError('Datos insuficientes para actualizar elemento local', { tempId, newItem })
         return false
       }
 
-      console.log(`Actualizando elemento local en ${collection}: ${tempId} -> ${newItem.id}`)
+      logSync(`Actualizando elemento local en ${collection}: ${tempId} -> ${newItem.id}`)
 
       // 1. Buscar el elemento por ID exacto
       let index = items.findIndex((item) => item.id === tempId)
@@ -335,7 +361,7 @@ export const useSyncStore = defineStore('sync', {
 
               if (itemTimestamp && Math.abs(itemTimestamp - tempTimestamp) < 5000) {
                 index = i
-                console.log(`Encontrada coincidencia por timestamp para ${tempId} -> ${item.id}`)
+                logSync(`Encontrada coincidencia por timestamp para ${tempId} -> ${item.id}`)
                 break
               }
             }
@@ -345,7 +371,7 @@ export const useSyncStore = defineStore('sync', {
 
       // 3. Si aún no se encuentra, agregar como nuevo elemento
       if (index === -1) {
-        console.log(
+        logSync(
           `No se encontró elemento con ID ${tempId}, agregando como nuevo elemento con ID ${newItem.id}`
         )
         items.push({
@@ -376,7 +402,7 @@ export const useSyncStore = defineStore('sync', {
       }
 
       items[index] = updatedItem
-      console.log(`Elemento actualizado en ${collection}: ${oldId} -> ${newItem.id}`)
+      logSync(`Elemento actualizado en ${collection}: ${oldId} -> ${newItem.id}`)
 
       // 5. Actualizar mapeo de IDs si es necesario
       if (oldId.startsWith('temp_') && oldId !== newItem.id) {
@@ -399,7 +425,7 @@ export const useSyncStore = defineStore('sync', {
     updateAllReferencesInStore(collection, oldId, newId, items) {
       if (!oldId || !newId || oldId === newId) return 0
 
-      console.log(`Actualizando todas las referencias en ${collection} de ${oldId} a ${newId}`)
+      logSync(`Actualizando todas las referencias en ${collection} de ${oldId} a ${newId}`)
       let updatedCount = 0
 
       // Todos los posibles campos que podrían contener referencias
@@ -435,19 +461,19 @@ export const useSyncStore = defineStore('sync', {
               }
             }
             if (updated) {
-              console.log(`Actualizada referencia en array ${key} de ${item.id}`)
+              logSync(`Actualizada referencia en array ${key} de ${item.id}`)
             }
           }
           // Si es una cadena y coincide con oldId
           else if (typeof value === 'string' && value === oldId) {
             item[key] = newId
             updatedCount++
-            console.log(`Actualizada referencia en campo ${key} de ${item.id}`)
+            logSync(`Actualizada referencia en campo ${key} de ${item.id}`)
           }
         })
       })
 
-      console.log(`Se actualizaron ${updatedCount} referencias en ${collection}`)
+      logSync(`Se actualizaron ${updatedCount} referencias en ${collection}`)
       return updatedCount
     },
 
@@ -478,7 +504,7 @@ export const useSyncStore = defineStore('sync', {
         })
       })
 
-      console.log(
+      logSync(
         `Actualizadas ${updatedCount} referencias en ${collection} para ${tempId} -> ${realId}`
       )
       return updatedCount
@@ -533,7 +559,7 @@ export const useSyncStore = defineStore('sync', {
     },
 
     handleSyncError(error, message) {
-      console.error(message, error)
+      logError(message, error)
       this.errors.push({
         message: error.message,
         timestamp: Date.now(),
@@ -556,7 +582,7 @@ export const useSyncStore = defineStore('sync', {
     saveToLocalStorage(key, value) {
       const success = safeLocalStorage.saveToLocalStorage(key, value)
       if (!success) {
-        console.error(`[SyncStore] Failed to save "${key}" to localStorage`)
+        logError(`[SyncStore] Failed to save "${key}" to localStorage`)
       }
       return success
     },
@@ -580,7 +606,7 @@ export const useSyncStore = defineStore('sync', {
         const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000
         this.errors = this.errors.filter((err) => err.timestamp > oneDayAgo)
       } catch (error) {
-        console.error('Error limpiando datos antiguos:', error)
+        logError('Error limpiando datos antiguos:', error)
       }
     },
 
@@ -588,7 +614,7 @@ export const useSyncStore = defineStore('sync', {
     async updateCrossStoreReferences(tempId, realId) {
       if (!tempId || !realId) return
 
-      console.log(`Actualizando referencias entre stores: ${tempId} -> ${realId}`)
+      logSync(`Actualizando referencias entre stores: ${tempId} -> ${realId}`)
 
       const storeGetters = [
         useZonasStore,
@@ -603,8 +629,8 @@ export const useSyncStore = defineStore('sync', {
         try {
           const store = useStore();
           // Determine collectionName from store ID or a specific property if available
-          const collectionName = store.$id || store.collectionName || 'unknown_collection'; 
-          
+          const collectionName = store.$id || store.collectionName || 'unknown_collection';
+
           let itemsKey = null;
           if (store[collectionName] && Array.isArray(store[collectionName])) { // e.g. zonasStore.zonas
              itemsKey = collectionName;
@@ -623,7 +649,7 @@ export const useSyncStore = defineStore('sync', {
               }
             }
           }
-          
+
           if (itemsKey && store[itemsKey] && Array.isArray(store[itemsKey])) {
             const updatedCount = this.updateAllReferencesInStore(collectionName, tempId, realId, store[itemsKey]);
             if (updatedCount > 0) {
@@ -632,24 +658,24 @@ export const useSyncStore = defineStore('sync', {
                 await store.persistState(); // Assuming persistState might be async
               } else {
                 // Fallback to direct localStorage saving if persistState is not available
-                this.saveToLocalStorage(collectionName, store[itemsKey]); 
+                this.saveToLocalStorage(collectionName, store[itemsKey]);
               }
-              console.log(`UpdateCrossStoreReferences: Referencias actualizadas y persistidas para ${collectionName}.`);
+              logSync(`UpdateCrossStoreReferences: Referencias actualizadas y persistidas para ${collectionName}.`);
             }
           } else {
-             console.warn(`UpdateCrossStoreReferences: No se pudo determinar/encontrar el array de items para el store '${collectionName}'. ItemsKey: ${itemsKey}. Store state:`, store ? store.$state : 'Store no disponible');
+             logger.warn(`UpdateCrossStoreReferences: No se pudo determinar/encontrar el array de items para el store '${collectionName}'. ItemsKey: ${itemsKey}.`);
           }
         } catch (e) {
           // Catch errors if a store isn't available (e.g. bitacoraStore not created yet or fails to init)
-          console.warn(`UpdateCrossStoreReferences: Error accediendo/actualizando store: ${e.message}. Esto puede ser normal si el store aún no está definido.`);
+          logger.warn(`UpdateCrossStoreReferences: Error accediendo/actualizando store: ${e.message}. Esto puede ser normal si el store aún no está definido.`);
         }
       }
     },
     
     refreshAllStores() {
       try {
-        console.log('[SYNC_STORE] Refreshing all data stores from localStorage via initFromLocalStorage');
-    
+        logSync('[SYNC_STORE] Refreshing all data stores from localStorage via initFromLocalStorage');
+
         const storesToRefresh = [
           useActividadesStore,
           useZonasStore,
@@ -658,28 +684,28 @@ export const useSyncStore = defineStore('sync', {
           useProgramacionesStore, // Assumed
           useBitacoraStore // Assumed
         ];
-    
+
         storesToRefresh.forEach(useStore => {
           try {
             const store = useStore(); // Initialize the store
             if (store && typeof store.initFromLocalStorage === 'function') {
               store.initFromLocalStorage();
             } else if (store) {
-              console.warn(`[SYNC_STORE] Store ${store.$id || 'unknown'} no tiene método initFromLocalStorage.`);
+              logger.warn(`[SYNC_STORE] Store ${store.$id || 'unknown'} no tiene método initFromLocalStorage.`);
             } else {
               // This case should ideally not happen if useStore() is successful
-              console.warn(`[SYNC_STORE] No se pudo obtener una instancia del store.`);
+              logger.warn(`[SYNC_STORE] No se pudo obtener una instancia del store.`);
             }
           } catch (e) {
             // This catch is important if a store (like bitacora) is imported but not yet created,
             // useStore() itself would throw an error.
-            console.warn(`[SYNC_STORE] Error inicializando store (puede que aún no exista o haya un error en su inicialización): ${e.message}.`);
+            logger.warn(`[SYNC_STORE] Error inicializando store (puede que aún no exista o haya un error en su inicialización): ${e.message}.`);
           }
         });
-        
-        console.log('[SYNC_STORE] All data stores refreshed from localStorage.');
+
+        logSync('[SYNC_STORE] All data stores refreshed from localStorage.');
       } catch (error) {
-        console.error('Error al refrescar los stores:', error);
+        logError('Error al refrescar los stores:', error);
         this.handleSyncError(error, 'Error refrescando stores');
       }
     },
@@ -781,10 +807,10 @@ export const useSyncStore = defineStore('sync', {
         // Guardar configuración en localStorage
         this.saveToLocalStorage('selectiveSyncConfig', this.selectiveSyncConfig)
 
-        console.log('Configuración de sincronización selectiva actualizada:', this.selectiveSyncConfig)
+        logSync('Configuración de sincronización selectiva actualizada')
         return true
       } catch (error) {
-        console.error('Error configurando sincronización selectiva:', error)
+        logError('Error configurando sincronización selectiva:', error)
         return false
       }
     },
@@ -829,7 +855,7 @@ export const useSyncStore = defineStore('sync', {
       if (now - lastSync < interval) return
 
       try {
-        console.log('Procesando sincronización diferida...')
+        logSync('Procesando sincronización diferida...')
 
         // Filtrar operaciones diferidas de la cola
         const deferredOperations = this.queue.queue.filter(op => {
@@ -838,7 +864,7 @@ export const useSyncStore = defineStore('sync', {
         })
 
         if (deferredOperations.length > 0) {
-          console.log(`Procesando ${deferredOperations.length} operaciones diferidas`)
+          logSync(`Procesando ${deferredOperations.length} operaciones diferidas`)
           // Procesar operaciones diferidas con prioridad baja
           await this.processPendingQueue()
         }
@@ -847,7 +873,7 @@ export const useSyncStore = defineStore('sync', {
         this.saveToLocalStorage('selectiveSyncConfig', this.selectiveSyncConfig)
 
       } catch (error) {
-        console.error('Error en sincronización diferida:', error)
+        logError('Error en sincronización diferida:', error)
       }
     },
 
@@ -866,7 +892,7 @@ export const useSyncStore = defineStore('sync', {
           }
         }
       } catch (error) {
-        console.error('Error cargando configuración selectiva:', error)
+        logError('Error cargando configuración selectiva:', error)
       }
     },
 
@@ -877,7 +903,7 @@ export const useSyncStore = defineStore('sync', {
       try {
         return this.queue.trackLocalChange(entityId, collection, operation, oldData, newData)
       } catch (error) {
-        console.error('Error tracking local change:', error)
+        logError('Error tracking local change:', error)
         return null
       }
     },
@@ -887,7 +913,7 @@ export const useSyncStore = defineStore('sync', {
       try {
         return this.queue.getChangeHistory(entityId, collection, limit)
       } catch (error) {
-        console.error('Error getting change history:', error)
+        logError('Error getting change history:', error)
         return []
       }
     },
@@ -897,7 +923,7 @@ export const useSyncStore = defineStore('sync', {
       try {
         return this.queue.resolveConflictWithContext(localData, remoteData, entityId, collection)
       } catch (error) {
-        console.error('Error resolving conflict with context:', error)
+        logError('Error resolving conflict with context:', error)
         // Fallback: devolver datos remotos
         return remoteData
       }
@@ -911,7 +937,7 @@ export const useSyncStore = defineStore('sync', {
           .sort((a, b) => b.timestamp - a.timestamp)
           .slice(0, limit)
       } catch (error) {
-        console.error('Error getting conflict resolution history:', error)
+        logError('Error getting conflict resolution history:', error)
         return []
       }
     },
@@ -921,7 +947,7 @@ export const useSyncStore = defineStore('sync', {
       try {
         this.queue.cleanupOldHistory(maxAgeMs)
       } catch (error) {
-        console.error('Error cleaning up old history:', error)
+        logError('Error cleaning up old history:', error)
       }
     },
 
@@ -948,7 +974,7 @@ export const useSyncStore = defineStore('sync', {
 
         return true
       } catch (error) {
-        console.error('Error exporting change history:', error)
+        logError('Error exporting change history:', error)
         return false
       }
     },
@@ -975,10 +1001,10 @@ export const useSyncStore = defineStore('sync', {
           this.initializeAnalytics()
         }
 
-        console.log('Funcionalidades offline configuradas:', this.offlineFeatures)
+        logSync('Funcionalidades offline configuradas')
         return true
       } catch (error) {
-        console.error('Error habilitando funcionalidades offline:', error)
+        logError('Error habilitando funcionalidades offline:', error)
         return false
       }
     },
@@ -986,7 +1012,7 @@ export const useSyncStore = defineStore('sync', {
     // Búsqueda offline en todas las colecciones
     searchOffline(query, collections = null, options = {}) {
       if (!this.offlineFeatures.searchIndexEnabled) {
-        console.warn('Búsqueda offline no habilitada')
+        logger.warn('Búsqueda offline no habilitada')
         return []
       }
 
@@ -1047,7 +1073,7 @@ export const useSyncStore = defineStore('sync', {
           .slice(0, limit)
 
       } catch (error) {
-        console.error('Error en búsqueda offline:', error)
+        logError('Error en búsqueda offline:', error)
         return []
       }
     },
@@ -1092,7 +1118,7 @@ export const useSyncStore = defineStore('sync', {
     // Construir índice de búsqueda offline
     async buildSearchIndex() {
       try {
-        console.log('Construyendo índice de búsqueda offline...')
+        logSync('Construyendo índice de búsqueda offline...')
 
         const stores = [
           { name: 'Haciendas', store: useHaciendaStore },
@@ -1116,28 +1142,34 @@ export const useSyncStore = defineStore('sync', {
               indexedAt: Date.now()
             }))
 
-            this.intelligentCache.searchIndex.set(name, indexData)
-            console.log(`Índice construido para ${name}: ${indexData.length} elementos`)
+            this.setWithCacheLimit(
+              this.intelligentCache.searchIndex,
+              'searchIndex',
+              name,
+              indexData,
+              this.cacheLimits.maxSearchIndexEntries
+            )
+            logSync(`Índice construido para ${name}: ${indexData.length} elementos`)
 
           } catch (storeError) {
-            console.warn(`Error indexando ${name}:`, storeError)
+            logger.warn(`Error indexando ${name}:`, storeError)
           }
         }
 
         this.offlineFeatures.searchIndexLastUpdate = Date.now()
         this.saveToLocalStorage('offlineFeatures', this.offlineFeatures)
 
-        console.log('Índice de búsqueda offline completado')
+        logSync('Índice de búsqueda offline completado')
 
       } catch (error) {
-        console.error('Error construyendo índice de búsqueda:', error)
+        logError('Error construyendo índice de búsqueda:', error)
       }
     },
 
     // Generar reportes offline
     generateOfflineReport(type, parameters = {}) {
       if (!this.offlineFeatures.reportsEnabled) {
-        console.warn('Generación de reportes offline no habilitada')
+        logger.warn('Generación de reportes offline no habilitada')
         return null
       }
 
@@ -1168,22 +1200,28 @@ export const useSyncStore = defineStore('sync', {
             break
 
           default:
-            console.warn('Tipo de reporte no soportado:', type)
+            logger.warn('Tipo de reporte no soportado:', type)
             return null
         }
 
         // Calcular resumen
         report.summary = this.calculateReportSummary(report.data, type)
 
-        // Guardar en cache
-        this.intelligentCache.reports.set(reportId, report)
+        // Guardar en cache con límite
+        this.setWithCacheLimit(
+          this.intelligentCache.reports,
+          'reports',
+          reportId,
+          report,
+          this.cacheLimits.maxReportsEntries
+        )
         this.offlineFeatures.lastReportGeneration = Date.now()
 
-        console.log('Reporte offline generado:', reportId)
+        logSync('Reporte offline generado:', reportId)
         return report
 
       } catch (error) {
-        console.error('Error generando reporte offline:', error)
+        logError('Error generando reporte offline:', error)
         return null
       }
     },
@@ -1226,7 +1264,7 @@ export const useSyncStore = defineStore('sync', {
         else data.complianceLevel = 'Deficiente'
 
       } catch (error) {
-        console.error('Error generando reporte BPA:', error)
+        logError('Error generando reporte BPA:', error)
       }
 
       return data
@@ -1252,7 +1290,7 @@ export const useSyncStore = defineStore('sync', {
     // Generar analytics básicos offline
     generateOfflineAnalytics(period = 'daily') {
       if (!this.offlineFeatures.analyticsEnabled) {
-        console.warn('Analytics offline no habilitados')
+        logger.warn('Analytics offline no habilitados')
         return null
       }
 
@@ -1276,15 +1314,24 @@ export const useSyncStore = defineStore('sync', {
         // Calcular volumen de datos (aproximado)
         analytics.dataVolume = this.calculateDataVolume()
 
-        // Guardar en cache de analytics
+        // Guardar en cache de analytics con límite
         const cacheKey = `${period}_${new Date().toISOString().split('T')[0]}`
-        this.intelligentCache.analytics[`${period}Stats`].set(cacheKey, analytics)
+        const statsMap = this.intelligentCache.analytics[`${period}Stats`]
 
-        console.log('Analytics offline generados:', period)
+        // Enforce límite antes de agregar
+        if (statsMap.size >= this.cacheLimits.maxAnalyticsEntries) {
+          // Eliminar la entrada más antigua (primera key)
+          const firstKey = statsMap.keys().next().value
+          statsMap.delete(firstKey)
+        }
+
+        statsMap.set(cacheKey, analytics)
+
+        logSync('Analytics offline generados:', period)
         return analytics
 
       } catch (error) {
-        console.error('Error generando analytics offline:', error)
+        logError('Error generando analytics offline:', error)
         return null
       }
     },
@@ -1312,7 +1359,7 @@ export const useSyncStore = defineStore('sync', {
           estimatedSizeMB: Math.round(estimatedSize / (1024 * 1024) * 100) / 100
         }
       } catch (error) {
-        console.error('Error calculando volumen de datos:', error)
+        logError('Error calculando volumen de datos:', error)
         return { totalItems: 0, estimatedSize: 0, estimatedSizeMB: 0 }
       }
     },
@@ -1339,10 +1386,10 @@ export const useSyncStore = defineStore('sync', {
           }
         })
 
-        console.log('Cache inteligente limpiado')
+        logSync('Cache inteligente limpiado')
 
       } catch (error) {
-        console.error('Error limpiando cache:', error)
+        logError('Error limpiando cache:', error)
       }
     },
 
@@ -1356,10 +1403,10 @@ export const useSyncStore = defineStore('sync', {
           this.generateOfflineAnalytics('daily')
         }
 
-        console.log('Analytics inicializados')
+        logSync('Analytics inicializados')
 
       } catch (error) {
-        console.error('Error inicializando analytics:', error)
+        logError('Error inicializando analytics:', error)
       }
     },
 
@@ -1391,10 +1438,10 @@ export const useSyncStore = defineStore('sync', {
         }
         this.cleanupIntervalId = setInterval(() => this.cleanupIntelligentCache(), 60 * 60 * 1000) // Cada hora
 
-        console.log('Funcionalidades offline inicializadas:', this.offlineFeatures)
+        logSync('Funcionalidades offline inicializadas')
 
       } catch (error) {
-        console.error('Error inicializando funcionalidades offline:', error)
+        logError('Error inicializando funcionalidades offline:', error)
       }
     },
 
@@ -1428,7 +1475,7 @@ export const useSyncStore = defineStore('sync', {
         })
 
       } catch (error) {
-        console.error('Error generando reporte de actividades:', error)
+        logError('Error generando reporte de actividades:', error)
       }
 
       return data
@@ -1454,7 +1501,7 @@ export const useSyncStore = defineStore('sync', {
         })
 
       } catch (error) {
-        console.error('Error generando reporte de productividad:', error)
+        logError('Error generando reporte de productividad:', error)
       }
 
       return data
@@ -1499,7 +1546,7 @@ export const useSyncStore = defineStore('sync', {
         }
 
       } catch (error) {
-        console.error('Error calculando resumen de reporte:', error)
+        logError('Error calculando resumen de reporte:', error)
       }
 
       return summary
@@ -1621,10 +1668,10 @@ export const useSyncStore = defineStore('sync', {
 
           if (result.status === 200 && result.body?.items) {
             collections[collectionName] = result.body.items
-            console.log(`✅ Batch result - ${collectionName}: ${result.body.items.length} registros`)
+            logP3(`Batch result - ${collectionName}: ${result.body.items.length} registros`)
           } else {
             collections[collectionName] = []
-            console.warn(`⚠️ Batch result - ${collectionName}: Error ${result.status}`)
+            logger.warn(`Batch result - ${collectionName}: Error ${result.status}`)
           }
         })
       }
@@ -1635,13 +1682,13 @@ export const useSyncStore = defineStore('sync', {
     // P3.1: Batch processing para Dashboard y carga inicial
     async batchInitializeDashboard() {
       try {
-        logP3('Iniciando batch processing para Dashboard...', 'batch_start')
+        logP3('Iniciando batch processing para Dashboard...')
         const startTime = performance.now()
 
         // Verificar autenticación antes de continuar
         const authStore = useAuthStore()
         if (!authStore.isLoggedIn || !pb.authStore.isValid) {
-          console.warn('P3.1: Usuario no autenticado, cancelando batch processing')
+          logger.warn('P3.1: Usuario no autenticado, cancelando batch processing')
           return {
             success: false,
             error: 'Usuario no autenticado',
@@ -1651,29 +1698,29 @@ export const useSyncStore = defineStore('sync', {
         }
 
         // 🧪 ESTRATEGIA DE DEBUG: Probar methods step by step
-        console.log('🧪 P3.1: Ejecutando tests diagnósticos...')
+        logP3('Ejecutando tests diagnósticos...')
 
         // Paso 0: Verificar capacidades del servidor
         const serverCapabilities = await this.testServerCapabilities()
-        console.log('🧪 Server capabilities:', serverCapabilities)
+        logP3('Server capabilities:', serverCapabilities)
 
         // Paso 1: Probar requests individuales
         const individualResults = await this.testIndividualRequests()
-        console.log('🧪 Individual results:', individualResults)
+        logP3('Individual results:', individualResults)
 
         // Paso 2: Probar batch simple
         const simpleBatchResult = await this.testSimpleBatch()
-        console.log('🧪 Simple batch result:', simpleBatchResult)
+        logP3('Simple batch result:', simpleBatchResult)
 
         // Paso 2.5: Si batch simple falla, probar con límites de PocketBase
         if (!simpleBatchResult.success) {
-          console.log('🧪 Probando batch respetando configuraciones PocketBase...')
+          logP3('Probando batch respetando configuraciones PocketBase...')
           const batchWithLimitsResult = await this.testBatchWithLimits()
-          console.log('🧪 Batch with limits result:', batchWithLimitsResult)
+          logP3('Batch with limits result:', batchWithLimitsResult)
 
           // Si funciona con límites, usar ese enfoque
           if (batchWithLimitsResult.success) {
-            console.log('✅ P3.1: Batch funciona respetando límites PocketBase!')
+            logP3('Batch funciona respetando límites PocketBase!')
             return {
               success: true,
               collections: this.processBatchResults(batchWithLimitsResult.data),
@@ -1687,13 +1734,13 @@ export const useSyncStore = defineStore('sync', {
 
         // Si el batch simple falla, usar parallel requests optimizado
         if (!simpleBatchResult.success) {
-          console.warn('🚨 P3.1: Batch API no disponible, usando parallel requests optimizado')
+          logger.warn('P3.1: Batch API no disponible, usando parallel requests optimizado')
 
           // Usar método parallel requests como optimización P3.1
           const parallelResult = await this.loadDashboardWithParallelRequests()
 
           if (parallelResult.success) {
-            console.log('✅ P3.1: Parallel requests exitoso como alternativa al batch')
+            logP3('Parallel requests exitoso como alternativa al batch')
             return {
               success: true,
               collections: parallelResult.collections,
@@ -1727,12 +1774,12 @@ export const useSyncStore = defineStore('sync', {
         }
 
         // 🔍 DEBUG: Log del payload optimizado
-        console.log('P3.1 DEBUG: Batch payload optimizado:', JSON.stringify(batchPayload, null, 2))
-        console.log('P3.1 DEBUG: PocketBase baseUrl:', pb.baseUrl)
-        console.log('P3.1 DEBUG: Auth token present:', !!pb.authStore.token)
+        logP3('DEBUG: Batch payload optimizado:', JSON.stringify(batchPayload, null, 2))
+        logP3('DEBUG: PocketBase baseUrl:', pb.baseUrl)
+        logP3('DEBUG: Auth token present:', !!pb.authStore.token)
 
         // Ejecutar batch request manual con headers globales únicamente
-        console.log('P3.1: Ejecutando batch request optimizado para', collections.length, 'colecciones...')
+        logP3('Ejecutando batch request optimizado para', collections.length, 'colecciones...')
 
         const response = await fetch(`${pb.baseUrl}/api/batch`, {
           method: 'POST',
@@ -1744,18 +1791,18 @@ export const useSyncStore = defineStore('sync', {
         })
 
         // 🔍 DEBUG: Log de la respuesta
-        console.log('P3.1 DEBUG: Response status:', response.status)
-        console.log('P3.1 DEBUG: Response headers:', Object.fromEntries(response.headers.entries()))
+        logP3('DEBUG: Response status:', response.status)
+        logP3('DEBUG: Response headers:', Object.fromEntries(response.headers.entries()))
 
         if (!response.ok) {
           // 🔍 DEBUG: Log detallado del error
           const errorText = await response.text()
-          console.error('P3.1 DEBUG: Error response body:', errorText)
+          logP3('DEBUG: Error response body:', errorText)
           try {
             const errorJson = JSON.parse(errorText)
-            console.error('P3.1 DEBUG: Error JSON:', JSON.stringify(errorJson, null, 2))
+            logP3('DEBUG: Error JSON:', JSON.stringify(errorJson, null, 2))
           } catch (parseError) {
-            console.error('P3.1 DEBUG: Error body is not JSON')
+            logP3('DEBUG: Error body is not JSON')
           }
           throw new Error(`Batch request failed: ${response.status} ${response.statusText}`)
         }
@@ -1763,13 +1810,13 @@ export const useSyncStore = defineStore('sync', {
         const batchResponse = await response.json()
 
         // 🔍 DEBUG: Log de la respuesta exitosa
-        console.log('P3.1 DEBUG: Batch response received:', JSON.stringify(batchResponse, null, 2))
+        logP3('DEBUG: Batch response received:', JSON.stringify(batchResponse, null, 2))
         // La respuesta de batch es un array con {status, body} para cada request
         const results = batchResponse.map(item => {
           if (item.status >= 200 && item.status < 300) {
             return item.body?.items || item.body || []
           } else {
-            console.warn('P3.1: Error en request batch:', item.status, item.body)
+            logger.warn('P3.1: Error en request batch:', item.status)
             return []
           }
         })
@@ -1783,9 +1830,9 @@ export const useSyncStore = defineStore('sync', {
           if (result && Array.isArray(result)) {
             processedResults[collectionName] = result
             totalRecords += result.length
-            console.log(`P3.1: ${collectionName} cargada:`, result.length, 'registros')
+            logP3(`${collectionName} cargada:`, result.length, 'registros')
           } else {
-            console.warn(`P3.1: Error cargando ${collectionName}:`, result)
+            logger.warn(`P3.1: Error cargando ${collectionName}:`, result)
             processedResults[collectionName] = []
           }
         })
@@ -1802,7 +1849,7 @@ export const useSyncStore = defineStore('sync', {
           recordsPerSecond: Math.round(totalRecords / (duration / 1000))
         }
 
-        console.log('P3.1: Batch processing completado:', metrics)
+        logP3('Batch processing completado:', metrics)
 
         return {
           success: true,
@@ -1811,7 +1858,7 @@ export const useSyncStore = defineStore('sync', {
         }
 
       } catch (error) {
-        console.error('P3.1: Error en batch processing Dashboard:', error)
+        logP3('Error en batch processing Dashboard:', error)
         return {
           success: false,
           error: error.message,
@@ -1825,7 +1872,7 @@ export const useSyncStore = defineStore('sync', {
     async applyBatchDataToStores(batchData) {
       try {
         if (!batchData.success || !batchData.collections) {
-          console.warn('P3.1: Datos batch inválidos para aplicar a stores')
+          logger.warn('P3.1: Datos batch inválidos para aplicar a stores')
           return false
         }
 
@@ -1883,19 +1930,19 @@ export const useSyncStore = defineStore('sync', {
                 this.saveToLocalStorage(collectionName, data)
               }
 
-              console.log(`P3.1: Store ${collectionName} actualizado con`, data.length, 'registros')
+              logP3(`Store ${collectionName} actualizado con`, data.length, 'registros')
               storesUpdated++
             }
           } catch (storeError) {
-            console.warn(`P3.1: Error aplicando datos a store ${collectionName}:`, storeError)
+            logger.warn(`P3.1: Error aplicando datos a store ${collectionName}:`, storeError)
           }
         }
 
-        console.log(`P3.1: ${storesUpdated} stores actualizados exitosamente`)
+        logP3(`${storesUpdated} stores actualizados exitosamente`)
         return storesUpdated > 0
 
       } catch (error) {
-        console.error('P3.1: Error aplicando datos batch a stores:', error)
+        logP3('Error aplicando datos batch a stores:', error)
         return false
       }
     },
@@ -1903,7 +1950,7 @@ export const useSyncStore = defineStore('sync', {
     // P3.1: Método principal que combina batch loading y aplicación a stores
     async initializeDashboardWithBatch() {
       try {
-        console.log('P3.1: Iniciando inicialización Dashboard con batch processing...')
+        logP3('Iniciando inicialización Dashboard con batch processing...')
 
         // 1. Ejecutar batch request
         const batchResult = await this.batchInitializeDashboard()
@@ -1920,7 +1967,7 @@ export const useSyncStore = defineStore('sync', {
           }
         } else {
           // Fallback: método tradicional si batch falla
-          console.warn('P3.1: Batch processing falló, usando método tradicional como fallback')
+          logger.warn('P3.1: Batch processing falló, usando método tradicional como fallback')
           return {
             success: false,
             error: batchResult.error,
@@ -1930,7 +1977,7 @@ export const useSyncStore = defineStore('sync', {
         }
 
       } catch (error) {
-        console.error('P3.1: Error en inicialización Dashboard con batch:', error)
+        logP3('Error en inicialización Dashboard con batch:', error)
         return {
           success: false,
           error: error.message,
@@ -1958,7 +2005,7 @@ export const useSyncStore = defineStore('sync', {
           resolution: null
         })
 
-        console.log(`[SyncStore] Conflicto agregado: ${conflict.collection} - ${conflict.id || conflict.tempId}`)
+        logSync(`Conflicto agregado: ${conflict.collection}`)
 
         // Abrir dialog automáticamente si hay conflictos
         if (this.conflicts.length > 0) {
@@ -1983,7 +2030,7 @@ export const useSyncStore = defineStore('sync', {
         conflict.resolved = true
         conflict.resolution = resolution
 
-        console.log(`[SyncStore] Conflicto resuelto: ${conflict.collection} - resolución: ${resolution}`)
+        logSync(`Conflicto resuelto: ${conflict.collection} - resolución: ${resolution}`)
 
         // Ejecutar acción correspondiente
         if (resolution === 'local') {
@@ -2028,7 +2075,7 @@ export const useSyncStore = defineStore('sync', {
      * Fuerza la versión local de un conflicto
      */
     async forceLocalVersion(conflict) {
-      console.log(`[SyncStore] Forzando versión local para ${conflict.collection} - ${conflict.id || conflict.tempId}`)
+      logSync(`Forzando versión local para ${conflict.collection}`)
 
       try {
         // La versión local ya está en el store local
@@ -2056,7 +2103,7 @@ export const useSyncStore = defineStore('sync', {
           }
         }
       } catch (error) {
-        console.error('[SyncStore] Error forzando versión local:', error)
+        logError('[SyncStore] Error forzando versión local:', error)
         handleError(error, 'Error forzando versión local')
       }
     },
@@ -2065,13 +2112,13 @@ export const useSyncStore = defineStore('sync', {
      * Acepta la versión del servidor para un conflicto
      */
     async acceptServerVersion(conflict, serverData) {
-      console.log(`[SyncStore] Aceptando versión servidor para ${conflict.collection} - ${conflict.id || conflict.tempId}`)
+      logSync(`Aceptando versión servidor para ${conflict.collection}`)
 
       try {
         const store = this.getStoreByCollectionName(conflict.collection)
 
         if (!store) {
-          console.warn(`[SyncStore] No se encontró store para ${conflict.collection}`)
+          logger.warn(`No se encontró store para ${conflict.collection}`)
           return
         }
 
@@ -2094,9 +2141,9 @@ export const useSyncStore = defineStore('sync', {
         )
         this.queue.saveState()
 
-        console.log(`[SyncStore] Versión servidor aplicada exitosamente`)
+        logSync('Versión servidor aplicada exitosamente')
       } catch (error) {
-        console.error('[SyncStore] Error aceptando versión servidor:', error)
+        logError('[SyncStore] Error aceptando versión servidor:', error)
         handleError(error, 'Error aceptando versión del servidor')
       }
     },
@@ -2126,7 +2173,7 @@ export const useSyncStore = defineStore('sync', {
         }))
         localStorage.setItem('sync_conflicts', JSON.stringify(conflictsToSave))
       } catch (error) {
-        console.error('[SyncStore] Error guardando conflictos:', error)
+        logError('[SyncStore] Error guardando conflictos:', error)
       }
     },
 
@@ -2142,12 +2189,12 @@ export const useSyncStore = defineStore('sync', {
           this.conflicts = conflicts.filter(c => !c.resolved)
 
           if (this.conflicts.length > 0) {
-            console.log(`[SyncStore] ${this.conflicts.length} conflictos pendientes cargados`)
+            logSync(`${this.conflicts.length} conflictos pendientes cargados`)
             this.conflictDialog = true
           }
         }
       } catch (error) {
-        console.error('[SyncStore] Error cargando conflictos:', error)
+        logError('[SyncStore] Error cargando conflictos:', error)
       }
     },
 
@@ -2189,7 +2236,7 @@ export const useSyncStore = defineStore('sync', {
 
         localStorage.setItem('recent_actions', JSON.stringify(limitedActions))
       } catch (error) {
-        console.error('[SyncStore] Error registrando acción:', error)
+        logError('[SyncStore] Error registrando acción:', error)
       }
     },
 
@@ -2227,7 +2274,7 @@ export const useSyncStore = defineStore('sync', {
           return
         }
 
-        console.log(`[SyncStore] Prefetch: Colección más usada = ${mostUsedCollection} (${collectionFrequency[mostUsedCollection]} accesos/hora)`)
+        logSync(`Prefetch: Colección más usada = ${mostUsedCollection}`)
 
         // Precargar datos de la colección más usada si no está cacheada
         const prefetchKey = `prefetch_${mostUsedCollection}`
@@ -2239,7 +2286,7 @@ export const useSyncStore = defineStore('sync', {
           localStorage.setItem(prefetchKey, now.toString())
         }
       } catch (error) {
-        console.error('[SyncStore] Error en prefetch basado en patrones:', error)
+        logError('[SyncStore] Error en prefetch basado en patrones:', error)
       }
     },
 
@@ -2287,7 +2334,7 @@ export const useSyncStore = defineStore('sync', {
         const config = collectionConfigs[collectionName]
 
         if (!config) {
-          console.warn(`[SyncStore] No hay configuración de prefetch para ${collectionName}`)
+          logger.warn(`No hay configuración de prefetch para ${collectionName}`)
           return
         }
 
@@ -2299,17 +2346,23 @@ export const useSyncStore = defineStore('sync', {
         })
 
         const duration = performance.now() - startTime
-        console.log(`[SyncStore] Prefetch completado: ${collectionName} (${records.length} registros) en ${duration.toFixed(0)}ms`)
+        logSync(`Prefetch completado: ${collectionName} (${records.length} registros) en ${duration.toFixed(0)}ms`)
 
-        // Guardar en caché inteligente
-        this.intelligentCache.frequentData.set(`${config.collection}_prefetch`, {
-          data: records,
-          timestamp: Date.now(),
-          duration
-        })
+        // Guardar en caché inteligente con límite
+        this.setWithCacheLimit(
+          this.intelligentCache.frequentData,
+          'frequentData',
+          `${config.collection}_prefetch`,
+          {
+            data: records,
+            timestamp: Date.now(),
+            duration
+          },
+          this.cacheLimits.maxFrequentDataEntries
+        )
 
       } catch (error) {
-        console.error(`[SyncStore] Error prefetching ${collectionName}:`, error)
+        logError(`Error prefetching ${collectionName}:`, error)
       }
     },
 
@@ -2325,7 +2378,7 @@ export const useSyncStore = defineStore('sync', {
         const maxAge = 10 * 60 * 1000 // 10 minutos
 
         if (age < maxAge) {
-          console.log(`[SyncStore] Usando datos precargados para ${collectionName} (${(age / 1000).toFixed(0)}s antiguo)`)
+          logSync(`Usando datos precargados para ${collectionName}`)
           return cached.data
         }
       }
@@ -2346,10 +2399,15 @@ export const useSyncStore = defineStore('sync', {
         window.removeEventListener('online', this.handleOnline)
         window.removeEventListener('offline', this.handleOffline)
 
-        console.log('SyncStore cleanup completado')
+        logSync('SyncStore cleanup completado')
       } catch (error) {
-        console.error('Error en syncStore cleanup:', error)
+        logError('Error en syncStore cleanup:', error)
       }
+    },
+
+    // Hook de Pinia para cleanup automático cuando el store se destruye
+    $dispose() {
+      this.cleanup()
     }
   }
 })

@@ -13,7 +13,8 @@ import { useZonasStore } from '@/stores/zonasStore'
 import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useRecordatoriosStore } from '@/stores/recordatoriosStore'
 import { useProgramacionesStore } from '@/stores/programacionesStore'
-import { debounce } from 'lodash'
+import { debounce } from '@/utils/debounce'
+import { logger } from '@/utils/logger'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -42,11 +43,11 @@ export const useAuthStore = defineStore('auth', {
      */
     async attemptTokenRefresh() {
       const syncStore = useSyncStore()
-      console.log('[AUTH] Attempting token refresh...')
+      logger.auth('Attempting token refresh...')
 
       try {
         const freshAuthData = await pb.collection('users').authRefresh()
-        console.log('[AUTH] Token refresh successful:', freshAuthData)
+        logger.auth('Token refresh successful - record ID:', freshAuthData.record?.id)
 
         this.setSession(freshAuthData.record)
         const authDataToStore = {
@@ -58,24 +59,24 @@ export const useAuthStore = defineStore('auth', {
 
         return true
       } catch (error) {
-        console.error('[AUTH] Token refresh failed:', error)
+        logger.auth('Token refresh failed:', error.message)
         return false
       }
     },
 
     async init() {
       const syncStore = useSyncStore()
-      console.log('[AUTH INIT] Starting initialization...')
+      logger.auth('Starting initialization...')
 
       const loadedAuthData = syncStore.loadFromLocalStorage('pocketbase_auth')
       const rememberMeIsActive = syncStore.loadFromLocalStorage('rememberMe_active')
 
-      console.log('[AUTH INIT] Loaded auth data:', loadedAuthData ? 'found' : 'not found')
-      console.log('[AUTH INIT] Remember me active:', rememberMeIsActive)
+      logger.auth('Loaded auth data:', loadedAuthData ? 'found' : 'not found')
+      logger.auth('Remember me active:', rememberMeIsActive)
 
       // CAMINO 2: No hay auth data en localStorage
       if (!loadedAuthData?.token || !loadedAuthData?.model) {
-        console.log('[AUTH INIT] No auth data found, clearing state')
+        logger.auth('No auth data found, clearing state')
         this.clearAuthState()
         this.initialized = true
         return false
@@ -83,18 +84,18 @@ export const useAuthStore = defineStore('auth', {
 
       // Cargar auth data en PocketBase
       pb.authStore.save(loadedAuthData.token, loadedAuthData.model)
-      console.log('[AUTH INIT] Session valid:', pb.authStore.isValid)
+      logger.auth('Session valid:', pb.authStore.isValid)
 
       // CAMINO 1: Auth data existe
       if (pb.authStore.isValid) {
         // Session válida: setSession + refresh si es necesario
-        console.log('[AUTH INIT] Valid session, setting up user')
+        logger.auth('Valid session, setting up user')
 
         if (this.tokenNeedsRefresh()) {
-          console.log('[AUTH INIT] Token needs refresh, attempting...')
+          logger.auth('Token needs refresh, attempting...')
           const refreshed = await this.attemptTokenRefresh()
           if (!refreshed) {
-            console.log('[AUTH INIT] Refresh failed, logging out')
+            logger.auth('Refresh failed, logging out')
             this.logout()
             this.initialized = true
             return false
@@ -105,25 +106,25 @@ export const useAuthStore = defineStore('auth', {
 
         this.startRefreshTimerIfNeeded(rememberMeIsActive)
         this.initialized = true
-        console.log('[AUTH INIT] Init successful, user logged in')
+        logger.auth('Init successful, user logged in')
         return true
 
       } else {
         // Session inválida: verificar rememberMe
-        console.log('[AUTH INIT] Invalid session')
+        logger.auth('Invalid session')
 
         if (!rememberMeIsActive) {
-          console.log('[AUTH INIT] Remember me not active, logging out')
+          logger.auth('Remember me not active, logging out')
           this.logout()
           this.initialized = true
           return false
         }
 
         // Intentar refresh con rememberMe
-        console.log('[AUTH INIT] Remember me active, attempting refresh')
+        logger.auth('Remember me active, attempting refresh')
         const refreshed = await this.attemptTokenRefresh()
         if (!refreshed) {
-          console.log('[AUTH INIT] Refresh failed, logging out')
+          logger.auth('Refresh failed, logging out')
           this.logout()
           this.initialized = true
           return false
@@ -131,7 +132,7 @@ export const useAuthStore = defineStore('auth', {
 
         this.startRefreshTimer()
         this.initialized = true
-        console.log('[AUTH INIT] Init successful after refresh')
+        logger.auth('Init successful after refresh')
         return true
       }
     },
@@ -159,10 +160,10 @@ export const useAuthStore = defineStore('auth', {
 
     async ensureAuthInitialized() {
       if (!this.initialized) {
-        console.log('[AUTH_STORE] ensureAuthInitialized: Not initialized, calling init().')
+        logger.auth('ensureAuthInitialized: Not initialized, calling init().')
         await this.init() // init() will set this.initialized = true after its attempt
       } else {
-        console.log('[AUTH_STORE] ensureAuthInitialized: Already attempted initialization.')
+        logger.auth('ensureAuthInitialized: Already attempted initialization.')
       }
       // The source of truth for auth status is pb.authStore.isValid after init has run
       return pb.authStore.isValid
@@ -234,7 +235,7 @@ export const useAuthStore = defineStore('auth', {
               return true
             }
           } catch (error) {
-            console.log('Error al intentar login con username:', error)
+            logger.auth('Error al intentar login con username:', error.message)
             // Continuamos intentando con email
           }
         }
@@ -248,7 +249,7 @@ export const useAuthStore = defineStore('auth', {
               return true
             }
           } catch (error) {
-            console.log('Error al intentar login con email:', error)
+            logger.auth('Error al intentar login con email:', error.message)
             // Si llegamos aquí, ambos intentos fallaron
           }
         }
@@ -269,10 +270,7 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async refreshToken() {
-      console.log(
-        '[AUTH REFRESH TOKEN] Attempting to refresh token. Current pb.authStore.isValid:',
-        pb.authStore.isValid
-      )
+      logger.auth('Attempting to refresh token. Current pb.authStore.isValid:', pb.authStore.isValid)
       const syncStore = useSyncStore()
 
       // Verificar si el token es válido antes de intentar refrescarlo
@@ -284,10 +282,7 @@ export const useAuthStore = defineStore('auth', {
       if (this.tokenNeedsRefresh()) {
         try {
           const freshAuthData = await pb.collection('users').authRefresh()
-          console.log(
-            '[AUTH REFRESH TOKEN] authRefresh successful. Response:',
-            JSON.parse(JSON.stringify(freshAuthData))
-          )
+          logger.auth('authRefresh successful - record ID:', freshAuthData.record?.id)
           this.setSession(freshAuthData.record) // freshAuthData from authRefresh is { token, record }
 
           // Actualizar token en syncStore
@@ -296,16 +291,11 @@ export const useAuthStore = defineStore('auth', {
             model: pb.authStore.model
           }
           syncStore.saveToLocalStorage('pocketbase_auth', authDataToStoreOnTokenRefresh)
-          console.log(
-            '[AUTH REFRESH TOKEN] Refreshed auth data (token & model) saved to localStorage:',
-            JSON.parse(JSON.stringify(authDataToStoreOnTokenRefresh))
-          )
           syncStore.saveToLocalStorage('last_auth_success', Date.now())
 
           return true
         } catch (error) {
-          console.error('[AUTH REFRESH TOKEN] Error during token refresh:', error)
-          console.error('Error al refrescar token:', error)
+          logger.auth('Error during token refresh:', error.message)
           return false
         }
       }
@@ -333,8 +323,8 @@ export const useAuthStore = defineStore('auth', {
       // Solo log si necesita refresh o si ha pasado más de 30 minutos (debug mode)
       const shouldRefresh = timeSinceLastSuccess > refreshThreshold
       if (shouldRefresh || import.meta.env.DEV && timeSinceLastSuccess > 30 * 60 * 1000) {
-        console.log(
-          '[AUTH] Token refresh check:',
+        logger.auth(
+          'Token refresh check:',
           shouldRefresh ? 'NEEDS REFRESH' : 'DEBUG',
           `(${Math.round(timeSinceLastSuccess / 60000)}min ago)`
         )
@@ -345,7 +335,7 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async handleSuccessfulLogin(authData, rememberMe = false) {
-      console.log('[AUTH] Iniciando handleSuccessfulLogin, rememberMe:', rememberMe)
+      logger.auth('Iniciando handleSuccessfulLogin, rememberMe:', rememberMe)
 
       // Set auth state
       this.setSession(authData.record) // authData from pb.authWithPassword is { token, record }
@@ -354,19 +344,15 @@ export const useAuthStore = defineStore('auth', {
       // Guardar datos de autenticación usando syncStore
       const authDataToStore = { token: pb.authStore.token, model: pb.authStore.model }
       syncStore.saveToLocalStorage('pocketbase_auth', authDataToStore)
-      console.log(
-        '[AUTH] Saved authDataToStore (token & model) to localStorage:',
-        JSON.parse(JSON.stringify(authDataToStore))
-      )
       syncStore.saveToLocalStorage('last_auth_success', Date.now())
 
       if (rememberMe) {
         syncStore.saveToLocalStorage('rememberMe_active', true)
-        console.log('[AUTH] rememberMe_active guardado como true')
+        logger.auth('rememberMe_active guardado como true')
         this.startRefreshTimer()
       } else {
         syncStore.removeFromLocalStorage('rememberMe_active')
-        console.log('[AUTH] rememberMe_active eliminado')
+        logger.auth('rememberMe_active eliminado')
         this.stopRefreshTimer()
       }
 
@@ -377,18 +363,10 @@ export const useAuthStore = defineStore('auth', {
           email: authData.record.email
         }
         syncStore.saveToLocalStorage('rememberedUser', rememberedCredentials)
-        console.log(
-          '[AUTH] Remembered user credentials saved:',
-          JSON.parse(JSON.stringify(rememberedCredentials))
-        )
+        logger.auth('Remembered user credentials saved for user:', authData.record.username)
       } else {
         syncStore.removeFromLocalStorage('rememberedUser')
-        console.log('[AUTH] Cleared remembered user credentials.')
-        const checkRememberedUser = syncStore.loadFromLocalStorage('rememberedUser')
-        console.log(
-          '[AUTH] After explicitly removing rememberedUser (rememberMe=false path), its value is:',
-          JSON.parse(JSON.stringify(checkRememberedUser))
-        )
+        logger.auth('Cleared remembered user credentials.')
       }
 
       // RESTAURAR EL FLUJO ORIGINAL: primero inicializar syncStore
@@ -407,7 +385,7 @@ export const useAuthStore = defineStore('auth', {
           : Promise.resolve()
       ])
 
-      console.log('[AUTH] Critical stores loaded, redirecting to dashboard')
+      logger.auth('Critical stores loaded, redirecting to dashboard')
 
       // Redirigir inmediatamente al dashboard
       router.push('/dashboard')
@@ -415,7 +393,7 @@ export const useAuthStore = defineStore('auth', {
       // Cargar datos diferidos después de la redirección
       // Estos no bloquean la UI y se cargan en segundo plano
       setTimeout(async () => {
-        console.log('[AUTH] Loading deferred stores in background')
+        logger.auth('Loading deferred stores in background')
         const planStore = usePlanStore()
         const actividadesStore = useActividadesStore()
         const zonasStore = useZonasStore()
@@ -432,9 +410,9 @@ export const useAuthStore = defineStore('auth', {
             recordatoriosStore.init(),
             programacionesStore.init()
           ])
-          console.log('[AUTH] Deferred stores loaded successfully')
+          logger.auth('Deferred stores loaded successfully')
         } catch (error) {
-          console.error('[AUTH] Error loading deferred stores:', error)
+          logger.auth('Error loading deferred stores:', error.message)
           handleError(error, 'Error loading initial data')
         }
       }, 100) // 100ms delay para no bloquear la transición de ruta
@@ -588,12 +566,7 @@ export const useAuthStore = defineStore('auth', {
         syncStore.removeFromLocalStorage('pocketbase_auth')
         syncStore.removeFromLocalStorage('rememberMe_active') // Updated key
         syncStore.removeFromLocalStorage('rememberedUser')
-        console.log('[AUTH] Cleared remembered user credentials during logout.')
-        const checkRememberedUserOnLogout = syncStore.loadFromLocalStorage('rememberedUser')
-        console.log(
-          '[AUTH LOGOUT] After explicitly removing rememberedUser, its value is:',
-          JSON.parse(JSON.stringify(checkRememberedUserOnLogout))
-        )
+        logger.auth('Cleared remembered user credentials during logout.')
         syncStore.removeFromLocalStorage('last_auth_success')
 
         snackbarStore.showSnackbar('Logged out successfully', 'success')

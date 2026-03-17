@@ -15,6 +15,7 @@ import { useNotificationStore } from '@/stores/notificationStore'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 import { handleError } from '@/utils/errorHandler'
 import { getSchedulerOptimizer } from '@/utils/schedulerOptimizer'
+import { logger } from '@/utils/logger'
 
 export class Scheduler {
   constructor() {
@@ -30,26 +31,26 @@ export class Scheduler {
    */
   start() {
     if (this.isRunning) {
-      console.warn('[Scheduler] Ya está corriendo, omitiendo inicio')
+      logger.warn('[Scheduler] Ya está corriendo, omitiendo inicio')
       return
     }
 
-    console.log('[Scheduler] Iniciando scheduler...')
+    logger.debug('[Scheduler] Iniciando scheduler...')
     this.isRunning = true
 
     // Ejecutar verificación inmediata
     this.checkAndExecute().catch(error => {
-      console.error('[Scheduler] Error en verificación inicial:', error)
+      logger.error('[Scheduler] Error en verificación inicial:', error)
     })
 
     // Configurar intervalo periódico
     this.cronJob = setInterval(() => {
       this.checkAndExecute().catch(error => {
-        console.error('[Scheduler] Error en verificación periódica:', error)
+        logger.error('[Scheduler] Error en verificación periódica:', error)
       })
     }, this.checkInterval)
 
-    console.log(`[Scheduler] Iniciado - verificando cada ${this.checkInterval / 60000} minutos`)
+    logger.debug(`[Scheduler] Iniciado - verificando cada ${this.checkInterval / 60000} minutos`)
   }
 
   /**
@@ -57,11 +58,11 @@ export class Scheduler {
    */
   stop() {
     if (!this.isRunning) {
-      console.warn('[Scheduler] No está corriendo, omitiendo detención')
+      logger.warn('[Scheduler] No está corriendo, omitiendo detención')
       return
     }
 
-    console.log('[Scheduler] Deteniendo scheduler...')
+    logger.debug('[Scheduler] Deteniendo scheduler...')
 
     if (this.cronJob) {
       clearInterval(this.cronJob)
@@ -70,7 +71,7 @@ export class Scheduler {
 
     this.isRunning = false
     this.executedCount = 0
-    console.log('[Scheduler] Detenido')
+    logger.debug('[Scheduler] Detenido')
   }
 
   /**
@@ -78,7 +79,7 @@ export class Scheduler {
    */
   async checkAndExecute() {
     if (!pb.authStore.isValid) {
-      console.log('[Scheduler] Usuario no autenticado, omitiendo verificación')
+      logger.debug('[Scheduler] Usuario no autenticado, omitiendo verificación')
       return
     }
 
@@ -87,7 +88,7 @@ export class Scheduler {
 
     // Verificar si debe hacer check (evita llamadas innecesarias)
     if (!optimizer.shouldCheckNow()) {
-      console.log('[Scheduler] Omitiendo verificación por inactividad')
+      logger.debug('[Scheduler] Omitiendo verificación por inactividad')
       return
     }
 
@@ -95,22 +96,22 @@ export class Scheduler {
     this.lastCheck = new Date().toISOString()
 
     try {
-      console.log(`[Scheduler] Iniciando verificación optimizada: ${new Date(this.lastCheck).toLocaleString()}`)
+      logger.debug(`[Scheduler] Iniciando verificación optimizada: ${new Date(this.lastCheck).toLocaleString()}`)
 
       // Usar check optimizado con caché
       const result = await optimizer.checkPendingProgramacionesOptimized()
 
       // Si usó caché y no hay pendientes, retornar temprano
       if (result.cached && result.programaciones?.length === 0) {
-        console.log('[Scheduler] Caché válido, no hay pendientes')
+        logger.debug('[Scheduler] Caché válido, no hay pendientes')
         return
       }
 
       const programaciones = result.programaciones || []
-      console.log(`[Scheduler] ${programaciones.length} programaciones pendientes encontradas ${result.cached ? '(caché)' : '(fetch)'}`)
+      logger.debug(`[Scheduler] ${programaciones.length} programaciones pendientes encontradas ${result.cached ? '(caché)' : '(fetch)'}`)
 
       if (programaciones.length === 0) {
-        console.log('[Scheduler] No hay programaciones para ejecutar')
+        logger.debug('[Scheduler] No hay programaciones para ejecutar')
         return
       }
 
@@ -123,7 +124,7 @@ export class Scheduler {
           await this.executeProgramacion(programacion)
           successfulExecutions++
         } catch (error) {
-          console.error(`[Scheduler] Error ejecutando programación ${programacion.id}:`, error)
+          logger.error(`[Scheduler] Error ejecutando programación ${programacion.id}:`, error)
           failedExecutions++
         }
       }
@@ -131,7 +132,7 @@ export class Scheduler {
       this.executedCount += successfulExecutions
 
       const elapsed = performance.now() - startTime
-      console.log(`[Scheduler] Verificación completada en ${elapsed.toFixed(0)}ms - ${successfulExecutions} exitosas, ${failedExecutions} fallidas`)
+      logger.debug(`[Scheduler] Verificación completada en ${elapsed.toFixed(0)}ms - ${successfulExecutions} exitosas, ${failedExecutions} fallidas`)
 
       // Limpiar caché después de ejecutar para forzar refresh en próximo ciclo
       if (successfulExecutions > 0) {
@@ -144,7 +145,7 @@ export class Scheduler {
       }
 
     } catch (error) {
-      console.error('[Scheduler] Error en checkAndExecute:', error)
+      logger.error('[Scheduler] Error en checkAndExecute:', error)
       handleError(error, 'Error verificando programaciones automáticas')
     }
   }
@@ -153,7 +154,7 @@ export class Scheduler {
    * Ejecuta una programación específica
    */
   async executeProgramacion(programacion) {
-    console.log(`[Scheduler] Ejecutando programación ${programacion.id}: ${programacion.descripcion}`)
+    logger.debug(`[Scheduler] Ejecutando programación ${programacion.id}: ${programacion.descripcion}`)
 
     const programacionesStore = useProgramacionesStore()
     const bitacoraStore = useBitacoraStore()
@@ -162,7 +163,7 @@ export class Scheduler {
 
     // Validar que tenga actividades
     if (!programacion.actividades || programacion.actividades.length === 0) {
-      console.warn(`[Scheduler] Programación ${programacion.id} no tiene actividades, omitiendo`)
+      logger.warn(`[Scheduler] Programación ${programacion.id} no tiene actividades, omitiendo`)
       return
     }
 
@@ -175,11 +176,11 @@ export class Scheduler {
     const fechasPendientes = programacionesStore.getFechasPendientes(programacion, siembraId)
 
     if (fechasPendientes.length === 0) {
-      console.log(`[Scheduler] No hay fechas pendientes para programación ${programacion.id}`)
+      logger.debug(`[Scheduler] No hay fechas pendientes para programación ${programacion.id}`)
       return
     }
 
-    console.log(`[Scheduler] Ejecutando ${fechasPendientes.length} fechas pendientes para programación ${programacion.id}`)
+    logger.debug(`[Scheduler] Ejecutando ${fechasPendientes.length} fechas pendientes para programación ${programacion.id}`)
 
     // Ejecutar batch con todas las fechas pendientes
     try {
@@ -198,10 +199,10 @@ export class Scheduler {
         type: 'success'
       })
 
-      console.log(`[Scheduler] Programación ${programacion.id} ejecutada exitosamente`)
+      logger.debug(`[Scheduler] Programación ${programacion.id} ejecutada exitosamente`)
 
     } catch (error) {
-      console.error(`[Scheduler] Error ejecutando programación ${programacion.id}:`, error)
+      logger.error(`[Scheduler] Error ejecutando programación ${programacion.id}:`, error)
 
       notificationStore.addNotification({
         title: 'Error ejecutando programación',
@@ -236,7 +237,7 @@ export class Scheduler {
    * Ejecuta una verificación manual (on-demand)
    */
   async runManually() {
-    console.log('[Scheduler] Ejecutando verificación manual...')
+    logger.debug('[Scheduler] Ejecutando verificación manual...')
     await this.checkAndExecute()
   }
 
@@ -262,14 +263,14 @@ let schedulerInstance = null
 export function initScheduler() {
   if (!schedulerInstance) {
     schedulerInstance = new Scheduler()
-    console.log('[Scheduler] Instancia creada')
+    logger.debug('[Scheduler] Instancia creada')
   }
   return schedulerInstance
 }
 
 export function getScheduler() {
   if (!schedulerInstance) {
-    console.warn('[Scheduler] Instancia no inicializada, creando...')
+    logger.warn('[Scheduler] Instancia no inicializada, creando...')
     schedulerInstance = new Scheduler()
   }
   return schedulerInstance

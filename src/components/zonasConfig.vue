@@ -254,6 +254,7 @@ import { storeToRefs } from 'pinia'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 import { useAvatarStore } from '@/stores/avatarStore'
 import ZonaForm from '@/components/forms/ZonaForm.vue'
+import { debounce } from '@/utils/debounce'
 
 const { t } = useI18n()
 const zonasStore = useZonasStore()
@@ -303,10 +304,23 @@ const siembrasActivas = computed(() => {
     }))
 })
 
+// Original search ref, tied to v-model
 const search = ref({
   nombre: '',
   siembra: ''
 })
+
+// Debounced search ref, used for actual filtering
+const debouncedSearch = ref({
+  nombre: '',
+  siembra: ''
+})
+
+// Watch for changes in the instant search and update the debounced one after 300ms
+watch(search, debounce((newSearchValues) => {
+  debouncedSearch.value = { ...newSearchValues }
+}, 300), { deep: true })
+
 
 const headers = [
   { title: t('zones.name'), align: 'start', key: 'nombre' },
@@ -440,12 +454,13 @@ const onZonaSaved = async () => {
   snackbarStore.showSnackbar(t('zones.zone_saved_successfully'), 'success')
 }
 
+// Updated function to use debounced values
 const filteredZonas = (tipoId) => {
   let zonastemp = zonas.value.filter((zona) => zona && zona.tipos_zonas === tipoId)
-  const siembraIdsTemp = search.value.siembra ? getSiembraId(search.value.siembra) : []
+  const siembraIdsTemp = debouncedSearch.value.siembra ? getSiembraId(debouncedSearch.value.siembra) : []
   return zonastemp.filter((zona) => {
-    const matchesNombre = search.value.nombre
-      ? zona.nombre.includes(search.value.nombre.toUpperCase())
+    const matchesNombre = debouncedSearch.value.nombre
+      ? zona.nombre.includes(debouncedSearch.value.nombre.toUpperCase())
       : true
     const matchesSiembra =
       siembraIdsTemp.length > 0

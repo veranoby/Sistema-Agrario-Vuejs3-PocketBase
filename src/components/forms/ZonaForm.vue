@@ -66,15 +66,38 @@
               ></v-select>
             </div>
             <!-- GPS -->
-            <v-text-field
-              v-model="zonaLocal.gps"
-              variant="outlined"
-              class="compact-form"
-              label="GPS (Lat, Lng)"
-              density="compact"
-              placeholder="Ej: {lat: 0, lng: 0}"
-              prepend-icon="mdi-crosshairs-gps"
-            ></v-text-field>
+            <div class="d-flex align-center">
+              <v-text-field
+                v-model="zonaLocal.gps"
+                variant="outlined"
+                class="compact-form flex-grow-1"
+                label="GPS (Lat, Lng)"
+                density="compact"
+                placeholder="Ej: {lat: 0, lng: 0}"
+                prepend-icon="mdi-crosshairs-gps"
+                readonly
+              ></v-text-field>
+              <v-btn
+                color="primary"
+                size="small"
+                class="ml-2"
+                :loading="loadingGPS"
+                :disabled="!gpsAvailable"
+                @click="autoLocate"
+                variant="tonal"
+              >
+                <v-icon start>mdi-crosshairs-gps</v-icon>
+                Auto
+              </v-btn>
+            </div>
+            <div v-if="gpsError" class="text-caption text-error mb-2">
+              <v-icon start size="x-small">mdi-alert</v-icon>
+              {{ gpsError }}
+            </div>
+            <div v-if="gpsAccuracy" class="text-caption text-success mb-2">
+              <v-icon start size="x-small">mdi-check-circle</v-icon>
+              Precisión: {{ gpsAccuracy }}m
+            </div>
 
             <div class="flex">
               <v-select
@@ -429,6 +452,13 @@ const { tiposZonas } = storeToRefs(zonasStore)
 const haciendaStore = useHaciendaStore()
 const avatarStore = useAvatarStore()
 
+// Importar servicio de geolocalización
+import { GeolocationService } from '@/utils/geolocation'
+const geoService = new GeolocationService()
+
+// Importar logger
+import { logger } from '@/utils/logger'
+
 const { mi_hacienda } = storeToRefs(haciendaStore)
 const { zonas } = storeToRefs(zonasStore)
 
@@ -436,6 +466,12 @@ const form = ref(null)
 const formularioValido = ref(true)
 const avatarFile = ref(null)
 //const avatarPreview = ref(null)
+
+// Estado para GPS automático
+const loadingGPS = ref(false)
+const gpsAvailable = ref(true)
+const gpsError = ref('')
+const gpsAccuracy = ref(null)
 
 // Estado inicial
 const initialState = {
@@ -545,6 +581,56 @@ function addMetrica() {
 
 function removeMetrica(index) {
   delete zonaLocal.metricas[index]
+}
+
+/**
+ * GPS Automático - Obtiene coordenadas actuales del dispositivo
+ */
+async function autoLocate() {
+  if (!geoService.isAvailable()) {
+    gpsError.value = 'Geolocalización no soportada por este navegador'
+    snackbarStore.showError('Geolocalización no disponible')
+    return
+  }
+
+  loadingGPS.value = true
+  gpsError.value = ''
+  gpsAccuracy.value = null
+
+  try {
+    const position = await geoService.getCurrentPosition({
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 0
+    })
+
+    // Actualizar campo GPS con coordenadas
+    const gpsString = JSON.stringify({
+      lat: position.latitude,
+      lng: position.longitude
+    })
+    zonaLocal.gps = gpsString
+
+    // Guardar precisión si está disponible
+    if (position.accuracy !== null) {
+      gpsAccuracy.value = Math.round(position.accuracy)
+      snackbarStore.showSuccess(`Ubicación obtenida (precisión: ${gpsAccuracy.value}m)`)
+    } else {
+      snackbarStore.showSuccess('Ubicación obtenida exitosamente')
+    }
+
+    logger.debug('[ZonaForm] Coordenadas GPS obtenidas:', {
+      latitude: position.latitude,
+      longitude: position.longitude,
+      accuracy: position.accuracy
+    })
+  } catch (error) {
+    gpsError.value = error.message
+    snackbarStore.showError(`Error GPS: ${error.message}`)
+    logger.error('[ZonaForm] Error obteniendo ubicación:', error)
+  } finally {
+    loadingGPS.value = false
+  }
 }
 
 async function guardar() {

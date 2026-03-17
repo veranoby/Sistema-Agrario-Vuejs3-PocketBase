@@ -227,11 +227,12 @@
         </v-card>
 
         <v-card>
-          <v-data-table
-            v-model:items-per-page="itemsPerPage"
+          <v-data-table-virtual
             :headers="headers"
             :items="filteredRegistros"
             :loading="finanzaStore.loading"
+            height="700"
+            fixed-header
             item-value="id"
             class="elevation-0"
           >
@@ -341,7 +342,7 @@
                 </v-btn>
               </div>
             </template>
-          </v-data-table>
+          </v-data-table-virtual>
         </v-card>
       </v-container>
     </main>

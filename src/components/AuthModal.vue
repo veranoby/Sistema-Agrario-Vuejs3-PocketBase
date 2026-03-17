@@ -5,36 +5,42 @@
     :persistent="false"
     transition="dialog-bottom-transition"
     scrollable
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="auth-dialog-title"
     @click:outside="closeDialog"
+    @keydown.esc="closeDialog"
   >
     <v-card>
-      <v-tabs v-model="tab" fixed-tabs hide-slider>
-        <v-tab value="login" :class="tab === 'login' ? 'bg-green-lighten-1' : 'bg-white'">
+      <v-tabs v-model="tab" fixed-tabs hide-slider role="tablist" aria-label="Auth tabs">
+        <v-tab value="login" :class="tab === 'login' ? 'bg-green-lighten-1' : 'bg-white'" role="tab" aria-selected="tab === 'login'" aria-controls="login-panel">
           <v-icon icon="mdi-login"></v-icon> &nbsp; {{ t('auth.login') }}
         </v-tab>
-        <v-tab value="register" :class="tab === 'register' ? 'bg-cyan-darken-1' : 'bg-white'">
+        <v-tab value="register" :class="tab === 'register' ? 'bg-cyan-darken-1' : 'bg-white'" role="tab" aria-selected="tab === 'register'" aria-controls="register-panel">
           <v-icon icon="mdi-account-plus"></v-icon> &nbsp; {{ t('auth.register') }}
         </v-tab>
       </v-tabs>
 
       <v-card-text class="m-0 p-0">
-        <v-window v-model="tab">
-          <v-window-item value="login" class="m-0 p-0">
+        <v-window v-model="tab" role="tabpanel">
+          <v-window-item value="login" class="m-0 p-0" role="tabpanel" aria-labelledby="login-tab" id="login-panel">
             <v-row class="m-0 p-0">
               <v-col class="m-0 p-0">
-                <v-img :src="loginLogo" height="200" cover class="m-0 p-0"></v-img>
+                <v-img :src="loginLogo" height="200" cover class="m-0 p-0" alt="Inicio de sesión"></v-img>
               </v-col>
             </v-row>
             <v-row class="m-2 p-2">
               <v-col class="m-2 p-2">
-                <v-form @submit.prevent="login">
+                <v-form @submit.prevent="login" aria-label="Formulario de inicio de sesión">
                   <v-row justify="center">
                     <v-col cols="6">
-                      {{ t('auth.login_by_user') }}
+                      <label :for="usernameInputId" class="text-caption">{{ t('auth.login_by_user') }}</label>
                       <v-text-field
                         v-model="loginForm.username"
+                        :id="usernameInputId"
                         class="pt-4"
                         :label="t('auth.username')"
+                        aria-label="Nombre de usuario"
                         variant="outlined"
                         required
                         color="success"
@@ -44,11 +50,13 @@
                       ></v-text-field>
                     </v-col>
                     <v-col cols="6">
-                      {{ t('auth.login_by_email') }}
+                      <label :for="emailInputId" class="text-caption">{{ t('auth.login_by_email') }}</label>
                       <v-text-field
                         v-model="loginForm.email"
+                        :id="emailInputId"
                         class="pt-4"
                         :label="t('auth.email')"
+                        aria-label="Correo electrónico"
                         variant="outlined"
                         type="email"
                         required
@@ -58,10 +66,13 @@
                       ></v-text-field>
                     </v-col>
                     <v-col cols="12">
+                      <label :for="passwordInputId" class="text-caption">{{ t('auth.password') }}</label>
                       <v-text-field
                         v-model="loginForm.password"
+                        :id="passwordInputId"
                         class=""
                         :label="t('auth.password')"
+                        aria-label="Contraseña"
                         variant="outlined"
                         required
                         color="success"
@@ -79,6 +90,7 @@
                         class=""
                         v-model="loginForm.rememberMe"
                         :label="t('auth.remember_me')"
+                        aria-label="Recordar mis credenciales"
                       ></v-checkbox>
                     </v-col>
                     <v-col class="pt-4">
@@ -87,11 +99,14 @@
                         href="#"
                         rel="noopener noreferrer"
                         @click.prevent="openForgotPasswordDialog"
+                        tabindex="0"
+                        @keydown.enter="openForgotPasswordDialog"
+                        @keydown.space.prevent="openForgotPasswordDialog"
                         ><strong>{{ t('auth.forgot_password') }}</strong></a
                       >
                     </v-col>
                   </v-row>
-                  <v-btn type="submit" @click="login" color="green" block>{{ t('auth.login') }}</v-btn>
+                  <v-btn type="submit" @click="login" color="green" block aria-label="Iniciar sesión">{{ t('auth.login') }}</v-btn>
                 </v-form>
               </v-col>
             </v-row>
@@ -354,7 +369,7 @@ import registerLogo from '../assets/register-logo.png'
 import { useVuelidate } from '@vuelidate/core'
 import { required, minLength, sameAs, helpers } from '@vuelidate/validators'
 import { useSyncStore } from '@/stores/syncStore'
-import { debounce } from 'lodash'
+import { debounce } from '@/utils/debounce'
 import { useRouter } from 'vue-router'
 import { calculatePasswordStrength, getPasswordStrengthColor, getPasswordStrengthLabel } from '@/utils/validationUtils'
 
@@ -396,6 +411,11 @@ const dialogModel = computed({
   get: () => props.isOpen,
   set: (value) => emit('update:isOpen', value)
 })
+
+// Unique IDs for accessibility
+const usernameInputId = `username-input-${Date.now()}`
+const emailInputId = `email-input-${Date.now()}`
+const passwordInputId = `password-input-${Date.now()}`
 
 const loginForm = ref({
   username: '',

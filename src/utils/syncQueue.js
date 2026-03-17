@@ -1,5 +1,6 @@
 import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
+import { logger } from '@/utils/logger'
 
 import { useZonasStore } from '@/stores/zonasStore'
 import { useActividadesStore } from '@/stores/actividadesStore'
@@ -74,7 +75,7 @@ export class SyncQueue {
     try {
       return JSON.parse(localStorage.getItem('tempToRealIdMap')) || {}
     } catch (e) {
-      console.error('Error cargando mapeo de IDs:', e)
+      logger.error('Error cargando mapeo de IDs:', e)
       return {}
     }
   }
@@ -84,7 +85,7 @@ export class SyncQueue {
     try {
       localStorage.setItem('tempToRealIdMap', JSON.stringify(this.tempToRealIdMap))
     } catch (e) {
-      console.error('Error al guardar mapeo de IDs temporales:', e)
+      logger.error('Error al guardar mapeo de IDs temporales:', e)
     }
   }
 
@@ -150,7 +151,7 @@ export class SyncQueue {
 
   async process() {
     if (this.isProcessing) {
-      console.log('Ya hay un procesamiento en curso, saltando...')
+      logger.debug('Ya hay un procesamiento en curso, saltando...')
       return { createdItems: [], updatedItems: [], deletedItems: [] } // Early exit with summary
     }
 
@@ -159,7 +160,7 @@ export class SyncQueue {
     let updatedItems = []
     let deletedItems = []
     const startTime = Date.now() // Track processing start time
-    console.log('Iniciando procesamiento de cola:', JSON.parse(JSON.stringify(this.queue)))
+    logger.debug('Iniciando procesamiento de cola:', this.queue.length, 'operaciones')
 
     try {
       if (!navigator.onLine) {
@@ -177,16 +178,16 @@ export class SyncQueue {
         workQueue = this.queue.filter(
           (op) => (!op.userId || op.userId === currentUserId) && (op.status === 'pending' || op.status === 'retrying')
         )
-        console.log(
+        logger.debug(
           `Procesando ${workQueue.length} operaciones pendientes para usuario ${currentUserId}`
         )
       } else {
         workQueue = this.queue.filter((op) => !op.userId && (op.status === 'pending' || op.status === 'retrying'))
-        console.log(`Procesando ${workQueue.length} operaciones pendientes sin usuario asignado`)
+        logger.debug(`Procesando ${workQueue.length} operaciones pendientes sin usuario asignado`)
       }
 
       if (workQueue.length === 0) {
-        console.log('No hay operaciones pendientes para procesar.')
+        logger.debug('No hay operaciones pendientes para procesar.')
         this.isProcessing = false
         return { createdItems, updatedItems, deletedItems }
       }
@@ -197,7 +198,7 @@ export class SyncQueue {
         .sort((a, b) => a.createdAt - b.createdAt)
 
       if (createOps.length > 0) {
-        console.log('Create Pass - Operaciones:', JSON.parse(JSON.stringify(createOps)))
+        logger.debug('Create Pass - Operaciones:', createOps.length, 'creaciones')
         for (let i = 0; i < createOps.length; i += this.config.batchSize) {
           const clientBatchOps = createOps.slice(i, i + this.config.batchSize)
           // clientBatchOps are guaranteed to be 'create' and 'pending'
@@ -213,9 +214,9 @@ export class SyncQueue {
           })
 
           try {
-            console.log(`Create Pass - Enviando batch de ${clientBatchOps.length} operaciones`)
+            logger.debug(`Create Pass - Enviando batch de ${clientBatchOps.length} operaciones`)
             const results = await pbBatch.send()
-            console.log('Create Pass - Resultados del batch:', JSON.parse(JSON.stringify(results)))
+            logger.debug('Create Pass - Resultados:', results.length, 'operaciones procesadas')
 
             for (let j = 0; j < results.length; j++) {
               const createdRecord = results[j]
@@ -230,7 +231,7 @@ export class SyncQueue {
                 // Update metrics for successful operation
                 this.updateOperationCounts('create', true, originalOp.retryCount > 0)
               } else {
-                console.error('Create Pass - Resultado inesperado para op:', originalOp, 'Resultado:', createdRecord)
+                logger.error('Create Pass - Resultado inesperado para op:', originalOp, 'Resultado:', createdRecord)
                 this.handleBatchError([originalOp], new Error('Resultado inesperado en batch de creación'))
                 
                 // Update metrics for failed operation
@@ -240,7 +241,7 @@ export class SyncQueue {
             }
             this.saveTempToRealIdMap()
           } catch (batchError) {
-            console.error('Error en Create Pass batch:', batchError)
+            logger.error('Error en Create Pass batch:', batchError)
             this.handleBatchError(clientBatchOps, batchError)
             
             // Update metrics for failed operations in batch
@@ -251,8 +252,19 @@ export class SyncQueue {
           }
         }
       } else {
-        console.log('Create Pass - No hay operaciones de creación.')
+        logger.debug('Create Pass - No hay operaciones de creación.')
       }
+
+      // ========================================================================
+      // FASE 1.4: MANEJO DE OPERACIONES HUÉRFANAS (Después de Create Pass)
+      // ========================================================================
+      // Verificar operaciones huérfanas antes de proceder con Update/Delete Pass
+      const orphans = this.handleOrphanedOperations(workQueue)
+      // Remover operaciones en cuarentena de workQueue para este ciclo
+      if (orphans.length > 0) {
+        workQueue = workQueue.filter(op => op.status !== 'quarantined')
+      }
+      // ========================================================================
 
       // Update/Delete Pass
       // We need to re-evaluate from workQueue which operations are *still* pending for update/delete,
@@ -262,7 +274,7 @@ export class SyncQueue {
         .sort((a, b) => a.createdAt - b.createdAt)
 
       if (updateDeleteOps.length > 0) {
-        console.log('Update/Delete Pass - Operaciones:', JSON.parse(JSON.stringify(updateDeleteOps)))
+        logger.debug('Update/Delete Pass - Operaciones:', updateDeleteOps.length, 'actualizaciones/eliminaciones')
         for (let i = 0; i < updateDeleteOps.length; i += this.config.batchSize) {
           const clientBatchOps = updateDeleteOps.slice(i, i + this.config.batchSize)
           // clientBatchOps are 'update' or 'delete' and still 'pending'
@@ -276,12 +288,12 @@ export class SyncQueue {
             if (typeof op.id === 'string' && op.id.startsWith('temp_')) {
               resolvedMainId = this.tempToRealIdMap[op.id]
               if (!resolvedMainId) {
-                console.warn(`Update/Delete Pass: ID real para ${op.id} (op ${op.type} en ${op.collection}) no encontrado. Saltando del batch.`)
+                logger.warn(`Update/Delete Pass: ID real para ${op.id} (op ${op.type} en ${op.collection}) no encontrado. Saltando del batch.`)
                 continue
               }
             }
             if (!resolvedMainId) {
-              console.warn(`Update/Delete Pass: ID principal nulo/inválido para ${op.type} en ${op.collection} (ID: ${op.id}). Saltando.`)
+              logger.warn(`Update/Delete Pass: ID principal nulo/inválido para ${op.type} en ${op.collection} (ID: ${op.id}). Saltando.`)
               continue
             }
             
@@ -298,14 +310,14 @@ export class SyncQueue {
           }
 
             if (opsWithResolvedIds.length === 0) { // Check opsWithResolvedIds instead of validClientBatchOps
-            console.log('Update/Delete Pass - No hay operaciones válidas en este batch para enviar.')
+            logger.debug('Update/Delete Pass - No hay operaciones válidas en este batch para enviar.')
             continue
           }
 
           try {
-            console.log(`Update/Delete Pass - Enviando batch de ${opsWithResolvedIds.length} operaciones`)
+            logger.debug(`Update/Delete Pass - Enviando batch de ${opsWithResolvedIds.length} operaciones`)
             await pbBatch.send()
-            console.log('Update/Delete Pass - Batch enviado exitosamente.')
+            logger.debug('Update/Delete Pass - Batch enviado exitosamente.')
             
             // Iterate over opsWithResolvedIds to correctly populate updatedItems and deletedItems
             opsWithResolvedIds.forEach((opDetails) => {
@@ -331,11 +343,11 @@ export class SyncQueue {
                   this.updateOperationCounts('delete', true, originalOp.retryCount > 0)
                 }
               } else {
-                console.warn("Update/Delete Pass: No se encontró la operación original para marcar como completada después del batch:", opDetails);
+                logger.warn("Update/Delete Pass: No se encontró la operación original para marcar como completada después del batch:", opDetails);
               }
             })
           } catch (batchError) {
-            console.error('Error en Update/Delete Pass batch:', batchError)
+            logger.error('Error en Update/Delete Pass batch:', batchError)
             this.handleBatchError(validClientBatchOps, batchError)
             
             // Update metrics for failed operations in batch
@@ -346,7 +358,7 @@ export class SyncQueue {
           }
         }
       } else {
-        console.log('Update/Delete Pass - No hay operaciones de actualización/eliminación.')
+        logger.debug('Update/Delete Pass - No hay operaciones de actualización/eliminación.')
       }
 
       // Final queue cleanup: remove all 'completed' ops from the main this.queue
@@ -369,14 +381,33 @@ export class SyncQueue {
       
       // Save metrics to history
       this.saveMetricsToHistory()
+
+      // ========================================================================
+      // FASE 1.3 & 1.5: VALIDACIÓN FINAL DE REFERENCIAS Y MAPEO
+      // ========================================================================
+      // Validar que todas las referencias fueron resueltas
+      const validationIssues = this.validateFinalState()
       
+      // Validar completitud de mapeo
+      const mappingComplete = this.validateMappingCompleteness()
+      
+      // Reportar estado de validación
+      if (validationIssues.length === 0 && mappingComplete) {
+        logger.debug('[SyncQueue] Validación final completada exitosamente')
+      } else {
+        logger.warn('[SyncQueue] Validación final completada con issues:', {
+          issues: validationIssues.length,
+          mappingComplete: mappingComplete
+        })
+      }
+      // ========================================================================
+
     } catch (error) {
-      console.error('Error general procesando cola:', error)
+      logger.error('Error general procesando cola:', error)
       this.trackError(error.name || 'processing_error')
     } finally {
       this.isProcessing = false
-      console.log('Procesamiento de cola finalizado. Estado actual de this.queue:', JSON.parse(JSON.stringify(this.queue)))
-      console.log('Estado actual del mapeo de IDs:', JSON.parse(JSON.stringify(this.tempToRealIdMap)))
+      logger.debug('Procesamiento de cola finalizado. Queue:', this.queue.length, 'ops, IDs mapeados:', Object.keys(this.tempToRealIdMap).length)
       return { createdItems, updatedItems, deletedItems }
     }
   }
@@ -428,7 +459,7 @@ export class SyncQueue {
           // Buscar el ID real en el mapa
           const mappedValue = self.resolveRealId(value)
           if (mappedValue !== value) {
-            console.log(`Reemplazando ID temporal: ${value} -> ${mappedValue}`)
+            logger.debug(`Reemplazando ID temporal: ${value} -> ${mappedValue}`)
             return mappedValue
           }
         }
@@ -480,7 +511,7 @@ export class SyncQueue {
         uniqueOps[key] = true
         newQueue.unshift(op)
       } else {
-        console.log(`Eliminando operación duplicada: ${key}`)
+        logger.debug(`Eliminando operación duplicada: ${key}`)
       }
     }
 
@@ -489,21 +520,16 @@ export class SyncQueue {
 
   handleSuccess(op, result) {
     // Implementa la lógica para manejar un resultado exitoso
-    console.log('Operación exitosa:', op, result)
-  }
-
-  handleSuccess(op, result) {
-    // Implementa la lógica para manejar un resultado exitoso
-    console.log('Operación exitosa:', op, result)
+    logger.debug('Operación exitosa:', op, result)
   }
 
   // handleError se reemplaza o complementa con handleBatchError
   // La lógica de reintentos individuales se mantiene si una op falla repetidamente en batches
   // This method handles individual operation errors and implements exponential backoff retry logic
   handleError(op, error) {
-    console.error('Error procesando operación individualmente (fuera de un batch):', op, error)
+    logger.error('Error procesando operación individualmente (fuera de un batch):', op, error)
     if (error.response && error.response.data) {
-      console.error('Detalles del error individual:', error.response.data)
+      logger.error('Detalles del error individual:', error.response.data)
     }
     op.retryCount = (op.retryCount || 0) + 1
     
@@ -518,7 +544,7 @@ export class SyncQueue {
       // Calculate delay with exponential backoff and jitter
       const delay = this.calculateBackoffDelay(op.retryCount - 1); // retryCount-1 because we just incremented
       
-      console.log(
+      logger.debug(
         `Programando reintento para operación ${op.type} en ${op.collection} ID ${
           op.id || op.tempId
         } después de ${delay}ms`
@@ -526,7 +552,7 @@ export class SyncQueue {
       
       // Schedule retry with delay
       setTimeout(() => {
-        console.log(
+        logger.debug(
           `Reintentando operación ${op.type} en ${op.collection} ID ${
             op.id || op.tempId
           } (intento ${op.retryCount})`
@@ -537,7 +563,7 @@ export class SyncQueue {
       }, delay)
     } else if (op.retryCount >= this.config.maxRetries) {
       op.status = 'failed' // Marcar como fallida permanentemente
-      console.warn(
+      logger.warn(
         `Operación ${op.type} para ${op.collection} ID ${
           op.id || op.tempId
         } ha fallado ${this.config.maxRetries} veces. Marcada como 'failed'.`
@@ -552,11 +578,12 @@ export class SyncQueue {
   // This method implements exponential backoff retry logic with jitter to prevent
   // overwhelming the server with retry attempts
   handleBatchError(operationsInFailedBatch, error) {
-    console.error(
-      'Error en batch PocketBase:',
-      error,
-      'Operaciones afectadas:',
-      JSON.parse(JSON.stringify(operationsInFailedBatch))
+    // Solo loggear métricas, no el array completo (evita deep copy innecesaria)
+    const count = operationsInFailedBatch.length
+    const types = [...new Set(operationsInFailedBatch.map(op => op.type))].join(',')
+
+    logger.error(
+      `Error en batch: ${error.name || 'unknown'}. ${count} ops afectadas [${types}]`
     )
 
     // Track error metrics
@@ -567,12 +594,12 @@ export class SyncQueue {
 
     // Intentar obtener más detalles del error si es una instancia de ClientResponseError de PocketBase
     if (error && error.isAbort === false && error.status !== 0 && typeof error.data === 'object') {
-      console.error('Detalles del error de batch (PocketBase ClientResponseError):', error.data)
+      logger.error('Detalles del error de batch (PocketBase ClientResponseError):', error.data)
     }
 
     // Si es un error 409, crear conflictos en lugar de reintentar automáticamente
     if (isConflictError && this.onConflictCallback) {
-      console.log('[SyncQueue] Detectado error 409, creando conflictos para resolución de usuario')
+      logger.debug('[SyncQueue] Detectado error 409, creando conflictos para resolución de usuario')
 
       operationsInFailedBatch.forEach((op) => {
         // Crear objeto de conflicto
@@ -603,7 +630,7 @@ export class SyncQueue {
     // Para otros errores, aplicar lógica normal de reintentos
     operationsInFailedBatch.forEach((op) => {
       op.retryCount = (op.retryCount || 0) + 1
-      console.log(
+      logger.debug(
         `Incrementado retryCount para op (ID: ${op.tempId || op.id}, Colección: ${
           op.collection
         }) a ${op.retryCount}. Status actual: ${op.status}`
@@ -617,7 +644,7 @@ export class SyncQueue {
         // Calculate delay with exponential backoff and jitter
         const delay = this.calculateBackoffDelay(op.retryCount - 1); // retryCount-1 because we just incremented
 
-        console.log(
+        logger.debug(
           `Programando reintento para operación ${op.type} en ${op.collection} ID ${
             op.id || op.tempId
           } después de ${delay}ms`
@@ -625,7 +652,7 @@ export class SyncQueue {
 
         // Schedule retry with delay
         setTimeout(() => {
-          console.log(
+          logger.debug(
             `Reintentando operación ${op.type} en ${op.collection} ID ${
               op.id || op.tempId
             } (intento ${op.retryCount})`
@@ -636,7 +663,7 @@ export class SyncQueue {
         }, delay)
       } else if (op.retryCount >= this.config.maxRetries && op.status !== 'completed') {
         op.status = 'failed'
-        console.warn(
+        logger.warn(
           `Operación ${op.type} para ${op.collection} ID ${
             op.id || op.tempId
           } ha fallado ${
@@ -653,13 +680,13 @@ export class SyncQueue {
 
   async updatePendingOperations(tempIdJustCreated, newRealId) {
     if (!tempIdJustCreated || !newRealId) {
-      console.warn(
+      logger.warn(
         'updatePendingOperations: Se requieren tempIdJustCreated y newRealId.'
       )
       return 0
     }
 
-    console.log(
+    logger.debug(
       `updatePendingOperations: Actualizando todas las operaciones pendientes en la cola global usando el mapeo: ${tempIdJustCreated} -> ${newRealId}`
     )
 
@@ -678,7 +705,7 @@ export class SyncQueue {
         (op.type === 'update' || op.type === 'delete') &&
         op.id === tempIdJustCreated
       ) {
-        console.log(
+        logger.debug(
           `  - En op ${op.type} (ID: ${op.id}, Colección: ${op.collection}), actualizando ID principal a ${newRealId}`
         )
         op.id = newRealId
@@ -692,7 +719,7 @@ export class SyncQueue {
         op.data = this.replaceTemporaryIdsInData(op.data, tempIdJustCreated, newRealId)
 
         if (JSON.stringify(op.data) !== originalDataSnapshot) {
-          console.log(
+          logger.debug(
             `  - En op ${op.type} (ID: ${op.id || op.tempId}, Colección: ${op.collection}), datos internos actualizados para reflejar ${tempIdJustCreated} -> ${newRealId}`
           )
           modifiedByThisUpdate = true
@@ -705,7 +732,7 @@ export class SyncQueue {
     }
 
     if (updatedCount > 0) {
-      console.log(
+      logger.debug(
         `updatePendingOperations: ${updatedCount} operaciones pendientes fueron actualizadas con el mapeo ${tempIdJustCreated} -> ${newRealId}.`
       )
       // No llamamos a this.saveState() aquí, se llamará al final de process() o saveTempToRealIdMap().
@@ -722,7 +749,7 @@ export class SyncQueue {
     // Caso 1: Reemplazo específico de un ID temporal
     if (specificTempIdToReplace && newRealId) {
       if (typeof data === 'string' && data === specificTempIdToReplace) {
-        // console.log(`Reemplazo específico: ${specificTempIdToReplace} -> ${newRealId}`)
+        // logger.debug(`Reemplazo específico: ${specificTempIdToReplace} -> ${newRealId}`)
         return newRealId
       }
       if (Array.isArray(data)) {
@@ -748,7 +775,7 @@ export class SyncQueue {
     if (typeof data === 'string' && data.startsWith('temp_')) {
       const mappedValue = this.tempToRealIdMap[data] // Usar el mapa general
       if (mappedValue) {
-        // console.log(`Reemplazo general: ${data} -> ${mappedValue}`)
+        // logger.debug(`Reemplazo general: ${data} -> ${mappedValue}`)
         return mappedValue
       }
       return data // Si no está en el mapa, devolver el temp_ id original
@@ -797,7 +824,7 @@ export class SyncQueue {
     }
 
     if (isNaN(timestamp)) {
-      console.warn(`No se pudo extraer timestamp válido del ID temporal: ${tempId}`)
+      logger.warn(`No se pudo extraer timestamp válido del ID temporal: ${tempId}`)
       return null
     }
 
@@ -1004,7 +1031,7 @@ export class SyncQueue {
       localStorage.setItem('syncQueue', JSON.stringify(this.queue))
       localStorage.setItem('tempToRealIdMap', JSON.stringify(this.tempToRealIdMap))
     } catch (e) {
-      console.error('Error al guardar estado:', e)
+      logger.error('Error al guardar estado:', e)
     }
   }
 
@@ -1048,10 +1075,10 @@ export class SyncQueue {
       // Guardar en localStorage
       this.saveChangeHistory()
 
-      console.log('Cambio local trackeado:', change)
+      logger.debug('Cambio local trackeado:', change)
       return change.id
     } catch (error) {
-      console.error('Error trackeando cambio local:', error)
+      logger.error('Error trackeando cambio local:', error)
       return null
     }
   }
@@ -1074,7 +1101,7 @@ export class SyncQueue {
         .sort((a, b) => b.timestamp - a.timestamp)
         .slice(0, limit)
     } catch (error) {
-      console.error('Error obteniendo historial de cambios:', error)
+      logger.error('Error obteniendo historial de cambios:', error)
       return []
     }
   }
@@ -1116,10 +1143,10 @@ export class SyncQueue {
       this.changeHistory.conflictResolutions.push(resolution)
       this.saveChangeHistory()
 
-      console.log('Conflicto resuelto con contexto:', resolution)
+      logger.debug('Conflicto resuelto con contexto:', resolution)
       return resolution.resolution
     } catch (error) {
-      console.error('Error resolviendo conflicto con contexto:', error)
+      logger.error('Error resolviendo conflicto con contexto:', error)
       // Fallback: devolver datos remotos
       return remoteData
     }
@@ -1157,7 +1184,7 @@ export class SyncQueue {
 
       return merged
     } catch (error) {
-      console.error('Error en auto-resolución:', error)
+      logger.error('Error en auto-resolución:', error)
       return null
     }
   }
@@ -1184,7 +1211,7 @@ export class SyncQueue {
     try {
       localStorage.setItem('syncQueue_changeHistory', JSON.stringify(this.changeHistory))
     } catch (error) {
-      console.error('Error guardando historial de cambios:', error)
+      logger.error('Error guardando historial de cambios:', error)
     }
   }
 
@@ -1200,7 +1227,7 @@ export class SyncQueue {
         }
       }
     } catch (error) {
-      console.error('Error cargando historial de cambios:', error)
+      logger.error('Error cargando historial de cambios:', error)
     }
   }
 
@@ -1230,9 +1257,329 @@ export class SyncQueue {
 
       this.saveChangeHistory()
     } catch (error) {
-      console.error('Error limpiando historial:', error)
+      logger.error('Error limpiando historial:', error)
     }
   }
+
+  // ============================================================================
+  // FASE 1: VALIDACIÓN FINAL DE REFERENCIAS (CRÍTICO)
+  // ============================================================================
+
+  /**
+   * VALIDACIÓN FINAL DE REFERENCIAS - Método crítico para integridad de datos
+   * Verifica que todas las referencias fueron resueltas después de sync
+   * Se debe llamar al final de process(), antes de return
+   *
+   * @returns {Array} issues - Lista de problemas de integridad detectados
+   */
+  validateFinalState() {
+    const issues = []
+    const unresolvedTemps = new Set()
+
+    logger.debug('[SyncQueue] Iniciando validación final de referencias...')
+
+    // Escanear todas las operaciones pendientes
+    for (const op of this.queue) {
+      // Ignorar operaciones completadas o fallidas
+      if (op.status === 'completed' || op.status === 'failed') {
+        continue
+      }
+
+      // Buscar IDs temporales en data
+      this.findTempIds(op.data, unresolvedTemps)
+
+      // Verificar referencias directas en update/delete
+      if (op.type === 'update' || op.type === 'delete') {
+        if (typeof op.id === 'string' && op.id.startsWith('temp_')) {
+          if (!this.tempToRealIdMap[op.id]) {
+            issues.push({
+              type: 'unresolved_reference',
+              severity: 'critical',
+              operation: op.type,
+              tempId: op.id,
+              collection: op.collection,
+              timestamp: op.createdAt,
+              message: `Referencia no resuelta: ${op.id} en ${op.collection}`
+            })
+            unresolvedTemps.add(op.id)
+          }
+        }
+      }
+    }
+
+    // Buscar temp_ids anidados en data
+    for (const tempId of unresolvedTemps) {
+      if (!this.tempToRealIdMap[tempId]) {
+        issues.push({
+          type: 'nested_temp_id',
+          severity: 'high',
+          tempId: tempId,
+          message: `ID temporal anidado sin mapeo: ${tempId}`
+        })
+      }
+    }
+
+    // Reportar resultados
+    if (issues.length > 0) {
+      logger.error('[SyncQueue] Validación final fallida:', {
+        totalIssues: issues.length,
+        criticalIssues: issues.filter(i => i.severity === 'critical').length,
+        issues: issues.slice(0, 10) // Mostrar solo primeros 10 para no saturar logs
+      })
+
+      // Intentar recuperación automática para issues no críticos
+      this.attemptAutoRecovery(issues)
+    } else {
+      logger.debug('[SyncQueue] Validación final exitosa - Sin referencias rotas')
+    }
+
+    return issues
+  }
+
+  /**
+   * Encuentra todos los IDs temporales en un objeto/data
+   * @param {any} obj - Objeto a escanear
+   * @param {Set} tempIds - Set para almacenar IDs encontrados
+   */
+  findTempIds(obj, tempIds) {
+    if (!obj || typeof obj !== 'object') return
+
+    if (Array.isArray(obj)) {
+      obj.forEach(item => this.findTempIds(item, tempIds))
+    } else {
+      for (const [key, value] of Object.entries(obj)) {
+        if (typeof value === 'string' && value.startsWith('temp_')) {
+          tempIds.add(value)
+        } else if (typeof value === 'object' && value !== null) {
+          this.findTempIds(value, tempIds)
+        }
+      }
+    }
+  }
+
+  /**
+   * Intenta recuperación automática para issues de validación
+   * @param {Array} issues - Lista de issues detectados
+   */
+  attemptAutoRecovery(issues) {
+    const recoverableIssues = issues.filter(
+      issue => issue.severity !== 'critical'
+    )
+
+    if (recoverableIssues.length === 0) {
+      return
+    }
+
+    logger.warn('[SyncQueue] Intentando recuperación automática...', recoverableIssues.length)
+
+    // Marcar operaciones problemáticas para retry manual
+    recoverableIssues.forEach(issue => {
+      if (issue.tempId) {
+        const op = this.queue.find(o => o.tempId === issue.tempId)
+        if (op && op.status !== 'completed') {
+          op.status = 'retrying'
+          op.retryCount = (op.retryCount || 0) + 1
+          op.recoveryAttempt = true
+        }
+      }
+    })
+
+    this.saveState()
+  }
+
+  // ============================================================================
+  // FASE 1.4: MANEJO DE OPERACIONES HUÉRFANAS (CRÍTICO)
+  // ============================================================================
+
+  /**
+   * MANEJO DE OPERACIONES HUÉRFANAS - Método crítico para integridad
+   * Detecta y maneja operaciones que dependen de creaciones fallidas
+   * Se debe llamar después del Create Pass, antes del Update/Delete Pass
+   *
+   * @param {Array} workQueue - Cola de trabajo actual
+   * @returns {Array} orphans - Lista de operaciones huérfanas detectadas
+   */
+  handleOrphanedOperations(workQueue) {
+    const orphans = []
+    const resolvedIds = new Set(Object.values(this.tempToRealIdMap))
+
+    logger.debug('[SyncQueue] Verificando operaciones huérfanas...')
+
+    // Filtrar operaciones UPDATE/DELETE que dependen de IDs no resueltos
+    for (const op of workQueue) {
+      if ((op.type === 'update' || op.type === 'delete') && op.id) {
+        // Si el ID es temporal y no está resuelto
+        if (typeof op.id === 'string' && op.id.startsWith('temp_')) {
+          if (!resolvedIds.has(op.id) && !this.tempToRealIdMap[op.id]) {
+            orphans.push(op)
+            logger.warn(
+              `[SyncQueue] Operación huérfana detectada: ${op.type} ${op.collection} ref=${op.id}`
+            )
+          }
+        }
+      }
+    }
+
+    // Manejo de huérfanos
+    if (orphans.length > 0) {
+      logger.error('[SyncQueue] Operaciones huérfanas detectadas:', {
+        count: orphans.length,
+        operations: orphans.map(o => ({
+          type: o.type,
+          collection: o.collection,
+          id: o.id || o.tempId
+        }))
+      })
+
+      this.quarantineOrphanedOperations(orphans)
+    } else {
+      logger.debug('[SyncQueue] No hay operaciones huérfanas')
+    }
+
+    return orphans
+  }
+
+  /**
+   * Pone en cuarentena operaciones huérfanas para revisión manual
+   * @param {Array} orphans - Lista de operaciones huérfanas
+   */
+  quarantineOrphanedOperations(orphans) {
+    const quarantine = []
+
+    for (const op of orphans) {
+      // Marcar para revisión manual
+      op.status = 'quarantined'
+      op.quarantineReason = 'dependency_not_created'
+      op.quarantineTimestamp = Date.now()
+
+      quarantine.push({
+        operation: {
+          type: op.type,
+          collection: op.collection,
+          id: op.id || op.tempId,
+          tempId: op.tempId
+        },
+        message: `Depende de ${op.id} que no fue creado`,
+        timestamp: new Date().toISOString()
+      })
+    }
+
+    // Guardar estado actualizado
+    this.saveState()
+
+    // Notificar al usuario (vía snackbar store o callback)
+    this.notifyQuarantine(quarantine)
+  }
+
+  /**
+   * Notifica operaciones en cuarentena al usuario
+   * @param {Array} quarantine - Lista de operaciones en cuarentena
+   */
+  notifyQuarantine(quarantine) {
+    try {
+      const snackbarStore = useSnackbarStore()
+
+      if (snackbarStore) {
+        snackbarStore.showSnackbar({
+          text: `${quarantine.length} operaciones en cuarentena - Revisar sincronización`,
+          color: 'warning',
+          timeout: 5000
+        })
+      }
+
+      logger.warn('[SyncQueue] Notificación de cuarentena:', quarantine)
+    } catch (error) {
+      logger.error('[SyncQueue] Error notificando cuarentena:', error)
+    }
+  }
+
+  // ============================================================================
+  // FASE 1.5: VERIFICACIÓN DE COMPLETITUD DE MAPEO
+  // ============================================================================
+
+  /**
+   * VERIFICACIÓN DE COMPLETITUD DE MAPEO
+   * Verifica que no queden referencias a temp_ids en la cola
+   *
+   * @returns {boolean} true si todos los mapeos están completos
+   */
+  validateMappingCompleteness() {
+    const tempRefs = []
+
+    logger.debug('[SyncQueue] Verificando completitud de mapeo...')
+
+    // Escanear todas las operaciones en busca de referencias temporales
+    for (const op of this.queue) {
+      // Ignorar completadas
+      if (op.status === 'completed' || op.status === 'failed') {
+        continue
+      }
+
+      this.findTempIdsInOperation(op, tempRefs)
+    }
+
+    // Verificar que cada temp_ref tenga un mapeo
+    const unmapped = tempRefs.filter(id => !this.tempToRealIdMap[id])
+
+    if (unmapped.length > 0) {
+      logger.warn(`[SyncQueue] ${unmapped.length} IDs temporales sin mapeo:`, unmapped.slice(0, 20))
+    } else {
+      logger.debug('[SyncQueue] Mapeo completo - Todos los IDs temporales resueltos')
+    }
+
+    return unmapped.length === 0
+  }
+
+  /**
+   * Encuentra IDs temporales en una operación
+   * @param {Object} op - Operación a escanear
+   * @param {Array} tempRefs - Array para almacenar referencias encontradas
+   */
+  findTempIdsInOperation(op, tempRefs) {
+    // Verificar ID principal
+    if (typeof op.id === 'string' && op.id.startsWith('temp_')) {
+      tempRefs.push(op.id)
+    }
+
+    // Verificar tempId
+    if (typeof op.tempId === 'string' && op.tempId.startsWith('temp_')) {
+      tempRefs.push(op.tempId)
+    }
+
+    // Verificar data recursivamente
+    if (op.data && typeof op.data === 'object') {
+      this.findTempIds(op.data, new Set(tempRefs))
+      // Convertir set a array y agregar a tempRefs
+      const dataIds = []
+      this.findTempIdsRecursive(op.data, dataIds)
+      tempRefs.push(...dataIds)
+    }
+  }
+
+  /**
+   * Versión recursiva que retorna array en lugar de set
+   * @param {any} obj - Objeto a escanear
+   * @param {Array} tempRefs - Array para almacenar referencias
+   */
+  findTempIdsRecursive(obj, tempRefs) {
+    if (!obj || typeof obj !== 'object') return
+
+    if (Array.isArray(obj)) {
+      obj.forEach(item => this.findTempIdsRecursive(item, tempRefs))
+    } else {
+      for (const [key, value] of Object.entries(obj)) {
+        if (typeof value === 'string' && value.startsWith('temp_')) {
+          tempRefs.push(value)
+        } else if (typeof value === 'object' && value !== null) {
+          this.findTempIdsRecursive(value, tempRefs)
+        }
+      }
+    }
+  }
+
+  // ============================================================================
+  // FASE 2: FILTRADO POR PRIORIDAD (EXISTENTE - Se mantiene)
+  // ============================================================================
 
   // FASE 2: Método para filtrar operaciones por prioridad de sincronización selectiva
   filterOperationsByPriority(operations, syncStore) {

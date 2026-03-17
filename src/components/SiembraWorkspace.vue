@@ -156,9 +156,11 @@
               {{ t('sowing_workspace.target_area') }}: {{ siembraInfo.area_total }} ha
             </v-chip>
 
-            <v-data-table
+            <v-data-table-virtual
               :headers="headers"
               :items="zonasfiltradas"
+              height="300"
+              fixed-header
               class="elevation-1 tabla-compacta my-2 mx-0 py-0 px-0"
               density="compact"
               item-value="id"
@@ -238,7 +240,7 @@
                   </v-card>
                 </td>
               </template>
-            </v-data-table>
+            </v-data-table-virtual>
           </v-card-text>
         </v-card>
 
@@ -259,9 +261,11 @@
             </v-btn>
           </v-card-title>
           <v-card-text class="px-2 py-0">
-            <v-data-table
+            <v-data-table-virtual
               :headers="headers_actividades"
               :items="actividadesfiltradas"
+              height="300"
+              fixed-header
               class="elevation-1 tabla-compacta my-2 mx-0 py-0 px-0"
               density="compact"
               item-value="id"
@@ -337,7 +341,7 @@
                   </v-card>
                 </td>
               </template>
-            </v-data-table>
+            </v-data-table-virtual>
           </v-card-text>
         </v-card>
       </v-col>
