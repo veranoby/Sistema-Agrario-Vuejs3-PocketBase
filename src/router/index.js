@@ -223,11 +223,131 @@ const adminDataMiningRoute = {
   }
 }
 
+// Nuevas rutas Admin Panel - Gestión de Usuarios y Haciendas
+const adminUsersRoute = {
+  path: '/admin/users',
+  component: () => import('@/components/admin/UsersManagement.vue'),
+  name: 'Gestión de Usuarios',
+  meta: {
+    requiresAuth: true,
+    requiresSuperAdmin: true,
+    roles: [ROLES.SUPERADMIN]
+  }
+}
+
+const adminHaciendasRoute = {
+  path: '/admin/haciendas',
+  component: () => import('@/components/admin/HaciendasManagement.vue'),
+  name: 'Gestión de Haciendas',
+  meta: {
+    requiresAuth: true,
+    requiresSuperAdmin: true,
+    roles: [ROLES.SUPERADMIN]
+  }
+}
+
+const adminSettingsRoute = {
+  path: '/admin/settings',
+  component: () => import('@/components/admin/SystemSettings.vue'),
+  name: 'Configuración del Sistema',
+  meta: {
+    requiresAuth: true,
+    requiresSuperAdmin: true,
+    roles: [ROLES.SUPERADMIN]
+  }
+}
+
+const adminLogsRoute = {
+  path: '/admin/logs',
+  component: () => import('@/components/admin/LogsViewer.vue'),
+  name: 'Visor de Logs',
+  meta: {
+    requiresAuth: true,
+    requiresSuperAdmin: true,
+    roles: [ROLES.SUPERADMIN]
+  }
+}
+
+const adminExportsRoute = {
+  path: '/admin/exports',
+  component: () => import('@/components/admin/AdminExports.vue'),
+  name: 'Exportaciones',
+  meta: {
+    requiresAuth: true,
+    requiresSuperAdmin: true,
+    roles: [ROLES.SUPERADMIN]
+  }
+}
+
 // Add admin routes to routes array
 routes.push(adminRoute)
 routes.push(adminAnalyticsRoute)
 routes.push(adminUsageMetricsRoute)
 routes.push(adminDataMiningRoute)
+routes.push(adminUsersRoute)
+routes.push(adminHaciendasRoute)
+routes.push(adminSettingsRoute)
+routes.push(adminLogsRoute)
+routes.push(adminExportsRoute)
+
+// Rutas Knowledge Hub
+const knowledgeSearchRoute = {
+  path: '/knowledge/search',
+  component: () => import('@/components/knowledge/UnifiedSearch.vue'),
+  name: 'Búsqueda Unificada',
+  meta: {
+    requiresAuth: true,
+    requiresSuperAdmin: true,
+    roles: [ROLES.SUPERADMIN]
+  }
+}
+
+const knowledgeExportRoute = {
+  path: '/knowledge/export',
+  component: () => import('@/components/admin/AdminExports.vue'),
+  name: 'Exportar Conocimiento',
+  meta: {
+    requiresAuth: true,
+    requiresSuperAdmin: true,
+    roles: [ROLES.SUPERADMIN]
+  }
+}
+
+const knowledgeActivitiesRoute = {
+  path: '/knowledge/activities',
+  component: () => import('@/components/knowledge/ActivitiesCatalog.vue'),
+  name: 'Catálogo de Actividades',
+  meta: {
+    requiresAuth: true,
+    roles: [ROLES.SUPERADMIN, ROLES.ADMINISTRADOR, ROLES.AUDITOR]
+  }
+}
+
+const knowledgeProgramDetailRoute = {
+  path: '/knowledge/program/:id',
+  component: () => import('@/components/knowledge/ProgramDetailView.vue'),
+  name: 'Detalle de Programación',
+  meta: {
+    requiresAuth: true,
+    roles: [ROLES.SUPERADMIN, ROLES.ADMINISTRADOR, ROLES.AUDITOR]
+  }
+}
+
+const knowledgeSiembraRoute = {
+  path: '/knowledge/siembra/:id',
+  component: () => import('@/components/knowledge/SiembraKnowledge.vue'),
+  name: 'Conocimiento de Siembra',
+  meta: {
+    requiresAuth: true,
+    roles: [ROLES.SUPERADMIN, ROLES.ADMINISTRADOR, ROLES.AUDITOR, ROLES.OPERADOR]
+  }
+}
+
+routes.push(knowledgeSearchRoute)
+routes.push(knowledgeExportRoute)
+routes.push(knowledgeActivitiesRoute)
+routes.push(knowledgeProgramDetailRoute)
+routes.push(knowledgeSiembraRoute)
 
 // Add reports route for authenticated users
 const reportsRoute = {

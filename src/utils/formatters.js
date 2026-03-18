@@ -5,6 +5,7 @@
 
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { ROLE_COLORS, ROLE_LABELS, STATUS_COLORS, STATUS_LABELS } from '@/constants/roles'
 
 /**
  * Cache memoizado para instancias de Intl.NumberFormat
@@ -277,4 +278,73 @@ export const formatters = {
   fileSize: formatFileSize,
   duration: formatDuration,
   gps: formatGPSCoordinate
+}
+
+// ============================================================================
+// FUNCIONES PARA ROLES Y ESTADOS (Compartidas)
+// ============================================================================
+
+/**
+ * Formatea el rol de usuario a etiqueta amigable
+ * @param {string} role - Rol del usuario
+ * @returns {string} Etiqueta formateada
+ */
+export function formatRole(role) {
+  return ROLE_LABELS[role] || role
+}
+
+/**
+ * Obtiene el color Vuetify para un rol
+ * @param {string} role - Rol del usuario
+ * @returns {string} Color Vuetify
+ */
+export function getRoleColor(role) {
+  return ROLE_COLORS[role] || 'grey'
+}
+
+/**
+ * Formatea el estado de usuario
+ * @param {string} status - Estado del usuario
+ * @returns {string} Etiqueta formateada
+ */
+export function formatUserStatus(status) {
+  return STATUS_LABELS[status] || status
+}
+
+/**
+ * Obtiene el color para un estado
+ * @param {string} status - Estado del usuario
+ * @returns {string} Color Vuetify
+ */
+export function getUserStatusColor(status) {
+  return STATUS_COLORS[status] || 'grey'
+}
+
+// ============================================================================
+// FUNCIONES DE EXPORTACIÓN DE ARCHIVOS (Compartidas)
+// ============================================================================
+
+/**
+ * Descarga contenido como archivo
+ * @param {string} content - Contenido a descargar
+ * @param {string} filename - Nombre del archivo
+ * @param {string} mimeType - Tipo MIME (default: 'text/markdown')
+ */
+export function downloadFile(content, filename, mimeType = 'text/markdown') {
+  const blob = new Blob([content], { type: mimeType })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+/**
+ * Descarga contenido Markdown como archivo .md
+ * @param {string} markdown - Contenido Markdown
+ * @param {string} filename - Nombre del archivo (sin extensión)
+ */
+export function downloadMarkdown(markdown, filename) {
+  downloadFile(markdown, filename.endsWith('.md') ? filename : `${filename}.md`)
 }
