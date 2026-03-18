@@ -17,7 +17,7 @@ export class SyncQueue {
     this.onConflictCallback = onConflictCallback // Callback para conflictos
     this.config = {
       maxRetries: 5, // Increased from 3 to 5 for better retry handling
-      batchSize: 10,
+      batchSize: 30, // Optimized for 200 users BPA throughput
       baseDelay: 1000, // Base delay of 1 second for exponential backoff
       maxDelay: 30000  // Maximum delay of 30 seconds for exponential backoff
       // collectionPriority: ['siembras', 'zonas', 'actividades', 'recordatorios', 'programaciones'] // Removed

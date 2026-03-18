@@ -244,7 +244,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useZonasStore } from '@/stores/zonasStore'
 import { useProfileStore } from '@/stores/profileStore'
@@ -254,7 +254,7 @@ import { storeToRefs } from 'pinia'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 import { useAvatarStore } from '@/stores/avatarStore'
 import ZonaForm from '@/components/forms/ZonaForm.vue'
-import { debounce } from '@/utils/debounce'
+import { useDebouncedSearch } from '@/composables/useDebouncedSearch'
 
 const { t } = useI18n()
 const zonasStore = useZonasStore()
@@ -304,22 +304,11 @@ const siembrasActivas = computed(() => {
     }))
 })
 
-// Original search ref, tied to v-model
-const search = ref({
+// Usar composable de debounce para búsqueda (300ms)
+const { query: search, debouncedQuery: debouncedSearch } = useDebouncedSearch({
   nombre: '',
   siembra: ''
-})
-
-// Debounced search ref, used for actual filtering
-const debouncedSearch = ref({
-  nombre: '',
-  siembra: ''
-})
-
-// Watch for changes in the instant search and update the debounced one after 300ms
-watch(search, debounce((newSearchValues) => {
-  debouncedSearch.value = { ...newSearchValues }
-}, 300), { deep: true })
+}, 300)
 
 
 const headers = [

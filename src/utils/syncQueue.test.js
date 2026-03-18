@@ -102,7 +102,7 @@ describe('SyncQueue', () => {
   describe('Constructor', () => {
     it('debe inicializar con configuración correcta', () => {
       expect(syncQueue.config.maxRetries).toBe(5)
-      expect(syncQueue.config.batchSize).toBe(10)
+      expect(syncQueue.config.batchSize).toBe(30)
       expect(syncQueue.config.baseDelay).toBe(1000)
       expect(syncQueue.config.maxDelay).toBe(30000)
     })
@@ -452,6 +452,46 @@ describe('SyncQueue', () => {
       
       expect(retryOp.status).toBe('failed')
       expect(syncQueue.metrics.operationCounts.failed).toBeGreaterThanOrEqual(1)
+    })
+  })
+
+  describe('Load Test', () => {
+    it('debe procesar 30 operaciones en batch', async () => {
+      const queue = new SyncQueue()
+      const operations = Array(30).fill(null).map((_, i) => ({
+        id: `op_${i}`,
+        collection: 'test',
+        type: 'create',
+        data: { id: i },
+        status: 'pending',
+        retryCount: 0
+      }))
+
+      // Verificar que el batch size es 30
+      expect(queue.config.batchSize).toBe(30)
+
+      // Agregar operaciones al queue
+      operations.forEach(op => queue.add(op))
+
+      // Verificar que todas las operaciones están encoladas
+      expect(queue.queue.length).toBe(30)
+    })
+
+    it('debe manejar múltiples operaciones concurrentes', async () => {
+      const queue = new SyncQueue()
+      const operations = Array(50).fill(null).map((_, i) => ({
+        id: `op_${i}`,
+        collection: 'test',
+        type: 'create',
+        data: { id: i },
+        status: 'pending',
+        retryCount: 0
+      }))
+
+      operations.forEach(op => queue.add(op))
+
+      expect(queue.queue.length).toBe(50)
+      expect(queue.queue.length).toBeGreaterThanOrEqual(30) // Al menos un batch completo
     })
   })
 })

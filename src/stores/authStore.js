@@ -15,6 +15,8 @@ import { useRecordatoriosStore } from '@/stores/recordatoriosStore'
 import { useProgramacionesStore } from '@/stores/programacionesStore'
 import { debounce } from '@/utils/debounce'
 import { logger } from '@/utils/logger'
+import { cache, CacheKeys } from '@/utils/cacheManager'
+import { CACHE_LEVELS } from '@/constants/bpa'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -334,6 +336,82 @@ export const useAuthStore = defineStore('auth', {
       return timeSinceLastSuccess > refreshThreshold
     },
 
+    /**
+     * Cache warming al login - precarga datos críticos
+     * @param {Object} user - Usuario autenticado
+     * @returns {Promise<Object>} Resultado del cache warming
+     */
+    async warmUpCache(user) {
+      const startTime = Date.now()
+      logger.info(`[CacheWarming] Iniciando para usuario ${user.id}`)
+
+      try {
+        // 1. Datos de lookup (L1 - más larga duración)
+        const tiposActividadesStore = useActividadesStore()
+        const tiposZonasStore = useZonasStore()
+
+        await Promise.all([
+          tiposActividadesStore.fetchTiposActividades(),
+          tiposZonasStore.fetchTiposZonas()
+        ])
+
+        cache.setToLevel(
+          CacheKeys.tiposActividades().key,
+          tiposActividadesStore.tiposActividades,
+          CACHE_LEVELS.LOOKUP
+        )
+        cache.setToLevel(
+          CacheKeys.tiposZonas().key,
+          tiposZonasStore.tiposZonas,
+          CACHE_LEVELS.LOOKUP
+        )
+
+        // 2. Datos de hacienda del usuario (L1)
+        const haciendaStore = useHaciendaStore()
+        await haciendaStore.fetchHaciendas()
+
+        // Usar getter reutilizable en lugar de filtro inline
+        const userHaciendas = haciendaStore.userHaciendas(user.id)
+
+        userHaciendas.forEach(h => {
+          cache.setToLevel(
+            `hacienda:${h.id}`,
+            h,
+            CACHE_LEVELS.LOOKUP
+          )
+        })
+
+        // 3. Programaciones activas (L2 - duración media)
+        // Parallelizar fetch para mejor performance
+        const programacionesStore = useProgramacionesStore()
+        await Promise.all(
+          userHaciendas.map(async (hacienda) => {
+            await programacionesStore.fetchProgramaciones(hacienda.id)
+            cache.setToLevel(
+              CacheKeys.programaciones(hacienda.id).key,
+              [...programacionesStore.programaciones],
+              CACHE_LEVELS.RECENT
+            )
+          })
+        )
+
+        const elapsed = Date.now() - startTime
+        logger.info(`[CacheWarming] Completado en ${elapsed}ms`)
+
+        return {
+          success: true,
+          elapsed,
+          itemsCached: 2 + userHaciendas.length + userHaciendas.length
+        }
+      } catch (error) {
+        logger.error('[CacheWarming] Error:', error)
+        return {
+          success: false,
+          error: error.message
+        }
+      }
+    },
+
     async handleSuccessfulLogin(authData, rememberMe = false) {
       logger.auth('Iniciando handleSuccessfulLogin, rememberMe:', rememberMe)
 
@@ -389,6 +467,18 @@ export const useAuthStore = defineStore('auth', {
 
       // Redirigir inmediatamente al dashboard
       router.push('/dashboard')
+
+      // Cache warming: precargar datos críticos en segundo plano
+      // No bloquea la navegación pero mejora rendimiento de siguientes cargas
+      this.warmUpCache(authData.record).then(result => {
+        if (result.success) {
+          logger.auth(`Cache warming completado en ${result.elapsed}ms, ${result.itemsCached} items`)
+        } else {
+          logger.auth('Cache warming falló (no crítico):', result.error)
+        }
+      }).catch(err => {
+        logger.auth('Error en cache warming:', err)
+      })
 
       // Cargar datos diferidos después de la redirección
       // Estos no bloquean la UI y se cargan en segundo plano

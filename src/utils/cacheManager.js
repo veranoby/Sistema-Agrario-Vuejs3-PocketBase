@@ -4,6 +4,7 @@
  */
 
 import { logger } from '@/utils/logger'
+import { CACHE_LEVELS, CACHE_KEYS } from '@/constants/bpa'
 
 /**
  * Configuración por defecto del cache
@@ -150,6 +151,7 @@ export class CacheManager {
     const entry = this.cache.get(key);
     if (!entry) return null;
     // Retornar una copia sin la propiedad 'data'
+    // eslint-disable-next-line no-unused-vars
     const { data, ...metadata } = entry;
     return {
       ...metadata,
@@ -264,18 +266,33 @@ export const cache = {
 }
 
 /**
- * Helper para generar claves de cache
+ * Helper para generar claves de cache con nivel
  */
 export const CacheKeys = {
+  // L1 Keys (datos de lookup)
+  tiposActividades: () => ({ key: CACHE_KEYS.TIPOS_ACTIVIDADES(), level: CACHE_LEVELS.LOOKUP }),
+  tiposZonas: () => ({ key: CACHE_KEYS.TIPOS_ZONAS(), level: CACHE_LEVELS.LOOKUP }),
+  planes: () => ({ key: CACHE_KEYS.PLANES_CONFIG(), level: CACHE_LEVELS.LOOKUP }),
+
+  // L2 Keys (datos recientes)
+  actividades: (haciendaId) => ({ key: CACHE_KEYS.ACTIVIDADES(haciendaId), level: CACHE_LEVELS.RECENT }),
+  bitacoras: (haciendaId) => ({ key: CACHE_KEYS.BITACORAS(haciendaId), level: CACHE_LEVELS.RECENT }),
+  siembras: (haciendaId) => ({ key: CACHE_KEYS.SIEMBRAS(haciendaId), level: CACHE_LEVELS.RECENT }),
+  programaciones: (haciendaId) => ({ key: CACHE_KEYS.PROGRAMACIONES(haciendaId), level: CACHE_LEVELS.RECENT }),
+
+  // L3 Keys (paginación)
+  paginatedResult: (collection, page, filters) => ({
+    key: `${collection}:page:${page}:${JSON.stringify(filters)}`,
+    level: CACHE_LEVELS.PAGINATION
+  }),
+
+  // Legacy keys (backward compatibility)
   users: (page = 1, perPage = 50) => `users:page:${page}:perPage:${perPage}`,
   haciendas: (page = 1, perPage = 50) => `haciendas:page:${page}:perPage:${perPage}`,
   userStats: () => 'stats:users',
   haciendaStats: () => 'stats:haciendas',
   userGrowth: (days) => `growth:users:${days}d`,
-  actividades: (haciendaId) => `actividades:hacienda:${haciendaId}`,
-  programaciones: (haciendaId) => `programaciones:hacienda:${haciendaId}`,
-  bitacora: (haciendaId, filters) => `bitacora:hacienda:${haciendaId}:${JSON.stringify(filters)}`,
-  tiposActividades: () => 'tipos:actividades'
+  tiposActividadesLegacy: () => 'tipos:actividades'
 }
 
 /**
@@ -314,3 +331,126 @@ export function cached(keyFn, ttl = null) {
 
 // Exportar por defecto la clase
 export default CacheManager
+
+/**
+ * TieredCacheManager - Cache de 3 niveles para optimización BPA
+ * L1: Lookup Data (TTL: 1 hora) - Tipos de actividades, zonas, configuración
+ * L2: Recent Entries (TTL: 10 minutos) - Últimas actividades, bitácoras, siembras
+ * L3: Pagination (TTL: 5 minutos) - Resultados paginados, listas filtradas
+ */
+export class TieredCacheManager extends CacheManager {
+  constructor() {
+    super({
+      ttl: 600000,  // 10 minutos default
+      maxSize: 300   // Aumentado de 200
+    })
+
+    // Cachés separados por nivel
+    this.l1Cache = new CacheManager({ ttl: 3600000, maxSize: 50 })   // 1 hora
+    this.l2Cache = new CacheManager({ ttl: 600000, maxSize: 150 })   // 10 min
+    this.l3Cache = new CacheManager({ ttl: 300000, maxSize: 100 })   // 5 min
+  }
+
+  /**
+   * Obtiene del nivel apropiado de cache
+   * @param {string} key - Clave del cache
+   * @param {string} level - 'l1' | 'l2' | 'l3'
+   */
+  getFromLevel(key, level = CACHE_LEVELS.RECENT) {
+    const cache = this[`${level}Cache`]
+    if (!cache) {
+      logger.warn(`[TieredCache] Nivel inválido: ${level}`)
+      return null
+    }
+    return cache.get(key)
+  }
+
+  /**
+   * Guarda en el nivel especificado
+   * @param {string} key - Clave del cache
+   * @param {*} data - Datos a almacenar
+   * @param {string} level - 'l1' | 'l2' | 'l3'
+   * @param {number} [customTtl] - TTL personalizado opcional
+   */
+  setToLevel(key, data, level = CACHE_LEVELS.RECENT, customTtl = null) {
+    const cache = this[`${level}Cache`]
+    if (!cache) {
+      logger.warn(`[TieredCache] Nivel inválido: ${level}`)
+      return
+    }
+    cache.set(key, data, customTtl)
+  }
+
+  /**
+   * Invalida across all levels
+   * @param {string} keyPattern - Patrón de claves a invalidar
+   */
+  invalidateAcrossLevels(keyPattern) {
+    ;[this.l1Cache, this.l2Cache, this.l3Cache].forEach(cache => {
+      if (cache.invalidatePattern) {
+        cache.invalidatePattern(keyPattern)
+      }
+    })
+  }
+
+  /**
+   * Obtiene estadísticas combinadas
+   * @returns {Object} Estadísticas de todos los niveles
+   */
+  getCombinedStats() {
+    return {
+      l1: this.l1Cache.getStats(),
+      l2: this.l2Cache.getStats(),
+      l3: this.l3Cache.getStats(),
+      totalSize: this.l1Cache.cache.size + this.l2Cache.cache.size + this.l3Cache.cache.size
+    }
+  }
+
+  /**
+   * Override del método get para usar L2 por defecto
+   */
+  get(key) {
+    return this.getFromLevel(key, 'l2')
+  }
+
+  /**
+   * Override del método set para usar L2 por defecto
+   */
+  set(key, data, ttl = null) {
+    this.setToLevel(key, data, 'l2', ttl)
+  }
+}
+
+/**
+ * Instancia global del cache tiered para uso en toda la aplicación
+ */
+let globalTieredCache = null
+
+/**
+ * Obtiene o crea la instancia global del cache tiered
+ */
+function getGlobalTieredCache() {
+  if (!globalTieredCache) {
+    globalTieredCache = new TieredCacheManager()
+  }
+  return globalTieredCache
+}
+
+/**
+ * Wrapper para usar el cache global tiered
+ */
+export const tieredCache = {
+  get: (key) => getGlobalTieredCache().get(key),
+  set: (key, data, ttl) => getGlobalTieredCache().set(key, data, ttl),
+  getFromLevel: (key, level) => getGlobalTieredCache().getFromLevel(key, level),
+  setToLevel: (key, data, level, ttl) => getGlobalTieredCache().setToLevel(key, data, level, ttl),
+  invalidateAcrossLevels: (pattern) => getGlobalTieredCache().invalidateAcrossLevels(pattern),
+  getStats: () => getGlobalTieredCache().getCombinedStats(),
+  clear: () => getGlobalTieredCache().clear(),
+  destroy: () => {
+    if (globalTieredCache) {
+      globalTieredCache.destroy()
+      globalTieredCache = null
+    }
+  }
+}
