@@ -232,15 +232,19 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
 import { exportUsersToMarkdown } from '@/utils/markdownExporter'
 import { useSnackbarStore } from '@/stores/snackbarStore'
+import { useUserStore } from '@/stores/userStore'
+import { useEvents } from '@/composables/useEvents'
+import { EVENTS } from '@/utils/eventTypes'
 import UserForm from '@/components/forms/auth/UserForm.vue'
 import { USER_ROLES, USER_STATUS, ROLE_OPTIONS } from '@/constants/roles'
 import { formatRole, getRoleColor, formatDate, downloadMarkdown, getUserStatusColor, formatUserStatus } from '@/utils/formatters'
 
 const snackbarStore = useSnackbarStore()
+const userStore = useUserStore()
+const { emit } = useEvents()
 
 // Estado
 const loading = ref(false)
@@ -325,8 +329,6 @@ onMounted(async () => {
 async function fetchUsers() {
   loading.value = true
   try {
-    const { useUserStore } = await import('@/stores/userStore')
-    const userStore = useUserStore()
     const records = await userStore.fetchUsers({ expand: 'hacienda' })
     // Mapear haciendas
     users.value = records.map(u => ({
@@ -344,9 +346,7 @@ async function fetchUsers() {
 // Obtener haciendas
 async function fetchHaciendas() {
   try {
-    haciendas.value = await pb.collection('Haciendas').getFullList({
-      sort: 'name'
-    })
+    haciendas.value = await userStore.fetchHaciendas()
   } catch (error) {
     handleError(error, 'Error al cargar haciendas')
   }
@@ -401,32 +401,22 @@ function confirmDelete(user) {
 async function saveUser(userFormData) {
   loading.value = true
   try {
-    const data = {
-      email: userFormData.email,
-      username: userFormData.username,
-      name: userFormData.firstname,
-      lastname: userFormData.lastname,
-      role: userFormData.role,
-      hacienda: userFormData.haciendas?.[0] || null,
-      status: userFormData.status ?? USER_STATUS.ACTIVE
-    }
-
-    const { useUserStore } = await import('@/stores/userStore')
-    const userStore = useUserStore()
+    const haciendaId = userFormData.haciendas?.[0] || null
 
     if (editingUser.value) {
       // Actualizar
-      if (userFormData.password) {
-        data.password = userFormData.password
-        data.passwordConfirm = userFormData.password
-      }
-      await userStore.updateUser(editingUser.value.id, data)
+      const user = await userStore.updateUserWithForm(
+        editingUser.value.id,
+        userFormData,
+        userFormData.role,
+        haciendaId
+      )
+      emit(EVENTS.HACIENDA_UPDATED, { userId: user.id, haciendaId, role: userFormData.role })
       showSnackbar('Usuario actualizado correctamente', 'success')
     } else {
       // Crear
-      data.password = userFormData.password
-      data.passwordConfirm = userFormData.password
-      await userStore.createUser(data)
+      const user = await userStore.registerUser(userFormData, userFormData.role, haciendaId)
+      emit(EVENTS.USUARIO_ADDED, { userId: user.id, haciendaId, role: userFormData.role })
       showSnackbar('Usuario creado correctamente', 'success')
     }
 
@@ -443,9 +433,8 @@ async function saveUser(userFormData) {
 async function deleteUser() {
   loading.value = true
   try {
-    const { useUserStore } = await import('@/stores/userStore')
-    const userStore = useUserStore()
-    await userStore.deleteUser(selectedUser.value.id)
+    await userStore.deleteUser(selectedUser.value.id, { soft: true })
+    emit(EVENTS.USUARIO_REMOVED, { userId: selectedUser.value.id, soft: true })
     showSnackbar('Usuario eliminado correctamente', 'success')
     deleteDialog.value = false
     selectedUser.value = null

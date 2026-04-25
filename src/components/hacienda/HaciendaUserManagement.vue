@@ -129,37 +129,40 @@
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useHaciendaStore } from '@/stores/haciendaStore'
-import { usePlanStore } from '@/stores/planStore'
 import { useUserStore } from '@/stores/userStore'
 import { useSnackbarStore } from '@/stores/snackbarStore'
+import { useSubscriptionLimits } from '@/composables/useSubscriptionLimits'
+import { useEvents } from '@/composables/useEvents'
+import { EVENTS } from '@/utils/eventTypes'
 import { storeToRefs } from 'pinia'
 
 const { t } = useI18n()
 const haciendaStore = useHaciendaStore()
-const planStore = usePlanStore()
 const userStore = useUserStore()
 const snackbarStore = useSnackbarStore()
+const { canAddUser } = useSubscriptionLimits()
+const { emit } = useEvents()
 
 const { mi_hacienda } = storeToRefs(haciendaStore)
-const { currentPlan } = storeToRefs(planStore)
 
 const auditores = ref([])
 const operadores = ref([])
 const createUserModalOpen = ref(false)
 const userTypeToCreate = ref('')
 const loading = ref(false)
+const limitCheck = ref(null)
 
 const canAddAuditor = computed(() => {
-  return auditores.value.length < (currentPlan.value?.auditores || 0)
+  return limitCheck.value?.canAdd !== false && userTypeToCreate.value === 'auditor'
 })
 
 const canAddOperador = computed(() => {
-  return operadores.value.length < (currentPlan.value?.operadores || 0)
+  return limitCheck.value?.canAdd !== false && userTypeToCreate.value === 'operador'
 })
 
 const fetchHaciendaUsers = async () => {
   try {
-    const users = await haciendaStore.fetchHaciendaUsers()
+    const users = await userStore.fetchHaciendaUsers(mi_hacienda.value.id)
     auditores.value = users.filter((user) => user.role === 'auditor')
     operadores.value = users.filter((user) => user.role === 'operador')
   } catch (error) {
@@ -167,33 +170,34 @@ const fetchHaciendaUsers = async () => {
   }
 }
 
-const openCreateUserModal = (userType) => {
-  if (
-    (userType === 'auditor' && !canAddAuditor.value) ||
-    (userType === 'operador' && !canAddOperador.value)
-  ) {
-    snackbarStore.showSnackbar(t('user_management.cannot_add_more_users', { userType }), 'error')
+const openCreateUserModal = async (userType) => {
+  userTypeToCreate.value = userType
+  
+  // Validar límites de suscripción
+  try {
+    const check = await canAddUser(mi_hacienda.value.id, userType)
+    limitCheck.value = check
+    
+    if (!check.canAdd) {
+      snackbarStore.showSnackbar(check.reason, 'error')
+      return
+    }
+  } catch (error) {
+    snackbarStore.showSnackbar(t('user_management.error_checking_limits') + ': ' + error.message, 'error')
     return
   }
 
-  userTypeToCreate.value = userType
   createUserModalOpen.value = true
 }
 
 const createUser = async (formData) => {
-  if (
-    (userTypeToCreate.value === 'auditor' && !canAddAuditor.value) ||
-    (userTypeToCreate.value === 'operador' && !canAddOperador.value)
-  ) {
-    snackbarStore.showSnackbar(t('user_management.cannot_add_more_users', { userType: userTypeToCreate.value }), 'error')
-    return
-  }
-
   loading.value = true
   try {
-    await userStore.registerUser(formData, userTypeToCreate.value, mi_hacienda.value.id)
+    const user = await userStore.registerUser(formData, userTypeToCreate.value, mi_hacienda.value.id)
+    emit(EVENTS.USUARIO_ADDED, { userId: user.id, haciendaId: mi_hacienda.value.id, role: userTypeToCreate.value })
     snackbarStore.showSnackbar(t('user_management.user_created'), 'success')
     createUserModalOpen.value = false
+    limitCheck.value = null
     await fetchHaciendaUsers()
   } catch (error) {
     snackbarStore.showSnackbar(t('user_management.error_creating_user') + ': ' + error.message, 'error')
@@ -205,7 +209,8 @@ const createUser = async (formData) => {
 const deleteUser = async (userId) => {
   if (confirm(t('user_management.confirm_delete'))) {
     try {
-      await userStore.deleteUser(userId)
+      await userStore.deleteUser(userId, { soft: true })
+      emit(EVENTS.USUARIO_REMOVED, { userId, soft: true })
       await fetchHaciendaUsers()
       snackbarStore.showSnackbar(t('user_management.user_deleted'), 'success')
     } catch (error) {
@@ -216,6 +221,5 @@ const deleteUser = async (userId) => {
 
 onMounted(async () => {
   await fetchHaciendaUsers()
-  await planStore.fetchAvailablePlans()
 })
 </script>

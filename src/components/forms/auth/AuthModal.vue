@@ -361,7 +361,7 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/authStore'
 
-import { useValidationStore } from '@/stores/validationStore'
+import { useValidation } from '@/composables/useValidation'
 
 import { useSnackbarStore } from '@/stores/snackbarStore'
 import loginLogo from '@/assets/login-logo.png'
@@ -384,7 +384,7 @@ const props = defineProps({
 const emit = defineEmits(['update:isOpen', 'loginSuccess', 'HandleDrawer'])
 const { t } = useI18n()
 const authStore = useAuthStore()
-const validationStore = useValidationStore()
+const { checkFieldsTaken, loading: validationLoading } = useValidation()
 const snackbarStore = useSnackbarStore()
 const tab = ref(props.initialTab)
 const visible = ref(false)
@@ -528,7 +528,7 @@ const strengthLabel = computed(() =>
 
 const checkFields = async () => {
   try {
-    const validationResults = await validationStore.checkFieldsTaken([
+    const validationResults = await checkFieldsTaken([
       { collection: 'users', field: 'username', value: registerForm.value.username.toUpperCase() },
       { collection: 'users', field: 'email', value: registerForm.value.email },
       { collection: 'Haciendas', field: 'name', value: registerForm.value.hacienda.toUpperCase() }
@@ -555,7 +555,7 @@ const checkUsernameAvailability = debounce(async (username) => {
 
   checkingUsername.value = true
   try {
-    const result = await validationStore.checkFieldsTaken([
+    const result = await checkFieldsTaken([
       { collection: 'users', field: 'username', value: username.toUpperCase() }
     ])
     usernameAvailable.value = result.username
@@ -576,7 +576,7 @@ const checkEmailAvailability = debounce(async (email) => {
 
   checkingEmail.value = true
   try {
-    const result = await validationStore.checkFieldsTaken([
+    const result = await checkFieldsTaken([
       { collection: 'users', field: 'email', value: email }
     ])
     emailAvailable.value = result.email
@@ -597,7 +597,7 @@ const checkHaciendaAvailability = debounce(async (hacienda) => {
 
   checkingHacienda.value = true
   try {
-    const result = await validationStore.checkFieldsTaken([
+    const result = await checkFieldsTaken([
       { collection: 'Haciendas', field: 'name', value: hacienda.toUpperCase() }
     ])
     haciendaAvailable.value = result.name
@@ -651,7 +651,7 @@ const register = async () => {
 
   try {
     // Verificar disponibilidad de campos solo al submit
-    const fieldsAvailable = await validationStore.checkFieldsTaken([
+    const fieldsAvailable = await checkFieldsTaken([
       {
         collection: 'users',
         field: 'username',
