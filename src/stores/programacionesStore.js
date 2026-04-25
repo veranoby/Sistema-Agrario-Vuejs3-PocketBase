@@ -190,6 +190,52 @@ export const useProgramacionesStore = defineStore('programaciones', {
       return this.fetchPage(1, this.pagination.perPage, this.filters);
     },
 
+    async fetchProgramacionById(id) {
+      if (!id) throw new Error('ID de programación no proporcionado')
+
+      // Buscar en array local primero
+      const local = this.programaciones.find((p) => p.id === id)
+      if (local) return this.enriquecerProgramacion(local)
+
+      // Fallback a PocketBase
+      const syncStore = useSyncStore()
+      if (syncStore.isOnline) {
+        const record = await pb.collection('programaciones').getOne(id, {
+          expand: 'actividad,siembras'
+        })
+        const enriched = this.enriquecerProgramacion(record)
+        if (!this.programaciones.some(p => p.id === record.id)) {
+          this.programaciones.push(enriched)
+          syncStore.saveToLocalStorage('programaciones', this.programaciones)
+        }
+        return enriched
+      }
+
+      throw new Error('Programación no encontrada y sin conexión')
+    },
+
+    async fetchProgramacionesBySiembra(siembraId) {
+      const syncStore = useSyncStore()
+      if (!syncStore.isOnline) {
+        return this.programaciones.filter(p => p.siembras?.includes(siembraId))
+      }
+      return pb.collection('programaciones').getFullList({
+        filter: `siembras ~ "${siembraId}"`,
+        sort: '-created'
+      })
+    },
+
+    async fetchEjecuciones(programacionId) {
+      const syncStore = useSyncStore()
+      if (!syncStore.isOnline) {
+        return []
+      }
+      return pb.collection('programaciones_ejecuciones').getFullList({
+        filter: `programacion = "${programacionId}"`,
+        sort: '-fecha'
+      }).catch(() => [])
+    },
+
     clearProgramaciones() {
       this.programaciones = [];
       this.pagination = {

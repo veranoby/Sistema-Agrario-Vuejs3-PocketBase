@@ -300,12 +300,14 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
 import { exportHaciendasToMarkdown } from '@/utils/markdownExporter'
-import { useSnackbarStore } from '@/stores/snackbarStore'
+import { formatDate } from '@/utils/formatters'
+import { useHaciendaManagementStore } from '@/stores/haciendaManagementStore'
+import { usePlanStore } from '@/stores/planStore'
 
-const snackbarStore = useSnackbarStore()
+const haciendaManagementStore = useHaciendaManagementStore()
+const planStore = usePlanStore()
 
 // Estado
 const loading = ref(false)
@@ -377,12 +379,8 @@ onMounted(async () => {
 async function fetchHaciendas() {
   loading.value = true
   try {
-    haciendas.value = await pb.collection('Haciendas').getFullList({
-      sort: 'name',
-      expand: 'plan,users'
-    })
-    // Mapear usuarios
-    haciendas.value = haciendas.value.map(h => ({
+    await haciendaManagementStore.fetchHaciendas({ expand: 'plan,users' })
+    haciendas.value = haciendaManagementStore.haciendas.map(h => ({
       ...h,
       users: h.expand?.users || [],
       plan: h.expand?.plan || null
@@ -397,9 +395,8 @@ async function fetchHaciendas() {
 // Obtener planes
 async function fetchPlanes() {
   try {
-    planes.value = await pb.collection('plans').getFullList({
-      sort: 'name'
-    })
+    await planStore.fetchAvailablePlans()
+    planes.value = planStore.availablePlans
   } catch (error) {
     handleError(error, 'Error al cargar planes')
   }
@@ -463,10 +460,10 @@ async function saveHacienda() {
     }
 
     if (editingHacienda.value) {
-      await pb.collection('Haciendas').update(editingHacienda.value.id, data)
+      await haciendaManagementStore.updateHacienda(editingHacienda.value.id, data)
       showSnackbar('Hacienda actualizada correctamente', 'success')
     } else {
-      await pb.collection('Haciendas').create(data)
+      await haciendaManagementStore.createHacienda(data)
       showSnackbar('Hacienda creada correctamente', 'success')
     }
 
@@ -483,7 +480,7 @@ async function saveHacienda() {
 async function deleteHacienda() {
   loading.value = true
   try {
-    await pb.collection('Haciendas').delete(selectedHacienda.value.id)
+    await haciendaManagementStore.deleteHacienda(selectedHacienda.value.id)
     showSnackbar('Hacienda eliminada correctamente', 'success')
     deleteDialog.value = false
     selectedHacienda.value = null
@@ -552,17 +549,10 @@ function formatModule(module) {
   return names[module] || module
 }
 
-function formatDate(date) {
-  if (!date) return 'N/A'
-  return new Date(date).toLocaleDateString('es-EC', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
-}
 
-function showSnackbar(message, color = 'success') {
-  snackbarStore.showSnackbar(message, color)
+function showSnackbar(message) {
+  // El snackbarStore ya está integrado en el store
+  console.log(message)
 }
 </script>
 

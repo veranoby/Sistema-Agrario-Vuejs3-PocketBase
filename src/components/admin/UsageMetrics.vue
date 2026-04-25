@@ -139,8 +139,12 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { pb } from '@/utils/pocketbase'
 import { logger } from '@/utils/logger'
+import { useActividadesStore } from '@/stores/actividadesStore'
+import { useHaciendaStore } from '@/stores/haciendaStore'
+
+const actividadesStore = useActividadesStore()
+const haciendaStore = useHaciendaStore()
 
 const loading = ref(false)
 const topHaciendas = ref([])
@@ -155,23 +159,29 @@ async function loadMetrics() {
   loading.value = true
   try {
     // Top 10 haciendas por actividad
-    const actividades = await pb.collection('actividades').getList(1, 1000, {
-      sort: '-created'
-    })
+    await actividadesStore.fetchPage(1, 1000)
+    const actividades = actividadesStore.actividades
 
     const actividadPorHacienda = {}
-    actividades.items.forEach(a => {
+    actividades.forEach(a => {
       actividadPorHacienda[a.hacienda] = (actividadPorHacienda[a.hacienda] || 0) + 1
     })
 
-    // Obtener nombres de haciendas
+    // Obtener nombres de haciendas desde el store
     const haciendaIds = Object.keys(actividadPorHacienda)
     for (const haciendaId of haciendaIds) {
-      try {
-        const hacienda = await pb.collection('Haciendas').getOne(haciendaId)
+      const hacienda = haciendaStore.haciendas.find(h => h.id === haciendaId)
+      if (hacienda) {
         haciendaNames.value[haciendaId] = hacienda.name
-      } catch (error) {
-        haciendaNames.value[haciendaId] = 'Hacienda eliminada'
+      } else {
+        // Si no está en el store, intentar cargarla
+        try {
+          await haciendaStore.fetchHacienda(haciendaId)
+          const loadedHacienda = haciendaStore.haciendas.find(h => h.id === haciendaId)
+          haciendaNames.value[haciendaId] = loadedHacienda?.name || 'Hacienda eliminada'
+        } catch (error) {
+          haciendaNames.value[haciendaId] = 'Hacienda eliminada'
+        }
       }
     }
 
@@ -186,7 +196,7 @@ async function loadMetrics() {
 
     // Uso de módulos (contar actividades por tipo)
     const tipos = {}
-    actividades.items.forEach(a => {
+    actividades.forEach(a => {
       const tipo = a.tipo_actividades || 'Sin tipo'
       tipos[tipo] = (tipos[tipo] || 0) + 1
     })

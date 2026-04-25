@@ -95,6 +95,28 @@ export const useBitacoraStore = defineStore('bitacora', {
       logger.debug('[BITACORA_STORE] Initialization complete.');
     },
 
+    async fetchBitacorasBySiembra(siembraId) {
+      const syncStore = useSyncStore()
+      if (!syncStore.isOnline) {
+        return this.bitacoraEntries.filter(e => e.siembra_asociada === siembraId)
+      }
+      return pb.collection('bitacora').getFullList({
+        filter: `siembra_asociada = "${siembraId}"`,
+        sort: '-created'
+      })
+    },
+
+    async fetchBitacorasByProgramacion(programacionId) {
+      const syncStore = useSyncStore()
+      if (!syncStore.isOnline) {
+        return this.bitacoraEntries.filter(e => e.programacion_origen === programacionId)
+      }
+      return pb.collection('bitacora').getFullList({
+        filter: `programacion_origen = "${programacionId}"`,
+        sort: '-created'
+      }).catch(() => [])
+    },
+
     async cargarBitacoraEntries(haciendaId) {
       return this.fetchPage(1, 100, { hacienda: haciendaId });
     },

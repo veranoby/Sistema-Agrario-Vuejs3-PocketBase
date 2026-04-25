@@ -244,6 +244,7 @@ import { useZonasStore } from '@/stores/zonasStore'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 import { handleError } from '@/utils/errorHandler'
 import { useAvatarStore } from '@/stores/avatarStore'
+import { formatDate } from '@/utils/formatters'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -315,10 +316,6 @@ const getStatusColor = (status) => {
     finalizada: 'gray'
   }
   return colors[status] || 'gray'
-}
-
-const formatDate = (date) => {
-  return new Date(date).toLocaleDateString()
 }
 
 const getZoneNames = (siembra) => {

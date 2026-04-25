@@ -90,23 +90,19 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { pb } from '@/utils/pocketbase'
-import { handleError } from '@/utils/errorHandler'
-import { MODULE_CATEGORIES, MODULE_ICONS, MODULE_TITLES, BILLING_CYCLES } from '@/constants/modules'
+import { MODULE_CATEGORIES, MODULE_TITLES } from '@/constants/modules'
 import { useEvents } from '@/composables/useEvents'
 import { EVENTS } from '@/utils/eventBus'
 import ModuleCard from './ModuleCard.vue'
 import CostSummary from './CostSummary.vue'
-import { useSnackbarStore } from '@/stores/snackbarStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
+import { usePlanStore } from '@/stores/planStore'
 
-const snackbarStore = useSnackbarStore()
 const haciendaStore = useHaciendaStore()
+const planStore = usePlanStore()
 const { emit } = useEvents()
 
 // Estado
-const modules = ref([])
-const activeModules = ref([])
 const search = ref('')
 const filterCategory = ref(null)
 const showCostSummary = ref(false)
@@ -124,7 +120,7 @@ const categories = computed(() => {
 
 // Módulos filtrados
 const filteredModules = computed(() => {
-  let result = modules.value.filter(m => m.is_active)
+  let result = planStore.availableModules.filter(m => m.is_active)
 
   if (search.value) {
     const query = search.value.toLowerCase()
@@ -143,103 +139,28 @@ const filteredModules = computed(() => {
 
 // Módulos seleccionados (activos)
 const selectedModules = computed(() => {
-  return modules.value.filter(m => isModuleActive(m.id))
+  return planStore.availableModules.filter(m => planStore.isModuleActive(m.id))
 })
 
 onMounted(async () => {
-  await Promise.all([fetchModules(), fetchActiveModules()])
+  await Promise.all([
+    planStore.fetchModules(),
+    planStore.fetchSubscriptions(haciendaStore.mi_hacienda?.id)
+  ])
 })
-
-// Obtener módulos disponibles
-async function fetchModules() {
-  try {
-    modules.value = await pb.collection('modulos').getFullList({
-      sort: 'category, name'
-    })
-  } catch (error) {
-    handleError(error, 'Error al cargar módulos')
-  }
-}
-
-// Obtener módulos activos de la hacienda
-async function fetchActiveModules() {
-  try {
-    // En producción, filtrar por hacienda del usuario actual
-    const subscriptions = await pb.collection('subscriptions').getFullList({
-      filter: 'is_active = true',
-      expand: 'modulo'
-    })
-    
-    activeModules.value = subscriptions.map(s => s.expand.modulo.id)
-  } catch (error) {
-    // Si no existe la colección, usar array vacío
-    activeModules.value = []
-  }
-}
-
-// Verificar si un módulo está activo
-function isModuleActive(moduleId) {
-  return activeModules.value.includes(moduleId)
-}
 
 // Toggle de módulo
 async function toggleModule(moduleId, activate) {
-  try {
-    const haciendaId = haciendaStore.mi_hacienda?.id
-
-    if (!haciendaId) {
-      showSnackbar('No hay hacienda seleccionada', 'error')
-      return
-    }
-
+  const haciendaId = haciendaStore.mi_hacienda?.id
+  const success = await planStore.toggleModule(moduleId, haciendaId, activate)
+  
+  if (success) {
+    // Emitir evento
     if (activate) {
-      // Activar módulo usando endpoint backend
-      const response = await fetch(`/api/modulos/${moduleId}/activate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${pb.authStore.token}`
-        },
-        body: JSON.stringify({ haciendaId })
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Error al activar módulo')
-      }
-
-      const result = await response.json()
-      activeModules.value.push(moduleId)
-      
-      // Emitir evento
       emit(EVENTS.MODULO_ACTIVADO, { moduleId, haciendaId })
-      
-      showSnackbar('Módulo activado', 'success')
     } else {
-      // Desactivar módulo usando endpoint backend
-      const response = await fetch(`/api/modulos/${moduleId}/deactivate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${pb.authStore.token}`
-        },
-        body: JSON.stringify({ haciendaId })
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Error al desactivar módulo')
-      }
-
-      activeModules.value = activeModules.value.filter(id => id !== moduleId)
-      
-      // Emitir evento
       emit(EVENTS.MODULO_DESACTIVADO, { moduleId, haciendaId })
-      
-      showSnackbar('Módulo desactivado', 'success')
     }
-  } catch (error) {
-    handleError(error, activate ? 'Error al activar módulo' : 'Error al desactivar módulo')
   }
 }
 

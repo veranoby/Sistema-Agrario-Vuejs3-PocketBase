@@ -359,18 +359,27 @@ export const useActividadesStore = defineStore('actividades', {
           } else {
             this.actividades.push(record)
           }
-
-          this.activityLookupMap.set(id, record)
           syncStore.saveToLocalStorage('actividades', this.actividades)
-
+          this.buildActivityLookup()
           return record
         }
 
-        throw new Error('Actividad no encontrada')
+        throw new Error('Actividad no encontrada y sin conexión')
       } catch (error) {
-        console.error('Error al obtener actividad:', error)
-        throw new Error('Actividad no encontrada')
+        handleError(error, 'Error al obtener actividad')
+        throw error
       }
+    },
+
+    async fetchActividadesBySiembra(siembraId) {
+      const syncStore = useSyncStore()
+      if (!syncStore.isOnline) {
+        return this.actividades.filter(a => a.siembras?.includes(siembraId))
+      }
+      return pb.collection('actividades').getFullList({
+        filter: `siembras ~ "${siembraId}"`,
+        sort: '-fecha_ejecucion'
+      })
     },
 
     buildActivityLookup() {

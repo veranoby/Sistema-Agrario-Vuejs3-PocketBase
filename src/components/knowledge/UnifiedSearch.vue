@@ -235,16 +235,15 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
 import { debounce } from '@/utils/debounce'
 import { exportKnowledgeHubToMarkdown } from '@/utils/markdownExporter'
-import { useSnackbarStore } from '@/stores/snackbarStore'
+import { useSyncStore } from '@/stores/sync/index'
 
 const router = useRouter()
-const snackbarStore = useSnackbarStore()
+const syncStore = useSyncStore()
 
 // Estado
 const searchQuery = ref('')
@@ -293,74 +292,18 @@ async function performSearch() {
     const query = searchQuery.value.toLowerCase()
     const types = selectedTypes.value.length ? selectedTypes.value : entityTypes.map(t => t.value)
 
-    const searchPromises = []
-
-    if (types.includes('siembras')) {
-      searchPromises.push(
-        pb.collection('siembras').getFullList().then(data =>
-          data.filter(s =>
-            s.nombre?.toLowerCase().includes(query) ||
-            s.tipo_cultivo?.toLowerCase().includes(query) ||
-            s.hacienda_nombre?.toLowerCase().includes(query)
-          )
-        )
-      )
-    }
-
-    if (types.includes('programaciones')) {
-      searchPromises.push(
-        pb.collection('programaciones').getFullList().then(data =>
-          data.filter(p =>
-            p.nombre?.toLowerCase().includes(query) ||
-            p.actividad_nombre?.toLowerCase().includes(query)
-          )
-        )
-      )
-    }
-
-    if (types.includes('actividades')) {
-      searchPromises.push(
-        pb.collection('actividades').getFullList().then(data =>
-          data.filter(a =>
-            a.nombre?.toLowerCase().includes(query) ||
-            a.tipo?.toLowerCase().includes(query)
-          )
-        )
-      )
-    }
-
-    if (types.includes('tipos_actividades')) {
-      searchPromises.push(
-        pb.collection('tipos_actividades').getFullList().then(data =>
-          data.filter(t =>
-            t.nombre?.toLowerCase().includes(query) ||
-            t.descripcion?.toLowerCase().includes(query)
-          )
-        )
-      )
-    }
-
-    if (types.includes('haciendas')) {
-      searchPromises.push(
-        pb.collection('Haciendas').getFullList().then(data =>
-          data.filter(h =>
-            h.name?.toLowerCase().includes(query) ||
-            h.descripcion?.toLowerCase().includes(query)
-          )
-        )
-      )
-    }
-
-    const searchResults = await Promise.all(searchPromises)
+    // Usar syncStore.searchOffline para búsqueda offline-first
+    const searchResults = await syncStore.searchOffline(query, {
+      collections: types,
+      fields: ['nombre', 'tipo_cultivo', 'descripcion', 'actividad_nombre', 'name']
+    })
 
     results.value = {}
-    let idx = 0
-
-    if (types.includes('siembras')) results.value.siembras = searchResults[idx++]
-    if (types.includes('programaciones')) results.value.programaciones = searchResults[idx++]
-    if (types.includes('actividades')) results.value.actividades = searchResults[idx++]
-    if (types.includes('tipos_actividades')) results.value.tipos_actividades = searchResults[idx++]
-    if (types.includes('haciendas')) results.value.haciendas = searchResults[idx++]
+    if (types.includes('siembras')) results.value.siembras = searchResults.siembras || []
+    if (types.includes('programaciones')) results.value.programaciones = searchResults.programaciones || []
+    if (types.includes('actividades')) results.value.actividades = searchResults.actividades || []
+    if (types.includes('tipos_actividades')) results.value.tipos_actividades = searchResults.tipos_actividades || []
+    if (types.includes('haciendas')) results.value.haciendas = searchResults.haciendas || []
 
     // Seleccionar primera pestaña con resultados
     const firstTypeWithResults = entityTypes.find(t => results.value[t.value]?.length)
@@ -414,11 +357,6 @@ function exportResults() {
 }
 
 // Utilidades
-function getAvatarUrl(item) {
-  // Implementar lógica de avatar si existe
-  return null
-}
-
 function getStatusColor(status) {
   const colors = {
     activa: 'success',

@@ -36,9 +36,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { digitalSignature, isWebCryptoSupported } from '@/utils/digitalSignature'
-import { pb } from '@/utils/pocketbase'
+import { useAuthStore } from '@/stores/authStore'
 import { logger } from '@/utils/logger'
 
 const props = defineProps({
@@ -53,6 +53,8 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['signed'])
+
+const authStore = useAuthStore()
 
 const isSigned = ref(false)
 const signatureDate = ref(null)
@@ -108,7 +110,7 @@ async function handleSign() {
     const dataToSign = {
       bitacoraId: props.bitacoraId,
       timestamp: new Date().toISOString(),
-      userId: pb.authStore.model?.id
+      userId: authStore.user?.id
     }
 
     // Firmar

@@ -155,6 +155,7 @@
 import { computed } from 'vue'
 import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useZonasStore } from '@/stores/zonasStore'
+import { formatDate } from '@/utils/formatters'
 
 const siembrasStore = useSiembrasStore()
 const zonasStore = useZonasStore()
@@ -174,20 +175,6 @@ const statusMap = {
 }
 
 const availableStatuses = computed(() => statusMap[props.color] || [])
-
-const formatDate = (dateString) => {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  // Ajustar a UTC
-  const utcDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000)
-  const options = {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    timeZone: 'UTC'
-  }
-  return utcDate.toLocaleDateString('es-ES', options)
-}
 
 const getDaysAgo = (dateString) => {
   if (!dateString) return ''

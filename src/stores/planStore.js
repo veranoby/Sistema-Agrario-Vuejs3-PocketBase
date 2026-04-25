@@ -8,6 +8,8 @@ import { useSyncStore } from '@/stores/sync/index'
 export const usePlanStore = defineStore('plan', {
   state: () => ({
     plans: [],
+    availableModules: [],
+    activeSubscriptions: [],
     loading: false,
     error: null
   }),
@@ -22,10 +24,94 @@ export const usePlanStore = defineStore('plan', {
     currentPlan: (state) => {
       const haciendaStore = useHaciendaStore()
       return state.plans.find((plan) => plan.id === haciendaStore.mi_hacienda?.plan)
+    },
+    isModuleActive: (state) => (moduleId) => {
+      return state.activeSubscriptions.some(s => s.modulo === moduleId || s.expand?.modulo?.id === moduleId)
+    },
+    activeModuleIds: (state) => {
+      return state.activeSubscriptions.map(s => s.modulo || s.expand?.modulo?.id).filter(Boolean)
     }
   },
 
   actions: {
+    async fetchModules() {
+      this.loading = true
+      try {
+        this.availableModules = await pb.collection('modulos').getFullList({
+          sort: 'category, name'
+        })
+        return this.availableModules
+      } catch (error) {
+        handleError(error, 'Error al cargar módulos')
+        throw error
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async fetchSubscriptions(haciendaId) {
+      this.loading = true
+      try {
+        const filter = haciendaId
+          ? `hacienda = "${haciendaId}" && is_active = true`
+          : 'is_active = true'
+
+        this.activeSubscriptions = await pb.collection('subscriptions').getFullList({
+          filter,
+          expand: 'modulo'
+        })
+        return this.activeSubscriptions
+      } catch (error) {
+        handleError(error, 'Error al cargar suscripciones')
+        this.activeSubscriptions = []
+        return []
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async toggleModule(moduleId, haciendaId, activate) {
+      const snackbarStore = useSnackbarStore()
+
+      if (!haciendaId) {
+        snackbarStore.showSnackbar('No hay hacienda seleccionada', 'error')
+        return false
+      }
+
+      this.loading = true
+      try {
+        const endpoint = activate ? 'activate' : 'deactivate'
+
+        const response = await fetch(`/api/modulos/${moduleId}/${endpoint}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${pb.authStore.token}`
+          },
+          body: JSON.stringify({ haciendaId })
+        })
+
+        if (!response.ok) {
+          const error = await response.json()
+          throw new Error(error.error || `Error al ${activate ? 'activar' : 'desactivar'} módulo`)
+        }
+
+        // Refrescar suscripciones
+        await this.fetchSubscriptions(haciendaId)
+
+        snackbarStore.showSnackbar(
+          `Módulo ${activate ? 'activado' : 'desactivado'}`,
+          'success'
+        )
+        return true
+      } catch (error) {
+        handleError(error, activate ? 'Error al activar módulo' : 'Error al desactivar módulo')
+        return false
+      } finally {
+        this.loading = false
+      }
+    },
+
     async getGratisPlan() {
       const syncStore = useSyncStore()
       const cachedPlan = syncStore.loadFromLocalStorage('gratisPlan')

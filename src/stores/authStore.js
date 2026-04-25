@@ -561,6 +561,16 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
+    async confirmPasswordReset(token, password, passwordConfirm) {
+      try {
+        await pb.collection('users').confirmPasswordReset(token, password, passwordConfirm)
+        return true
+      } catch (error) {
+        handleError(error, 'Error al confirmar reset de contraseña')
+        throw error
+      }
+    },
+
     async logout() {
       const snackbarStore = useSnackbarStore()
       const syncStore = useSyncStore()

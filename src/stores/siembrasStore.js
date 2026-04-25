@@ -271,13 +271,38 @@ export const useSiembrasStore = defineStore('siembras', {
     },
 
     async fetchSiembraById(id) {
-      console.log('entrando a fetchSiembraById: id=', id)
-      const index = this.siembras.findIndex((s) => s.id === id)
-      if (index !== -1) {
-        return this.siembras[index] // Retorna la actividad encontrada
-      } else {
-        throw new Error('Actividad no encontrada') // Manejo de error si no se encuentra
+      if (!id) throw new Error('ID de siembra no proporcionado')
+
+      // Buscar en array local primero
+      const local = this.siembras.find((s) => s.id === id)
+      if (local) return local
+
+      // Fallback a PocketBase
+      const syncStore = useSyncStore()
+      if (syncStore.isOnline) {
+        const record = await pb.collection('siembras').getOne(id, {
+          expand: 'hacienda,zona'
+        })
+        // Agregar al array local
+        if (!this.siembras.some(s => s.id === record.id)) {
+          this.siembras.push(record)
+          syncStore.saveToLocalStorage('siembras', this.siembras)
+        }
+        return record
       }
+
+      throw new Error('Siembra no encontrada y sin conexión')
+    },
+
+    async fetchSiembrasByProgramacion(programacionId) {
+      const syncStore = useSyncStore()
+      if (!syncStore.isOnline) {
+        return this.siembras.filter(s => s.programaciones?.includes(programacionId))
+      }
+      return pb.collection('siembras').getFullList({
+        filter: `programaciones ~ "${programacionId}"`,
+        sort: '-created'
+      }).catch(() => [])
     },
 
     // Método para actualizar un elemento local

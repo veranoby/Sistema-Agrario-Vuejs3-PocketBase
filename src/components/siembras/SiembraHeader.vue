@@ -64,41 +64,9 @@
 
 <script setup>
 import { useI18n } from 'vue-i18n'
-
-const props = defineProps({
-  siembraInfo: {
-    type: Object,
-    required: true
-  },
-  avatarUrl: {
-    type: String,
-    required: true
-  },
-  avatarHaciendaUrl: {
-    type: String,
-    required: true
-  },
-  mi_hacienda: {
-    type: Object,
-    required: true
-  },
-  userRole: {
-    type: String,
-    required: true
-  },
-  siembraAvatarUrl: {
-    type: String,
-    required: true
-  }
-})
-
-const emit = defineEmits([])
+import { formatDate } from '@/utils/formatters'
 
 const { t } = useI18n()
-
-const formatDate = (date) => {
-  return new Date(date).toLocaleDateString()
-}
 
 const getStatusColor = (status) => {
   const colors = {

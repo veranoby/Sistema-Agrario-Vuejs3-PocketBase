@@ -67,6 +67,7 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useBitacoraStore } from '@/stores/bitacoraStore';
+import { formatDate } from '@/utils/formatters';
 import BitacoraEntryCard from './BitacoraEntryCard.vue';
 
 const props = defineProps({
@@ -143,17 +144,16 @@ watch(() => [props.siembraId, props.actividadId], () => {
 });
 
 // Watch for changes in the store itself
-watch(() => bitacoraStore.bitacoraEntries, (newEntries) => {
-    // Re-evaluate the source based on current props when store changes
-    if (props.siembraId) {
-      allMatchingEntries.value = bitacoraStore.getEnrichedBitacoraBySiembra(props.siembraId) || [];
-    } else if (props.actividadId) {
-      allMatchingEntries.value = bitacoraStore.getEnrichedBitacoraByActividadRealizada(props.actividadId) || [];
-    } else {
-      allMatchingEntries.value = bitacoraStore.getEnrichedBitacoraEntries || [];
-    }
+watch(() => bitacoraStore.bitacoraEntries, () => {
+  // Re-evaluate the source based on current props when store changes
+  if (props.siembraId) {
+    allMatchingEntries.value = bitacoraStore.getEnrichedBitacoraBySiembra(props.siembraId) || [];
+  } else if (props.actividadId) {
+    allMatchingEntries.value = bitacoraStore.getEnrichedBitacoraByActividadRealizada(props.actividadId) || [];
+  } else {
+    allMatchingEntries.value = bitacoraStore.getEnrichedBitacoraEntries || [];
+  }
 }, { deep: true });
-
 
 const entriesToShow = computed(() => {
   return allMatchingEntries.value.slice(0, props.itemLimit);
@@ -162,17 +162,6 @@ const entriesToShow = computed(() => {
 const totalMatchingEntries = computed(() => {
     return allMatchingEntries.value.length;
 });
-
-function formatDate(dateString) {
-  if (!dateString) return '';
-  try {
-    const date = new Date(dateString);
-     if (isNaN(date.getTime())) return 'Fecha inválida';
-    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-  } catch (e) {
-    return 'Fecha inválida';
-  }
-}
 
 const estadoColor = (estado) => {
   switch (estado?.toLowerCase()) {

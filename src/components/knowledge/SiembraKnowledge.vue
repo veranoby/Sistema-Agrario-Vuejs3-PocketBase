@@ -197,13 +197,19 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
 import { exportSiembrasToMarkdown } from '@/utils/markdownExporter'
-import { useSnackbarStore } from '@/stores/snackbarStore'
+import { formatDate } from '@/utils/formatters'
+import { useSiembrasStore } from '@/stores/siembrasStore'
+import { useActividadesStore } from '@/stores/actividadesStore'
+import { useProgramacionesStore } from '@/stores/programacionesStore'
+import { useBitacoraStore } from '@/stores/bitacoraStore'
 
 const route = useRoute()
-const snackbarStore = useSnackbarStore()
+const siembrasStore = useSiembrasStore()
+const actividadesStore = useActividadesStore()
+const programacionesStore = useProgramacionesStore()
+const bitacoraStore = useBitacoraStore()
 
 // Estado
 const siembra = ref(null)
@@ -261,30 +267,18 @@ onMounted(async () => {
 // Cargar datos
 async function loadData() {
   try {
-    // Obtener siembra
-    siembra.value = await pb.collection('siembras').getOne(route.params.id, {
-      expand: 'hacienda,zona'
-    })
+    siembra.value = await siembrasStore.fetchSiembraById(route.params.id)
 
-    // Obtener actividades relacionadas
-    actividades.value = await pb.collection('actividades').getFullList({
-      filter: `siembras ~ "${route.params.id}"`,
-      sort: '-fecha_ejecucion'
-    }).catch(() => [])
+    actividades.value = await actividadesStore.fetchActividadesBySiembra(route.params.id)
+      .catch(() => [])
 
-    // Obtener bitácoras
-    bitacoras.value = await pb.collection('bitacora').getFullList({
-      filter: `siembras ~ "${route.params.id}"`,
-      sort: '-created'
-    }).catch(() => [])
+    bitacoras.value = await bitacoraStore.fetchBitacorasBySiembra(route.params.id)
+      .catch(() => [])
 
-    // Obtener métricas BPA
     metricasBPA.value = siembra.value?.metricas_bpa || []
 
-    // Obtener programaciones futuras
-    programacionesFuturas.value = await pb.collection('programaciones').getFullList({
-      filter: `siembras ~ "${route.params.id}" && estado = "activa"`
-    }).catch(() => [])
+    programacionesFuturas.value = await programacionesStore.fetchProgramacionesBySiembra(route.params.id)
+      .catch(() => [])
   } catch (error) {
     handleError(error, 'Error al cargar datos de la siembra')
   }
@@ -324,14 +318,6 @@ function getStatusColor(status) {
   return colors[status?.toLowerCase()] || 'grey'
 }
 
-function formatDate(date) {
-  if (!date) return 'N/A'
-  return new Date(date).toLocaleDateString('es-EC', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
-}
 
 function showSnackbar(message, color = 'success') {
   snackbarMessage.value = message

@@ -9,6 +9,7 @@ import { useProfileStore } from '@/stores/profileStore'
 import { useAvatarStore } from '@/stores/avatarStore'
 import { handleError } from '@/utils/errorHandler'
 import { storeToRefs } from 'pinia'
+import { formatDate } from '@/utils/formatters'
 
 export function useSiembraData(siembraId) {
   const { t } = useI18n()
@@ -161,10 +162,6 @@ export function useSiembraData(siembraId) {
 
   const handleBitacoraSave = () => {
     showBitacoraFormDialog.value = false
-  }
-
-  const formatDate = (date) => {
-    return new Date(date).toLocaleDateString()
   }
 
   const getStatusColor = (status) => {

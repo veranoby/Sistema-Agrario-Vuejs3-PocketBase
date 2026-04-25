@@ -165,12 +165,12 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
 import { exportTiposActividadesToMarkdown } from '@/utils/markdownExporter'
-import { useSnackbarStore } from '@/stores/snackbarStore'
+import { formatDate } from '@/utils/formatters'
+import { useActividadesStore } from '@/stores/actividadesStore'
 
-const snackbarStore = useSnackbarStore()
+const actividadesStore = useActividadesStore()
 
 // Estado
 const loading = ref(false)
@@ -216,9 +216,8 @@ onMounted(async () => {
 async function fetchActivities() {
   loading.value = true
   try {
-    activities.value = await pb.collection('tipos_actividades').getFullList({
-      sort: 'nombre'
-    })
+    await actividadesStore.cargarTiposActividades()
+    activities.value = actividadesStore.tiposActividades
   } catch (error) {
     handleError(error, 'Error al cargar tipos de actividades')
   } finally {
@@ -266,14 +265,6 @@ function downloadMarkdown(content, filename) {
 }
 
 // Utilidades
-function formatDate(date) {
-  if (!date) return 'N/A'
-  return new Date(date).toLocaleDateString('es-EC', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
-}
 
 function showSnackbar(message, color = 'success') {
   snackbarMessage.value = message

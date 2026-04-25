@@ -129,13 +129,17 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
 import { exportProgramacionesToMarkdown } from '@/utils/markdownExporter'
-import { useSnackbarStore } from '@/stores/snackbarStore'
+import { formatDate } from '@/utils/formatters'
+import { useProgramacionesStore } from '@/stores/programacionesStore'
+import { useSiembrasStore } from '@/stores/siembrasStore'
+import { useBitacoraStore } from '@/stores/bitacoraStore'
 
 const route = useRoute()
-const snackbarStore = useSnackbarStore()
+const programacionesStore = useProgramacionesStore()
+const siembrasStore = useSiembrasStore()
+const bitacoraStore = useBitacoraStore()
 
 // Estado
 const programacion = ref(null)
@@ -153,26 +157,16 @@ onMounted(async () => {
 // Cargar datos
 async function loadData() {
   try {
-    // Obtener programación
-    programacion.value = await pb.collection('programaciones').getOne(route.params.id, {
-      expand: 'actividad,hacienda'
-    })
+    programacion.value = await programacionesStore.fetchProgramacionById(route.params.id)
 
-    // Obtener ejecuciones (mock - en producción sería una colección real)
-    ejecuciones.value = await pb.collection('programaciones_ejecuciones').getFullList({
-      filter: `programacion = "${route.params.id}"`,
-      sort: '-fecha'
-    }).catch(() => [])
+    ejecuciones.value = await programacionesStore.fetchEjecuciones(route.params.id)
+      .catch(() => [])
 
-    // Obtener siembras relacionadas
-    siembrasRelacionadas.value = await pb.collection('siembras').getFullList({
-      filter: `programaciones ~ "${route.params.id}"`
-    }).catch(() => [])
+    siembrasRelacionadas.value = await siembrasStore.fetchSiembrasByProgramacion(route.params.id)
+      .catch(() => [])
 
-    // Obtener bitácoras vinculadas
-    bitacorasVinculadas.value = await pb.collection('bitacora').getFullList({
-      filter: `programacion = "${route.params.id}"`
-    }).catch(() => [])
+    bitacorasVinculadas.value = await bitacoraStore.fetchBitacorasByProgramacion(route.params.id)
+      .catch(() => [])
   } catch (error) {
     handleError(error, 'Error al cargar datos de la programación')
   }
@@ -212,14 +206,6 @@ function getStatusColor(status) {
   return colors[status?.toLowerCase()] || 'grey'
 }
 
-function formatDate(date) {
-  if (!date) return 'N/A'
-  return new Date(date).toLocaleDateString('es-EC', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
-}
 
 function showSnackbar(message, color = 'success') {
   snackbarMessage.value = message

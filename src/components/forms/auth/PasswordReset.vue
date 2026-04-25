@@ -120,13 +120,14 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { pb } from '@/utils/pocketbase'
+import { useAuthStore } from '@/stores/authStore'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 import { calculatePasswordStrength, getPasswordStrengthColor, getPasswordStrengthLabel } from '@/utils/validators'
 
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
+const authStore = useAuthStore()
 const snackbarStore = useSnackbarStore()
 
 // Estado del componente
@@ -191,11 +192,7 @@ const handlePasswordReset = async () => {
   resetError.value = ''
 
   try {
-    await pb.collection('users').confirmPasswordReset(
-      token.value,
-      password.value,
-      passwordConfirm.value
-    )
+    await authStore.confirmPasswordReset(token.value, password.value, passwordConfirm.value)
 
     resetSuccess.value = true
     snackbarStore.showSnackbar(t('auth.password_reset_success'), 'success')
