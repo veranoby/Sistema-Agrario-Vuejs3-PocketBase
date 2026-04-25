@@ -9,7 +9,7 @@
 
 import { logger } from './logger'
 import { format, parseISO, differenceInDays } from 'date-fns'
-import { COMPLIANCE_THRESHOLDS, COMPLIANCE_LEVELS } from '@/constants/bpa'
+import { calculateBPAScore, getComplianceLevel, getBPAStatus, calculateEntryCompliance } from '@/utils/agriMetrics'
 
 /**
  * @typedef {Object} ReportConfig
@@ -796,15 +796,7 @@ export class ReportGenerator {
    * Calcula cumplimiento por entrada
    */
   calculateEntryCompliance(entry) {
-    const datosBPA = entry.datos_bpa || {}
-    const totalPreguntas = Object.keys(datosBPA).length
-    const respondidas = Object.values(datosBPA).filter(v =>
-      v !== null && v !== undefined && v !== ''
-    ).length
-
-    if (totalPreguntas === 0) return 0
-
-    return Math.round((respondidas / totalPreguntas) * 100)
+    return calculateEntryCompliance(entry.datos_bpa || {})
   }
 
   /**
@@ -819,9 +811,7 @@ export class ReportGenerator {
     return {
       totalEntries,
       avgCompliance: Math.round(avgCompliance),
-      complianceLevel: avgCompliance >= COMPLIANCE_THRESHOLDS.EXCELLENT ? COMPLIANCE_LEVELS.EXCELLENT :
-                       avgCompliance >= COMPLIANCE_THRESHOLDS.GOOD ? COMPLIANCE_LEVELS.GOOD :
-                       avgCompliance >= COMPLIANCE_THRESHOLDS.ACCEPTABLE ? COMPLIANCE_LEVELS.ACCEPTABLE : COMPLIANCE_LEVELS.CRITICAL
+      complianceLevel: getComplianceLevel(avgCompliance)
     }
   }
 

@@ -8,6 +8,7 @@
  */
 
 import { logger } from './logger'
+import { calculateDistance } from '@/utils/geoUtils'
 
 /**
  * @typedef {Object} LocationData

@@ -4,6 +4,7 @@
  */
 
 import { logger } from '@/utils/logger'
+import { formatDate } from '@/utils/formatters'
 
 /**
  * Mapeo de transformaciones específicas por tipo de actividad
@@ -37,7 +38,7 @@ const TRANSFORM_RULES = {
       fecha_siembra: (val, metrica) => ({
         key: 'fecha_siembra',
         label: 'Fecha de Siembra',
-        value: formatDateValue(val),
+        value: formatDate(val, 'dd MMM yyyy'),
         unit: null,
         category: 'fechas'
       }),
@@ -78,7 +79,7 @@ const TRANSFORM_RULES = {
       fecha_cosecha: (val, metrica) => ({
         key: 'fecha_cosecha',
         label: 'Fecha de Cosecha',
-        value: formatDateValue(val),
+        value: formatDate(val, 'dd MMM yyyy'),
         unit: null,
         category: 'fechas'
       }),
@@ -126,7 +127,7 @@ const TRANSFORM_RULES = {
       fecha_aplicacion: (val, metrica) => ({
         key: 'fecha_aplicacion',
         label: 'Fecha de Aplicación',
-        value: formatDateValue(val),
+        value: formatDate(val, 'dd MMM yyyy'),
         unit: null,
         category: 'fechas'
       }),
@@ -174,7 +175,7 @@ const TRANSFORM_RULES = {
       fecha_monitoreo: (val, metrica) => ({
         key: 'fecha_monitoreo',
         label: 'Fecha de Monitoreo',
-        value: formatDateValue(val),
+        value: formatDate(val, 'dd MMM yyyy'),
         unit: null,
         category: 'fechas'
       }),
@@ -222,7 +223,7 @@ const TRANSFORM_RULES = {
       fecha_riego: (val, metrica) => ({
         key: 'fecha_riego',
         label: 'Fecha de Riego',
-        value: formatDateValue(val),
+        value: formatDate(val, 'dd MMM yyyy'),
         unit: null,
         category: 'fechas'
       }),
@@ -269,8 +270,8 @@ const TRANSFORM_RULES = {
       }),
       fecha_fertilizacion: (val, metrica) => ({
         key: 'fecha_fertilizacion',
-        label: 'Fecha de Fertilización',
-        value: formatDateValue(val),
+        label: 'Fecha de Fertilizacion',
+        value: formatDate(val, 'dd MMM yyyy'),
         unit: null,
         category: 'fechas'
       }),
@@ -311,7 +312,7 @@ const TRANSFORM_RULES = {
       fecha_labranza: (val, metrica) => ({
         key: 'fecha_labranza',
         label: 'Fecha de Labranza',
-        value: formatDateValue(val),
+        value: formatDate(val, 'dd MMM yyyy'),
         unit: null,
         category: 'fechas'
       })
@@ -345,7 +346,7 @@ const TRANSFORM_RULES = {
       fecha_poda: (val, metrica) => ({
         key: 'fecha_poda',
         label: 'Fecha de Poda',
-        value: formatDateValue(val),
+        value: formatDate(val, 'dd MMM yyyy'),
         unit: null,
         category: 'fechas'
       })
@@ -549,23 +550,6 @@ export function flattenMetricas(metricasTransformadas) {
   }
 
   return flattened
-}
-
-/**
- * Formatea un valor de fecha para mostrar
- * @param {string|Date} value - Valor de fecha
- * @returns {string} Fecha formateada
- */
-function formatDateValue(value) {
-  if (!value) return ''
-  const date = new Date(value)
-  if (isNaN(date.getTime())) return value
-
-  return date.toLocaleDateString('es-ES', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  })
 }
 
 /**

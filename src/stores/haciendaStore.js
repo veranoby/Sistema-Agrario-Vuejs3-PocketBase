@@ -5,6 +5,17 @@ import { useSnackbarStore } from './snackbarStore'
 import { useSyncStore } from '@/stores/sync/index'
 import { useAvatarStore } from './avatarStore'
 
+/**
+ * Store de sesión: Hacienda actual del usuario logueado
+ *
+ * Responsabilidades:
+ * - mi_hacienda: Hacienda activa del usuario
+ * - haciendaUsers: Usuarios de mi hacienda
+ * - Operaciones sobre mi hacienda (update, delete user)
+ *
+ * Para CRUD administrativo de TODAS las haciendas (SuperAdmin),
+ * usar haciendaManagementStore.js
+ */
 export const useHaciendaStore = defineStore('hacienda', {
   state: () => {
     const syncStore = useSyncStore()

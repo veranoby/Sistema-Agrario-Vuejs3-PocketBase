@@ -5,6 +5,18 @@ import { useEvents } from '@/composables/useEvents'
 import { EVENTS } from '@/utils/eventBus'
 import { logger } from '@/utils/logger'
 
+/**
+ * Store administrativo: CRUD global de haciendas (SuperAdmin)
+ *
+ * Responsabilidades:
+ * - haciendas: Lista de todas las haciendas con paginación
+ * - Filtros y búsqueda
+ * - Suspensión/reactivación
+ * - Configuración de planes
+ *
+ * Para la hacienda actual del usuario logueado,
+ * usar haciendaStore.js
+ */
 export const useHaciendaManagementStore = defineStore('haciendaManagement', {
   state: () => ({
     haciendas: [],

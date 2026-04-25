@@ -4,6 +4,7 @@ import { useZonasStore } from '@/stores/zonasStore'
 import { useActividadesStore } from '@/stores/actividadesStore'
 import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
+import { calculateBPAScore, getBPAStatus, getComplianceLevel, calculateScoreDistribution } from '@/utils/agriMetrics'
 
 /**
  * Servicio especializado para generación de reportes offline
@@ -290,49 +291,19 @@ export class OfflineReportsService {
   // Métodos auxiliares
 
   calculateBPAScore(datosBpa) {
-    if (!datosBpa || typeof datosBpa !== 'object') return 0
-
-    let totalPoints = 0
-    let maxPoints = 0
-
-    Object.values(datosBpa).forEach(value => {
-      if (typeof value === 'number') {
-        totalPoints += value
-        maxPoints += 100
-      }
-    })
-
-    return maxPoints > 0 ? Math.round((totalPoints / maxPoints) * 100) : 0
+    return calculateBPAScore(datosBpa)
   }
 
   getBPAStatus(score) {
-    if (score >= 90) return 'excelente'
-    if (score >= 75) return 'bueno'
-    if (score >= 60) return 'regular'
-    return 'deficiente'
+    return getBPAStatus(score)
   }
 
   getComplianceLevel(score) {
-    if (score >= 90) return 'Excelente'
-    if (score >= 75) return 'Bueno'
-    if (score >= 60) return 'Regular'
-    return 'Deficiente'
+    return getComplianceLevel(score)
   }
 
   calculateScoreDistribution(zonas) {
-    const distribution = {
-      excelente: 0,
-      bueno: 0,
-      regular: 0,
-      deficiente: 0
-    }
-
-    zonas.forEach(zona => {
-      const status = this.getBPAStatus(zona.bpaScore)
-      distribution[status]++
-    })
-
-    return distribution
+    return calculateScoreDistribution(zonas)
   }
 
   generateBPARecommendations(zonas, summary) {
