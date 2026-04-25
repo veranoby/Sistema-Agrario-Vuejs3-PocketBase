@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
 import { useSnackbarStore } from './snackbarStore'
-import { useSyncStore } from './syncStore'
+import { useSyncStore } from '@/stores/sync/index'
 
 import placeholderUser from '@/assets/placeholder-user.png'
 import placeholderHacienda from '@/assets/placeholder-hacienda.png'

@@ -3,7 +3,7 @@ import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
 import { createUserData, createUserUpdateData } from '@/utils/userDataFactory'
 import { useEvents } from '@/composables/useEvents'
-import { EVENTS } from '@/utils/eventTypes'
+import { EVENTS } from '@/utils/eventBus'
 import { logger } from '@/utils/logger'
 
 export const useUserStore = defineStore('user', {

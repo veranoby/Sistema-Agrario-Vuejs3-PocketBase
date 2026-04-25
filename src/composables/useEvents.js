@@ -1,4 +1,4 @@
-import { eventBus, EVENTS } from '@/utils/eventBus'
+import eventBus, { EVENTS } from '@/utils/eventBus'
 
 /**
  * Composable para manejar eventos del sistema

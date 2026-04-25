@@ -78,33 +78,15 @@ class SiembraHandler extends BaseBitacoraHandler {
   }
 
   validate(datos, context = {}) {
-    const errors = []
-    const warnings = []
+    // Delegar validación al validador central
+    const result = validateBitacoraEntry(datos, this.tipo, context.tipoActividadData)
 
-    // Validar variedad
-    if (!datos.variedad || datos.variedad.trim() === '') {
-      errors.push('La variedad de semilla es requerida')
-    }
-
-    // Validar densidad
-    const densidad = datos.densidad || datos.densidad_plantas
-    if (!densidad || densidad <= 0) {
-      errors.push('La densidad de siembra debe ser mayor a 0')
-    }
-
-    // Validar fecha
-    if (!datos.fecha_siembra || isNaN(new Date(datos.fecha_siembra).getTime())) {
-      errors.push('La fecha de siembra es requerida y debe ser válida')
-    }
-
-    // Advertencias de mejores prácticas
-    if (densidad && densidad > 100000) {
-      warnings.push('La densidad parece muy alta. Verificar unidades.')
-    }
+    // Solo mantener warnings específicos del handler
+    const warnings = [...(result.warnings || [])]
 
     return {
-      valid: errors.length === 0,
-      errors,
+      valid: result.valid,
+      errors: result.errors,
       warnings
     }
   }
@@ -137,35 +119,15 @@ class CosechaHandler extends BaseBitacoraHandler {
   }
 
   validate(datos, context = {}) {
-    const errors = []
-    const warnings = []
+    // Delegar validación al validador central
+    const result = validateBitacoraEntry(datos, this.tipo, context.tipoActividadData)
 
-    // Validar rendimiento
-    if (!datos.rendimiento_kg || datos.rendimiento_kg <= 0) {
-      errors.push('El rendimiento en kg es requerido y debe ser mayor a 0')
-    }
-
-    // Validar calidad
-    if (!datos.calidad || datos.calidad.trim() === '') {
-      errors.push('La calidad de la cosecha es requerida')
-    }
-
-    // Validaciones de consistencia
-    if (datos.rendimiento_kg && datos.rendimiento_por_hectarea) {
-      // Si hay superficie, verificar consistencia
-      const superficie = context.superficie
-      if (superficie && superficie > 0) {
-        const rendimientoCalculado = datos.rendimiento_kg / superficie
-        const diff = Math.abs(rendimientoCalculado - datos.rendimiento_por_hectarea)
-        if (diff / rendimientoCalculado > 0.2) {
-          warnings.push('Posible inconsistencia entre rendimiento total y por hectárea')
-        }
-      }
-    }
+    // Solo mantener warnings específicos del handler
+    const warnings = [...(result.warnings || [])]
 
     return {
-      valid: errors.length === 0,
-      errors,
+      valid: result.valid,
+      errors: result.errors,
       warnings
     }
   }
@@ -198,32 +160,15 @@ class AplicacionHandler extends BaseBitacoraHandler {
   }
 
   validate(datos, context = {}) {
-    const errors = []
-    const warnings = []
+    // Delegar validación al validador central
+    const result = validateBitacoraEntry(datos, this.tipo, context.tipoActividadData)
 
-    // Validar producto
-    if (!datos.producto || datos.producto.trim() === '') {
-      errors.push('El producto aplicado es requerido')
-    }
-
-    // Validar dosis
-    if (!datos.dosis || datos.dosis <= 0) {
-      errors.push('La dosis es requerida y debe ser mayor a 0')
-    }
-
-    // Validar método
-    if (!datos.metodo || datos.metodo.trim() === '') {
-      errors.push('El método de aplicación es requerido')
-    }
-
-    // Advertencias de seguridad
-    if (datos.producto && datos.producto.toLowerCase().match(/toxico|peligro|veneno/)) {
-      warnings.push('Producto peligroso: Verificar equipo de protección')
-    }
+    // Solo mantener warnings específicos del handler
+    const warnings = [...(result.warnings || [])]
 
     return {
-      valid: errors.length === 0,
-      errors,
+      valid: result.valid,
+      errors: result.errors,
       warnings
     }
   }
@@ -265,30 +210,15 @@ class MonitoreoHandler extends BaseBitacoraHandler {
   }
 
   validate(datos, context = {}) {
-    const errors = []
-    const warnings = []
+    // Delegar validación al validador central
+    const result = validateBitacoraEntry(datos, this.tipo, context.tipoActividadData)
 
-    // Fecha obligatoria
-    if (!datos.fecha_monitoreo || isNaN(new Date(datos.fecha_monitoreo).getTime())) {
-      errors.push('La fecha de monitoreo es requerida')
-    }
-
-    // Validaciones de rangos
-    if (datos.temperatura !== undefined && datos.temperatura !== null) {
-      if (datos.temperatura < -50 || datos.temperatura > 60) {
-        errors.push('Temperatura fuera de rango válido (-50 a 60°C)')
-      }
-    }
-
-    if (datos.humedad !== undefined && datos.humedad !== null) {
-      if (datos.humedad < 0 || datos.humedad > 100) {
-        errors.push('Humedad fuera de rango válido (0 a 100%)')
-      }
-    }
+    // Solo mantener warnings específicos del handler
+    const warnings = [...(result.warnings || [])]
 
     return {
-      valid: errors.length === 0,
-      errors,
+      valid: result.valid,
+      errors: result.errors,
       warnings
     }
   }
@@ -320,22 +250,15 @@ class RiegoHandler extends BaseBitacoraHandler {
   }
 
   validate(datos, context = {}) {
-    const errors = []
-    const warnings = []
+    // Delegar validación al validador central
+    const result = validateBitacoraEntry(datos, this.tipo, context.tipoActividadData)
 
-    // Validar método
-    if (!datos.metodo || datos.metodo.trim() === '') {
-      errors.push('El método de riego es requerido')
-    }
-
-    // Validar cantidad o tiempo
-    if (!datos.dosis_agua && !datos.tiempo_horas) {
-      errors.push('Se requiere dosis de agua o tiempo de riego')
-    }
+    // Solo mantener warnings específicos del handler
+    const warnings = [...(result.warnings || [])]
 
     return {
-      valid: errors.length === 0,
-      errors,
+      valid: result.valid,
+      errors: result.errors,
       warnings
     }
   }
@@ -368,27 +291,15 @@ class FertilizacionHandler extends BaseBitacoraHandler {
   }
 
   validate(datos, context = {}) {
-    const errors = []
-    const warnings = []
+    // Delegar validación al validador central
+    const result = validateBitacoraEntry(datos, this.tipo, context.tipoActividadData)
 
-    // Validar tipo
-    if (!datos.tipo_fertilizante || datos.tipo_fertilizante.trim() === '') {
-      errors.push('El tipo de fertilizante es requerido')
-    }
-
-    // Validar dosis
-    if (!datos.dosis || datos.dosis <= 0) {
-      errors.push('La dosis es requerida y debe ser mayor a 0')
-    }
-
-    // Advertir si no hay fórmula NPK
-    if (!datos.formula && !datos.npk) {
-      warnings.push('Recomendable incluir fórmula NPK del fertilizante')
-    }
+    // Solo mantener warnings específicos del handler
+    const warnings = [...(result.warnings || [])]
 
     return {
-      valid: errors.length === 0,
-      errors,
+      valid: result.valid,
+      errors: result.errors,
       warnings
     }
   }
@@ -421,17 +332,16 @@ class GenericHandler extends BaseBitacoraHandler {
   }
 
   validate(datos, context = {}) {
-    // Validación genérica: verificar que haya datos
-    const errors = []
+    // Delegar validación al validador central
+    const result = validateBitacoraEntry(datos, this.tipo, context.tipoActividadData)
 
-    if (!datos || Object.keys(datos).length === 0) {
-      errors.push('No hay datos para validar')
-    }
+    // Solo mantener warnings específicos del handler
+    const warnings = [...(result.warnings || [])]
 
     return {
-      valid: errors.length === 0,
-      errors,
-      warnings: []
+      valid: result.valid,
+      errors: result.errors,
+      warnings
     }
   }
 

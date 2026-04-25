@@ -13,7 +13,7 @@ import * as directives from 'vuetify/directives'
 import { aliases, mdi } from 'vuetify/iconsets/mdi'
 import '@mdi/font/css/materialdesignicons.css'
 import { useAuthStore } from './stores/authStore'
-import { useSyncStore } from './stores/syncStore'
+import { useSyncStore } from './stores/sync/index'
 import { useThemeStore } from './stores/themeStore'
 
 // Estilos
@@ -155,8 +155,8 @@ initApp()
 window.addEventListener('beforeunload', () => {
   const syncStore = useSyncStore()
   // Guardar estado pendiente si es necesario
-  if (syncStore.syncQueue.queue.length > 0) {
-    syncStore.syncQueue.saveQueue()
+  if (syncStore.queue.length > 0) {
+    syncStore.persistQueueState()
   }
 })
 

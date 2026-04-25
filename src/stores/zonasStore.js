@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { markRaw } from 'vue'
 import { pb } from '@/utils/pocketbase'
-import { useSyncStore } from './syncStore'
+import { useSyncStore } from '@/stores/sync/index'
 import { useSnackbarStore } from './snackbarStore'
 import { handleError } from '@/utils/errorHandler'
 import { useHaciendaStore } from './haciendaStore'

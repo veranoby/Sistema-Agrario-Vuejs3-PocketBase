@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { pb } from '@/utils/pocketbase';
 import { handleError } from '@/utils/errorHandler';
-import { useSyncStore } from './syncStore';
+import { useSyncStore } from '@/stores/sync/index'
 import { useAuthStore } from './authStore';
 import { useHaciendaStore } from './haciendaStore';
 import { useProgramacionesStore } from './programacionesStore';

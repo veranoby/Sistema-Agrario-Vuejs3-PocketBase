@@ -6,7 +6,7 @@
 import { defineStore } from 'pinia'
 import { pb } from '@/utils/pocketbase'
 import { format, isBefore } from 'date-fns'
-import { useSyncStore } from '../syncStore'
+import { useSyncStore } from '../sync/index'
 import { handleError } from '@/utils/errorHandler'
 import { useActividadesStore } from '@/stores/actividadesStore'
 import { useHaciendaStore } from '../haciendaStore'

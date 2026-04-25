@@ -159,3 +159,64 @@ export const Rules = {
   maxLength: (max, msg) => (v) => !v || String(v).length <= max || msg,
   phone: (msg = 'Teléfono inválido') => (v) => !v || /^\+?[\d\s\-()]+$/.test(v) || msg
 }
+
+// ============================================================================
+// FUNCIONES MIGRADAS DESDE validationUtils.js
+// ============================================================================
+
+/**
+ * Calcula fortaleza de contraseña (0-100)
+ * @param {string} password
+ * @returns {number}
+ */
+export function calculatePasswordStrength(password) {
+  if (!password) return 0
+  let strength = 0
+  if (password.length >= 8) strength += 25
+  if (password.length >= 12) strength += 15
+  if (/\d/.test(password)) strength += 20
+  if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength += 20
+  if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) strength += 20
+  return Math.min(strength, 100)
+}
+
+/**
+ * Obtiene color según fortaleza de contraseña
+ * @param {number} strength
+ * @returns {string}
+ */
+export function getPasswordStrengthColor(strength) {
+  if (strength < 40) return 'error'
+  if (strength < 70) return 'warning'
+  return 'success'
+}
+
+/**
+ * Obtiene label según fortaleza de contraseña
+ * @param {number} strength
+ * @param {Function} t - función de traducción i18n
+ * @returns {string}
+ */
+export function getPasswordStrengthLabel(strength, t) {
+  if (strength < 40) return t('auth.password_weak')
+  if (strength < 70) return t('auth.password_medium')
+  return t('auth.password_strong')
+}
+
+/**
+ * Valida formato de username (sin caracteres especiales)
+ * @param {string} username
+ * @returns {boolean}
+ */
+export function isValidUsername(username) {
+  return !/["'`!@#$%^&*()+=<>?\/\\{}[\]|~:;]/.test(username)
+}
+
+/**
+ * Convierte valor a mayúsculas de forma segura
+ * @param {string} value
+ * @returns {string}
+ */
+export function toUpperCase(value) {
+  return value ? value.toUpperCase() : ''
+}

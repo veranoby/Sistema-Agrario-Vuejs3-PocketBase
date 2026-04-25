@@ -133,7 +133,7 @@ import { useUserStore } from '@/stores/userStore'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 import { useSubscriptionLimits } from '@/composables/useSubscriptionLimits'
 import { useEvents } from '@/composables/useEvents'
-import { EVENTS } from '@/utils/eventTypes'
+import { EVENTS } from '@/utils/eventBus'
 import { storeToRefs } from 'pinia'
 
 const { t } = useI18n()

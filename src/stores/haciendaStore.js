@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
 import { useSnackbarStore } from './snackbarStore'
-import { useSyncStore } from './syncStore'
+import { useSyncStore } from '@/stores/sync/index'
 import { useAvatarStore } from './avatarStore'
 
 export const useHaciendaStore = defineStore('hacienda', {

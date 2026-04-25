@@ -1,8 +1,51 @@
 // Logger inteligente para ConAgri
 // Reduce logs excesivos en production y proporciona control granular
-// Integrado con secureLogger para filtrar datos sensibles
+// Integrado con sanitización de datos sensibles
 
-import { secureLogger } from '@/utils/secureLogger'
+// ============================================================================
+// SANITIZACIÓN DE DATOS SENSIBLES (migrado desde secureLogger.js)
+// ============================================================================
+
+const SENSITIVE_KEYS = [
+  'token',
+  'password',
+  'password_confirmation',
+  'email',
+  'secret',
+  'apiKey',
+  'api_key',
+  'accessToken',
+  'refreshToken',
+  'auth',
+  'credential'
+]
+
+const SENSITIVE_PATTERNS = [
+  /eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]*/g,
+  /Bearer\s+[A-Za-z0-9._-]+/gi
+]
+
+function sanitizeValue(value, depth = 0) {
+  if (depth > 10) return '[Max depth]'
+  if (value === null || value === undefined) return value
+  if (typeof value === 'string') {
+    let sanitized = value
+    for (const pattern of SENSITIVE_PATTERNS) {
+      sanitized = sanitized.replace(pattern, '[REDACTED]')
+    }
+    return sanitized
+  }
+  if (typeof value !== 'object') return value
+  if (Array.isArray(value)) return value.map(item => sanitizeValue(item, depth + 1))
+
+  const sanitized = {}
+  for (const [key, val] of Object.entries(value)) {
+    const lowerKey = key.toLowerCase()
+    const isSensitive = SENSITIVE_KEYS.some(s => lowerKey.includes(s.toLowerCase()))
+    sanitized[key] = isSensitive ? '[REDACTED]' : sanitizeValue(val, depth + 1)
+  }
+  return sanitized
+}
 
 class Logger {
   constructor() {
@@ -45,16 +88,20 @@ class Logger {
     return true
   }
 
-  // Sanitiza el mensaje usando secureLogger antes de loggear
+  // Sanitiza el mensaje usando sanitización interna
   sanitizeMessage(message) {
     if (typeof message === 'string') {
       return message
     }
-    // Para objetos, usar secureLogger.sanitize
-    return secureLogger.sanitize(message)
+    return sanitizeValue(message)
   }
 
-  // Log con nivel y anti-spam (usando secureLogger)
+  // Método público para sanitizar valores
+  sanitize(value) {
+    return sanitizeValue(value)
+  }
+
+  // Log con nivel y anti-spam
   log(message, level = 'info', key = null) {
     if (!this.shouldLog(key, level)) return
 
@@ -64,17 +111,17 @@ class Logger {
     switch (level) {
       case 'error':
       case 'critical':
-        secureLogger.error(prefix, sanitized)
+        console.error(prefix, sanitized)
         break
       case 'warn':
-        secureLogger.warn(prefix, sanitized)
+        console.warn(prefix, sanitized)
         break
       case 'info':
       case 'debug':
-        secureLogger.log(prefix, sanitized)
+        console.log(prefix, sanitized)
         break
       default:
-        secureLogger.log(prefix, sanitized)
+        console.log(prefix, sanitized)
     }
   }
 

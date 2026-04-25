@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
 import { useEvents } from '@/composables/useEvents'
-import { EVENTS } from '@/utils/eventTypes'
+import { EVENTS } from '@/utils/eventBus'
 import { logger } from '@/utils/logger'
 
 export const useHaciendaManagementStore = defineStore('haciendaManagement', {

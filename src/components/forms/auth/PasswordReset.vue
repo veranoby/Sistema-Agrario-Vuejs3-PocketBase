@@ -122,7 +122,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { pb } from '@/utils/pocketbase'
 import { useSnackbarStore } from '@/stores/snackbarStore'
-import { calculatePasswordStrength, getPasswordStrengthColor, getPasswordStrengthLabel } from '@/utils/validationUtils'
+import { calculatePasswordStrength, getPasswordStrengthColor, getPasswordStrengthLabel } from '@/utils/validators'
 
 const route = useRoute()
 const router = useRouter()

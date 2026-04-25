@@ -28,4 +28,3 @@ export const EVENTS = {
 }
 
 export default eventBus
-export { EVENTS }

@@ -3,7 +3,7 @@ import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
 import { useSnackbarStore } from './snackbarStore'
 import { useHaciendaStore } from './haciendaStore'
-import { useSyncStore } from './syncStore'
+import { useSyncStore } from '@/stores/sync/index'
 import {
   format,
   startOfMonth,

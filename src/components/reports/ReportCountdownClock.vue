@@ -44,7 +44,6 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useReportScheduler } from '@/composables/useReportScheduler'
 
 const props = defineProps({
   report: {
@@ -57,7 +56,29 @@ const props = defineProps({
   }
 })
 
-const { getTimeUntilExecution, formatTimeRemaining } = useReportScheduler()
+// Funciones de tiempo (reemplazo de useReportScheduler)
+const getTimeUntilExecution = (report) => {
+  if (!report?.nextExecution) return null
+  const now = new Date()
+  const next = new Date(report.nextExecution)
+  const diffMs = next - now
+  const isDue = diffMs <= 0
+  const diffSecs = Math.floor(Math.abs(diffMs) / 1000)
+  const hours = Math.floor(diffSecs / 3600)
+  const minutes = Math.floor((diffSecs % 3600) / 60)
+  return { isDue, hours, minutes, totalMs: diffMs }
+}
+
+const formatTimeRemaining = (timeData) => {
+  if (!timeData) return 'No programado'
+  if (timeData.isDue) return 'Ahora'
+  if (timeData.hours > 24) {
+    const days = Math.floor(timeData.hours / 24)
+    return `${days}d ${timeData.hours % 24}h`
+  }
+  if (timeData.hours > 0) return `${timeData.hours}h ${timeData.minutes}m`
+  return `${timeData.minutes}m`
+}
 
 const timeLeft = ref(null)
 let countdownInterval = null

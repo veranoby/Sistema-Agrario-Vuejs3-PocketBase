@@ -4,7 +4,7 @@
  */
 
 import { defineStore } from 'pinia'
-import { cacheManager } from './cacheManager'
+import { createCacheManager } from './cacheManager'
 import { initNetworkMonitor } from './networkMonitor'
 import { conflictResolver } from './conflictResolver'
 import { createIdMapper } from './idMapper'
@@ -29,6 +29,9 @@ const ALL_STORES = [
   useBitacoraStore
 ]
 
+// Namespace aislado para sincronización
+const syncCache = createCacheManager('agri_sync_')
+
 const STORE_MAP = {
   zonas: useZonasStore,
   siembras: useSiembrasStore,
@@ -41,7 +44,7 @@ const STORE_MAP = {
 export const useSyncStore = defineStore('sync', {
   state: () => ({
     isOnline: navigator.onLine,
-    queue: cacheManager.get('syncQueue') || [],
+    queue: syncCache.get('syncQueue') || [],
     lastSyncTime: null,
     syncStatus: 'idle',
     initialized: false,
@@ -63,23 +66,23 @@ export const useSyncStore = defineStore('sync', {
       this._networkCleanup = cleanup
 
       // Factories
-      this.idMapper = createIdMapper({ stores: ALL_STORES, cacheManager })
-      this.syncConfig = createSyncConfig({ cacheManager })
-      this.conflictUI = createConflictUI({ cacheManager })
+      this.idMapper = createIdMapper({ stores: ALL_STORES, cacheManager: syncCache })
+      this.syncConfig = createSyncConfig({ cacheManager: syncCache })
+      this.conflictUI = createConflictUI({ cacheManager: syncCache })
       this.processor = createQueueProcessor({
         getStore: (name) => STORE_MAP[name]?.(),
         updateRefs: this.idMapper.updateRefs,
-        saveCache: cacheManager.save,
+        saveCache: syncCache.save,
         resolveConflict: conflictResolver.resolve,
         addConflict: this.conflictUI.addConflict,
         notify
       })
-      this.offline = createOfflineFeatures({ stores: ALL_STORES, cacheManager })
+      this.offline = createOfflineFeatures({ stores: ALL_STORES, cacheManager: syncCache })
 
       // RESTAURAR ESTADO
-      this.queue = cacheManager.get('syncQueue') || []
+      this.queue = syncCache.get('syncQueue') || []
 
-      const savedIdMap = cacheManager.get('idMap')
+      const savedIdMap = syncCache.get('idMap')
       if (savedIdMap) {
         this.idMapper.setMap(savedIdMap)
       }
@@ -166,7 +169,7 @@ export const useSyncStore = defineStore('sync', {
         priority: this.syncConfig.getPriority(operation.collection)
       }
       this.queue.push(item)
-      cacheManager.save('syncQueue', this.queue)
+      syncCache.save('syncQueue', this.queue)
 
       if (this.isOnline) await this.processPendingQueue()
       return item.tempId
@@ -195,16 +198,16 @@ export const useSyncStore = defineStore('sync', {
 
     // PERSISTENCIA
     persistQueueState() {
-      cacheManager.save('syncQueue', this.queue)
-      cacheManager.save('idMap', this.idMapper.getMap())
+      syncCache.save('syncQueue', this.queue)
+      syncCache.save('idMap', this.idMapper.getMap())
     },
 
     loadFromLocalStorage(key) {
-      return cacheManager.get(key)
+      return syncCache.get(key)
     },
 
     saveToLocalStorage(key, value) {
-      cacheManager.save(key, value)
+      syncCache.save(key, value)
     },
 
     // ACTUALIZACIÓN LOCAL
@@ -219,7 +222,7 @@ export const useSyncStore = defineStore('sync', {
       }
 
       this.idMapper.updateRefs(tempId, newItem.id)
-      cacheManager.save(collection, items)
+      syncCache.save(collection, items)
       return true
     },
 

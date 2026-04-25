@@ -3,16 +3,13 @@
  * @module constants/analytics
  */
 
+import { USER_ROLES } from './roles'
+
 /**
- * Roles de usuario
+ * Roles de usuario (importados desde roles.js para consistencia)
  * @enum {string}
  */
-export const ROLES = {
-  SUPERADMIN: 'superadmin',
-  ADMIN: 'admin',
-  OPERADOR: 'operador',
-  VIEWER: 'viewer'
-}
+export const ROLES = USER_ROLES
 
 /**
  * Tipos de plan de hacienda

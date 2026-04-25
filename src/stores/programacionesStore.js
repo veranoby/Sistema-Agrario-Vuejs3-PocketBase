@@ -10,7 +10,7 @@ import {
   differenceInMonths,
   format
 } from 'date-fns'
-import { useSyncStore } from './syncStore'
+import { useSyncStore } from '@/stores/sync/index'
 import { handleError } from '@/utils/errorHandler'
 import { useActividadesStore } from '@/stores/actividadesStore';
 import { useHaciendaStore } from './haciendaStore';
