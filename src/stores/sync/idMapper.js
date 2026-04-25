@@ -49,80 +49,86 @@ export function createIdMapper({ stores, cacheManager: cm = cacheManager }) {
     tempToRealIdMap[tempId] = realId
     cm.save('tempToRealIdMap', tempToRealIdMap)
 
-    // Actualizar referencias cruzadas en cada store
     for (const useStore of stores) {
       try {
         const store = useStore()
-        const collectionName = store.$id || store.collectionName || 'unknown'
 
-        // Verificar si el store tiene método específico de actualización
+        // Si tiene método propio, usarlo
         if (typeof store.updateReferencesToItem === 'function') {
           await store.updateReferencesToItem(tempId, realId)
           continue
         }
 
-        // Encontrar el array de items en el store
-        let itemsKey = null
-        if (store[collectionName] && Array.isArray(store[collectionName])) {
-          itemsKey = collectionName
-        } else if (store.items && Array.isArray(store.items)) {
-          itemsKey = 'items'
-        } else {
-          // Buscar array plausible
-          const stateKeys = Object.keys(store.$state || {})
-          for (const key of stateKeys) {
-            if (Array.isArray(store[key])) {
-              itemsKey = key
-              break
-            }
-          }
-        }
+        // Encontrar el key del array de items
+        const itemsKey = findItemsKey(store)
+        if (!itemsKey) continue
 
-        if (itemsKey && store[itemsKey]) {
-          updateAllReferencesInStore(tempId, realId, store[itemsKey])
-        }
+        // FIX REACTIVIDAD: Usar $patch con acceso correcto
+        store.$patch((state) => {
+          const items = state[itemsKey]
+          if (!Array.isArray(items)) return
+
+          state[itemsKey] = items.map(item => {
+            let changed = false
+            const newItem = { ...item }
+
+            Object.keys(newItem).forEach(key => {
+              if (newItem[key] === tempId) {
+                newItem[key] = realId
+                changed = true
+              }
+              // Manejar arrays de referencias
+              if (Array.isArray(newItem[key]) && newItem[key].includes(tempId)) {
+                newItem[key] = newItem[key].map(id => id === tempId ? realId : id)
+                changed = true
+              }
+            })
+
+            return changed ? newItem : item
+          })
+        })
+
       } catch (error) {
-        console.warn(`[idMapper] Error actualizando store:`, error)
+        console.warn('[idMapper] Error actualizando store:', error)
       }
     }
   }
 
   /**
-   * Actualiza todas las referencias en un array de items
-   * @param {string} oldId - ID viejo
-   * @param {string} newId - ID nuevo
-   * @param {Array} items - Array de items
+   * Helper para encontrar el key del array de items
+   * @param {Object} store - Store de Pinia
+   * @returns {string|null} - Key del array o null
    */
-  function updateAllReferencesInStore(oldId, newId, items) {
-    if (!oldId || !newId || oldId === newId) return 0
+  function findItemsKey(store) {
+    const collectionName = store.$id || ''
 
-    let updatedCount = 0
-    const possibleRefFields = [
-      'id', 'siembra', 'siembras', 'zona', 'zonas',
-      'actividad', 'actividades', 'parent', 'children',
-      'relacionados', 'recordatorio', 'recordatorios'
-    ]
+    // Intentar por nombre de colección
+    if (store[collectionName] && Array.isArray(store[collectionName])) {
+      return collectionName
+    }
 
-    items.forEach(item => {
-      Object.keys(item).forEach(key => {
-        const value = item[key]
+    // Intentar 'items'
+    if (store.items && Array.isArray(store.items)) {
+      return 'items'
+    }
 
-        if (Array.isArray(value)) {
-          for (let i = 0; i < value.length; i++) {
-            if (value[i] === oldId) {
-              value[i] = newId
-              updatedCount++
-            }
-          }
-        } else if (typeof value === 'string' && value === oldId) {
-          item[key] = newId
-          updatedCount++
-        }
-      })
-    })
+    // Buscar en state
+    for (const key of Object.keys(store.$state || {})) {
+      if (Array.isArray(store[key])) {
+        return key
+      }
+    }
 
-    return updatedCount
+    return null
   }
 
-  return { generateTempId, getRealId, isTempId, updateRefs }
+  function setMap(map) {
+    Object.assign(tempToRealIdMap, map)
+  }
+
+  function getMap() {
+    return { ...tempToRealIdMap }
+  }
+
+  return { generateTempId, getRealId, isTempId, updateRefs, setMap, getMap }
 }

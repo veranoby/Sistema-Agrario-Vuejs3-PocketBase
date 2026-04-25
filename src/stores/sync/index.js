@@ -55,13 +55,14 @@ export const useSyncStore = defineStore('sync', {
       const snackbar = useSnackbarStore()
       const notify = (msg, type) => snackbar.showSnackbar(msg, type)
 
-      // Inicializar módulos
+      // Network monitor
       const { isOnline, cleanup } = initNetworkMonitor((online) => {
         this.isOnline = online
         if (online && this.queue.length > 0) this.processPendingQueue()
       })
       this._networkCleanup = cleanup
 
+      // Factories
       this.idMapper = createIdMapper({ stores: ALL_STORES, cacheManager })
       this.syncConfig = createSyncConfig({ cacheManager })
       this.conflictUI = createConflictUI({ cacheManager })
@@ -75,11 +76,81 @@ export const useSyncStore = defineStore('sync', {
       })
       this.offline = createOfflineFeatures({ stores: ALL_STORES, cacheManager })
 
+      // RESTAURAR ESTADO
+      this.queue = cacheManager.get('syncQueue') || []
+
+      const savedIdMap = cacheManager.get('idMap')
+      if (savedIdMap) {
+        this.idMapper.setMap(savedIdMap)
+      }
+
       this.initialized = true
+
+      // Procesar cola pendiente si online
+      if (navigator.onLine && this.queue.length > 0) {
+        await this.processPendingQueue()
+      }
     },
 
     getStoreByCollectionName(name) {
       return STORE_MAP[name]?.()
+    },
+
+    // === DELEGACIONES A FACTORIES ===
+
+    // IDENTIDAD (idMapper)
+    generateTempId() {
+      return this.idMapper.generateTempId()
+    },
+    isTempId(id) {
+      return this.idMapper.isTempId(id)
+    },
+    getRealId(tempId) {
+      return this.idMapper.getRealId(tempId)
+    },
+
+    // CONFIGURACIÓN (syncConfig)
+    shouldSyncImmediately(col) {
+      return this.syncConfig.shouldSyncImmediately(col)
+    },
+    getCollectionPriority(col) {
+      return this.syncConfig.getPriority(col)
+    },
+    configureSelectiveSync(config) {
+      return this.syncConfig.updateConfig(config)
+    },
+    getSelectiveSyncConfig() {
+      return this.syncConfig.getConfig()
+    },
+
+    // CONFLICTOS UI (conflictUI)
+    addConflict(conflict) {
+      this.conflictUI.addConflict(conflict)
+    },
+    resolveConflict(id, resolution) {
+      return this.conflictUI.resolveChoice(id, resolution)
+    },
+    clearResolvedConflicts() {
+      this.conflictUI.clearResolved()
+    },
+    get conflicts() {
+      return this.conflictUI.conflicts
+    },
+    get conflictDialog() {
+      return this.conflictUI.showDialog
+    },
+
+    // OFFLINE FEATURES (offline)
+    async searchOffline(query, options) {
+      return this.offline.searchOffline(query, options)
+    },
+    async buildSearchIndex() {
+      return this.offline.buildIndex()
+    },
+
+    // MÉTRICAS (processor)
+    getPerformanceMetrics() {
+      return this.processor.getMetrics()
     },
 
     async queueOperation(operation) {
@@ -118,6 +189,147 @@ export const useSyncStore = defineStore('sync', {
 
     $dispose() {
       this._networkCleanup?.()
+    },
+
+    // === LÓGICA DE COORDINACIÓN ===
+
+    // PERSISTENCIA
+    persistQueueState() {
+      cacheManager.save('syncQueue', this.queue)
+      cacheManager.save('idMap', this.idMapper.getMap())
+    },
+
+    loadFromLocalStorage(key) {
+      return cacheManager.get(key)
+    },
+
+    saveToLocalStorage(key, value) {
+      cacheManager.save(key, value)
+    },
+
+    // ACTUALIZACIÓN LOCAL
+    updateLocalItem(collection, tempId, newItem, items) {
+      if (!tempId || !newItem || !newItem.id) return false
+
+      const index = items.findIndex(item => item.id === tempId)
+      if (index === -1) {
+        items.push({ ...newItem, _isTemp: false })
+      } else {
+        items[index] = { ...items[index], ...newItem, _isTemp: false }
+      }
+
+      this.idMapper.updateRefs(tempId, newItem.id)
+      cacheManager.save(collection, items)
+      return true
+    },
+
+    // OPTIMISTIC UPDATES
+    async optimisticOperation(operation, localUpdateFn) {
+      try {
+        const localResult = localUpdateFn()
+        const tempId = await this.queueOperation(operation)
+        return { ...localResult, tempId, isPending: true }
+      } catch (error) {
+        this.errors.push({ message: error.message, timestamp: Date.now() })
+        if (this.errors.length > 50) this.errors = this.errors.slice(-50)
+        throw error
+      }
+    },
+
+    // REFRESH STORES
+    async refreshAllStores() {
+      for (const useStore of ALL_STORES) {
+        try {
+          const store = useStore()
+          if (store?.initFromLocalStorage) store.initFromLocalStorage()
+        } catch (e) {
+          // store no disponible aún
+        }
+      }
+    },
+
+    // SYNC SELECTIVO
+    async processDeferredSync() {
+      const config = this.syncConfig.getConfig()
+      if (!config.enabled) return
+
+      const now = Date.now()
+      if (now - (config.lastDeferredSync || 0) < config.deferredSyncInterval) return
+
+      await this.processPendingQueue()
+      this.syncConfig.updateConfig({ lastDeferredSync: now })
+    },
+
+    // CONFLICTOS RESOLUTION
+    async forceLocalVersion(conflict) {
+      const opIndex = this.queue.findIndex(
+        op => op.tempId === conflict.tempId || op.id === conflict.id
+      )
+      if (opIndex !== -1) {
+        this.queue[opIndex].status = 'pending'
+        this.queue[opIndex].retries = 0
+        this.persistQueueState()
+        setTimeout(() => this.processPendingQueue(), 1000)
+      }
+    },
+
+    async acceptServerVersion(conflict, serverData) {
+      const store = this.getStoreByCollectionName(conflict.collection)
+      if (!store) return
+
+      if (conflict.type === 'update' && store.applySyncedUpdate) {
+        await store.applySyncedUpdate(conflict.id, serverData || conflict.server)
+      } else if (conflict.type === 'create' && store.applySyncedCreate) {
+        await store.applySyncedCreate(conflict.tempId, serverData || conflict.server)
+      }
+
+      this.queue = this.queue.filter(
+        op => op.tempId !== conflict.tempId && op.id !== conflict.id
+      )
+      this.persistQueueState()
+    },
+
+    // HISTORIAL (stubs)
+    trackLocalChange() {
+      // stub - implementar si se necesita
+    },
+    getChangeHistory() {
+      return []
+    },
+    exportChangeHistory() {
+      // stub
+    },
+
+    // OFFLINE REPORTS (stub)
+    generateOfflineReport(type, params) {
+      return null
+    },
+
+    // PREFETCH (stubs)
+    async prefetchBasedOnPatterns() {
+      // stub
+    },
+    async prefetchCollection(name) {
+      // stub
+    },
+    getPrefetchedData() {
+      return null
+    },
+    trackUserAction() {
+      // stub
+    },
+
+    // BATCH DASHBOARD
+    async batchInitializeDashboard() {
+      const { useDashboardLoader } = await import('@/composables/useDashboardLoader')
+      const loader = useDashboardLoader(ALL_STORES)
+      return loader.loadDashboard()
+    },
+
+    // CLEANUP
+    cleanupOldData() {
+      const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000
+      this.errors = this.errors.filter(err => err.timestamp > oneDayAgo)
     }
   }
 })
