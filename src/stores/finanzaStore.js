@@ -221,7 +221,7 @@ export const useFinanzaStore = defineStore('finanzas', {
             const cacheKey = `${year}-${month}`
             this.cachedMonths[cacheKey] = true
           } catch (e) {
-            console.error('Error parseando fecha:', e)
+            handleError(e, 'Error parseando fecha')
           }
         }
       })
@@ -257,7 +257,7 @@ export const useFinanzaStore = defineStore('finanzas', {
           nextDay.setDate(nextDay.getDate() + 1)
           processedData.fecha = format(nextDay, 'yyyy-MM-dd')
         } catch (error) {
-          console.error('Error processing date:', error)
+          handleError(error, 'Error processing date')
         }
       }
 
@@ -324,7 +324,7 @@ export const useFinanzaStore = defineStore('finanzas', {
           nextDay.setDate(nextDay.getDate() + 1)
           processedData.fecha = format(nextDay, 'yyyy-MM-dd')
         } catch (error) {
-          console.error('Error processing date:', error)
+          handleError(error, 'Error processing date')
         }
       }
 

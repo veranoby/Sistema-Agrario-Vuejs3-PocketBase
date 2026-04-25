@@ -6,7 +6,7 @@ import { useSnackbarStore } from './snackbarStore'
 import { handleError } from '@/utils/errorHandler'
 import { useHaciendaStore } from './haciendaStore'
 import { useAlertStore } from './alertStore'
-import { MAX_PAGE_SIZE, DEFAULT_PAGE_SIZE } from '@/constants/pagination'
+import { MAX_PAGE_SIZE } from '@/constants/pagination'
 
 export const useActividadesStore = defineStore('actividades', {
   state: () => ({
@@ -193,7 +193,7 @@ export const useActividadesStore = defineStore('actividades', {
             const alertStore = useAlertStore()
             await alertStore.triggerCriticalActivityAlert(record)
           } catch (alertError) {
-            console.error('[ACTIVIDADES] Error enviando alerta crítica:', alertError)
+            handleError(alertError, 'Error enviando alerta crítica')
           }
         }
 

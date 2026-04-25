@@ -4,6 +4,8 @@
  * Permite aislar caché de diferentes módulos
  */
 
+import { handleError } from '@/utils/errorHandler'
+
 /**
  * Crea un gestor de caché con prefijo de namespace
  * @param {string} prefix - Prefijo para las keys (ej: 'agri_sync_')
@@ -15,7 +17,7 @@ export function createCacheManager(prefix = '') {
       try {
         localStorage.setItem(`${prefix}${key}`, JSON.stringify(data))
       } catch (error) {
-        console.error('[cacheManager] Error guardando:', key, error)
+        handleError(error, 'Error guardando en caché')
       }
     },
 
@@ -24,7 +26,7 @@ export function createCacheManager(prefix = '') {
         const item = localStorage.getItem(`${prefix}${key}`)
         return item ? JSON.parse(item) : null
       } catch (error) {
-        console.error('[cacheManager] Error leyendo:', key, error)
+        handleError(error, 'Error leyendo de caché')
         return null
       }
     },
@@ -33,7 +35,7 @@ export function createCacheManager(prefix = '') {
       try {
         localStorage.removeItem(`${prefix}${key}`)
       } catch (error) {
-        console.error('[cacheManager] Error eliminando:', key, error)
+        handleError(error, 'Error eliminando de caché')
       }
     },
 
@@ -46,7 +48,7 @@ export function createCacheManager(prefix = '') {
           }
         })
       } catch (error) {
-        console.error('[cacheManager] Error limpiando:', error)
+        handleError(error, 'Error limpiando caché')
       }
     }
   }

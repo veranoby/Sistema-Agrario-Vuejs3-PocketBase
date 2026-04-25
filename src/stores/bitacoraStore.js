@@ -89,7 +89,7 @@ export const useBitacoraStore = defineStore('bitacora', {
         try {
           await this.cargarBitacoraEntries(haciendaStore.mi_hacienda.id);
         } catch (error) {
-          console.error('[BITACORA_STORE] Error during initial fetch:', error);
+          handleError(error, 'Error during initial fetch');
         }
       }
       logger.debug('[BITACORA_STORE] Initialization complete.');
@@ -241,7 +241,6 @@ export const useBitacoraStore = defineStore('bitacora', {
       };
 
       if (!fullEntryData.hacienda || !fullEntryData.programacion_origen || !fullEntryData.actividad_realizada || !fullEntryData.fecha_ejecucion) {
-          console.error('[BITACORA_STORE] Missing essential data for bitacora entry:', fullEntryData);
           handleError(new Error('Datos incompletos para la entrada de bitácora.'), 'Error creando entrada de bitácora');
           return null;
       }
@@ -316,7 +315,7 @@ export const useBitacoraStore = defineStore('bitacora', {
             }
         }
       } catch (e) {
-        console.error("[BITACORA_STORE] Error re-fetching enriched item for applySyncedCreate:", e);
+        handleError(e, 'Error re-fetching enriched item for applySyncedCreate')
         if (itemIndex !== -1) {
             this.bitacoraEntries[itemIndex] = { ...realItem, _isTemp: false };
         } else {
@@ -347,7 +346,7 @@ export const useBitacoraStore = defineStore('bitacora', {
             this.bitacoraEntries.unshift({ ...freshEnrichedItem, _isTemp: false });
         }
       } catch (e) {
-        console.error("[BITACORA_STORE] Error re-fetching enriched item for applySyncedUpdate:", e);
+        handleError(e, 'Error re-fetching enriched item for applySyncedUpdate')
         if (itemIndex !== -1) {
             this.bitacoraEntries[itemIndex] = { ...this.bitacoraEntries[itemIndex], ...updatedItemData, _isTemp: false };
         } else {
@@ -505,6 +504,6 @@ export async function checkBPACertificados(haciendaId) {
     }
 
   } catch (error) {
-    console.error('[bitacoraStore] Error en checkBPACertificados:', error)
+    handleError(error, 'Error en checkBPACertificados')
   }
 }

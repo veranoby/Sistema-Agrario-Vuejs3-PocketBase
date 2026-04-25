@@ -3,6 +3,7 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import piniaPersist from 'pinia-plugin-persistedstate'
 import { format } from 'date-fns' // Mantener porque se usa
+import { handleError } from '@/utils/errorHandler'
 
 import App from './App.vue'
 import router from './router'
@@ -92,6 +93,22 @@ const vuetify = createVuetify({
 const app = createApp(App)
 const pinia = createPinia()
 pinia.use(piniaPersist)
+
+// Capturar errores de Vue
+app.config.errorHandler = (error, instance, info) => {
+  handleError(error, `Error en componente: ${info}`)
+}
+
+// Capturar errores de promesas
+window.addEventListener('unhandledrejection', (event) => {
+  handleError(event.reason, 'Error no manejado')
+  event.preventDefault()
+})
+
+// Capturar errores globales
+window.addEventListener('error', (event) => {
+  handleError(event.error, 'Error global')
+})
 
 app.use(pinia)
 app.use(router)

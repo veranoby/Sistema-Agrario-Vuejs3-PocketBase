@@ -1,39 +1,126 @@
 import { useSnackbarStore } from '@/stores/snackbarStore'
 
-export function handleError(error, defaultMessage = 'An error occurred') {
-  const snackbarStore = useSnackbarStore()
+// ============================================================================
+// CLASES DE ERROR PERSONALIZADAS
+// ============================================================================
 
-  let errorMessage = defaultMessage
+export class AgriError extends Error {
+  constructor(message, code = 'UNKNOWN', details = {}) {
+    super(message)
+    this.name = 'AgriError'
+    this.code = code
+    this.details = details
+    this.timestamp = new Date().toISOString()
+  }
+}
 
-  if (error.data && error.data.message) {
-    errorMessage = error.data.message
-  } else if (error.message) {
-    errorMessage = error.message
+export class ValidationError extends AgriError {
+  constructor(message, fields = []) {
+    super(message, 'VALIDATION_ERROR', { fields })
+    this.name = 'ValidationError'
+  }
+}
+
+export class NetworkError extends AgriError {
+  constructor(message, statusCode = null) {
+    super(message, 'NETWORK_ERROR', { statusCode })
+    this.name = 'NetworkError'
+  }
+}
+
+export class AuthError extends AgriError {
+  constructor(message, statusCode = null) {
+    super(message, 'AUTH_ERROR', { statusCode })
+    this.name = 'AuthError'
+  }
+}
+
+export class PermissionError extends AgriError {
+  constructor(message) {
+    super(message, 'PERMISSION_ERROR')
+    this.name = 'PermissionError'
+  }
+}
+
+// ============================================================================
+// MAPEO DE CÓDIGOS POCKETBASE A MENSAJES AMIGABLES
+// ============================================================================
+
+const POCKETBASE_ERROR_MAP = {
+  400: 'Los datos enviados no son válidos',
+  401: 'Tu sesión ha expirado. Inicia sesión nuevamente',
+  403: 'No tienes permisos para realizar esta acción',
+  404: 'El recurso solicitado no fue encontrado',
+  409: 'El registro ya existe o hay un conflicto',
+  429: 'Demasiadas solicitudes. Intenta en unos minutos',
+  500: 'Error interno del servidor. Intenta más tarde'
+}
+
+// ============================================================================
+// FUNCIÓN PRINCIPAL DE MANEJO DE ERRORES
+// ============================================================================
+
+export function handleError(error, customMessage = null) {
+  // Si ya es un AgriError, usar su mensaje
+  if (error instanceof AgriError) {
+    showErrorMessage(error.message)
+    logError(error)
+    return error
   }
 
-  /*
-  console.log('entrada error:', error.data)
-
-  if (error.data && error.data.data) {
-    const errors = error.data.data
-    if (errors.username) {
-      console.log('errors.username:', errors.username)
-      errorMessage += ': ' + errors.username.message
-    } else if (errors.email) {
-      console.log('errors.email:', errors.email)
-
-      errorMessage += ': ' + errors.email.message
-    } else if (errors.password) {
-      console.log('errors.password:', errors.password)
-      errorMessage += ': ' + errors.password.message
-    } else if (errors.oldPassword) {
-      console.log('errors.oldPassword:', errors.oldPassword)
-      errorMessage = 'Old password error: ' + errors.oldPassword.message
-    }
+  // Errores de PocketBase
+  if (error?.status) {
+    const friendlyMessage = POCKETBASE_ERROR_MAP[error.status] || error.message
+    const agriError = mapPocketBaseError(error, friendlyMessage)
+    showErrorMessage(customMessage || friendlyMessage)
+    logError(agriError)
+    return agriError
   }
-*/
 
-  console.error('Error:', error)
+  // Errores de red
+  if (error?.message?.includes('Failed to fetch') || error?.message?.includes('NetworkError')) {
+    const networkError = new NetworkError('Sin conexión a internet. Los cambios se guardarán localmente.')
+    showErrorMessage(networkError.message)
+    logError(networkError)
+    return networkError
+  }
 
-  snackbarStore.showSnackbar(errorMessage, 'error')
+  // Error genérico
+  const genericError = new AgriError(
+    customMessage || error?.message || 'Ha ocurrido un error inesperado',
+    'UNKNOWN',
+    { originalError: error?.message }
+  )
+  showErrorMessage(genericError.message)
+  logError(genericError)
+  return genericError
+}
+
+function mapPocketBaseError(error, friendlyMessage) {
+  const status = error.status
+
+  if (status === 401) return new AuthError(friendlyMessage, status)
+  if (status === 403) return new PermissionError(friendlyMessage)
+  if (status === 400) return new ValidationError(friendlyMessage, extractValidationFields(error))
+  return new AgriError(friendlyMessage, `PB_${status}`, { statusCode: status })
+}
+
+function extractValidationFields(error) {
+  if (!error?.data?.data) return []
+  return Object.keys(error.data.data)
+}
+
+function showErrorMessage(message) {
+  try {
+    const snackbar = useSnackbarStore()
+    snackbar.showSnackbar(message, 'error')
+  } catch {
+    console.error('[AgriError]', message)
+  }
+}
+
+function logError(error) {
+  if (import.meta.env.DEV) {
+    console.error(`[${error.name}]`, error.code, error.message, error.details)
+  }
 }

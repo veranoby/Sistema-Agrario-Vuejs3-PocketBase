@@ -9,6 +9,7 @@
  */
 
 import { defineStore } from 'pinia'
+import { handleError } from '@/utils/errorHandler'
 
 export const useNotificationStore = defineStore('notifications', {
   state: () => ({
@@ -129,7 +130,7 @@ export const useNotificationStore = defineStore('notifications', {
           return false
         }
       } catch (error) {
-        console.error('[NotificationStore] Error solicitando permisos:', error)
+        handleError(error, 'Error solicitando permisos')
         this.permission = 'denied'
         return false
       }
@@ -188,7 +189,7 @@ export const useNotificationStore = defineStore('notifications', {
           this.markAsRead(notification.id)
         }
       } catch (error) {
-        console.error('[NotificationStore] Error mostrando notificación del navegador:', error)
+        handleError(error, 'Error mostrando notificación del navegador')
       }
     },
 
@@ -238,7 +239,7 @@ export const useNotificationStore = defineStore('notifications', {
       try {
         localStorage.setItem('notifications', JSON.stringify(this.notifications))
       } catch (error) {
-        console.error('[NotificationStore] Error guardando notificaciones:', error)
+        handleError(error, 'Error guardando notificaciones')
       }
     },
 
@@ -253,7 +254,7 @@ export const useNotificationStore = defineStore('notifications', {
           console.log(`[NotificationStore] ${this.notifications.length} notificaciones cargadas`)
         }
       } catch (error) {
-        console.error('[NotificationStore] Error cargando notificaciones:', error)
+        handleError(error, 'Error cargando notificaciones')
         this.notifications = []
       }
     },

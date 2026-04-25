@@ -11,6 +11,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { getScheduler, initScheduler } from '@/utils/scheduler'
+import { handleError } from '@/utils/errorHandler'
 
 export const useSchedulerStore = defineStore('scheduler', {
   state: () => ({
@@ -212,7 +213,7 @@ export const useSchedulerStore = defineStore('scheduler', {
           console.log(`[SchedulerStore] Preferencia cargada: ${saved}`)
         }
       } catch (error) {
-        console.error('[SchedulerStore] Error cargando preferencia:', error)
+        handleError(error, 'Error cargando preferencia')
       }
     },
 
@@ -224,7 +225,7 @@ export const useSchedulerStore = defineStore('scheduler', {
         localStorage.setItem('scheduler_preference', this.userPreference || 'manual')
         console.log(`[SchedulerStore] Preferencia guardada: ${this.userPreference}`)
       } catch (error) {
-        console.error('[SchedulerStore] Error guardando preferencia:', error)
+        handleError(error, 'Error guardando preferencia')
       }
     },
 

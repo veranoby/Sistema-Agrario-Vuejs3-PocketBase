@@ -1352,6 +1352,6 @@ export async function checkProximoActivities(haciendaId) {
     }
 
   } catch (error) {
-    console.error('[programacionesStore] Error en checkProximoActivities:', error)
+    handleError(error, 'Error en checkProximoActivities')
   }
 }

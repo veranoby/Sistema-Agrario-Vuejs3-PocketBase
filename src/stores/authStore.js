@@ -158,7 +158,7 @@ export const useAuthStore = defineStore('auth', {
           try {
             await this.refreshToken()
           } catch (error) {
-            console.error('Error en refresco automático:', error)
+            handleError(error, 'Error en refresco automático')
           }
         }
       }, 2000)
@@ -554,7 +554,7 @@ export const useAuthStore = defineStore('auth', {
         await pb.collection('users').requestPasswordReset(email)
         return true
       } catch (error) {
-        console.error('Error al solicitar restablecimiento de contraseña:', error)
+        handleError(error, 'Error al solicitar restablecimiento de contraseña')
         const message = error.message || 'No se pudo procesar la solicitud. Intente nuevamente.'
         snackbarStore.showSnackbar(message, 'error')
         throw error
@@ -596,7 +596,7 @@ export const useAuthStore = defineStore('auth', {
 
         snackbarStore.showSnackbar('Logged out successfully', 'success')
       } catch (error) {
-        console.error('Error during logout:', error)
+        handleError(error, 'Error al cerrar sesión')
         snackbarStore.showSnackbar('Error al cerrar sesión', 'error')
       }
     }
