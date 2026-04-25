@@ -55,6 +55,12 @@ export function createIdMapper({ stores, cacheManager: cm = cacheManager }) {
         const store = useStore()
         const collectionName = store.$id || store.collectionName || 'unknown'
 
+        // Verificar si el store tiene método específico de actualización
+        if (typeof store.updateReferencesToItem === 'function') {
+          await store.updateReferencesToItem(tempId, realId)
+          continue
+        }
+
         // Encontrar el array de items en el store
         let itemsKey = null
         if (store[collectionName] && Array.isArray(store[collectionName])) {

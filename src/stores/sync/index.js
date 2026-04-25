@@ -56,10 +56,11 @@ export const useSyncStore = defineStore('sync', {
       const notify = (msg, type) => snackbar.showSnackbar(msg, type)
 
       // Inicializar módulos
-      const { isOnline } = initNetworkMonitor((online) => {
+      const { isOnline, cleanup } = initNetworkMonitor((online) => {
         this.isOnline = online
         if (online && this.queue.length > 0) this.processPendingQueue()
       })
+      this._networkCleanup = cleanup
 
       this.idMapper = createIdMapper({ stores: ALL_STORES, cacheManager })
       this.syncConfig = createSyncConfig({ cacheManager })
@@ -109,9 +110,14 @@ export const useSyncStore = defineStore('sync', {
         this.lastSyncTime = Date.now()
       } catch (error) {
         this.errors.push({ message: error.message, timestamp: Date.now() })
+        if (this.errors.length > 50) this.errors = this.errors.slice(-50)
       } finally {
         this.syncStatus = 'idle'
       }
+    },
+
+    $dispose() {
+      this._networkCleanup?.()
     }
   }
 })

@@ -9,20 +9,28 @@ import { ref } from 'vue'
 /**
  * Inicializa el monitor de red
  * @param {Function} onStatusChange - Callback que recibe (isOnline: boolean)
- * @returns {Object} - { isOnline: Ref<boolean> }
+ * @returns {Object} - { isOnline: Ref<boolean>, cleanup: Function }
  */
 export function initNetworkMonitor(onStatusChange) {
   const isOnline = ref(navigator.onLine)
 
-  window.addEventListener('online', () => {
+  const handleOnline = () => {
     isOnline.value = true
     onStatusChange?.(true)
-  })
+  }
 
-  window.addEventListener('offline', () => {
+  const handleOffline = () => {
     isOnline.value = false
     onStatusChange?.(false)
-  })
+  }
 
-  return { isOnline }
+  window.addEventListener('online', handleOnline)
+  window.addEventListener('offline', handleOffline)
+
+  function cleanup() {
+    window.removeEventListener('online', handleOnline)
+    window.removeEventListener('offline', handleOffline)
+  }
+
+  return { isOnline, cleanup }
 }

@@ -8,7 +8,7 @@ import { pb } from '@/utils/pocketbase'
 
 /**
  * Crea procesador de cola
- * @param {Object} params - { getStore, updateRefs, saveCache, resolveConflict, addConflict, notify }
+ * @param {Object} params - { getStore, updateRefs, saveCache, resolveConflict, addConflict, notify, pb }
  * @returns {Object} - { processQueue, getMetrics }
  */
 export function createQueueProcessor({
@@ -17,7 +17,8 @@ export function createQueueProcessor({
   saveCache,
   resolveConflict,
   addConflict,
-  notify
+  notify,
+  pb: pbClient = pb
 }) {
   const MAX_RETRIES = 5
   const metrics = { totalProcessed: 0, successCount: 0, failCount: 0, avgLatency: 0 }
@@ -44,20 +45,20 @@ export function createQueueProcessor({
         let result
         switch (op.action) {
           case 'create':
-            result = await pb.collection(op.collection).create(op.data)
+            result = await pbClient.collection(op.collection).create(op.data)
             await updateRefs(op.tempId, result.id)
             if (store.applySyncedCreate) await store.applySyncedCreate(op.tempId, result)
             results.created.push({ tempId: op.tempId, realItem: result })
             break
 
           case 'update':
-            result = await pb.collection(op.collection).update(op.data.id, op.data)
+            result = await pbClient.collection(op.collection).update(op.data.id, op.data)
             if (store.applySyncedUpdate) await store.applySyncedUpdate(op.data.id, result)
             results.updated.push({ id: op.data.id, updatedItem: result })
             break
 
           case 'delete':
-            await pb.collection(op.collection).delete(op.data.id)
+            await pbClient.collection(op.collection).delete(op.data.id)
             if (store.applySyncedDelete) await store.applySyncedDelete(op.data.id)
             results.deleted.push({ id: op.data.id, collection: op.collection })
             break
