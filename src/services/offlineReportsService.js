@@ -1,5 +1,5 @@
 // FASE 4: Servicio para generación de reportes offline
-import { useSyncStore } from '@/stores/syncStore'
+import { useSyncStore } from '@/stores/sync'
 import { useZonasStore } from '@/stores/zonasStore'
 import { useActividadesStore } from '@/stores/actividadesStore'
 import { useSiembrasStore } from '@/stores/siembrasStore'

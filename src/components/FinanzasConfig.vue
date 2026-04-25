@@ -375,7 +375,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useSyncStore } from '@/stores/syncStore'
+import { useSyncStore } from '@/stores/sync'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import { useProfileStore } from '@/stores/profileStore'
 import { useFinanzaStore } from '@/stores/finanzaStore'

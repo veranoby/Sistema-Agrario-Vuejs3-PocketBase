@@ -66,7 +66,7 @@
 
 <script setup>
 import { computed, onMounted } from 'vue'
-import { useSyncStore } from '@/stores/syncStore'
+import { useSyncStore } from '@/stores/sync'
 import { useSchedulerStore } from '@/stores/schedulerStore'
 import NotificationBell from '@/components/NotificationBell.vue'
 

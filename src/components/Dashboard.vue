@@ -184,7 +184,7 @@ import { useActividadesStore } from '@/stores/actividadesStore'
 import { useZonasStore } from '@/stores/zonasStore'
 import { handleError } from '@/utils/errorHandler'
 import { useSnackbarStore } from '@/stores/snackbarStore'
-import { useSyncStore } from '@/stores/syncStore'
+import { useSyncStore } from '@/stores/sync'
 
 import StatusPanel from '@/components/recordatorios/RecordatoriosStatusPanel.vue'
 import RecordatorioForm from '@/components/forms/RecordatorioForm.vue'

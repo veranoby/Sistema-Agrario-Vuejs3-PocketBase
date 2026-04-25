@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
-import { useSyncStore } from '@/stores/syncStore'
+import { useSyncStore } from '@/stores/sync'
 import { pb } from '@/utils/pocketbase'
 
 // --- MOCK DE GLOBALES (DEBEN ESTAR ANTES QUE NADA) ---

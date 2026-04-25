@@ -172,7 +172,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { useSyncStore } from '@/stores/syncStore'
+import { useSyncStore } from '@/stores/sync'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 
 const syncStore = useSyncStore()

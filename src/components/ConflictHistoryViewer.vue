@@ -327,7 +327,7 @@
 
 <script setup>
 import { ref, computed, onMounted, reactive } from 'vue'
-import { useSyncStore } from '@/stores/syncStore'
+import { useSyncStore } from '@/stores/sync'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 
 const syncStore = useSyncStore()

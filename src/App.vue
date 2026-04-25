@@ -51,7 +51,7 @@ import AuthModal from './components/forms/auth/AuthModal.vue'
 import ConflictResolutionDialog from './components/dialogs/ConflictResolutionDialog.vue'
 
 import SnackbarComponent from '@/components/SnackbarComponent.vue'
-import { useSyncStore } from '@/stores/syncStore'
+import { useSyncStore } from '@/stores/sync'
 import StatusBar from '@/components/StatusBar.vue'
 import { useSchedulerStore } from '@/stores/schedulerStore'
 

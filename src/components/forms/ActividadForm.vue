@@ -141,7 +141,7 @@ import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 import { handleError } from '@/utils/errorHandler'
 
-import { useSyncStore } from '@/stores/syncStore'
+import { useSyncStore } from '@/stores/sync'
 import { storeToRefs } from 'pinia'
 import { useZonasStore } from '@/stores/zonasStore'
 
