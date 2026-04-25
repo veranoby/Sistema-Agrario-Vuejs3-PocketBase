@@ -1,4 +1,4 @@
-// Logger inteligente para Sistema Agri
+// Logger inteligente para ConAgri
 // Reduce logs excesivos en production y proporciona control granular
 // Integrado con secureLogger para filtrar datos sensibles
 

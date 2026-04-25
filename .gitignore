@@ -51,3 +51,4 @@ gemini*.*
 .claude/*
 claude*.*
 .serena/*
+.aider*

@@ -18,6 +18,7 @@ import { useSnackbarStore } from './snackbarStore';
 import { useBitacoraStore } from './bitacoraStore';
 import { safeLocalStorage } from '@/utils/safeLocalStorage';
 import { logger } from '@/utils/logger';
+import { useAlertTriggers } from '@/composables/useAlertTriggers'
 
 export const useProgramacionesStore = defineStore('programaciones', {
   state: () => ({
@@ -29,7 +30,6 @@ export const useProgramacionesStore = defineStore('programaciones', {
     lastSync: null,
     pendingBitacoraFromProgramacionData: null,
     loaded: false,
-    // Pagination state
     pagination: {
       page: 1,
       perPage: 50,
@@ -41,7 +41,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
       hacienda: null,
       actividad: null,
       siembra: null,
-      estado: null // 'vencida', 'proxima', 'al-dia'
+      estado: null
     }
   }),
 
@@ -104,13 +104,10 @@ export const useProgramacionesStore = defineStore('programaciones', {
       }
     },
 
-    // Cargar programaciones con paginación (backward compatible)
     async cargarProgramaciones() {
-      // Delegate to fetchPage for backward compatibility
       return this.fetchPage(1, 100, {});
     },
 
-    // Fetch a specific page of programaciones with filters
     async fetchPage(page = 1, perPage = 50, filters = {}) {
       const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore()
@@ -128,7 +125,6 @@ export const useProgramacionesStore = defineStore('programaciones', {
       logger.debug(`[PROGRAMACIONES_STORE] Fetching page ${page} with ${perPage} items per page for hacienda: ${targetHacienda}`);
 
       try {
-        // Build filter string
         const filterParts = [`hacienda="${targetHacienda}"`];
 
         if (filters.actividad) {
@@ -140,14 +136,12 @@ export const useProgramacionesStore = defineStore('programaciones', {
 
         const filterString = filterParts.join(' && ');
 
-        // Use PocketBase getList for pagination
         const result = await pb.collection('programaciones').getList(page, perPage, {
           filter: filterString,
           sort: '-created',
           expand: 'actividad,siembras'
         });
 
-        // Update pagination state
         this.pagination = {
           page: result.page,
           perPage: result.perPage,
@@ -156,13 +150,10 @@ export const useProgramacionesStore = defineStore('programaciones', {
           hasMore: result.page < result.totalPages
         };
 
-        // Update filters state
         this.filters = { ...this.filters, ...filters };
 
-        // Enriquecer programaciones
         const programaciones = result.items.map(this.enriquecerProgramacion.bind(this));
 
-        // For page 1, replace entries; for other pages, append
         if (page === 1) {
           this.programaciones = programaciones;
         } else {
@@ -186,7 +177,6 @@ export const useProgramacionesStore = defineStore('programaciones', {
       }
     },
 
-    // Load next page
     async loadNextPage() {
       if (!this.pagination.hasMore || this.loading) {
         return { items: [], pagination: this.pagination };
@@ -196,12 +186,10 @@ export const useProgramacionesStore = defineStore('programaciones', {
       return this.fetchPage(nextPage, this.pagination.perPage, this.filters);
     },
 
-    // Refresh current page
     async refreshPage() {
       return this.fetchPage(1, this.pagination.perPage, this.filters);
     },
 
-    // Clear all entries and reset pagination
     clearProgramaciones() {
       this.programaciones = [];
       this.pagination = {
@@ -329,20 +317,16 @@ export const useProgramacionesStore = defineStore('programaciones', {
       const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore()
 
-      // Establecer fecha actual como referencia
       const fechaActual = new Date().toISOString()
 
-      // Calcular próxima ejecución antes de enriquecer datos
       let proximaEjecucion
       try {
         if (nuevaProgramacion.frecuencia === 'fecha_especifica' && 
             nuevaProgramacion.frecuencia_personalizada) {
-          // Si es una fecha específica, usar esa fecha (frecuencia_personalizada is now an object)
           const fechaEspecifica = nuevaProgramacion.frecuencia_personalizada.fecha;
           proximaEjecucion = fechaEspecifica ? new Date(fechaEspecifica).toISOString() : fechaActual
         } else if (nuevaProgramacion.frecuencia === 'personalizada' && 
                   nuevaProgramacion.frecuencia_personalizada) {
-          // Si es personalizada, calcular basado en la configuración (frecuencia_personalizada is now an object)
           const config = nuevaProgramacion.frecuencia_personalizada;
           const addFunctions = {
             dias: addDays,
@@ -352,7 +336,6 @@ export const useProgramacionesStore = defineStore('programaciones', {
           }
           proximaEjecucion = addFunctions[config.tipo]?.(new Date(), config.cantidad).toISOString() || fechaActual
         } else {
-          // Para frecuencias estándar
           switch (nuevaProgramacion.frecuencia) {
             case 'diaria':
               proximaEjecucion = addDays(new Date(), 1).toISOString()
@@ -375,7 +358,6 @@ export const useProgramacionesStore = defineStore('programaciones', {
         proximaEjecucion = fechaActual
       }
 
-      // Enriquecer datos con contexto de hacienda
       const enrichedData = {
         ...nuevaProgramacion,
         hacienda: haciendaStore.mi_hacienda?.id,
@@ -390,7 +372,6 @@ export const useProgramacionesStore = defineStore('programaciones', {
       }
 
       if (!syncStore.isOnline) {
-        // Usar la función unificada para generar ID temporal
         const tempId = syncStore.generateTempId()
 
         const tempProgramacion = {
@@ -398,7 +379,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
           id: tempId,
           created: fechaActual,
           updated: fechaActual,
-          _isTemp: true // Marcar como temporal para mejor seguimiento
+          _isTemp: true
         }
 
         this.programaciones.unshift(tempProgramacion)
@@ -434,7 +415,6 @@ export const useProgramacionesStore = defineStore('programaciones', {
       const actividadesStore = useActividadesStore()
       const siembras = new Set()
 
-      // Primero, recolectar IDs de actividades que no están en el store local
       const missingIds = []
       for (const id of actividadesIds) {
         const actividad = actividadesStore.actividades.find(a => a.id === id)
@@ -445,11 +425,8 @@ export const useProgramacionesStore = defineStore('programaciones', {
         }
       }
 
-      // Batch fetch: obtener todas las actividades faltantes usando getFullList
       if (missingIds.length > 0) {
         try {
-          // Usar PocketBase filter con OR para obtener todos los registros
-          // getFullList maneja automáticamente la paginación interna
           const filter = missingIds.map(id => `id="${id}"`).join(' || ')
 
           const actividades = await pb.collection('actividades')
@@ -462,7 +439,6 @@ export const useProgramacionesStore = defineStore('programaciones', {
           }
         } catch (error) {
           logger.error('Error obteniendo actividades faltantes en batch:', error)
-          // Fallback: intentar individualmente si el batch falla
           const failedIds = []
           for (const id of missingIds) {
             try {
@@ -489,7 +465,6 @@ export const useProgramacionesStore = defineStore('programaciones', {
       snackbarStore.showLoading()
       const syncStore = useSyncStore()
 
-      // Verificar que el ID existe
       if (!id) {
         snackbarStore.hideLoading()
         throw new Error('ID de programación no proporcionado para actualización')
@@ -501,7 +476,6 @@ export const useProgramacionesStore = defineStore('programaciones', {
         throw new Error(`No se encontró programación con ID: ${id}`)
       }
 
-      // Calcular la próxima ejecución basada en los datos actualizados
       const dataToUpdate = {
         ...datosActualizados,
         actividades: datosActualizados.actividades || programacion?.actividades || [],
@@ -557,14 +531,12 @@ export const useProgramacionesStore = defineStore('programaciones', {
       snackbarStore.showLoading()
       const syncStore = useSyncStore()
 
-      // Verificar que el ID existe
       if (!id) {
         snackbarStore.hideLoading()
         throw new Error('ID de programación no proporcionado para eliminación')
       }
 
       if (!syncStore.isOnline) {
-        // Verificar si la programación existe antes de eliminarla
         const programacionExiste = this.programaciones.some((p) => p.id === id)
         if (!programacionExiste) {
           snackbarStore.hideLoading()
@@ -596,10 +568,9 @@ export const useProgramacionesStore = defineStore('programaciones', {
       }
     },
 
-  // Original execution logic. Superseded by prepareForBitacoraEntryFromProgramacion and ejecutarProgramacionesBatch flows as of 2023-12-08 (Task: Final Cleanup).
-   async ejecutarProgramacion(id) {
-     const bitacoraStore = useBitacoraStore();
-     const programacion = this.programaciones.find((p) => p.id === id)
+    async ejecutarProgramacion(id) {
+      const bitacoraStore = useBitacoraStore();
+      const programacion = this.programaciones.find((p) => p.id === id)
 
       if (!programacion) {
         logger.error(`Programacion con ID ${id} no encontrada.`)
@@ -609,7 +580,6 @@ export const useProgramacionesStore = defineStore('programaciones', {
       const actividadesParaRegistrar = Array.isArray(programacion.actividades) ? programacion.actividades : [];
       if(actividadesParaRegistrar.length === 0) {
         logger.warn(`Programacion ${id} no tiene actividades asociadas para registrar en bitácora.`);
-        // Aún así, actualizaremos la fecha de ejecución de la programación.
       }
 
       for (const actividadId of actividadesParaRegistrar) {
@@ -625,7 +595,6 @@ export const useProgramacionesStore = defineStore('programaciones', {
           await bitacoraStore.crearBitacoraEntry(entryData)
         } catch (error) {
           logger.error(`Error creando entrada en bitácora para actividad ${actividadId} de programacion ${id}:`, error)
-          // Continuar con la siguiente actividad
         }
       }
 
@@ -641,13 +610,10 @@ export const useProgramacionesStore = defineStore('programaciones', {
           proxima_ejecucion: nuevaProximaEjecucionObj.toISOString()
         })
       } catch (error) {
-        // handleError ya es llamado por actualizarProgramacion, pero podemos loggear contexto adicional si es necesario.
         logger.error(`Error actualizando la programacion ${id} después de la ejecución:`, error);
-        // No re-lanzar para no romper el flujo si la bitácora se creó parcialmente.
       }
     },
 
-    // Método para actualizar un elemento local
     updateLocalItem(tempId, newItem) {
       return useSyncStore().updateLocalItem(
         'programaciones',
@@ -661,7 +627,6 @@ export const useProgramacionesStore = defineStore('programaciones', {
       )
     },
 
-    // Método para actualizar referencias
     updateReferencesToItem(tempId, realId) {
       return useSyncStore().updateReferencesToItem(
         'programaciones',
@@ -672,7 +637,6 @@ export const useProgramacionesStore = defineStore('programaciones', {
       )
     },
 
-    // Método para eliminar un elemento local
     removeLocalItem(id) {
       return useSyncStore().removeLocalItem(
         'programaciones',
@@ -681,7 +645,6 @@ export const useProgramacionesStore = defineStore('programaciones', {
       )
     },
 
-    // Standard sync methods
     applySyncedCreate(tempId, realItem) {
       const syncStore = useSyncStore();
       logger.debug(`[PROGRAMACIONES_STORE] Applying synced create: tempId ${tempId} -> realId ${realItem.id}`);
@@ -689,10 +652,8 @@ export const useProgramacionesStore = defineStore('programaciones', {
       if (index !== -1) {
         this.programaciones[index] = { ...realItem, _isTemp: false };
       } else {
-        // If not found by tempId (e.g., page reloaded), add if it's not already present by realId
         if (!this.programaciones.some(p => p.id === realItem.id)) {
-            this.programaciones.unshift({ ...realItem, _isTemp: false }); // Or push, unshift to show newest first
-            logger.debug('[PROGRAMACIONES_STORE] Synced item added as new (was not found by tempId).');
+            this.programaciones.unshift({ ...realItem, _isTemp: false });
         } else {
             logger.debug('[PROGRAMACIONES_STORE] Synced item already exists by realId.');
         }
@@ -724,633 +685,627 @@ export const useProgramacionesStore = defineStore('programaciones', {
         logger.debug('[PROGRAMACIONES_STORE] Synced delete applied, localStorage updated.');
       } else {
         logger.warn(`[PROGRAMACIONES_STORE] Could not find item with id ${id} to apply delete.`);
-      }}, // End of applySyncedDelete, ensure comma if more actions follow in 'actions'
+      }
+    },
 
-      // === Start of moved actions ===
-      async prepareForBitacoraEntryFromProgramacion(programacion) {
-        const actividadesStore = useActividadesStore()
-        this.pendingBitacoraFromProgramacionData = null // Reset previous state
+    async prepareForBitacoraEntryFromProgramacion(programacion) {
+      const actividadesStore = useActividadesStore()
+      this.pendingBitacoraFromProgramacionData = null
 
-        if (!programacion || !programacion.actividades || programacion.actividades.length === 0) {
-          logger.error('[ProgramacionesStore] No activities found in the programacion object.')
+      if (!programacion || !programacion.actividades || programacion.actividades.length === 0) {
+        logger.error('[ProgramacionesStore] No activities found in the programacion object.')
+        return false
+      }
+
+      const primaryActivityId = programacion.actividades[0]
+      let actividad = actividadesStore.actividades.find(a => a.id === primaryActivityId)
+
+      if (!actividad) {
+        try {
+          logger.warn(`[ProgramacionesStore] Activity ${primaryActivityId} not found in store, attempting fetch.`);
+          actividad = await actividadesStore.fetchActividadById(primaryActivityId); 
+        } catch (error) {
+          logger.error(`[ProgramacionesStore] Error fetching activity ${primaryActivityId}:`, error)
+          handleError(error, `Error fetching activity ${primaryActivityId}`)
           return false
         }
+      }
+      
+      if (!actividad) {
+        logger.error(`[ProgramacionesStore] Activity ${primaryActivityId} could not be found or fetched.`)
+        return false
+      }
 
-        const primaryActivityId = programacion.actividades[0]
-        let actividad = actividadesStore.actividades.find(a => a.id === primaryActivityId)
-
-        if (!actividad) {
-          try {
-            logger.warn(`[ProgramacionesStore] Activity ${primaryActivityId} not found in store, attempting fetch.`);
-            actividad = await actividadesStore.fetchActividadById(primaryActivityId); 
-          } catch (error) {
-            logger.error(`[ProgramacionesStore] Error fetching activity ${primaryActivityId}:`, error)
-            handleError(error, `Error fetching activity ${primaryActivityId}`)
-            return false
+      const actividadMetricas = actividad.metricas && typeof actividad.metricas === 'object' ? actividad.metricas : {};
+      const metricasToPreload = {};
+      for (const key in actividadMetricas) {
+        if (Object.prototype.hasOwnProperty.call(actividadMetricas, key) && actividadMetricas[key] && typeof actividadMetricas[key].valor !== 'undefined') {
+          metricasToPreload[key] = actividadMetricas[key].valor;
+        }
+      }
+      
+      let observacionesPreload = '';
+      try {
+        const tipoActividadId = actividad.tipo_actividades;
+        if (tipoActividadId) {
+          if (actividadesStore.tiposActividades.length === 0) {
+              await actividadesStore.cargarTiposActividades(); 
           }
-        }
-        
-        if (!actividad) {
-          logger.error(`[ProgramacionesStore] Activity ${primaryActivityId} could not be found or fetched.`)
-          return false
-        }
-
-        const actividadMetricas = actividad.metricas && typeof actividad.metricas === 'object' ? actividad.metricas : {};
-        const metricasToPreload = {};
-        for (const key in actividadMetricas) {
-          if (Object.prototype.hasOwnProperty.call(actividadMetricas, key) && actividadMetricas[key] && typeof actividadMetricas[key].valor !== 'undefined') {
-            metricasToPreload[key] = actividadMetricas[key].valor;
-          }
-        }
-        
-        let observacionesPreload = '';
-        try {
-          const tipoActividadId = actividad.tipo_actividades;
-          if (tipoActividadId) {
-            if (actividadesStore.tiposActividades.length === 0) {
-                await actividadesStore.cargarTiposActividades(); 
-            }
-            const tipoActividad = actividadesStore.tiposActividades.find(ta => ta.id === tipoActividadId);
-            
-            if (tipoActividad && tipoActividad.formato_reporte && tipoActividad.formato_reporte.columnas) {
-              const mappedMetricaKeys = new Set();
-              tipoActividad.formato_reporte.columnas.forEach(col => {
-                if (col.metrica && col.titulo !== 'Observaciones') { 
-                  mappedMetricaKeys.add(col.metrica);
-                }
-              });
-
-              const unmappedMetricasContent = [];
-              for (const metricaKey in actividadMetricas) {
-                if (Object.prototype.hasOwnProperty.call(actividadMetricas, metricaKey) && !mappedMetricaKeys.has(metricaKey)) {
-                  const metrica = actividadMetricas[metricaKey];
-                  const desc = metrica.descripcion || metricaKey;
-                  const val = metrica.valor !== undefined && metrica.valor !== null ? metrica.valor : 'N/A';
-                  const unit = metrica.unidad || '';
-                  unmappedMetricasContent.push(`${desc}: ${val} ${unit}`.trim());
-                }
-              }
-              observacionesPreload = unmappedMetricasContent.join('\n');
-            }
-          }
-        } catch (error) {
-            logger.error('[ProgramacionesStore] Error generating observacionesPreload:', error);
-        }
-
-        const prefillDataObject = {
-          actividadRealizadaId: primaryActivityId,
-          programacionOrigenId: programacion.id,
-          fechaEjecucion: format(new Date(), 'yyyy-MM-dd'),
-          metricasToPreload: metricasToPreload,
-          observacionesPreload: observacionesPreload,
-          siembraAsociadaId: programacion.siembras && programacion.siembras.length > 0 ? programacion.siembras[0] : null
-        };
-
-        this.pendingBitacoraFromProgramacionData = prefillDataObject;
-        logger.debug('[ProgramacionesStore] Prepared data for Bitacora Entry:', this.pendingBitacoraFromProgramacionData);
-        return true;
-      },
-
-      clearPendingBitacoraData() {
-        this.pendingBitacoraFromProgramacionData = null;
-        logger.debug('[ProgramacionesStore] Cleared pending bitacora data.');
-      },
-
-      async finalizeProgramacionExecution(payload) {
-        const { programacionId, fechaEjecucionReal } = payload;
-        const programacionIndex = this.programaciones.findIndex(p => p.id === programacionId);
-
-        if (programacionIndex === -1) {
-          logger.error(`[ProgramacionesStore] Programacion with ID ${programacionId} not found for finalization.`);
-          return;
-        }
-        
-        const dateParts = fechaEjecucionReal.split('T')[0].split('-'); 
-        const year = parseInt(dateParts[0], 10);
-        const month = parseInt(dateParts[1], 10) -1; 
-        const day = parseInt(dateParts[2], 10);
-        
-        const newUltimaEjecucionDate = new Date(Date.UTC(year, month, day, 0, 0, 0));
-        const newUltimaEjecucionISO = newUltimaEjecucionDate.toISOString();
-
-        const originalProgramacion = this.programaciones[programacionIndex];
-        const tempProgForCalc = { 
-          ...originalProgramacion, 
-          ultima_ejecucion: newUltimaEjecucionISO 
-        };
-        
-        const proximaEjecucionDate = this.calcularProximaEjecucion(tempProgForCalc);
-        const proxima_ejecucion_iso = proximaEjecucionDate.toISOString();
-        const ejecucionesPendientes = 0;
-
-        try {
-          await this.actualizarProgramacion(programacionId, { 
-            ultima_ejecucion: newUltimaEjecucionISO, 
-            proxima_ejecucion: proxima_ejecucion_iso, 
-            ejecucionesPendientes: ejecucionesPendientes 
-          });
-          logger.debug(`[ProgramacionesStore] Finalized execution for programacion ${programacionId}. New ultima_ejecucion: ${newUltimaEjecucionISO}, new proxima_ejecucion: ${proxima_ejecucion_iso}`);
-        } catch (error) {
-          logger.error(`[ProgramacionesStore] Error finalizing programacion execution for ${programacionId}:`, error);
-          throw error; 
-        }
-      },
-
-      async ejecutarProgramacionesBatch(payload) {
-        const { programacionId, fechasEjecucion, observacionesAdicionales = '', siembraId = null, metricasSeleccionadas = [] } = payload;
-
-        const actividadesStore = useActividadesStore();
-        const bitacoraStore = useBitacoraStore();
-        const snackbarStore = useSnackbarStore();
-
-        // Validate siembra context to prevent cross-siembra data corruption
-        if (!siembraId) {
-          logger.warn('[Store] No siembraId provided for batch execution - proceeding without siembra isolation');
-        }
-
-        const programacion = this.programaciones.find(p => p.id === programacionId);
-        if (!programacion) {
-          logger.error(`[Store] Programacion ${programacionId} no encontrada.`);
-          snackbarStore.showSnackbar(`Error: Programación ${programacionId} no encontrada.`, 'error');
-          return;
-        }
-
-        // Validate siembra context against programacion's siembras
-        if (siembraId && programacion.siembras && Array.isArray(programacion.siembras)) {
-          if (!programacion.siembras.includes(siembraId)) {
-            logger.error(`[Store] SiembraId ${siembraId} not associated with programacion ${programacionId}`);
-            snackbarStore.showSnackbar(`Error: La siembra especificada no está asociada a esta programación.`, 'error');
-            return;
-          }
-        }
-
-        if (!programacion.actividades || programacion.actividades.length === 0) {
-          logger.error(`[Store] Programacion ${programacionId} no tiene actividades asociadas.`);
-          snackbarStore.showSnackbar(`Error: Programación ${programacionId} no tiene actividades.`, 'error');
-          return;
-        }
-
-        const primaryActivityId = programacion.actividades[0];
-        let actividad;
-        try {
-          actividad = await actividadesStore.fetchActividadById(primaryActivityId, { expand: 'tipo_actividades' });
-        } catch (error) {
-          logger.error(`[Store] Error fetching actividad ${primaryActivityId}:`, error);
-          snackbarStore.showSnackbar(`Error cargando actividad ${primaryActivityId}.`, 'error');
-          return;
-        }
-
-        if (!actividad) {
-          logger.error(`[Store] Actividad ${primaryActivityId} no pudo ser cargada.`);
-          snackbarStore.showSnackbar(`Error: Actividad ${primaryActivityId} no pudo ser cargada.`, 'error');
-          return;
-        }
-
-        const metricasToSubmit = {};
-        if (actividad.metricas && typeof actividad.metricas === 'object') {
-          for (const key in actividad.metricas) {
-            if (Object.prototype.hasOwnProperty.call(actividad.metricas, key) && actividad.metricas[key] && typeof actividad.metricas[key].valor !== 'undefined') {
-              // If metricasSeleccionadas is provided and not empty, filter by selected metrics
-              if (metricasSeleccionadas.length > 0) {
-                if (metricasSeleccionadas.includes(key)) {
-                  metricasToSubmit[key] = actividad.metricas[key].valor;
-                }
-              } else {
-                // If no filtering provided, include all metrics (backward compatibility)
-                metricasToSubmit[key] = actividad.metricas[key].valor;
-              }
-            }
-          }
-        }
-
-        let observacionesContent = '';
-        try {
-          const tipoActividad = actividad.expand?.tipo_actividades;
+          const tipoActividad = actividadesStore.tiposActividades.find(ta => ta.id === tipoActividadId);
+          
           if (tipoActividad && tipoActividad.formato_reporte && tipoActividad.formato_reporte.columnas) {
             const mappedMetricaKeys = new Set();
             tipoActividad.formato_reporte.columnas.forEach(col => {
-              if (col.metrica && col.titulo !== 'Observaciones') {
+              if (col.metrica && col.titulo !== 'Observaciones') { 
                 mappedMetricaKeys.add(col.metrica);
               }
             });
 
             const unmappedMetricasContent = [];
-            if (actividad.metricas && typeof actividad.metricas === 'object') {
-              for (const metricaKey in actividad.metricas) {
-                if (Object.prototype.hasOwnProperty.call(actividad.metricas, metricaKey) && !mappedMetricaKeys.has(metricaKey)) {
-                  const metrica = actividad.metricas[metricaKey];
-                  const desc = metrica.descripcion || metricaKey;
-                  const val = metrica.valor !== undefined && metrica.valor !== null ? metrica.valor : 'N/A';
-                  const unit = metrica.unidad || '';
-                  unmappedMetricasContent.push(`${desc}: ${val} ${unit}`.trim());
-                }
+            for (const metricaKey in actividadMetricas) {
+              if (Object.prototype.hasOwnProperty.call(actividadMetricas, metricaKey) && !mappedMetricaKeys.has(metricaKey)) {
+                const metrica = actividadMetricas[metricaKey];
+                const desc = metrica.descripcion || metricaKey;
+                const val = metrica.valor !== undefined && metrica.valor !== null ? metrica.valor : 'N/A';
+                const unit = metrica.unidad || '';
+                unmappedMetricasContent.push(`${desc}: ${val} ${unit}`.trim());
               }
             }
-            observacionesContent = unmappedMetricasContent.join('\n');
-          }
-        } catch (error) {
-          logger.error('[Store] Error generando observacionesContent para batch:', error);
-        }
-
-        // Combine auto-generated observaciones with additional user input
-        const finalObservaciones = [observacionesContent, observacionesAdicionales]
-          .filter(obs => obs && obs.trim())
-          .join('\n\n');
-
-        let successfulExecutions = 0;
-        let latestSuccessfullyExecutedDate = null;
-
-        const sortedDates = [...fechasEjecucion].sort((a, b) => new Date(a) - new Date(b));
-
-        for (const dateString of sortedDates) {
-          // Create bitacora entries ONLY for the specified siembra context
-          const entryData = {
-            programacion_origen: programacionId,
-            actividad_realizada: primaryActivityId,
-            fecha_ejecucion: new Date(dateString + 'T00:00:00.000Z').toISOString(),
-            estado_ejecucion: 'completado',
-            // Use the specific siembraId if provided, otherwise fall back to programacion's first siembra
-            siembra_asociada: siembraId || (programacion.siembras && programacion.siembras.length > 0 ? programacion.siembras[0] : null),
-            // Ensure siembras array includes the specific siembra context
-            siembras: siembraId ? [siembraId] : (programacion.siembras || []),
-            metricas: { ...metricasToSubmit },
-            notas: finalObservaciones,
-          };
-
-          try {
-            await bitacoraStore.crearBitacoraEntry(entryData);
-            successfulExecutions++;
-            latestSuccessfullyExecutedDate = dateString;
-          } catch (error) {
-            logger.error(`[Store] Error creando entrada de bitácora para fecha ${dateString}:`, error);
-            snackbarStore.showSnackbar(`Error registrando bitácora para ${dateString}.`, 'error');
+            observacionesPreload = unmappedMetricasContent.join('\n');
           }
         }
+      } catch (error) {
+          logger.error('[ProgramacionesStore] Error generating observacionesPreload:', error);
+      }
 
-        // Update proxima_ejecucion based on LAST created entry date, not today
-        if (successfulExecutions > 0 && latestSuccessfullyExecutedDate) {
-          const dateParts = latestSuccessfullyExecutedDate.split('-');
-          const year = parseInt(dateParts[0], 10);
-          const month = parseInt(dateParts[1], 10) - 1;
-          const day = parseInt(dateParts[2], 10);
-          const latestDateObj = new Date(Date.UTC(year, month, day, 0, 0, 0));
-          const latestSuccessfullyExecutedDateISO = latestDateObj.toISOString();
+      const prefillDataObject = {
+        actividadRealizadaId: primaryActivityId,
+        programacionOrigenId: programacion.id,
+        fechaEjecucion: format(new Date(), 'yyyy-MM-dd'),
+        metricasToPreload: metricasToPreload,
+        observacionesPreload: observacionesPreload,
+        siembraAsociadaId: programacion.siembras && programacion.siembras.length > 0 ? programacion.siembras[0] : null
+      };
 
-          const tempProgForCalc = {
-            ...programacion,
-            ultima_ejecucion: latestSuccessfullyExecutedDateISO
-          };
+      this.pendingBitacoraFromProgramacionData = prefillDataObject;
+      logger.debug('[ProgramacionesStore] Prepared data for Bitacora Entry:', this.pendingBitacoraFromProgramacionData);
+      return true;
+    },
 
-          const proximaEjecucionDate = this.calcularProximaEjecucion(tempProgForCalc);
-          const proxima_ejecucion_iso = proximaEjecucionDate.toISOString();
-          const ejecuciones_pendientes = this.calcularEjecucionesPendientes(tempProgForCalc);
+    clearPendingBitacoraData() {
+      this.pendingBitacoraFromProgramacionData = null;
+      logger.debug('[ProgramacionesStore] Cleared pending bitacora data.');
+    },
 
-          try {
-            await this.actualizarProgramacion(programacionId, {
-              ultima_ejecucion: latestSuccessfullyExecutedDateISO,
-              proxima_ejecucion: proxima_ejecucion_iso,
-              ejecucionesPendientes: ejecuciones_pendientes
-            });
+    async finalizeProgramacionExecution(payload) {
+      const { programacionId, fechaEjecucionReal } = payload;
+      const programacionIndex = this.programaciones.findIndex(p => p.id === programacionId);
 
-            const siembraContext = siembraId ? ` (Siembra: ${siembraId})` : '';
-            snackbarStore.showSnackbar(`${successfulExecutions} de ${sortedDates.length} programaciones ejecutadas y registradas${siembraContext}. Programación actualizada.`, 'success');
-          } catch (updateError) {
-            logger.error(`[Store] Error actualizando programacion ${programacionId} post-batch:`, updateError);
-            snackbarStore.showSnackbar('Bitácoras registradas, pero falló la actualización de la programación.', 'warning');
-          }
-        } else if (fechasEjecucion.length > 0 && successfulExecutions === 0) {
-          snackbarStore.showSnackbar('Ninguna de las programaciones seleccionadas pudo ser registrada.', 'error');
-        } else if (fechasEjecucion.length === 0) {
-          snackbarStore.showSnackbar('No se seleccionaron fechas para ejecutar.', 'info');
-        }
-      },
-
-      // Calculate pending execution dates based on programacion frequency with siembra context isolation
-      getFechasPendientes(programacion, siembraId = null) {
-        if (!programacion) {
-          logger.warn('[ProgramacionesStore] No programacion provided to getFechasPendientes');
-          return [];
-        }
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        const fechas = [];
-
-        // Handle fecha_especifica (one-time execution)
-        if (programacion.frecuencia === 'fecha_especifica') {
-          if (programacion.frecuencia_personalizada?.fecha) {
-            const fechaEspecifica = new Date(programacion.frecuencia_personalizada.fecha);
-            fechaEspecifica.setHours(0, 0, 0, 0);
-
-            // Only include if it's in the past or today
-            if (fechaEspecifica <= today) {
-              // Check if this date hasn't been processed in bitacora for the specific siembra
-              if (!this.isFechaProcessedInBitacora(programacion.id, fechaEspecifica, siembraId)) {
-                fechas.push(format(fechaEspecifica, 'yyyy-MM-dd'));
-              }
-            }
-          }
-          return fechas;
-        }
-
-        // Calculate pending dates for recurring programaciones from ultima_ejecucion, NOT from today
-        const ultimaEjecucion = programacion.ultima_ejecucion
-          ? new Date(programacion.ultima_ejecucion)
-          : new Date(programacion.created || programacion.proxima_ejecucion);
-        ultimaEjecucion.setHours(0, 0, 0, 0);
-
-        let currentDate = new Date(ultimaEjecucion);
-
-        // Generate dates from ultima_ejecucion until today
-        while (currentDate < today) {
-          // Calculate next execution date based on frequency
-          const nextDate = this.calcularSiguienteFecha(currentDate, programacion);
-
-          if (nextDate <= today) {
-            // Only include dates that haven't been processed in bitacora for this specific siembra
-            if (!this.isFechaProcessedInBitacora(programacion.id, nextDate, siembraId)) {
-              fechas.push(format(nextDate, 'yyyy-MM-dd'));
-            }
-          }
-
-          currentDate = nextDate;
-
-          // Safety limit: don't generate more than 100 dates
-          if (fechas.length >= 100) {
-            logger.warn('[ProgramacionesStore] Hit safety limit generating pending dates');
-            break;
-          }
-        }
-
-        return fechas.sort();
-      },
-
-      // Check if a specific date has been processed in bitacora for a given siembra context
-      isFechaProcessedInBitacora(programacionId, fecha, siembraId = null) {
-        const bitacoraStore = useBitacoraStore();
-
-        if (!bitacoraStore.bitacoras || !Array.isArray(bitacoraStore.bitacoras)) {
-          return false;
-        }
-
-        const fechaStr = format(fecha, 'yyyy-MM-dd');
-
-        return bitacoraStore.bitacoras.some(bitacora => {
-          // Check if this bitacora entry matches the programacion
-          if (bitacora.programaciones !== programacionId) {
-            return false;
-          }
-
-          // Check if the execution date matches
-          const bitacoraFecha = bitacora.fecha ? format(new Date(bitacora.fecha), 'yyyy-MM-dd') : null;
-          if (bitacoraFecha !== fechaStr) {
-            return false;
-          }
-
-          // If siembraId is specified, check siembra context isolation
-          if (siembraId) {
-            const bitacoraSiembras = Array.isArray(bitacora.siembras) ? bitacora.siembras : [];
-            return bitacoraSiembras.includes(siembraId);
-          }
-
-          // If no specific siembra context, any bitacora entry counts
-          return true;
-        });
-      },
-
-      // Helper method to calculate next date based on frequency
-      calcularSiguienteFecha(baseDate, programacion) {
-        const config = programacion.frecuencia_personalizada || {};
-
-        switch (programacion.frecuencia) {
-          case 'diaria':
-            return addDays(baseDate, 1);
-          case 'semanal':
-            return addWeeks(baseDate, 1);
-          case 'quincenal':
-            return addDays(baseDate, 15);
-          case 'mensual':
-            return addMonths(baseDate, 1);
-          case 'personalizada':
-            const addFunctions = {
-              dias: addDays,
-              semanas: addWeeks,
-              meses: addMonths,
-              años: addYears
-            };
-            return addFunctions[config.tipo]?.(baseDate, config.cantidad) || addDays(baseDate, 1);
-          default:
-            return addDays(baseDate, 1);
-        }
-      },
-      // === End of moved actions ===
+      if (programacionIndex === -1) {
+        logger.error(`[ProgramacionesStore] Programacion with ID ${programacionId} not found for finalization.`);
+        return;
+      }
       
-      // Compliance State Methods - Enhanced with siembra context isolation
-      getComplianceState(programacion, siembraId = null) {
-        if (!programacion) return 'PROGRAMADO'
+      const dateParts = fechaEjecucionReal.split('T')[0].split('-'); 
+      const year = parseInt(dateParts[0], 10);
+      const month = parseInt(dateParts[1], 10) -1; 
+      const day = parseInt(dateParts[2], 10);
+      
+      const newUltimaEjecucionDate = new Date(Date.UTC(year, month, day, 0, 0, 0));
+      const newUltimaEjecucionISO = newUltimaEjecucionDate.toISOString();
 
-        const today = new Date()
-        today.setHours(0, 0, 0, 0)
+      const originalProgramacion = this.programaciones[programacionIndex];
+      const tempProgForCalc = { 
+        ...originalProgramacion, 
+        ultima_ejecucion: newUltimaEjecucionISO 
+      };
+      
+      const proximaEjecucionDate = this.calcularProximaEjecucion(tempProgForCalc);
+      const proxima_ejecucion_iso = proximaEjecucionDate.toISOString();
+      const ejecucionesPendientes = 0;
 
-        // Use proxima_ejecucion instead of fecha_programada to avoid undefined field
-        const fechaProgramada = programacion.proxima_ejecucion
-          ? new Date(programacion.proxima_ejecucion)
-          : new Date()
-        fechaProgramada.setHours(0, 0, 0, 0)
+      try {
+        await this.actualizarProgramacion(programacionId, { 
+          ultima_ejecucion: newUltimaEjecucionISO, 
+          proxima_ejecucion: proxima_ejecucion_iso, 
+          ejecucionesPendientes: ejecucionesPendientes 
+        });
+        logger.debug(`[ProgramacionesStore] Finalized execution for programacion ${programacionId}.`);
+      } catch (error) {
+        logger.error(`[ProgramacionesStore] Error finalizing programacion execution for ${programacionId}:`, error);
+        throw error; 
+      }
+    },
 
-        // Check if there's a bitacora entry for this programacion with siembra context
-        const bitacoraStore = useBitacoraStore()
-        const hasBitacoraEntry = this.hasBitacoraEntryForSiembra(programacion.id, siembraId)
+    async ejecutarProgramacionesBatch(payload) {
+      const { programacionId, fechasEjecucion, observacionesAdicionales = '', siembraId = null, metricasSeleccionadas = [] } = payload;
 
-        if (hasBitacoraEntry) {
-          return 'REGISTRADO'
-        }
+      const actividadesStore = useActividadesStore();
+      const bitacoraStore = useBitacoraStore();
+      const snackbarStore = useSnackbarStore();
 
-        if (fechaProgramada > today) {
-          return 'PROGRAMADO'
-        }
+      if (!siembraId) {
+        logger.warn('[Store] No siembraId provided for batch execution - proceeding without siembra isolation');
+      }
 
-        if (fechaProgramada.getTime() === today.getTime()) {
-          return 'PENDIENTE'
-        }
+      const programacion = this.programaciones.find(p => p.id === programacionId);
+      if (!programacion) {
+        logger.error(`[Store] Programacion ${programacionId} no encontrada.`);
+        snackbarStore.showSnackbar(`Error: Programación ${programacionId} no encontrada.`, 'error');
+        return;
+      }
 
-        const daysDiff = Math.floor((today - fechaProgramada) / (1000 * 60 * 60 * 24))
-        if (daysDiff > 2) {
-          return 'ACUMULADO'
-        }
-
-        return 'VENCIDO'
-      },
-
-      // Helper method to check bitacora entries with siembra context
-      hasBitacoraEntryForSiembra(programacionId, siembraId = null) {
-        const bitacoraStore = useBitacoraStore()
-
-        if (!bitacoraStore.bitacoras || !Array.isArray(bitacoraStore.bitacoras)) {
-          return false
-        }
-
-        return bitacoraStore.bitacoras.some(bitacora => {
-          // Check if this bitacora entry matches the programacion
-          if (bitacora.programaciones !== programacionId) {
-            return false
-          }
-
-          // If siembraId is specified, check siembra context isolation
-          if (siembraId) {
-            const bitacoraSiembras = Array.isArray(bitacora.siembras) ? bitacora.siembras : []
-            return bitacoraSiembras.includes(siembraId)
-          }
-
-          // If no specific siembra context, any bitacora entry counts
-          return true
-        })
-      },
-
-      getComplianceStateColor(programacion, siembraId = null) {
-        const state = this.getComplianceState(programacion, siembraId)
-        const colors = {
-          'REGISTRADO': 'success',
-          'PENDIENTE': 'warning',
-          'ACUMULADO': 'error',
-          'PROGRAMADO': 'info',
-          'VENCIDO': 'orange'
-        }
-        return colors[state] || 'grey'
-      },
-
-      getComplianceStateIcon(programacion, siembraId = null) {
-        const state = this.getComplianceState(programacion, siembraId)
-        const icons = {
-          'REGISTRADO': 'mdi-check-circle',
-          'PENDIENTE': 'mdi-clock-alert-outline',
-          'ACUMULADO': 'mdi-alert-circle',
-          'PROGRAMADO': 'mdi-calendar-clock',
-          'VENCIDO': 'mdi-alert-outline'
-        }
-        return icons[state] || 'mdi-help-circle'
-      },
-
-      getComplianceStateTooltip(programacion, siembraId = null) {
-        const state = this.getComplianceState(programacion, siembraId)
-        const today = new Date()
-
-        // Use proxima_ejecucion instead of fecha_programada to avoid NaN
-        const fechaProgramada = programacion.proxima_ejecucion
-          ? new Date(programacion.proxima_ejecucion)
-          : new Date()
-
-        // Ensure we have a valid date before calculating
-        const daysDiff = fechaProgramada && !isNaN(fechaProgramada)
-          ? Math.floor((today - fechaProgramada) / (1000 * 60 * 60 * 24))
-          : 0
-
-        const siembraContext = siembraId ? ` (Siembra: ${siembraId})` : ''
-        const tooltips = {
-          'REGISTRADO': `Cumplimiento registrado en bitácora${siembraContext}`,
-          'PENDIENTE': `Requiere documentación hoy${siembraContext}`,
-          'ACUMULADO': `${Math.abs(daysDiff)} días sin documentar - riesgo de cumplimiento${siembraContext}`,
-          'PROGRAMADO': `Programado para fecha futura${siembraContext}`,
-          'VENCIDO': `Vencido hace ${Math.abs(daysDiff)} días${siembraContext}`
-        }
-        return tooltips[state] || state
-      },
-
-      // Enhanced method to get pending dates with proper validation and edge case handling
-      getFechasPendientesWithValidation(programacion, siembraId = null) {
-        try {
-          // Graceful handling when programacion is null/undefined
-          if (!programacion) {
-            logger.warn('[ProgramacionesStore] No programacion provided to getFechasPendientesWithValidation')
-            return []
-          }
-
-          // Use the core method with siembra context
-          const fechas = this.getFechasPendientes(programacion, siembraId)
-
-          // Additional validation for edge cases
-          if (!Array.isArray(fechas)) {
-            logger.error('[ProgramacionesStore] getFechasPendientes returned non-array result')
-            return []
-          }
-
-          // Filter out invalid dates
-          const validFechas = fechas.filter(fecha => {
-            try {
-              const dateObj = new Date(fecha)
-              return !isNaN(dateObj.getTime())
-            } catch (error) {
-              logger.warn(`[ProgramacionesStore] Invalid date found: ${fecha}`)
-              return false
-            }
-          })
-
-          logger.debug(`[ProgramacionesStore] Generated ${validFechas.length} valid pending dates for programacion ${programacion.id}${siembraId ? ` (siembra: ${siembraId})` : ''}`)
-          return validFechas
-
-        } catch (error) {
-          logger.error('[ProgramacionesStore] Error in getFechasPendientesWithValidation:', error)
-          handleError(error, 'Error calculating pending dates')
-          return []
-        }
-      },
-
-      // Multi-siembra isolation validation method
-      validateSiembraContext(programacionId, siembraId) {
-        if (!siembraId) {
-          logger.warn('[ProgramacionesStore] No siembraId provided for validation')
-          return { valid: true, warning: 'No siembra context specified' }
-        }
-
-        const programacion = this.programaciones.find(p => p.id === programacionId)
-        if (!programacion) {
-          return { valid: false, error: `Programación ${programacionId} no encontrada` }
-        }
-
-        if (!programacion.siembras || !Array.isArray(programacion.siembras)) {
-          return { valid: false, error: 'Programación no tiene siembras asociadas' }
-        }
-
+      if (siembraId && programacion.siembras && Array.isArray(programacion.siembras)) {
         if (!programacion.siembras.includes(siembraId)) {
-          return {
-            valid: false,
-            error: `Siembra ${siembraId} no está asociada a la programación ${programacionId}`
-          }
-        }
-
-        return { valid: true, message: 'Siembra context validated successfully' }
-      },
-
-      // Métodos de localStorage manual (reemplazando persist plugin)
-      saveToStorage() {
-        try {
-          safeLocalStorage.saveToLocalStorage('programaciones', this.programaciones)
-        } catch (error) {
-          logger.error('[ProgramacionesStore] Error guardando en localStorage:', error)
-        }
-      },
-
-      loadFromStorage() {
-        try {
-          const data = safeLocalStorage.loadFromLocalStorage('programaciones')
-          if (data && Array.isArray(data)) {
-            this.programaciones = data.map(this.enriquecerProgramacion)
-            this.loaded = true
-            return true
-          }
-          return false
-        } catch (error) {
-          logger.error('[ProgramacionesStore] Error cargando desde localStorage:', error)
-          return false
+          logger.error(`[Store] SiembraId ${siembraId} not associated with programacion ${programacionId}`);
+          snackbarStore.showSnackbar(`Error: La siembra especificada no está asociada a esta programación.`, 'error');
+          return;
         }
       }
 
-    } // Fin del objeto actions
-  }) // Fin de defineStore
+      if (!programacion.actividades || programacion.actividades.length === 0) {
+        logger.error(`[Store] Programacion ${programacionId} no tiene actividades asociadas.`);
+        snackbarStore.showSnackbar(`Error: Programación ${programacionId} no tiene actividades.`, 'error');
+        return;
+      }
 
-// Las siguientes funciones ya están definidas dentro del store:
-// - prepareForBitacoraEntryFromProgramacion
-// - clearPendingBitacoraData
-// - finalizeProgramacionExecution
-// - ejecutarProgramacionesBatch
+      const primaryActivityId = programacion.actividades[0];
+      let actividad;
+      try {
+        actividad = await actividadesStore.fetchActividadById(primaryActivityId, { expand: 'tipo_actividades' });
+      } catch (error) {
+        logger.error(`[Store] Error fetching actividad ${primaryActivityId}:`, error);
+        snackbarStore.showSnackbar(`Error cargando actividad ${primaryActivityId}.`, 'error');
+        return;
+      }
+
+      if (!actividad) {
+        logger.error(`[Store] Actividad ${primaryActivityId} no pudo ser cargada.`);
+        snackbarStore.showSnackbar(`Error: Actividad ${primaryActivityId} no pudo ser cargada.`, 'error');
+        return;
+      }
+
+      const metricasToSubmit = {};
+      if (actividad.metricas && typeof actividad.metricas === 'object') {
+        for (const key in actividad.metricas) {
+          if (Object.prototype.hasOwnProperty.call(actividad.metricas, key) && actividad.metricas[key] && typeof actividad.metricas[key].valor !== 'undefined') {
+            if (metricasSeleccionadas.length > 0) {
+              if (metricasSeleccionadas.includes(key)) {
+                metricasToSubmit[key] = actividad.metricas[key].valor;
+              }
+            } else {
+              metricasToSubmit[key] = actividad.metricas[key].valor;
+            }
+          }
+        }
+      }
+
+      let observacionesContent = '';
+      try {
+        const tipoActividad = actividad.expand?.tipo_actividades;
+        if (tipoActividad && tipoActividad.formato_reporte && tipoActividad.formato_reporte.columnas) {
+          const mappedMetricaKeys = new Set();
+          tipoActividad.formato_reporte.columnas.forEach(col => {
+            if (col.metrica && col.titulo !== 'Observaciones') {
+              mappedMetricaKeys.add(col.metrica);
+            }
+          });
+
+          const unmappedMetricasContent = [];
+          if (actividad.metricas && typeof actividad.metricas === 'object') {
+            for (const metricaKey in actividad.metricas) {
+              if (Object.prototype.hasOwnProperty.call(actividad.metricas, metricaKey) && !mappedMetricaKeys.has(metricaKey)) {
+                const metrica = actividad.metricas[metricaKey];
+                const desc = metrica.descripcion || metricaKey;
+                const val = metrica.valor !== undefined && metrica.valor !== null ? metrica.valor : 'N/A';
+                const unit = metrica.unidad || '';
+                unmappedMetricasContent.push(`${desc}: ${val} ${unit}`.trim());
+              }
+            }
+          }
+          observacionesContent = unmappedMetricasContent.join('\n');
+        }
+      } catch (error) {
+        logger.error('[Store] Error generando observacionesContent para batch:', error);
+      }
+
+      const finalObservaciones = [observacionesContent, observacionesAdicionales]
+        .filter(obs => obs && obs.trim())
+        .join('\n\n');
+
+      let successfulExecutions = 0;
+      let latestSuccessfullyExecutedDate = null;
+
+      const sortedDates = [...fechasEjecucion].sort((a, b) => new Date(a) - new Date(b));
+
+      for (const dateString of sortedDates) {
+        const entryData = {
+          programacion_origen: programacionId,
+          actividad_realizada: primaryActivityId,
+          fecha_ejecucion: new Date(dateString + 'T00:00:00.000Z').toISOString(),
+          estado_ejecucion: 'completado',
+          siembra_asociada: siembraId || (programacion.siembras && programacion.siembras.length > 0 ? programacion.siembras[0] : null),
+          siembras: siembraId ? [siembraId] : (programacion.siembras || []),
+          metricas: { ...metricasToSubmit },
+          notas: finalObservaciones,
+        };
+
+        try {
+          await bitacoraStore.crearBitacoraEntry(entryData);
+          successfulExecutions++;
+          latestSuccessfullyExecutedDate = dateString;
+        } catch (error) {
+          logger.error(`[Store] Error creando entrada de bitácora para fecha ${dateString}:`, error);
+          snackbarStore.showSnackbar(`Error registrando bitácora para ${dateString}.`, 'error');
+        }
+      }
+
+      if (successfulExecutions > 0 && latestSuccessfullyExecutedDate) {
+        const dateParts = latestSuccessfullyExecutedDate.split('-');
+        const year = parseInt(dateParts[0], 10);
+        const month = parseInt(dateParts[1], 10) - 1;
+        const day = parseInt(dateParts[2], 10);
+        const latestDateObj = new Date(Date.UTC(year, month, day, 0, 0, 0));
+        const latestSuccessfullyExecutedDateISO = latestDateObj.toISOString();
+
+        const tempProgForCalc = {
+          ...programacion,
+          ultima_ejecucion: latestSuccessfullyExecutedDateISO
+        };
+
+        const proximaEjecucionDate = this.calcularProximaEjecucion(tempProgForCalc);
+        const proxima_ejecucion_iso = proximaEjecucionDate.toISOString();
+        const ejecuciones_pendientes = this.calcularEjecucionesPendientes(tempProgForCalc);
+
+        try {
+          await this.actualizarProgramacion(programacionId, {
+            ultima_ejecucion: latestSuccessfullyExecutedDateISO,
+            proxima_ejecucion: proxima_ejecucion_iso,
+            ejecucionesPendientes: ejecuciones_pendientes
+          });
+
+          const siembraContext = siembraId ? ` (Siembra: ${siembraId})` : '';
+          snackbarStore.showSnackbar(`${successfulExecutions} de ${sortedDates.length} programaciones ejecutadas y registradas${siembraContext}. Programación actualizada.`, 'success');
+        } catch (updateError) {
+          logger.error(`[Store] Error actualizando programacion ${programacionId} post-batch:`, updateError);
+          snackbarStore.showSnackbar('Bitácoras registradas, pero falló la actualización de la programación.', 'warning');
+        }
+      } else if (fechasEjecucion.length > 0 && successfulExecutions === 0) {
+        snackbarStore.showSnackbar('Ninguna de las programaciones seleccionadas pudo ser registrada.', 'error');
+      } else if (fechasEjecucion.length === 0) {
+        snackbarStore.showSnackbar('No se seleccionaron fechas para ejecutar.', 'info');
+      }
+    },
+
+    getFechasPendientes(programacion, siembraId = null) {
+      if (!programacion) {
+        logger.warn('[ProgramacionesStore] No programacion provided to getFechasPendientes');
+        return [];
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const fechas = [];
+
+      if (programacion.frecuencia === 'fecha_especifica') {
+        if (programacion.frecuencia_personalizada?.fecha) {
+          const fechaEspecifica = new Date(programacion.frecuencia_personalizada.fecha);
+          fechaEspecifica.setHours(0, 0, 0, 0);
+
+          if (fechaEspecifica <= today) {
+            if (!this.isFechaProcessedInBitacora(programacion.id, fechaEspecifica, siembraId)) {
+              fechas.push(format(fechaEspecifica, 'yyyy-MM-dd'));
+            }
+          }
+        }
+        return fechas;
+      }
+
+      const ultimaEjecucion = programacion.ultima_ejecucion
+        ? new Date(programacion.ultima_ejecucion)
+        : new Date(programacion.created || programacion.proxima_ejecucion);
+      ultimaEjecucion.setHours(0, 0, 0, 0);
+
+      let currentDate = new Date(ultimaEjecucion);
+
+      while (currentDate < today) {
+        const nextDate = this.calcularSiguienteFecha(currentDate, programacion);
+
+        if (nextDate <= today) {
+          if (!this.isFechaProcessedInBitacora(programacion.id, nextDate, siembraId)) {
+            fechas.push(format(nextDate, 'yyyy-MM-dd'));
+          }
+        }
+
+        currentDate = nextDate;
+
+        if (fechas.length >= 100) {
+          logger.warn('[ProgramacionesStore] Hit safety limit generating pending dates');
+          break;
+        }
+      }
+
+      return fechas.sort();
+    },
+
+    isFechaProcessedInBitacora(programacionId, fecha, siembraId = null) {
+      const bitacoraStore = useBitacoraStore();
+
+      if (!bitacoraStore.bitacoraEntries || !Array.isArray(bitacoraStore.bitacoraEntries)) {
+        return false;
+      }
+
+      const fechaStr = format(fecha, 'yyyy-MM-dd');
+
+      return bitacoraStore.bitacoraEntries.some(bitacora => {
+        if (bitacora.programaciones !== programacionId) {
+          return false;
+        }
+
+        const bitacoraFecha = bitacora.fecha ? format(new Date(bitacora.fecha), 'yyyy-MM-dd') : null;
+        if (bitacoraFecha !== fechaStr) {
+          return false;
+        }
+
+        if (siembraId) {
+          const bitacoraSiembras = Array.isArray(bitacora.siembras) ? bitacora.siembras : [];
+          return bitacoraSiembras.includes(siembraId);
+        }
+
+        return true;
+      });
+    },
+
+    calcularSiguienteFecha(baseDate, programacion) {
+      const config = programacion.frecuencia_personalizada || {};
+
+      switch (programacion.frecuencia) {
+        case 'diaria':
+          return addDays(baseDate, 1);
+        case 'semanal':
+          return addWeeks(baseDate, 1);
+        case 'quincenal':
+          return addDays(baseDate, 15);
+        case 'mensual':
+          return addMonths(baseDate, 1);
+        case 'personalizada':
+          const addFunctions = {
+            dias: addDays,
+            semanas: addWeeks,
+            meses: addMonths,
+            años: addYears
+          };
+          return addFunctions[config.tipo]?.(baseDate, config.cantidad) || addDays(baseDate, 1);
+        default:
+          return addDays(baseDate, 1);
+      }
+    },
+
+    getComplianceState(programacion, siembraId = null) {
+      if (!programacion) return 'PROGRAMADO'
+
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+
+      const fechaProgramada = programacion.proxima_ejecucion
+        ? new Date(programacion.proxima_ejecucion)
+        : new Date()
+      fechaProgramada.setHours(0, 0, 0, 0)
+
+      const bitacoraStore = useBitacoraStore()
+      const hasBitacoraEntry = this.hasBitacoraEntryForSiembra(programacion.id, siembraId)
+
+      if (hasBitacoraEntry) {
+        return 'REGISTRADO'
+      }
+
+      if (fechaProgramada > today) {
+        return 'PROGRAMADO'
+      }
+
+      if (fechaProgramada.getTime() === today.getTime()) {
+        return 'PENDIENTE'
+      }
+
+      const daysDiff = Math.floor((today - fechaProgramada) / (1000 * 60 * 60 * 24))
+      if (daysDiff > 2) {
+        return 'ACUMULADO'
+      }
+
+      return 'VENCIDO'
+    },
+
+    hasBitacoraEntryForSiembra(programacionId, siembraId = null) {
+      const bitacoraStore = useBitacoraStore()
+
+      if (!bitacoraStore.bitacoraEntries || !Array.isArray(bitacoraStore.bitacoraEntries)) {
+        return false
+      }
+
+      return bitacoraStore.bitacoraEntries.some(bitacora => {
+        if (bitacora.programaciones !== programacionId) {
+          return false
+        }
+
+        if (siembraId) {
+          const bitacoraSiembras = Array.isArray(bitacora.siembras) ? bitacora.siembras : []
+          return bitacoraSiembras.includes(siembraId)
+        }
+
+        return true
+      })
+    },
+
+    getComplianceStateColor(programacion, siembraId = null) {
+      const state = this.getComplianceState(programacion, siembraId)
+      const colors = {
+        'REGISTRADO': 'success',
+        'PENDIENTE': 'warning',
+        'ACUMULADO': 'error',
+        'PROGRAMADO': 'info',
+        'VENCIDO': 'orange'
+      }
+      return colors[state] || 'grey'
+    },
+
+    getComplianceStateIcon(programacion, siembraId = null) {
+      const state = this.getComplianceState(programacion, siembraId)
+      const icons = {
+        'REGISTRADO': 'mdi-check-circle',
+        'PENDIENTE': 'mdi-clock-alert-outline',
+        'ACUMULADO': 'mdi-alert-circle',
+        'PROGRAMADO': 'mdi-calendar-clock',
+        'VENCIDO': 'mdi-alert-outline'
+      }
+      return icons[state] || 'mdi-help-circle'
+    },
+
+    getComplianceStateTooltip(programacion, siembraId = null) {
+      const state = this.getComplianceState(programacion, siembraId)
+      const today = new Date()
+
+      const fechaProgramada = programacion.proxima_ejecucion
+        ? new Date(programacion.proxima_ejecucion)
+        : new Date()
+
+      const daysDiff = fechaProgramada && !isNaN(fechaProgramada)
+        ? Math.floor((today - fechaProgramada) / (1000 * 60 * 60 * 24))
+        : 0
+
+      const siembraContext = siembraId ? ` (Siembra: ${siembraId})` : ''
+      const tooltips = {
+        'REGISTRADO': `Cumplimiento registrado en bitácora${siembraContext}`,
+        'PENDIENTE': `Requiere documentación hoy${siembraContext}`,
+        'ACUMULADO': `${Math.abs(daysDiff)} días sin documentar - riesgo de cumplimiento${siembraContext}`,
+        'PROGRAMADO': `Programado para fecha futura${siembraContext}`,
+        'VENCIDO': `Vencido hace ${Math.abs(daysDiff)} días${siembraContext}`
+      }
+      return tooltips[state] || state
+    },
+
+    getFechasPendientesWithValidation(programacion, siembraId = null) {
+      try {
+        if (!programacion) {
+          logger.warn('[ProgramacionesStore] No programacion provided to getFechasPendientesWithValidation')
+          return []
+        }
+
+        const fechas = this.getFechasPendientes(programacion, siembraId)
+
+        if (!Array.isArray(fechas)) {
+          logger.error('[ProgramacionesStore] getFechasPendientes returned non-array result')
+          return []
+        }
+
+        const validFechas = fechas.filter(fecha => {
+          try {
+            const dateObj = new Date(fecha)
+            return !isNaN(dateObj.getTime())
+          } catch (error) {
+            logger.warn(`[ProgramacionesStore] Invalid date found: ${fecha}`)
+            return false
+          }
+        })
+
+        logger.debug(`[ProgramacionesStore] Generated ${validFechas.length} valid pending dates for programacion ${programacion.id}${siembraId ? ` (siembra: ${siembraId})` : ''}`)
+        return validFechas
+
+      } catch (error) {
+        logger.error('[ProgramacionesStore] Error in getFechasPendientesWithValidation:', error)
+        handleError(error, 'Error calculating pending dates')
+        return []
+      }
+    },
+
+    validateSiembraContext(programacionId, siembraId) {
+      if (!siembraId) {
+        logger.warn('[ProgramacionesStore] No siembraId provided for validation')
+        return { valid: true, warning: 'No siembra context specified' }
+      }
+
+      const programacion = this.programaciones.find(p => p.id === programacionId)
+      if (!programacion) {
+        return { valid: false, error: `Programación ${programacionId} no encontrada` }
+      }
+
+      if (!programacion.siembras || !Array.isArray(programacion.siembras)) {
+        return { valid: false, error: 'Programación no tiene siembras asociadas' }
+      }
+
+      if (!programacion.siembras.includes(siembraId)) {
+        return {
+          valid: false,
+          error: `Siembra ${siembraId} no está asociada a la programación ${programacionId}`
+        }
+      }
+
+      return { valid: true, message: 'Siembra context validated successfully' }
+    },
+
+    clearComplianceStateCache() {
+      logger.debug('[ProgramacionesStore] Compliance state cache cleared (bitacora changed).')
+    },
+
+    saveToStorage() {
+      try {
+        safeLocalStorage.saveToLocalStorage('programaciones', this.programaciones)
+      } catch (error) {
+        logger.error('[ProgramacionesStore] Error guardando en localStorage:', error)
+      }
+    },
+
+    loadFromStorage() {
+      try {
+        const data = safeLocalStorage.loadFromLocalStorage('programaciones')
+        if (data && Array.isArray(data)) {
+          this.programaciones = data.map(this.enriquecerProgramacion)
+          this.loaded = true
+          return true
+        }
+        return false
+      } catch (error) {
+        logger.error('[ProgramacionesStore] Error cargando desde localStorage:', error)
+        return false
+      }
+    }
+  }
+})
+
+export async function checkProximoActivities(haciendaId) {
+  if (!haciendaId) return
+
+  const { triggerAlert } = useAlertTriggers()
+  const programacionesStore = useProgramacionesStore()
+
+  try {
+    const hoy = new Date()
+    const en7Dias = addDays(hoy, 7)
+
+    const { items } = await programacionesStore.fetchPage(1, 100, {
+      hacienda: haciendaId
+    })
+
+    if (!items || items.length === 0) return
+
+    const proximas = items.filter(act => {
+      const fechaAct = act.proxima_ejecucion ? new Date(act.proxima_ejecucion) : new Date(act.created)
+      const horas = differenceInDays(fechaAct, hoy) * 24
+      return horas > 0 && horas <= 24
+    })
+
+    for (const act of proximas) {
+      await triggerAlert('recordatorio', {
+        actividades: [{
+          nombre: act.nombre || 'Actividad',
+          fecha: format(new Date(act.proxima_ejecucion || act.created), 'dd/MM/yyyy'),
+          responsable: act.responsable || 'No asignado',
+          notas: act.notas || 'Sin notas'
+        }]
+      }, haciendaId)
+    }
+
+  } catch (error) {
+    console.error('[programacionesStore] Error en checkProximoActivities:', error)
+  }
+}

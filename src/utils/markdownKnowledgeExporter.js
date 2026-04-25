@@ -21,7 +21,7 @@ export function exportKnowledgeHubToMarkdown(data, options = {}) {
 
   const totalEntities = countEntities(data)
 
-  let md = `# Knowledge Hub - Sistema Agri\n\n`
+  let md = `# Knowledge Hub - ConAgri\n\n`
   
   if (includeMetadata) {
     md += `**Fecha de exportación**: ${timestamp}\n`

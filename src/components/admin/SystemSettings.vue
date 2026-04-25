@@ -281,7 +281,7 @@ const envChanged = ref(false)
 
 // Configuración general
 const settings = ref({
-  systemName: 'Sistema Agri',
+  systemName: 'ConAgri',
   supportEmail: 'soporte@agroassist.com',
   timezone: 'America/Guayaquil',
   locale: 'es-EC',

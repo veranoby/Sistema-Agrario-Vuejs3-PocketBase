@@ -11,7 +11,9 @@
         @keydown.enter="openEditDialog"
         @keydown.space.prevent="openEditDialog"
         icon
-        size="large"
+                            size="small"
+                    variant="flat"
+                    rounded="lg"
         :aria-label="t('sowing_workspace.edit_sowing_info')"
         tabindex="0"
       >

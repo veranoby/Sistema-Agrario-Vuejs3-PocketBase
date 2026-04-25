@@ -1,0 +1,285 @@
+{
+  "metadata": {
+    "purpose": "REAL PocketBase schema - Sistema Agri (exported from admin UI)",
+    "created": "2025-09-17",
+    "source": "pb_schema.json export",
+    "critical_for": "Accurate QWEN implementations + store validations"
+  },
+
+  "critical_corrections_vs_inference": [
+    "Collection names: 'Haciendas' (capital H), not 'haciendas'",
+    "Field mixing: español/english names, not pure snake_case", 
+    "Additional relations: bitacora→programaciones, users→hacienda",
+    "Missing collections: finanzas, planes, tipos_zonas",
+    "Avatar fields: Multiple file fields across collections",
+    "BPA fields: bpa_estado as number, not percentage calculation"
+  ],
+
+  "real_collections_structure": {
+    "users_auth": {
+      "id": "_pb_users_auth_",
+      "type": "auth",
+      "critical_fields": {
+        "username": "text (required, unique)",
+        "name": "text (required)", 
+        "lastname": "text (required)",
+        "email": "email (required, unique)",
+        "role": "select ['administrador', 'auditor', 'operador']",
+        "hacienda": "relation to Haciendas (maxSelect: 1)",
+        "avatar": "file (image)",
+        "cedula": "text",
+        "direccion": "text",
+        "info": "editor"
+      }
+    },
+
+    "Haciendas": {
+      "id": "hh6op9bbhdtkkf7", 
+      "real_fields": {
+        "name": "text (required) - NOT 'nombre'",
+        "location": "text - NOT 'ubicacion'", 
+        "gps": "json (maxSize: 2MB)",
+        "info": "editor",
+        "plan": "relation to planes",
+        "avatar": "file (image)",
+        "metricas": "json (maxSize: 2MB)"
+      }
+    },
+
+    "Siembras": {
+      "id": "lfnye2vld2cox8p",
+      "real_fields": {
+        "nombre": "text (required)",
+        "tipo": "text",
+        "hacienda": "relation to Haciendas",
+        "info": "editor", 
+        "fecha_inicio": "date",
+        "fecha_fin": "date",
+        "estado": "select ['planificada', 'en_crecimiento', 'cosechada', 'finalizada']",
+        "area_total": "number",
+        "avatar": "file (image)"
+      }
+    },
+
+    "tipo_actividades": {
+      "id": "d3m200q0p3srn5u",
+      "critical_json_fields": {
+        "metricas": "json (maxSize: 2MB) - dynamic metric definitions",
+        "formato_reporte": "json (maxSize: 2MB) - report column mapping",
+        "datos_bpa": "json (maxSize: 2MB) - BPA questions template"
+      },
+      "other_fields": {
+        "nombre": "text",
+        "descripcion": "editor", 
+        "icon": "text"
+      }
+    },
+
+    "actividades": {
+      "id": "sr9ivo9qmobtel5",
+      "real_relations": {
+        "hacienda": "relation to Haciendas",
+        "tipo_actividades": "relation to tipo_actividades",
+        "recordatorio": "relation to recordatorios",
+        "zonas": "relation to zonas (maxSelect: unlimited)",
+        "siembras": "relation to Siembras (maxSelect: unlimited)"
+      },
+      "json_fields": {
+        "metricas": "json (maxSize: 2MB) - specific metric values",
+        "datos_bpa": "json (maxSize: 2MB) - BPA responses"
+      },
+      "other_fields": {
+        "nombre": "text",
+        "descripcion": "editor",
+        "activa": "bool",
+        "bpa_estado": "number - calculated BPA score",
+        "avatar": "file (image)"
+      }
+    },
+
+    "programaciones": {
+      "id": "1ym87i8vzpwxsi0", 
+      "scheduling_fields": {
+        "descripcion": "text",
+        "actividades": "relation to actividades (maxSelect: unlimited)",
+        "ultima_ejecucion": "date",
+        "proxima_ejecucion": "date", 
+        "frecuencia": "select ['diaria', 'semanal', 'quincenal', 'mensual', 'personalizada', 'fecha_especifica']",
+        "frecuencia_personalizada": "json (maxSize: 2MB) - custom schedule config",
+        "estado": "select ['activo', 'pausado', 'finalizado']",
+        "hacienda": "relation to Haciendas",
+        "siembras": "relation to Siembras (maxSelect: unlimited)"
+      }
+    },
+
+    "bitacora": {
+      "id": "jw8s315a3rmbrfw",
+      "real_relations": {
+        "hacienda": "relation to Haciendas (required)",
+        "siembras": "relation to Siembras (maxSelect: unlimited)",
+        "actividades": "relation to actividades",
+        "programaciones": "relation to programaciones",
+        "zonas": "relation to zonas (maxSelect: unlimited)",
+        "user_created": "relation to users",
+        "user_edited": "relation to users"
+      },
+      "data_fields": {
+        "fecha": "date",
+        "descripcion": "editor",
+        "estado": "select ['planificada', 'activa', 'completada', 'cancelada']",
+        "metricas": "json (maxSize: 2MB) - executed metric values",
+        "notas": "editor"
+      }
+    },
+
+    "zonas": {
+      "id": "rciucrbsfbvfzmm",
+      "real_structure": {
+        "hacienda": "relation to Haciendas",
+        "tipos_zonas": "relation to tipos_zonas", 
+        "nombre": "text",
+        "info": "editor",
+        "gps": "json (maxSize: 2MB)",
+        "siembra": "relation to Siembras",
+        "area": "json (maxSize: 2MB)", 
+        "contabilizable": "bool",
+        "avatar": "file (image)",
+        "bpa_estado": "number",
+        "datos_bpa": "json (maxSize: 2MB)",
+        "metricas": "json (maxSize: 2MB)"
+      }
+    },
+
+    "recordatorios": {
+      "id": "4wi8nw5o41y08o7",
+      "fields": {
+        "hacienda": "relation to Haciendas",
+        "titulo": "text",
+        "descripcion": "editor",
+        "fecha_creacion": "date",
+        "fecha_recordatorio": "date",
+        "estado": "select ['pendiente', 'en_progreso', 'completado']",
+        "prioridad": "select ['baja', 'media', 'alta']",
+        "siembras": "relation to Siembras (maxSelect: unlimited)",
+        "actividades": "relation to actividades (maxSelect: unlimited)",
+        "zonas": "relation to zonas (maxSelect: unlimited)"
+      }
+    },
+
+    "log_comunicaciones": {
+      "id": "log_comunicaciones",
+      "type": "base",
+      "purpose": "Audit trail for all communications (email, SMS, push, WhatsApp)",
+      "api_rules": {
+        "list": "@request.auth.hacienda.id != '' && metadata ? @request.auth.hacienda.id = metadata.hacienda_id : false || @request.auth.role = 'superadmin'",
+        "view": "Same as list rule",
+        "create": "@request.auth.id != ''",
+        "update": "false (immutable audit trail)",
+        "delete": "@request.auth.role = 'superadmin'"
+      },
+      "fields": {
+        "tipo": "select ['email', 'sms', 'push_notification', 'whatsapp'] - required, default: 'email'",
+        "destinatario": "text (required, max_length: 500)",
+        "asunto": "text (nullable, max_length: 200)",
+        "estado": "select ['sent', 'failed', 'pending', 'mock'] - required, default: 'pending'",
+        "resend_id": "text (nullable, max_length: 100) - Resend API message ID",
+        "error": "text (nullable, max_length: 1000)",
+        "metadata": "json (maxSize: 2MB) - includes timestamp, reportType, hacienda_id, user_id",
+        "created": "date (auto, system field)",
+        "updated": "date (auto, system field)"
+      },
+      "indexes": [
+        "idx_log_comunicaciones_tipo (tipo)",
+        "idx_log_comunicaciones_estado (estado)",
+        "idx_log_comunicaciones_created (created DESC)",
+        "idx_log_comunicaciones_hacienda (metadata.hacienda_id)"
+      ]
+    }
+  },
+
+  "additional_collections_missed": {
+    "finanzas": {
+      "id": "sz6m96snruy6c0c",
+      "purpose": "Financial tracking system",
+      "key_fields": {
+        "fecha": "date",
+        "detalle": "text",
+        "razon_social": "text", 
+        "factura": "text",
+        "costo": "select ['SERVICIOS LEGALES', 'INVERSION', 'SUNDRY', 'ALIMENTACION', 'EQUIPOS', 'HONORARIOS', 'MOVILIZACION', 'MATERIALES']",
+        "monto": "number",
+        "registro_por": "relation to users",
+        "pagado_por": "relation to users",
+        "Haciendas": "relation to Haciendas"
+      }
+    },
+
+    "planes": {
+      "id": "k71wbkdxsz67mvy", 
+      "purpose": "Subscription/pricing plans",
+      "fields": {
+        "nombre": "text (presentable)",
+        "precio": "number",
+        "auditores": "number", 
+        "operadores": "number"
+      }
+    },
+
+    "tipos_zonas": {
+      "id": "7onoulfwpzqlieh",
+      "purpose": "Zone type templates with BPA + metrics",
+      "fields": {
+        "nombre": "text",
+        "descripcion": "editor",
+        "datos_bpa": "json (maxSize: 2MB)",
+        "metricas": "json (maxSize: 2MB)",
+        "icon": "text"
+      }
+    }
+  },
+
+  "critical_field_name_mappings": {
+    "frontend_vs_backend": {
+      "haciendas_name": "name (not 'nombre')",
+      "haciendas_location": "location (not 'ubicacion')", 
+      "all_collections": "Mixed español/english field names",
+      "json_fields": "All JSON fields maxSize: 2000000 bytes",
+      "file_fields": "Multiple avatar fields across collections"
+    }
+  },
+
+  "json_field_structures_confirmed": {
+    "metricas_pattern": {
+      "maxSize": 2000000,
+      "type": "json",
+      "collections": ["Haciendas", "tipo_actividades", "actividades", "tipos_zonas", "zonas", "bitacora"]
+    },
+    "datos_bpa_pattern": {
+      "maxSize": 2000000, 
+      "type": "json",
+      "collections": ["tipo_actividades", "actividades", "tipos_zonas", "zonas"]
+    },
+    "formato_reporte_confirmed": {
+      "collection": "tipo_actividades only",
+      "maxSize": 2000000,
+      "purpose": "Column mapping for reports"
+    }
+  },
+
+  "qwen_implementation_warnings": {
+    "field_name_accuracy": [
+      "NEVER assume field names - use exact names from this schema",
+      "Collection 'Haciendas' with capital H, field 'name' not 'nombre'", 
+      "Mixed language field names throughout schema"
+    ],
+    "missing_collections": [
+      "Don't forget finanzas, planes, tipos_zonas collections",
+      "Avatar/file fields in most collections for UI"
+    ],
+    "json_field_limits": [
+      "All JSON fields have 2MB maxSize limit",
+      "Validate JSON structure before saving",
+      "Handle metricas inheritance: tipo_actividades → actividades → bitacora"
+    ]
+  }
+}

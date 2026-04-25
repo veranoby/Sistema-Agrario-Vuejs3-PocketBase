@@ -11,7 +11,7 @@
 </template>
 
 <script>
-import { useSnackbarStore } from '../stores/snackbarStore'
+import { useSnackbarStore } from '@/stores/snackbarStore'
 import { computed } from 'vue'
 
 export default {

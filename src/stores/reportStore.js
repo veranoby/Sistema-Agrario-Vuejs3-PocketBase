@@ -42,6 +42,16 @@ export const REPORT_FREQUENCIES = {
   MONTHLY: 'monthly'
 }
 
+/**
+ * Tipos de reporte disponibles
+ */
+export const REPORT_TYPES = {
+  ACTIVIDADES_SEMANAL: 'actividades_semanal',
+  BPA_COMPLIANCE: 'bpa_compliance',
+  SIEMBRAS_ACTIVAS: 'siembras_activas',
+  PRODUCTIVIDAD: 'productividad'
+}
+
 export const useReportStore = defineStore('reports', {
   state: () => ({
     templates: REPORT_TEMPLATES,
@@ -202,13 +212,13 @@ export const useReportStore = defineStore('reports', {
       }
 
       switch (templateId) {
-        case 'actividades_semanal':
+        case REPORT_TYPES.ACTIVIDADES_SEMANAL:
           return await this.generateActividadesSemanal(haciendaId)
-        case 'bpa_compliance':
+        case REPORT_TYPES.BPA_COMPLIANCE:
           return await this.generateBPACompliance(haciendaId)
-        case 'siembras_activas':
+        case REPORT_TYPES.SIEMBRAS_ACTIVAS:
           return await this.generateSiembrasActivas(haciendaId)
-        case 'productividad':
+        case REPORT_TYPES.PRODUCTIVIDAD:
           return await this.generateProductividad(haciendaId)
         default:
           throw new Error(`Template ${templateId} no implementado`)
@@ -421,6 +431,126 @@ export const useReportStore = defineStore('reports', {
       this.loading = false
       this.error = null
       logger.info('[REPORT_STORE] Store reseteado')
+    },
+
+    // =============================================================================
+    // NUEVAS ACTIONS PARA SISTEMA DE REPORTES PROGRAMADOS V2
+    // =============================================================================
+
+    /**
+     * Obtiene reportes programados desde el nuevo endpoint
+     * Usa GET /api/reports/scheduled
+     */
+    async fetchScheduledReports() {
+      this.loading = true
+      this.error = null
+
+      try {
+        const response = await pb.send('/api/reports/scheduled')
+        this.schedules = response.items || []
+        logger.info('[REPORT_STORE] Schedules cargados desde API', { count: this.schedules.length })
+      } catch (error) {
+        logger.error('[REPORT_STORE] Error cargando schedules desde API', error)
+        this.error = error.message
+        throw error
+      } finally {
+        this.loading = false
+      }
+    },
+
+    /**
+     * Crea un nuevo reporte programado
+     * Usa POST /api/reports/scheduled
+     * @param {Object} data - Datos del reporte
+     * @returns {Promise<Object>} Reporte creado
+     */
+    async createScheduledReport(data) {
+      this.loading = true
+      this.error = null
+
+      try {
+        const response = await pb.send('/api/reports/scheduled', {
+          method: 'POST',
+          body: {
+            name: data.name,
+            type: data.type,
+            frequency: data.frequency || 'weekly',
+            recipients: data.recipients || [],
+            filters: data.filters || {},
+            format: data.format || 'csv',
+            isActive: data.isActive !== false
+          }
+        })
+
+        // Actualizar localmente en lugar de refetch completo
+        this.schedules.push(response)
+        logger.info('[REPORT_STORE] Reporte programado creado', { id: response.id })
+        return response
+      } catch (error) {
+        logger.error('[REPORT_STORE] Error creando reporte programado', error)
+        this.error = error.message
+        throw error
+      } finally {
+        this.loading = false
+      }
+    },
+
+    /**
+     * Actualiza un reporte programado existente
+     * Usa PUT /api/reports/scheduled/:id
+     * @param {string} id - ID del reporte
+     * @param {Object} data - Datos a actualizar
+     * @returns {Promise<Object>} Reporte actualizado
+     */
+    async updateScheduledReport(id, data) {
+      this.loading = true
+      this.error = null
+
+      try {
+        const response = await pb.send(`/api/reports/scheduled/${id}`, {
+          method: 'PUT',
+          body: data
+        })
+
+        // Actualizar localmente en lugar de refetch completo
+        const index = this.schedules.findIndex(s => s.id === id)
+        if (index !== -1) {
+          this.schedules[index] = response
+        }
+        logger.info('[REPORT_STORE] Reporte programado actualizado', { id })
+        return response
+      } catch (error) {
+        logger.error('[REPORT_STORE] Error actualizando reporte programado', error)
+        this.error = error.message
+        throw error
+      } finally {
+        this.loading = false
+      }
+    },
+
+    /**
+     * Elimina un reporte programado
+     * Usa DELETE /api/reports/scheduled/:id
+     * @param {string} id - ID del reporte
+     */
+    async deleteScheduledReport(id) {
+      this.loading = true
+      this.error = null
+
+      try {
+        await pb.send(`/api/reports/scheduled/${id}`, { method: 'DELETE' })
+
+        // Remover localmente en lugar de refetch completo
+        this.schedules = this.schedules.filter(s => s.id !== id)
+        logger.info('[REPORT_STORE] Reporte programado eliminado', { id })
+      } catch (error) {
+        logger.error('[REPORT_STORE] Error eliminando reporte programado', error)
+        this.error = error.message
+        throw error
+      } finally {
+        this.loading = false
+      }
     }
   }
 })
+

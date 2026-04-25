@@ -119,7 +119,7 @@ export const useNotificationStore = defineStore('notifications', {
         if (result === 'granted') {
           console.log('[NotificationStore] Permisos otorgados')
           // Notificación de prueba
-          new Notification('Sistema Agri', {
+          new Notification('ConAgri', {
             body: 'Notificaciones activadas correctamente',
             icon: '/favicon.ico'
           })
@@ -172,7 +172,7 @@ export const useNotificationStore = defineStore('notifications', {
       }
 
       try {
-        const notif = new Notification(notification.title || 'Sistema Agri', {
+        const notif = new Notification(notification.title || 'ConAgri', {
           body: notification.message || notification.body,
           icon: notification.icon || '/favicon.ico',
           tag: notification.tag || 'general'

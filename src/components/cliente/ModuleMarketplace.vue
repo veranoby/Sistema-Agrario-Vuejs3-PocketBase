@@ -93,6 +93,8 @@ import { ref, computed, onMounted } from 'vue'
 import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
 import { MODULE_CATEGORIES, MODULE_ICONS, MODULE_TITLES, BILLING_CYCLES } from '@/constants/modules'
+import { useEvents } from '@/composables/useEvents'
+import { EVENTS } from '@/utils/eventTypes'
 import ModuleCard from './ModuleCard.vue'
 import CostSummary from './CostSummary.vue'
 import { useSnackbarStore } from '@/stores/snackbarStore'
@@ -100,6 +102,7 @@ import { useHaciendaStore } from '@/stores/haciendaStore'
 
 const snackbarStore = useSnackbarStore()
 const haciendaStore = useHaciendaStore()
+const { emit } = useEvents()
 
 // Estado
 const modules = ref([])
@@ -190,25 +193,49 @@ async function toggleModule(moduleId, activate) {
     }
 
     if (activate) {
-      // Activar módulo
-      await pb.collection('subscriptions').create({
-        hacienda: haciendaId,
-        modulo: moduleId,
-        is_active: true,
-        start_date: new Date().toISOString().split('T')[0],
-        billing_cycle: BILLING_CYCLES.MONTHLY
+      // Activar módulo usando endpoint backend
+      const response = await fetch(`/api/modulos/${moduleId}/activate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${pb.authStore.token}`
+        },
+        body: JSON.stringify({ haciendaId })
       })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Error al activar módulo')
+      }
+
+      const result = await response.json()
       activeModules.value.push(moduleId)
+      
+      // Emitir evento
+      emit(EVENTS.MODULO_ACTIVADO, { moduleId, haciendaId })
+      
       showSnackbar('Módulo activado', 'success')
     } else {
-      // Desactivar módulo (buscar subscription y actualizar)
-      const subscription = await pb.collection('subscriptions').getFirstListItem(
-        `modulo = "${moduleId}" && is_active = true`
-      )
-      await pb.collection('subscriptions').update(subscription.id, {
-        is_active: false
+      // Desactivar módulo usando endpoint backend
+      const response = await fetch(`/api/modulos/${moduleId}/deactivate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${pb.authStore.token}`
+        },
+        body: JSON.stringify({ haciendaId })
       })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Error al desactivar módulo')
+      }
+
       activeModules.value = activeModules.value.filter(id => id !== moduleId)
+      
+      // Emitir evento
+      emit(EVENTS.MODULO_DESACTIVADO, { moduleId, haciendaId })
+      
       showSnackbar('Módulo desactivado', 'success')
     }
   } catch (error) {

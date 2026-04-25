@@ -284,7 +284,7 @@ export class PdfExporter {
       this.doc.setFont('helvetica', 'normal')
       this.doc.setTextColor(100, 100, 100)
 
-      const footerText = `Generado por Sistema Agri - ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: es })}`
+      const footerText = `Generado por ConAgri - ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: es })}`
       const pageNumText = `Página ${i} de ${pageCount}`
 
       this.doc.text(footerText, this.margin, yPos)

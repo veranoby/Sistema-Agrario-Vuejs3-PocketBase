@@ -39,15 +39,16 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useThemeStore } from './stores/themeStore'
 import { useAuthStore } from '@/stores/authStore'
+import { checkProximoActivities } from '@/stores/programacionesStore'
+import { checkBPACertificados } from '@/stores/bitacoraStore'
 import Header from './components/Header.vue'
 import Sidebar from './components/Sidebar.vue'
-import AuthModal from './components/AuthModal.vue'
-import ConflictResolutionDialog from './components/ConflictResolutionDialog.vue'
-import { pb } from '@/utils/pocketbase'
+import AuthModal from './components/forms/auth/AuthModal.vue'
+import ConflictResolutionDialog from './components/dialogs/ConflictResolutionDialog.vue'
 
 import SnackbarComponent from '@/components/SnackbarComponent.vue'
 import { useSyncStore } from '@/stores/syncStore'
@@ -74,10 +75,14 @@ const navigationLinks = [
   { id: 2, to: '/siembras', icon: 'mdi-sprout', label: 'Siembras/Proyectos' },
   { id: 3, to: '/actividades', icon: 'mdi-gesture-tap-button', label: 'Actividades' },
   { id: 4, to: '/programaciones', icon: 'mdi-alarm-check', label: 'Programaciones' },
-  { id: 5, to: '/zonas', icon: 'mdi-map', label: 'Zonas' },
-  { id: 6, to: '/finanzas', icon: 'mdi-cash-multiple', label: 'Finanzas' },
-  { id: 7, to: '/recordatorios', icon: 'mdi-alarm-light-outline', label: 'Recordatorios' }
+  { id: 5, to: '/bitacora', icon: 'mdi-book-open-variant', label: 'Bitácora' },
+  { id: 6, to: '/zonas', icon: 'mdi-map', label: 'Zonas' },
+  { id: 7, to: '/finanzas', icon: 'mdi-cash-multiple', label: 'Finanzas' },
+  { id: 8, to: '/recordatorios', icon: 'mdi-alarm-light-outline', label: 'Recordatorios' }
 ]
+
+// Interval IDs para limpieza
+let checkInterval = null
 
 const handleLoginSuccess = () => {
   showAuthModal.value = false
@@ -128,6 +133,33 @@ onMounted(async () => {
   // Detectar cuando el usuario retoma la actividad
   window.addEventListener('focus', handleWindowFocus)
   document.addEventListener('visibilitychange', handleVisibilityChange)
+
+  // Configurar verificación de alertas (cada hora)
+  const CHECK_INTERVAL = 3600000 // 1 hora en ms
+
+  checkInterval = setInterval(async () => {
+    const haciendaActual = authStore.haciendaActual
+
+    if (haciendaActual) {
+      console.log('[App] Verificando alertas para', haciendaActual.nombre)
+
+      await Promise.all([
+        checkProximoActivities(haciendaActual.id),
+        checkBPACertificados(haciendaActual.id)
+      ])
+    }
+  }, CHECK_INTERVAL)
+
+  // Ejecutar verificación inicial al cargar
+  setTimeout(async () => {
+    const haciendaActual = authStore.haciendaActual
+    if (haciendaActual) {
+      await Promise.all([
+        checkProximoActivities(haciendaActual.id),
+        checkBPACertificados(haciendaActual.id)
+      ])
+    }
+  }, 5000) // 5 segundos después de cargar
 })
 
 onBeforeUnmount(() => {
@@ -142,6 +174,11 @@ onBeforeUnmount(() => {
 
   // Detener scheduler al desmontar
   schedulerStore.reset()
+
+  // Limpiar intervalo de verificación de alertas
+  if (checkInterval) {
+    clearInterval(checkInterval)
+  }
 })
 
 const handleWindowFocus = () => {
@@ -189,15 +226,6 @@ function handleConflictResolution(resolvedConflicts) {
   console.log('[APP] Resolviendo conflictos:', resolvedConflicts)
   syncStore.resolveMultipleConflicts(resolvedConflicts)
 }
-
-// Agregar verificación de autenticación antes de cada ruta
-router.beforeEach((to, from, next) => {
-  if (to.matched.some((record) => record.meta.requiresAuth) && !isLoggedIn.value) {
-    showAuthModal.value = true // Mostrar el modal de autenticación
-  } else {
-    next()
-  }
-})
 </script>
 
 <style>

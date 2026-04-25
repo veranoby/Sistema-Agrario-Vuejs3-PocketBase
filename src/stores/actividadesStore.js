@@ -13,13 +13,11 @@ export const useActividadesStore = defineStore('actividades', {
     actividades: [],
     tiposActividades: [],
     loading: false,
-    loadingTipos: false, // Flag específico para prevenir requests duplicadas
+    loadingTipos: false,
     error: null,
     version: 1,
     lastSync: null,
-    // OPTIMIZACIÓN: Lookup Map para acceso O(1)
     activityLookupMap: new Map(),
-    // Pagination state
     currentPage: 1,
     perPage: 20,
     totalItems: 0,
@@ -59,20 +57,17 @@ export const useActividadesStore = defineStore('actividades', {
       return state.tiposActividades
     },
 
-    // Pagination getters
     hasNextPage: (state) => state.currentPage < state.totalPages,
     hasPrevPage: (state) => state.currentPage > 1
   },
 
   actions: {
     async init() {
-      const syncStore = useSyncStore()
       this.loading = true
 
       try {
         await this.cargarTiposActividades()
-
-        await this.cargarActividades() // Cargar zonas desde el servidor
+        await this.cargarActividades()
       } catch (error) {
         handleError(error, 'Error al inicializar actividades')
       } finally {
@@ -81,8 +76,6 @@ export const useActividadesStore = defineStore('actividades', {
     },
 
     async cargarActividades() {
-      // Local storage loading is now handled by initFromLocalStorage.
-      // This method maintains backward compatibility by loading all items.
       return this.fetchPage(1, MAX_PAGE_SIZE)
     },
 
@@ -92,16 +85,10 @@ export const useActividadesStore = defineStore('actividades', {
       this.error = null
       this.loading = true
 
-      // If activities are already populated (e.g., by initFromLocalStorage), consider not re-fetching unless necessary.
-      // For now, we'll keep the original behavior of fetching if local data wasn't sufficient (though it's loaded elsewhere).
-      // This part might be redundant if initFromLocalStorage always runs first via refreshAllStores.
-      if (this.actividades.length > 0 && !navigator.onLine) { // Example: only fetch if online and empty
-          this.loading = false;
-          return this.actividades;
+      if (this.actividades.length > 0 && !navigator.onLine) {
+        this.loading = false
+        return this.actividades
       }
-
-      // If online, proceed to fetch from server.
-      // The original logic to check 'actividadesLocal' first is removed as initFromLocalStorage handles it.
 
       try {
         const resultList = await pb.collection('actividades').getList(page, perPage, {
@@ -110,7 +97,6 @@ export const useActividadesStore = defineStore('actividades', {
           expand: 'tipo_actividades,siembras'
         })
 
-        // EFICIENCIA: Solo rebuild si el array cambió realmente
         const previousLength = this.actividades.length
         this.actividades = resultList.items
         this.totalItems = resultList.totalItems
@@ -118,7 +104,6 @@ export const useActividadesStore = defineStore('actividades', {
         this.totalPages = resultList.totalPages
         this.lastSync = Date.now()
 
-        // Solo rebuild si el tamaño cambió (evitar rebuilds innecesarios)
         if (previousLength !== resultList.items.length) {
           this.buildActivityLookup()
         }
@@ -151,17 +136,14 @@ export const useActividadesStore = defineStore('actividades', {
       const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore()
 
-      // Usar la función unificada para generar ID temporal
       const tempId = syncStore.generateTempId()
 
-      // Asegurarse de que siembras sea un array
       const siembras = Array.isArray(actividadData.siembras)
         ? actividadData.siembras
         : actividadData.siembra
           ? [actividadData.siembra]
           : []
 
-      // Enriquecer datos con contexto de hacienda
       const enrichedData = {
         ...actividadData,
         nombre: actividadData.nombre.toUpperCase(),
@@ -186,7 +168,6 @@ export const useActividadesStore = defineStore('actividades', {
         }
 
         this.actividades.unshift(tempActividad)
-        // EFICIENCIA: Actualización incremental del lookup map en lugar de rebuild O(n)
         this.activityLookupMap.set(tempId, tempActividad)
         syncStore.saveToLocalStorage('actividades', this.actividades)
 
@@ -201,25 +182,21 @@ export const useActividadesStore = defineStore('actividades', {
         return tempActividad
       }
 
-      // Online flow
       try {
         const record = await pb.collection('actividades').create(enrichedData)
         this.actividades.push(record)
-        // EFICIENCIA: Actualización incremental del lookup map
         this.activityLookupMap.set(record.id, record)
         syncStore.saveToLocalStorage('actividades', this.actividades)
-        
-        // Trigger alerta si es crítica
+
         if (actividadData.prioridad === 'alta') {
           try {
             const alertStore = useAlertStore()
             await alertStore.triggerCriticalActivityAlert(record)
           } catch (alertError) {
-            // No fallar la creación si la alerta falla
             console.error('[ACTIVIDADES] Error enviando alerta crítica:', alertError)
           }
         }
-        
+
         return record
       } catch (error) {
         handleError(error, 'Error al crear actividad')
@@ -234,13 +211,11 @@ export const useActividadesStore = defineStore('actividades', {
       snackbarStore.showLoading()
       const syncStore = useSyncStore()
 
-      // Verificar que el ID existe
       if (!id) {
         snackbarStore.hideLoading()
         throw new Error('ID de actividad no proporcionado para actualización')
       }
 
-      // OPTIMIZACIÓN: Usar lookup map O(1) en lugar de find() O(n)
       const actividad = this.activityLookupMap.get(id)
       if (!actividad) {
         snackbarStore.hideLoading()
@@ -263,22 +238,19 @@ export const useActividadesStore = defineStore('actividades', {
       if (!syncStore.isOnline) {
         const index = this.actividades.findIndex((a) => a.id === id)
         if (index !== -1) {
-          // Actualizar localmente
           this.actividades[index] = {
             ...this.actividades[index],
             ...enrichedData,
             updated: new Date().toISOString()
           }
 
-          // Encolar la operación
           await syncStore.queueOperation({
             type: 'update',
             collection: 'actividades',
-            id: id, // Usar el ID original (puede ser real o temporal)
+            id: id,
             data: enrichedData
           })
 
-          // EFICIENCIA: Actualizar lookup map incremental en lugar de rebuild O(n)
           this.activityLookupMap.set(id, this.actividades[index])
           syncStore.saveToLocalStorage('actividades', this.actividades)
           snackbarStore.hideLoading()
@@ -288,7 +260,6 @@ export const useActividadesStore = defineStore('actividades', {
         throw new Error('Actividad no encontrada')
       }
 
-      // Online flow
       try {
         const record = await pb.collection('actividades').update(id, enrichedData, {
           expand: 'tipo_actividades'
@@ -312,14 +283,12 @@ export const useActividadesStore = defineStore('actividades', {
       snackbarStore.showLoading()
       const syncStore = useSyncStore()
 
-      // Verificar que el ID existe
       if (!id) {
         snackbarStore.hideLoading()
         throw new Error('ID de actividad no proporcionado para eliminación')
       }
 
       if (!syncStore.isOnline) {
-        // EFICIENCIA: Usar lookup map O(1) para verificar existencia
         const actividadExiste = this.activityLookupMap.has(id)
         if (!actividadExiste) {
           snackbarStore.hideLoading()
@@ -327,7 +296,6 @@ export const useActividadesStore = defineStore('actividades', {
         }
 
         this.actividades = this.actividades.filter((a) => a.id !== id)
-        // EFICIENCIA: Eliminar del lookup map en lugar de rebuild O(n)
         this.activityLookupMap.delete(id)
 
         await syncStore.queueOperation({
@@ -344,7 +312,6 @@ export const useActividadesStore = defineStore('actividades', {
       try {
         await pb.collection('actividades').delete(id)
         this.actividades = this.actividades.filter((a) => a.id !== id)
-        // EFICIENCIA: Eliminar del lookup map en lugar de rebuild O(n)
         this.activityLookupMap.delete(id)
         syncStore.saveToLocalStorage('actividades', this.actividades)
         return true
@@ -362,11 +329,14 @@ export const useActividadesStore = defineStore('actividades', {
       }
 
       try {
-        // OPTIMIZACIÓN: Usar lookup Map O(1) en lugar de find() O(n)
+        // Asegurar que activityLookupMap sea un Map válido
+        if (!(this.activityLookupMap instanceof Map)) {
+          this.buildActivityLookup()
+        }
+
         let actividad = this.activityLookupMap.get(id)
 
         if (actividad) {
-          // Asegurar que todas las propiedades necesarias existan
           const actividadCompleta = {
             ...actividad,
             datos_bpa: actividad.datos_bpa || [],
@@ -379,12 +349,10 @@ export const useActividadesStore = defineStore('actividades', {
           return actividadCompleta
         }
 
-        // Si estamos online y no se encontró en el store, intentar buscar en el servidor
         const syncStore = useSyncStore()
         if (syncStore.isOnline) {
           const record = await pb.collection('actividades').getOne(id, options)
 
-          // Actualizar el store y el lookup map incrementalmente
           const actividadIndex = this.actividades.findIndex((a) => a.id === id)
           if (actividadIndex !== -1) {
             this.actividades[actividadIndex] = record
@@ -392,10 +360,7 @@ export const useActividadesStore = defineStore('actividades', {
             this.actividades.push(record)
           }
 
-          // EFICIENCIA: Actualización incremental del lookup map
           this.activityLookupMap.set(id, record)
-
-          // Guardar en localStorage
           syncStore.saveToLocalStorage('actividades', this.actividades)
 
           return record
@@ -408,18 +373,13 @@ export const useActividadesStore = defineStore('actividades', {
       }
     },
 
-    /**
-     * OPTIMIZACIÓN: Construye lookup Map para acceso O(1)
-     * Debe llamarse cada vez que se modifica el array de actividades
-     */
     buildActivityLookup() {
-      this.activityLookupMap.clear()
+      this.activityLookupMap = new Map()
       this.actividades.forEach(actividad => {
         this.activityLookupMap.set(actividad.id, actividad)
       })
     },
 
-    // Método para actualizar un elemento local
     updateLocalItem(tempId, newItem) {
       return useSyncStore().updateLocalItem('actividades', tempId, newItem, this.actividades, {
         referenceFields: ['actividad', 'actividades'],
@@ -427,7 +387,6 @@ export const useActividadesStore = defineStore('actividades', {
       })
     },
 
-    // Método para actualizar referencias
     updateReferencesToItem(tempId, realId) {
       return useSyncStore().updateReferencesToItem(
         'actividades',
@@ -438,12 +397,10 @@ export const useActividadesStore = defineStore('actividades', {
       )
     },
 
-    // Método para eliminar un elemento local
     removeLocalItem(id) {
       return useSyncStore().removeLocalItem('actividades', id, this.actividades)
     },
 
-    // Nuevo método para calcular bpa_estado
     calcularBpaEstado(datosBpa) {
       if (!datosBpa || datosBpa.length === 0) return 0
 
@@ -469,23 +426,19 @@ export const useActividadesStore = defineStore('actividades', {
     },
 
     async cargarTiposActividades() {
-      // Prevenir requests duplicadas
       if (this.loadingTipos) {
         console.log('[ACTIVIDADES] Ya hay una carga de tipos en progreso, esperando...')
         return this.tiposActividades
       }
 
-      // Si ya tenemos datos y estamos offline, usar cache
       if (this.tiposActividades.length > 0 && !navigator.onLine) {
         return this.tiposActividades
       }
 
-      // Si ya tenemos datos y estamos online, solo refresh si es necesario
       if (this.tiposActividades.length > 0) {
         return this.tiposActividades
       }
 
-      const syncStore = useSyncStore()
       this.loadingTipos = true
 
       try {
@@ -493,7 +446,6 @@ export const useActividadesStore = defineStore('actividades', {
           sort: 'nombre',
           expand: 'metricas,datos_bpa'
         })
-        // markRaw: lookup data doesn't need deep reactivity
         this.tiposActividades = markRaw(records.map((record) => ({
           id: record.id,
           nombre: record.nombre,
@@ -510,60 +462,65 @@ export const useActividadesStore = defineStore('actividades', {
     },
 
     initFromLocalStorage() {
-      const syncStore = useSyncStore();
-      const localActividades = syncStore.loadFromLocalStorage('actividades');
-      this.actividades = localActividades || [];
-      // EFICIENCIA: Solo construir lookup map si hay datos y está vacío
-      if (this.actividades.length > 0 && this.activityLookupMap.size === 0) {
-        this.buildActivityLookup();
+      const syncStore = useSyncStore()
+      const localActividades = syncStore.loadFromLocalStorage('actividades')
+      this.actividades = localActividades || []
+
+      // CRITICAL: Reinicializar Map después de deserialización de Pinia persist
+      if (!(this.activityLookupMap instanceof Map)) {
+        this.activityLookupMap = new Map()
       }
-      const localTiposActividades = syncStore.loadFromLocalStorage('tiposActividades');
-      this.tiposActividades = localTiposActividades ? markRaw(localTiposActividades) : [];
-      console.log('[ACT_STORE] Initialized from localStorage. Actividades:', this.actividades.length, 'Tipos:', this.tiposActividades.length);
+
+      if (this.actividades.length > 0) {
+        this.buildActivityLookup()
+      }
+
+      const localTiposActividades = syncStore.loadFromLocalStorage('tiposActividades')
+      this.tiposActividades = localTiposActividades ? markRaw(localTiposActividades) : []
+      console.log('[ACT_STORE] Initialized from localStorage. Actividades:', this.actividades.length, 'Tipos:', this.tiposActividades.length)
     },
 
-    // Standard sync methods
     applySyncedCreate(tempId, realItem) {
-      const syncStore = useSyncStore();
-      console.log(`[ACTIVIDADES_STORE] Applying synced create: tempId ${tempId} -> realId ${realItem.id}`);
-      const index = this.actividades.findIndex(a => a.id === tempId && a._isTemp);
+      const syncStore = useSyncStore()
+      console.log(`[ACTIVIDADES_STORE] Applying synced create: tempId ${tempId} -> realId ${realItem.id}`)
+      const index = this.actividades.findIndex(a => a.id === tempId && a._isTemp)
       if (index !== -1) {
-        this.actividades[index] = { ...realItem, _isTemp: false };
+        this.actividades[index] = { ...realItem, _isTemp: false }
       } else {
         if (!this.actividades.some(a => a.id === realItem.id)) {
-            this.actividades.unshift({ ...realItem, _isTemp: false }); 
-            console.log('[ACTIVIDADES_STORE] Synced item added as new (was not found by tempId).');
+          this.actividades.unshift({ ...realItem, _isTemp: false })
+          console.log('[ACTIVIDADES_STORE] Synced item added as new (was not found by tempId).')
         } else {
-            console.log('[ACTIVIDADES_STORE] Synced item already exists by realId.');
+          console.log('[ACTIVIDADES_STORE] Synced item already exists by realId.')
         }
       }
-      syncStore.saveToLocalStorage('actividades', this.actividades);
-      console.log('[ACTIVIDADES_STORE] Synced create applied, localStorage updated.');
+      syncStore.saveToLocalStorage('actividades', this.actividades)
+      console.log('[ACTIVIDADES_STORE] Synced create applied, localStorage updated.')
     },
 
     applySyncedUpdate(id, updatedItemData) {
-      const syncStore = useSyncStore();
-      console.log(`[ACTIVIDADES_STORE] Applying synced update for id: ${id}`);
-      const index = this.actividades.findIndex(a => a.id === id);
+      const syncStore = useSyncStore()
+      console.log(`[ACTIVIDADES_STORE] Applying synced update for id: ${id}`)
+      const index = this.actividades.findIndex(a => a.id === id)
       if (index !== -1) {
-        this.actividades[index] = { ...this.actividades[index], ...updatedItemData, _isTemp: false };
-        syncStore.saveToLocalStorage('actividades', this.actividades);
-        console.log('[ACTIVIDADES_STORE] Synced update applied, localStorage updated.');
+        this.actividades[index] = { ...this.actividades[index], ...updatedItemData, _isTemp: false }
+        syncStore.saveToLocalStorage('actividades', this.actividades)
+        console.log('[ACTIVIDADES_STORE] Synced update applied, localStorage updated.')
       } else {
-         console.warn(`[ACTIVIDADES_STORE] Could not find item with id ${id} to apply update.`);
+        console.warn(`[ACTIVIDADES_STORE] Could not find item with id ${id} to apply update.`)
       }
     },
 
     applySyncedDelete(id) {
-      const syncStore = useSyncStore();
-      console.log(`[ACTIVIDADES_STORE] Applying synced delete for id: ${id}`);
-      const initialLength = this.actividades.length;
-      this.actividades = this.actividades.filter(a => a.id !== id);
+      const syncStore = useSyncStore()
+      console.log(`[ACTIVIDADES_STORE] Applying synced delete for id: ${id}`)
+      const initialLength = this.actividades.length
+      this.actividades = this.actividades.filter(a => a.id !== id)
       if (this.actividades.length < initialLength) {
-        syncStore.saveToLocalStorage('actividades', this.actividades);
-        console.log('[ACTIVIDADES_STORE] Synced delete applied, localStorage updated.');
+        syncStore.saveToLocalStorage('actividades', this.actividades)
+        console.log('[ACTIVIDADES_STORE] Synced delete applied, localStorage updated.')
       } else {
-        console.warn(`[ACTIVIDADES_STORE] Could not find item with id ${id} to apply delete.`);
+        console.warn(`[ACTIVIDADES_STORE] Could not find item with id ${id} to apply delete.`)
       }
     }
   }

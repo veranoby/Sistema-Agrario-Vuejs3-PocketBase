@@ -45,7 +45,7 @@
 <script setup>
 import { useI18n } from 'vue-i18n'
 import RecordatorioForm from '@/components/forms/RecordatorioForm.vue'
-import StatusPanel from '@/components/RecordatoriosStatusPanel.vue'
+import StatusPanel from '@/components/recordatorios/RecordatoriosStatusPanel.vue'
 
 const props = defineProps({
   dialogVisible: {

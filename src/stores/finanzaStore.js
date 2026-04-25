@@ -23,8 +23,8 @@ export const useFinanzaStore = defineStore('finanzas', {
     version: 1,
     lastSync: null,
     currentMonth: new Date(),
-    filterStatus: 'all', // 'all', 'paid', 'pending'
-    cachedMonths: {} // Caché para registros por mes
+    filterStatus: 'all',
+    cachedMonths: {}
   }),
 
   persist: {
@@ -34,7 +34,6 @@ export const useFinanzaStore = defineStore('finanzas', {
   },
 
   getters: {
-    // Getters optimizados con caché local para evitar recálculos innecesarios
     _registrosPorMesCache: (state) => {
       const start = startOfMonth(state.currentMonth)
       const end = endOfMonth(state.currentMonth)
@@ -46,12 +45,10 @@ export const useFinanzaStore = defineStore('finanzas', {
     },
 
     registrosPorMes: (state) => {
-      // Retornar el getter cacheado
       return state._registrosPorMesCache || []
     },
 
     totalMes: (state) => {
-      // Calcular directamente desde los registros filtrados del mes actual
       const start = startOfMonth(state.currentMonth)
       const end = endOfMonth(state.currentMonth)
 
@@ -113,7 +110,6 @@ export const useFinanzaStore = defineStore('finanzas', {
           totales[userId].registros += 1
         })
 
-      // Convertir a array y ordenar por total descendente
       return Object.entries(totales)
         .map(([userId, data]) => ({
           userId,
@@ -143,7 +139,6 @@ export const useFinanzaStore = defineStore('finanzas', {
       this.loading = true
 
       try {
-        // Cargar todos los registros, no solo los del mes actual
         const registros = syncStore.loadFromLocalStorage('finanzas')
         if (registros?.length) {
           this.registros = registros
@@ -156,8 +151,8 @@ export const useFinanzaStore = defineStore('finanzas', {
         }
 
         const records = await pb.collection('finanzas').getFullList({
-          filter: `Haciendas="${haciendaStore.mi_hacienda?.id}"`,
-          expand: 'registro_por,pagado_por' // Asegurar que se expandan las relaciones
+          filter: `Haciendas='${haciendaStore.mi_hacienda?.id}'`,
+          expand: 'registro_por,pagado_por'
         })
         this.registros = records
         syncStore.saveToLocalStorage('finanzas', records)
@@ -170,11 +165,9 @@ export const useFinanzaStore = defineStore('finanzas', {
       }
     },
 
-    // Nuevo método para cargar registros por mes específico
     async cargarRegistrosPorMes(year, month) {
       const cacheKey = `${year}-${month}`
 
-      // Si ya tenemos este mes en caché, no hacer nada
       if (this.cachedMonths[cacheKey]) {
         return this.registros
       }
@@ -188,18 +181,15 @@ export const useFinanzaStore = defineStore('finanzas', {
           return this.registros
         }
 
-        // Construir fechas de inicio y fin del mes
         const startDate = new Date(year, Number(month), 1)
         const endDate = new Date(year, Number(month) + 1, 0)
 
-        // Filtrar por fecha y hacienda
         const records = await pb.collection('finanzas').getList(1, 100, {
-          filter: `Haciendas="${haciendaStore.mi_hacienda?.id}" && fecha >= "${format(startDate, 'yyyy-MM-dd')}" && fecha <= "${format(endDate, 'yyyy-MM-dd')}"`,
+          filter: `Haciendas='${haciendaStore.mi_hacienda?.id}' && fecha >= '${startDate.toISOString()}' && fecha <= '${endDate.toISOString()}'`,
           sort: '-fecha',
           expand: 'registro_por,pagado_por'
         })
 
-        // Combinar con registros existentes, evitando duplicados
         const existingIds = this.registros.map((r) => r.id)
         const newRecords = records.items.filter((r) => !existingIds.includes(r.id))
 
@@ -208,7 +198,6 @@ export const useFinanzaStore = defineStore('finanzas', {
           syncStore.saveToLocalStorage('finanzas', this.registros)
         }
 
-        // Marcar este mes como cacheado
         this.cachedMonths[cacheKey] = true
 
         return this.registros
@@ -220,7 +209,6 @@ export const useFinanzaStore = defineStore('finanzas', {
       }
     },
 
-    // Método para actualizar caché por mes
     updateMonthCache(records) {
       if (!records || !records.length) return
 
@@ -239,12 +227,10 @@ export const useFinanzaStore = defineStore('finanzas', {
       })
     },
 
-    // Modificar changeMonth para cargar datos del nuevo mes seleccionado
     async changeMonth(direction) {
       this.currentMonth =
         direction === 'next' ? addMonths(this.currentMonth, 1) : subMonths(this.currentMonth, 1)
 
-      // Cargar datos del nuevo mes si no están en caché
       const year = getYear(this.currentMonth)
       const month = getMonth(this.currentMonth)
 
@@ -257,19 +243,15 @@ export const useFinanzaStore = defineStore('finanzas', {
       const haciendaStore = useHaciendaStore()
       snackbarStore.showLoading()
 
-      // Make a copy of the data to avoid modifying the original
       const processedData = { ...registroData }
 
-      // Compensate for the 1-day offset by adding a day to the date
       if (processedData.fecha) {
         try {
-          // Extract just the date part if it includes time
           let dateStr = processedData.fecha
           if (dateStr.includes('T')) {
             dateStr = dateStr.split('T')[0]
           }
 
-          // Parse the date, add 1 day, and format it back to YYYY-MM-DD
           const dateObj = parseISO(dateStr)
           const nextDay = new Date(dateObj)
           nextDay.setDate(nextDay.getDate() + 1)
@@ -279,7 +261,6 @@ export const useFinanzaStore = defineStore('finanzas', {
         }
       }
 
-      // Enriquecer datos con contexto de hacienda
       const enrichedData = {
         ...processedData,
         Haciendas: haciendaStore.mi_hacienda?.id,
@@ -287,7 +268,6 @@ export const useFinanzaStore = defineStore('finanzas', {
       }
 
       if (!syncStore.isOnline) {
-        // Usar la función unificada para generar ID temporal
         const tempId = syncStore.generateTempId()
 
         const tempRegistro = {
@@ -295,7 +275,7 @@ export const useFinanzaStore = defineStore('finanzas', {
           id: tempId,
           created: new Date().toISOString(),
           updated: new Date().toISOString(),
-          _isTemp: true // Marcar como temporal
+          _isTemp: true
         }
 
         this.registros.unshift(tempRegistro)
@@ -330,19 +310,15 @@ export const useFinanzaStore = defineStore('finanzas', {
       const snackbarStore = useSnackbarStore()
       snackbarStore.showLoading()
 
-      // Make a copy of the data to avoid modifying the original
       const processedData = { ...updateData }
 
-      // Compensate for the 1-day offset by adding a day to the date
       if (processedData.fecha) {
         try {
-          // Extract just the date part if it includes time
           let dateStr = processedData.fecha
           if (dateStr.includes('T')) {
             dateStr = dateStr.split('T')[0]
           }
 
-          // Parse the date, add 1 day, and format it back to YYYY-MM-DD
           const dateObj = parseISO(dateStr)
           const nextDay = new Date(dateObj)
           nextDay.setDate(nextDay.getDate() + 1)
@@ -352,7 +328,6 @@ export const useFinanzaStore = defineStore('finanzas', {
         }
       }
 
-      // Verificar que el ID existe
       if (!id) {
         snackbarStore.hideLoading()
         throw new Error('ID de registro no proporcionado para actualización')
@@ -407,7 +382,6 @@ export const useFinanzaStore = defineStore('finanzas', {
       const snackbarStore = useSnackbarStore()
       snackbarStore.showLoading()
 
-      // Verificar que el ID existe
       if (!id) {
         snackbarStore.hideLoading()
         throw new Error('ID de registro no proporcionado para eliminación')
@@ -445,32 +419,18 @@ export const useFinanzaStore = defineStore('finanzas', {
       this.filterStatus = status
     },
 
-    // Métodos para Excel import/export
     async exportToExcel(yearParam = null, monthParam = null) {
       const snackbarStore = useSnackbarStore()
       const haciendaStore = useHaciendaStore()
 
-      // Definir los nombres de los meses en español
       const meses = [
-        'Enero',
-        'Febrero',
-        'Marzo',
-        'Abril',
-        'Mayo',
-        'Junio',
-        'Julio',
-        'Agosto',
-        'Septiembre',
-        'Octubre',
-        'Noviembre',
-        'Diciembre'
+        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
       ]
 
       snackbarStore.showLoading()
 
       try {
-        // Si no se especifican año y mes, usar el mes actual
-        // Asegurarse de que los parámetros son números, no eventos de interfaz
         let year = yearParam
         let month = monthParam
 
@@ -482,17 +442,14 @@ export const useFinanzaStore = defineStore('finanzas', {
           month = getMonth(this.currentMonth)
         }
 
-        // Asegurarnos que sean números
         year = Number(year)
         month = Number(month)
 
-        // Verificar si los datos del mes están en caché, si no, cargarlos
         const cacheKey = `${year}-${month}`
         if (!this.cachedMonths[cacheKey]) {
           await this.cargarRegistrosPorMes(year, month)
         }
 
-        // Filtrar los registros del mes seleccionado
         const startDate = new Date(year, month, 1)
         const endDate = new Date(year, month + 1, 0)
 
@@ -505,41 +462,30 @@ export const useFinanzaStore = defineStore('finanzas', {
           }
         })
 
-        // Ordenar los registros por fecha antes de exportarlos
         registrosDelMes.sort((a, b) => {
           const fechaA = parseISO(a.fecha)
           const fechaB = parseISO(b.fecha)
           return fechaA - fechaB
         })
 
-        // Importar XLSX dinámicamente
         const { utils, writeFile } = await import('xlsx')
 
-        // Crear un libro de Excel
         const wb = utils.book_new()
 
-        // Información de cabecera
         const haciendaInfo = [
           ['REPORTE FINANCIERO'],
           [`Hacienda: ${haciendaStore.mi_hacienda?.name || 'N/A'}`],
           [`Período: ${meses[month]} ${year}`],
           [`Fecha de generación: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`],
           [''],
-          [''] // Fila en blanco para separar
+          ['']
         ]
 
-        // Headers para el caso de que no haya registros
         const defaultHeaders = [
-          'Fecha',
-          'Detalle',
-          'Razón Social',
-          'Factura o Recibo',
-          'Centro de Costo',
-          'Pagado por',
-          'Monto'
+          'Fecha', 'Detalle', 'Razón Social', 'Factura o Recibo',
+          'Centro de Costo', 'Pagado por', 'Monto'
         ]
 
-        // Crear Map de lookup para usuarios (evita N+1 query pattern)
         const userMap = new Map(
           haciendaStore.haciendaUsers.map(u => [
             u.id,
@@ -550,11 +496,9 @@ export const useFinanzaStore = defineStore('finanzas', {
           ])
         )
 
-        // Datos de los registros
         const registrosData =
           registrosDelMes.length > 0
             ? registrosDelMes.map((reg) => {
-                // Obtener el nombre del usuario que pagó usando el Map (O(1) en lugar de O(n))
                 const pagadoPorUser = userMap.get(reg.pagado_por)
                 const nombrePagadoPor = pagadoPorUser?.fullName || reg.expand?.pagado_por?.name || ''
 
@@ -568,16 +512,14 @@ export const useFinanzaStore = defineStore('finanzas', {
                   Monto: reg.monto || 0
                 }
               })
-            : [{}] // Objeto vacío si no hay registros
+            : [{}]
 
-        // Agrupar montos por categoría
         const totalsPorCategoria = {}
         registrosDelMes.forEach((reg) => {
           const categoria = reg.costo || 'Sin categoría'
           totalsPorCategoria[categoria] = (totalsPorCategoria[categoria] || 0) + (reg.monto || 0)
         })
 
-        // Agrupar montos por usuario (usando el Map para O(1) lookup)
         const totalsPorUsuario = {}
         registrosDelMes.forEach((reg) => {
           const pagadoPorUser = userMap.get(reg.pagado_por)
@@ -589,31 +531,25 @@ export const useFinanzaStore = defineStore('finanzas', {
           totalsPorUsuario[nombrePagadoPor] += reg.monto || 0
         })
 
-        // Convertir los totales a un formato para Excel
         const totalesData = [[''], ['TOTALES POR CATEGORÍA'], ['']]
 
         Object.entries(totalsPorCategoria).forEach(([categoria, monto]) => {
           totalesData.push([categoria, '', '', '', '', '', monto])
         })
 
-        // Agregar sección de totales por usuario
         totalesData.push([''])
         totalesData.push(['TOTALES POR USUARIO'])
         totalesData.push([''])
 
         Object.entries(totalsPorUsuario)
-          .sort(([,a], [,b]) => b - a) // Ordenar por monto descendente
+          .sort(([,a], [,b]) => b - a)
           .forEach(([usuario, monto]) => {
             totalesData.push([usuario, '', '', '', '', '', monto])
           })
 
         totalesData.push([''])
         totalesData.push([
-          'TOTAL GENERAL',
-          '',
-          '',
-          '',
-          '',
+          'TOTAL GENERAL', '', '', '', '',
           registrosDelMes.reduce((sum, reg) => sum + (reg.monto || 0), 0)
         ])
 
@@ -623,42 +559,32 @@ export const useFinanzaStore = defineStore('finanzas', {
           [`aprobado por gerencia:`],
           [`aprobado por gerencia:`],
           ['aprobado por contabilidad:'],
-          [''] // Fila en blanco para separar
+          ['']
         )
 
-        // Crear hoja con cabecera e información
         const headerRow =
           registrosDelMes.length > 0 ? Object.keys(registrosData[0]) : defaultHeaders
 
         const wsData = [
           ...haciendaInfo,
-          headerRow, // Nombres de columnas
+          headerRow,
           ...(registrosDelMes.length > 0 ? registrosData.map(Object.values) : [[]]),
           ...totalesData
         ]
 
         const ws = utils.aoa_to_sheet(wsData)
 
-        // Agregar estilos (ancho de columnas)
         const colWidths = [
-          { wch: 12 }, // Fecha
-          { wch: 40 }, // Detalle
-          { wch: 30 }, // Razón Social
-          { wch: 15 }, // Factura o Recibo
-          { wch: 20 }, // Centro de Costo
-          { wch: 20 }, // Pagado por
-          { wch: 15 } // Monto
+          { wch: 12 }, { wch: 40 }, { wch: 30 }, { wch: 15 },
+          { wch: 20 }, { wch: 20 }, { wch: 15 }
         ]
 
         ws['!cols'] = colWidths
 
-        // Añadir hoja al libro
         utils.book_append_sheet(wb, ws, 'Finanzas')
 
-        // Generar nombre de archivo con fecha
         const fileName = `Finanzas_${haciendaStore.mi_hacienda?.name || 'Hacienda'}_${meses[month].substring(0, 3)}_${year}.xlsx`
 
-        // Guardar archivo
         writeFile(wb, fileName)
 
         snackbarStore.showSnackbar('Datos exportados exitosamente', 'success')
@@ -669,17 +595,14 @@ export const useFinanzaStore = defineStore('finanzas', {
       }
     },
 
-    // Método para actualizar un elemento local
     updateLocalItem(tempId, newItem) {
       return useSyncStore().updateLocalItem('finanzas', tempId, newItem, this.registros)
     },
 
-    // Método para actualizar referencias
     updateReferencesToItem(tempId, realId) {
       return useSyncStore().updateReferencesToItem('finanzas', tempId, realId, this.registros)
     },
 
-    // Método para eliminar un elemento local
     removeLocalItem(id) {
       return useSyncStore().removeLocalItem('finanzas', id, this.registros)
     }

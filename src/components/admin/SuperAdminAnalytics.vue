@@ -171,7 +171,9 @@ import { logger } from '@/utils/logger'
 import { cache, CacheKeys } from '@/utils/cacheManager'
 import { formatDate } from '@/utils/formatters'
 import { exportToCSV } from '@/utils/exporters'
+import { useAnalyticsStore } from '@/stores/analyticsStore'
 
+const analyticsStore = useAnalyticsStore()
 const loading = ref(false)
 const users = ref([])
 const haciendas = ref([])
@@ -367,6 +369,10 @@ async function refreshData() {
   // Invalidar cache específico
   cache.delete(USERS_CACHE_KEY)
   cache.delete(HACIENDAS_CACHE_KEY)
+  
+  // Recargar métricas desde analytics API
+  await analyticsStore.fetchGlobalMetrics('month')
+  
   await loadData()
 }
 </script>

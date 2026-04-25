@@ -71,11 +71,19 @@ export const useSchedulerStore = defineStore('scheduler', {
     },
 
     /**
-     * Tareas pendientes totales
+     * Programaciones pendientes desde el scheduler
      */
-    pendingTasksCount: (state) => {
-      // Este getter se actualizará cuando integremos con programacionesStore
-      return 0
+    pendingProgramaciones() {
+      const scheduler = getScheduler()
+      return scheduler.getPendingProgramaciones()
+    },
+
+    /**
+     * Cantidad de programaciones pendientes
+     */
+    pendingTasksCount() {
+      const scheduler = getScheduler()
+      return scheduler.getPendingProgramaciones().length
     }
   },
 
@@ -182,17 +190,15 @@ export const useSchedulerStore = defineStore('scheduler', {
 
       this.isRunning = stats.isRunning
       this.lastCheck = stats.lastCheck
-      this.executedCount = stats.executedCount
       this.checkInterval = stats.checkInterval
     },
 
     /**
-     * Actualiza el contador de tareas pendientes
+     * Limpia las programaciones pendientes (después de ejecutar)
      */
-    updatePendingTasks(count) {
-      // Este método se llamará desde programacionesStore
-      console.log(`[SchedulerStore] Tareas pendientes: ${count}`)
-      // Pendiente: implementar estado para pendingTasksCount
+    clearPending() {
+      const scheduler = getScheduler()
+      scheduler.clearPending()
     },
 
     /**

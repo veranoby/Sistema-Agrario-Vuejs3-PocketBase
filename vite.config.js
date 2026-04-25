@@ -12,8 +12,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'Sistema Agri - Gestión Agrícola',
-        short_name: 'SistemaAgri',
+        name: 'ConAgri - Gestión Agrícola',
+        short_name: 'ConAgri',
         description: 'Plataforma de gestión agrícola integral',
         theme_color: '#4CAF50',
         background_color: '#ffffff',

@@ -158,9 +158,9 @@
               </v-list-item>
 
               <v-list-item v-if="recentSiembras.length === 0">
-                <v-list-item-text class="text-center text-medium-emphasis">
+                <v-list-item-subtitle class="text-center text-medium-emphasis">
                   No hay siembras registradas
-                </v-list-item-text>
+                </v-list-item-subtitle>
               </v-list-item>
             </v-list>
           </v-card-text>
@@ -254,7 +254,7 @@ const isLoading = ref(true)
 onMounted(async () => {
   try {
     isLoading.value = true
-    await siembrasStore.fetchSiembras()
+    await siembrasStore.init()
     siembras.value = siembrasStore.siembras || []
   } catch (error) {
     console.error('Error cargando siembras:', error)

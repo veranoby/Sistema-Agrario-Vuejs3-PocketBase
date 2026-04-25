@@ -65,15 +65,13 @@
 </template>
 
 <script setup>
-import { computed, onMounted, watch } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useSyncStore } from '@/stores/syncStore'
 import { useSchedulerStore } from '@/stores/schedulerStore'
-import { useProgramacionesStore } from '@/stores/programacionesStore'
 import NotificationBell from '@/components/NotificationBell.vue'
 
 const syncStore = useSyncStore()
 const schedulerStore = useSchedulerStore()
-const programacionesStore = useProgramacionesStore()
 
 const isOnline = computed(() => syncStore.isOnline)
 const isSyncing = computed(() => syncStore.syncStatus === 'syncing')
@@ -84,20 +82,8 @@ const schedulerText = computed(() => schedulerStore.statusText)
 const schedulerColor = computed(() => schedulerStore.statusColor)
 const schedulerIcon = computed(() => schedulerStore.statusIcon)
 
-// Tareas pendientes de programaciones
-const pendingTasksCount = computed(() => {
-  if (!programacionesStore.programaciones) return 0
-  return programacionesStore.programacionesPendientes.length
-})
-
-// Actualizar contador de tareas pendientes en schedulerStore
-watch(
-  pendingTasksCount,
-  (count) => {
-    schedulerStore.updatePendingTasks(count)
-  },
-  { immediate: true }
-)
+// Tareas pendientes desde schedulerStore
+const pendingTasksCount = computed(() => schedulerStore.pendingTasksCount)
 
 onMounted(() => {
   // Inicializar schedulerStore si no está inicializado
@@ -114,6 +100,7 @@ onMounted(() => {
   align-items: center;
   padding: 8px 16px;
   background-color: #4CAF50;
+  background: linear-gradient(to bottom, white, #4CAF50, #4CAF50, white);
   color: white;
   font-size: 14px;
   position: fixed;
@@ -126,10 +113,14 @@ onMounted(() => {
 
 .status-bar.offline {
   background-color: #f44336;
+  background: linear-gradient(to bottom, white, #f44336, #f44336, white);
+
+
 }
 
 .status-bar.syncing {
   background-color: #ff9800;
+  background: linear-gradient(to bottom, white, #ff9800, #ff9800, white);
 }
 
 .status-left,

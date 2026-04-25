@@ -5,7 +5,7 @@
     </template>
     <v-app-bar-title @click="$router.push('/')"
       ><span class="hidden sm:inline"
-        >Agro Assist <v-icon size="24" color="green">mdi-leaf</v-icon
+        >ConAgri <v-icon size="24" color="green">mdi-leaf</v-icon
         ><!-- {{ PaginaActual }} --></span
       ></v-app-bar-title
     >
@@ -96,8 +96,8 @@
 <script>
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useAuthStore } from '../stores/authStore'
-import { useThemeStore } from '../stores/themeStore'
+import { useAuthStore } from '@/stores/authStore'
+import { useThemeStore } from '@/stores/themeStore'
 import { useSyncStore } from '@/stores/syncStore'
 import { useRouter } from 'vue-router'
 

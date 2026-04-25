@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { SyncQueue } from '@/utils/syncQueue'
 
 /**
- * Tests para SyncQueue - Sistema Agri
+ * Tests para SyncQueue - ConAgri
  * 
  * Enfocados en:
  * 1. Detección de error 409 (Conflict)

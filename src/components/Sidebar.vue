@@ -52,8 +52,8 @@
 
 <script>
 import { computed, watch } from 'vue'
-import { useAuthStore } from '../stores/authStore'
-import { useHaciendaStore } from '../stores/haciendaStore'
+import { useAuthStore } from '@/stores/authStore'
+import { useHaciendaStore } from '@/stores/haciendaStore'
 import { useRoute } from 'vue-router'
 
 // Module mapping for navigation links

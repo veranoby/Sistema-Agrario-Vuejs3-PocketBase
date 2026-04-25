@@ -1,13 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
-import HomeComp from '@/components/Home.vue'
-import AboutUs from '@/components/AboutUs.vue'
-import OurPlans from '@/components/OurPlans.vue'
-import DocumentationComponent from '@/components/Documentation.vue'
-import ContactUs from '@/components/ContactUs.vue'
-import FAQ from '@/components/FAQ.vue'
-import EmailConfirmation from '@/components/Confirmation.vue'
+import LandingPage from '@/components/LandingPage.vue'
+import AboutUs from '@/components/public/AboutUs.vue'
+import OurPlans from '@/components/hacienda/OurPlans.vue'
+import DocumentationComponent from '@/components/public/Documentation.vue'
+import ContactUs from '@/components/public/ContactUs.vue'
+import FAQ from '@/components/public/FAQ.vue'
+import EmailConfirmation from '@/components/dialogs/ConfirmationDialog.vue'
 
 // Role definitions
 const ROLES = {
@@ -36,7 +36,7 @@ const ROUTE_ROLE_MATRIX = {
 }
 
 const routes = [
-  { path: '/', component: HomeComp },
+  { path: '/', component: LandingPage },
   { path: '/about', component: AboutUs },
   { path: '/plans', component: OurPlans },
   { path: '/documentation', component: DocumentationComponent },
@@ -58,7 +58,7 @@ const routes = [
   },
   {
     path: '/auth/reset-password/:token',
-    component: () => import('@/components/PasswordReset.vue'),
+    component: () => import('@/components/forms/auth/PasswordReset.vue'),
     name: 'PasswordReset'
   },
   {
@@ -99,7 +99,7 @@ const routes = [
   },
   {
     path: '/siembras/:id',
-    component: () => import('@/components/SiembraWorkspace.vue'),
+    component: () => import('@/components/siembras/SiembraWorkspace.vue'),
     name: 'Ver Siembra/Proyecto',
     meta: {
       requiresAuth: true,
@@ -117,7 +117,7 @@ const routes = [
   },
   {
     path: '/actividades/:id',
-    component: () => import('@/components/actividadesWorkspace.vue'),
+    component: () => import('@/components/actividades/ActividadesWorkspace.vue'),
     name: 'Ver Actividad',
     meta: {
       requiresAuth: true,
@@ -127,8 +127,17 @@ const routes = [
 
   {
     path: '/programaciones',
-    component: () => import('@/components/ProgramacionesList.vue'),
+    component: () => import('@/components/programaciones/ProgramacionesList.vue'),
     name: 'Gestion de Programas de Actividades',
+    meta: {
+      requiresAuth: true,
+      roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR, ROLES.OPERADOR]
+    }
+  },
+  {
+    path: '/bitacora',
+    component: () => import('@/components/bitacora/BitacoraView.vue'),
+    name: 'Bitácora',
     meta: {
       requiresAuth: true,
       roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR, ROLES.OPERADOR]
@@ -155,7 +164,7 @@ const routes = [
   },
   {
     path: '/recordatorios',
-    component: () => import('@/components/Recordatorios.vue'),
+    component: () => import('@/components/recordatorios/Recordatorios.vue'),
     name: 'Gestion de Recordatorios y Emergencias',
     meta: {
       requiresAuth: true,

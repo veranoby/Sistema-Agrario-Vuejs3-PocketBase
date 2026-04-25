@@ -898,7 +898,7 @@ export class ReportGenerator {
         doc.setPage(i)
         doc.setFontSize(8)
         doc.text(
-          `Generado automáticamente por Sistema Agri - ${new Date().toISOString()}`,
+          `Generado automáticamente por ConAgri - ${new Date().toISOString()}`,
           14,
           doc.internal.pageSize.height - 10
         )

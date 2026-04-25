@@ -165,7 +165,7 @@ export function exportKnowledgeHubToMarkdown(data) {
     (data.actividades?.length || 0) +
     (data.programaciones?.length || 0)
 
-  let md = `# Knowledge Hub - Sistema Agri\n\n`
+  let md = `# Knowledge Hub - ConAgri\n\n`
   md += `**Fecha de exportación**: ${timestamp}\n`
   md += `**Total de entidades**: ${totalEntities}\n\n`
   

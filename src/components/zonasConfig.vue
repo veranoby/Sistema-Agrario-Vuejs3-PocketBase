@@ -244,7 +244,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useZonasStore } from '@/stores/zonasStore'
 import { useProfileStore } from '@/stores/profileStore'

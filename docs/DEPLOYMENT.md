@@ -1,8 +1,8 @@
-# Deployment Guide - Sistema Agri
+# Deployment Guide - ConAgri
 
 ## Overview
 
-Guía completa de deployment para producción del Sistema Agri.
+Guía completa de deployment para producción del ConAgri.
 
 ---
 
@@ -47,11 +47,13 @@ PocketBase usa archivo de configuración `pb_data/pb_hooks.json`:
     "smtpPort": 587,
     "smtpUser": "resend",
     "smtpPassword": "your_api_key",
-    "smtpFrom": "Sistema Agri <noreply@yourdomain.com>"
+    "smtpFrom": "ConAgri <noreply@yourdomain.com>"
   }
 }
 ```
-
+Credenciales locales de admin/dashboard de pocketbase:
+- Email: veranoby@gmail.com
+- Password: R@quito0205
 ---
 
 ## 📦 Build para Producción
@@ -271,7 +273,7 @@ sudo certbot renew --dry-run
 #!/bin/bash
 set -e
 
-echo "🚀 Deploying Sistema Agri..."
+echo "🚀 Deploying ConAgri..."
 
 # 1. Build
 echo "📦 Building..."
@@ -400,7 +402,7 @@ sudo ufw status
 
 ## 📱 PWA Considerations
 
-El Sistema Agri es una PWA. Asegurar:
+El ConAgri es una PWA. Asegurar:
 
 1. **Service Worker**: `sw.js` se sirve correctamente
 2. **Manifest**: `manifest.webmanifest` tiene URLs correctas

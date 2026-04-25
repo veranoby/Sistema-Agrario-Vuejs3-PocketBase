@@ -126,71 +126,17 @@
         <v-card-title>
           {{ editingUser ? 'Editar Usuario' : 'Nuevo Usuario' }}
         </v-card-title>
-        <v-card-text>
-          <v-form ref="userForm" v-model="formValid" @submit.prevent="saveUser">
-            <v-text-field
-              v-model="formData.email"
-              label="Email"
-              type="email"
-              :rules="[v => !!v || 'Email requerido', v => /.+@.+\..+/.test(v) || 'Email inválido']"
-              required
-            />
-            <v-text-field
-              v-model="formData.username"
-              label="Nombre de usuario"
-              :rules="[v => !!v || 'Nombre requerido']"
-              required
-            />
-            <v-text-field
-              v-model="formData.firstname"
-              label="Nombre"
-              :rules="[v => !!v || 'Nombre requerido']"
-              required
-            />
-            <v-text-field
-              v-model="formData.lastname"
-              label="Apellido"
-              :rules="[v => !!v || 'Apellido requerido']"
-              required
-            />
-            <v-text-field
-              v-if="!editingUser"
-              v-model="formData.password"
-              label="Contraseña"
-              type="password"
-              :rules="[v => !!v || 'Contraseña requerida', v => v.length >= 8 || 'Mínimo 8 caracteres']"
-              required
-            />
-            <v-select
-              v-model="formData.role"
-              label="Rol"
-              :items="roles"
-              :rules="[v => !!v || 'Rol requerido']"
-              required
-            />
-            <v-select
-              v-model="formData.haciendas"
-              label="Haciendas asignadas"
-              :items="haciendasList"
-              item-title="name"
-              item-value="id"
-              multiple
-              chips
-              closable-chips
-            />
-            <v-switch
-              v-model="formData.status"
-              label="Usuario activo"
-              :true-value="USER_STATUS.ACTIVE"
-              :false-value="USER_STATUS.INACTIVE"
-            />
-          </v-form>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn color="grey" variant="text" @click="closeDialog">Cancelar</v-btn>
-          <v-btn color="primary" :disabled="!formValid" @click="saveUser">Guardar</v-btn>
-        </v-card-actions>
+        <UserForm
+          :is-editing="!!editingUser"
+          :loading="loading"
+          :show-role-select="true"
+          :show-hacienda-select="true"
+          :available-roles="roles"
+          :haciendas-list="haciendasList"
+          :initial-data="formData"
+          @submit="saveUser"
+          @cancel="closeDialog"
+        />
       </v-card>
     </v-dialog>
 
@@ -290,6 +236,7 @@ import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
 import { exportUsersToMarkdown } from '@/utils/markdownExporter'
 import { useSnackbarStore } from '@/stores/snackbarStore'
+import UserForm from '@/components/forms/auth/UserForm.vue'
 import { USER_ROLES, USER_STATUS, ROLE_OPTIONS } from '@/constants/roles'
 import { formatRole, getRoleColor, formatDate, downloadMarkdown, getUserStatusColor, formatUserStatus } from '@/utils/formatters'
 
@@ -308,7 +255,6 @@ const deleteDialog = ref(false)
 const editingUser = ref(null)
 const selectedUser = ref(null)
 const selectedUsers = ref([])
-const formValid = ref(false)
 const userForm = ref(null)
 
 // Formulario
@@ -365,7 +311,7 @@ const filteredUsers = computed(() => {
   return result
 })
 
-// Lista de haciendas para el select
+// Lista de haciendas para UserForm (formato: title/value)
 const haciendasList = computed(() => {
   return haciendas.value.map(h => ({ title: h.name, value: h.id }))
 })
@@ -379,12 +325,11 @@ onMounted(async () => {
 async function fetchUsers() {
   loading.value = true
   try {
-    users.value = await pb.collection('users').getFullList({
-      sort: '-created',
-      expand: 'hacienda'
-    })
+    const { useUserStore } = await import('@/stores/userStore')
+    const userStore = useUserStore()
+    const records = await userStore.fetchUsers({ expand: 'hacienda' })
     // Mapear haciendas
-    users.value = users.value.map(u => ({
+    users.value = records.map(u => ({
       ...u,
       haciendas: u.expand?.hacienda ? [u.expand.hacienda] : [],
       status: u.status ?? 'active'
@@ -452,36 +397,36 @@ function confirmDelete(user) {
   deleteDialog.value = true
 }
 
-// Guardar usuario
-async function saveUser() {
-  const valid = await userForm.value?.validate()
-  if (!valid?.valid) return
-
+// Guardar usuario (recibe datos de UserForm)
+async function saveUser(userFormData) {
   loading.value = true
   try {
     const data = {
-      email: formData.value.email,
-      username: formData.value.username,
-      name: formData.value.firstname,
-      lastname: formData.value.lastname,
-      role: formData.value.role,
-      hacienda: formData.value.haciendas[0] || null,
-      status: formData.value.status
+      email: userFormData.email,
+      username: userFormData.username,
+      name: userFormData.firstname,
+      lastname: userFormData.lastname,
+      role: userFormData.role,
+      hacienda: userFormData.haciendas?.[0] || null,
+      status: userFormData.status ?? USER_STATUS.ACTIVE
     }
+
+    const { useUserStore } = await import('@/stores/userStore')
+    const userStore = useUserStore()
 
     if (editingUser.value) {
       // Actualizar
-      if (formData.value.password) {
-        data.password = formData.value.password
-        data.passwordConfirm = formData.value.password
+      if (userFormData.password) {
+        data.password = userFormData.password
+        data.passwordConfirm = userFormData.password
       }
-      await pb.collection('users').update(editingUser.value.id, data)
+      await userStore.updateUser(editingUser.value.id, data)
       showSnackbar('Usuario actualizado correctamente', 'success')
     } else {
       // Crear
-      data.password = formData.value.password
-      data.passwordConfirm = formData.value.password
-      await pb.collection('users').create(data)
+      data.password = userFormData.password
+      data.passwordConfirm = userFormData.password
+      await userStore.createUser(data)
       showSnackbar('Usuario creado correctamente', 'success')
     }
 
@@ -498,7 +443,9 @@ async function saveUser() {
 async function deleteUser() {
   loading.value = true
   try {
-    await pb.collection('users').delete(selectedUser.value.id)
+    const { useUserStore } = await import('@/stores/userStore')
+    const userStore = useUserStore()
+    await userStore.deleteUser(selectedUser.value.id)
     showSnackbar('Usuario eliminado correctamente', 'success')
     deleteDialog.value = false
     selectedUser.value = null

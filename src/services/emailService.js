@@ -138,7 +138,7 @@ export const emailService = {
         <p><strong>Fecha:</strong> ${new Date().toLocaleDateString()}</p>
         <hr style="border: 1px solid #eee; margin: 20px 0;" />
         <p style="font-size: 12px; color: #666;">
-          Este email fue generado automáticamente por Sistema Agri.
+          Este email fue generado automáticamente por ConAgri.
           Por favor no responda a este mensaje.
         </p>
       </div>
@@ -169,7 +169,7 @@ export const emailService = {
     const html = `
       <div style="font-family: Arial, sans-serif; padding: 20px;">
         <h2>Verifica tu Email</h2>
-        <p>Gracias por registrarte en Sistema Agri.</p>
+        <p>Gracias por registrarte en ConAgri.</p>
         <p>Por favor verifica tu email haciendo clic en el siguiente enlace:</p>
         <p>
           <a href="${verificationUrl}" 
@@ -188,7 +188,7 @@ export const emailService = {
 
     return this.sendEmail({
       to,
-      subject: 'Verifica tu Email - Sistema Agri',
+      subject: 'Verifica tu Email - ConAgri',
       html,
       metadata: {
         emailType: 'verification'
@@ -207,7 +207,7 @@ export const emailService = {
     const html = `
       <div style="font-family: Arial, sans-serif; padding: 20px;">
         <h2>Restablecer Contraseña</h2>
-        <p>Has solicitado restablecer tu contraseña en Sistema Agri.</p>
+        <p>Has solicitado restablecer tu contraseña en ConAgri.</p>
         <p>Haz clic en el siguiente enlace para establecer una nueva contraseña:</p>
         <p>
           <a href="${resetUrl}" 
@@ -227,7 +227,7 @@ export const emailService = {
 
     return this.sendEmail({
       to,
-      subject: 'Restablecer Contraseña - Sistema Agri',
+      subject: 'Restablecer Contraseña - ConAgri',
       html,
       metadata: {
         emailType: 'password_reset'

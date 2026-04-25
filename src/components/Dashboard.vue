@@ -186,7 +186,7 @@ import { handleError } from '@/utils/errorHandler'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 import { useSyncStore } from '@/stores/syncStore'
 
-import StatusPanel from '@/components/RecordatoriosStatusPanel.vue'
+import StatusPanel from '@/components/recordatorios/RecordatoriosStatusPanel.vue'
 import RecordatorioForm from '@/components/forms/RecordatorioForm.vue'
 
 const { t } = useI18n()

@@ -32,7 +32,7 @@
 
 <script setup>
 import { useI18n } from 'vue-i18n'
-import ProgramacionPanel from '@/components/ProgramacionPanel.vue'
+import ProgramacionPanel from '@/components/programaciones/ProgramacionPanel.vue'
 
 const props = defineProps({
   programaciones: {

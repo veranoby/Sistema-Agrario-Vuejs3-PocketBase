@@ -9,7 +9,7 @@
         </div>
         <div class="" v-if="isHaciendaAdmin">
           <PlanManagement />
-          <UserManagement />
+          <HaciendaUserManagement />
         </div>
       </div>
     </main>
@@ -23,11 +23,11 @@ import { useProfileStore } from '@/stores/profileStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 
 // Importa los componentes aquí
-import ProfileInfo from '@/components/ProfileInfo.vue'
-import PasswordChange from '@/components/PasswordChange.vue'
-import HaciendaInfo from '@/components/HaciendaInfo.vue'
-import PlanManagement from '@/components/PlanManagement.vue'
-import UserManagement from '@/components/UserManagement.vue'
+import ProfileInfo from '@/components/forms/auth/ProfileInfo.vue'
+import PasswordChange from '@/components/forms/auth/PasswordChange.vue'
+import HaciendaInfo from '@/components/hacienda/HaciendaInfo.vue'
+import PlanManagement from '@/components/hacienda/PlanManagement.vue'
+import HaciendaUserManagement from '@/components/hacienda/HaciendaUserManagement.vue'
 
 const profileStore = useProfileStore()
 const haciendaStore = useHaciendaStore()

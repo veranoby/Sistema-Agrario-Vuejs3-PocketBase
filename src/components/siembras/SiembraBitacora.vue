@@ -23,7 +23,7 @@
 
 <script setup>
 import { useI18n } from 'vue-i18n'
-import EmbeddedBitacoraList from '@/components/EmbeddedBitacoraList.vue'
+import EmbeddedBitacoraList from '@/components/bitacora/EmbeddedBitacoraList.vue'
 
 const props = defineProps({
   siembraId: {

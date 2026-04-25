@@ -5,7 +5,6 @@ import { useSnackbarStore } from './snackbarStore'
 import { useProfileStore } from './profileStore'
 import { useHaciendaStore } from './haciendaStore'
 import { usePlanStore } from './planStore'
-//import { useValidationStore } from './validationStore'
 import router from '@/router'
 import { useSyncStore } from './syncStore'
 import { useActividadesStore } from '@/stores/actividadesStore'
@@ -33,16 +32,9 @@ export const useAuthStore = defineStore('auth', {
 
   actions: {
     $dispose() {
-      // Cleanup timer when store is disposed to prevent memory leaks
       this.stopRefreshTimer()
     },
 
-    /**
-     * Intenta refrescar el token de autenticación (incluso si expiró)
-     * A diferencia de refreshToken(), esta función no verifica pb.authStore.isValid primero,
-     * lo que la hace adecuada para el caso de rememberMe donde el token puede haber expirado.
-     * @returns {boolean} true si el refresh fue exitoso, false en caso contrario
-     */
     async attemptTokenRefresh() {
       const syncStore = useSyncStore()
       logger.auth('Attempting token refresh...')
@@ -76,7 +68,6 @@ export const useAuthStore = defineStore('auth', {
       logger.auth('Loaded auth data:', loadedAuthData ? 'found' : 'not found')
       logger.auth('Remember me active:', rememberMeIsActive)
 
-      // CAMINO 2: No hay auth data en localStorage
       if (!loadedAuthData?.token || !loadedAuthData?.model) {
         logger.auth('No auth data found, clearing state')
         this.clearAuthState()
@@ -84,13 +75,10 @@ export const useAuthStore = defineStore('auth', {
         return false
       }
 
-      // Cargar auth data en PocketBase
       pb.authStore.save(loadedAuthData.token, loadedAuthData.model)
       logger.auth('Session valid:', pb.authStore.isValid)
 
-      // CAMINO 1: Auth data existe
       if (pb.authStore.isValid) {
-        // Session válida: setSession + refresh si es necesario
         logger.auth('Valid session, setting up user')
 
         if (this.tokenNeedsRefresh()) {
@@ -112,7 +100,6 @@ export const useAuthStore = defineStore('auth', {
         return true
 
       } else {
-        // Session inválida: verificar rememberMe
         logger.auth('Invalid session')
 
         if (!rememberMeIsActive) {
@@ -122,7 +109,6 @@ export const useAuthStore = defineStore('auth', {
           return false
         }
 
-        // Intentar refresh con rememberMe
         logger.auth('Remember me active, attempting refresh')
         const refreshed = await this.attemptTokenRefresh()
         if (!refreshed) {
@@ -139,9 +125,6 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    /**
-     * Limpia el estado de autenticación sin hacer logout completo
-     */
     clearAuthState() {
       this.user = null
       this.token = null
@@ -149,9 +132,6 @@ export const useAuthStore = defineStore('auth', {
       this.stopRefreshTimer()
     },
 
-    /**
-     * Inicia el timer de refresh solo si rememberMe está activo
-     */
     startRefreshTimerIfNeeded(rememberMeIsActive) {
       if (rememberMeIsActive) {
         this.startRefreshTimer()
@@ -163,20 +143,16 @@ export const useAuthStore = defineStore('auth', {
     async ensureAuthInitialized() {
       if (!this.initialized) {
         logger.auth('ensureAuthInitialized: Not initialized, calling init().')
-        await this.init() // init() will set this.initialized = true after its attempt
+        await this.init()
       } else {
         logger.auth('ensureAuthInitialized: Already attempted initialization.')
       }
-      // The source of truth for auth status is pb.authStore.isValid after init has run
       return pb.authStore.isValid
     },
 
-    // Método para iniciar el timer de refresco
     startRefreshTimer() {
-      // Detener cualquier timer existente primero
       this.stopRefreshTimer()
 
-      // Crear un método debounce para evitar múltiples refrescos simultáneos
       const debouncedRefresh = debounce(async () => {
         if (this.isLoggedIn && this.tokenNeedsRefresh()) {
           try {
@@ -185,13 +161,11 @@ export const useAuthStore = defineStore('auth', {
             console.error('Error en refresco automático:', error)
           }
         }
-      }, 2000) // 2 segundos de debounce
+      }, 2000)
 
-      // Refrescar cada 15 minutos
-      this.refreshTimer = setInterval(debouncedRefresh, 15 * 60 * 1000) // 15 minutos
+      this.refreshTimer = setInterval(debouncedRefresh, 15 * 60 * 1000)
     },
 
-    // Método para detener el timer de refresco
     stopRefreshTimer() {
       if (this.refreshTimer) {
         clearInterval(this.refreshTimer)
@@ -201,7 +175,7 @@ export const useAuthStore = defineStore('auth', {
 
     async login(username, email, password, rememberMe = false) {
       const syncStore = useSyncStore()
-      if (this.loading) return // Prevent multiple calls while loading
+      if (this.loading) return
       this.loading = true
 
       const snackbarStore = useSnackbarStore()
@@ -216,7 +190,6 @@ export const useAuthStore = defineStore('auth', {
       try {
         let authData = null
 
-        // Intentar login con username primero
         if (username) {
           try {
             authData = await pb
@@ -227,7 +200,7 @@ export const useAuthStore = defineStore('auth', {
               JSON.parse(
                 JSON.stringify({
                   token: pb.authStore.token,
-                  record: pb.authStore.model, // PocketBase typically uses pb.authStore.model for the user record
+                  record: pb.authStore.model,
                   isValid: pb.authStore.isValid
                 })
               )
@@ -238,11 +211,9 @@ export const useAuthStore = defineStore('auth', {
             }
           } catch (error) {
             logger.auth('Error al intentar login con username:', error.message)
-            // Continuamos intentando con email
           }
         }
 
-        // Si falla con username o no se proporcionó username, intentar con email
         if (email && !authData) {
           try {
             authData = await pb.collection('users').authWithPassword(email, password)
@@ -252,11 +223,9 @@ export const useAuthStore = defineStore('auth', {
             }
           } catch (error) {
             logger.auth('Error al intentar login con email:', error.message)
-            // Si llegamos aquí, ambos intentos fallaron
           }
         }
 
-        // Si llegamos aquí sin haber obtenido authData, es porque fallaron ambos intentos
         if (!authData) {
           throw new Error('Credenciales incorrectas')
         }
@@ -275,19 +244,16 @@ export const useAuthStore = defineStore('auth', {
       logger.auth('Attempting to refresh token. Current pb.authStore.isValid:', pb.authStore.isValid)
       const syncStore = useSyncStore()
 
-      // Verificar si el token es válido antes de intentar refrescarlo
       if (!pb.authStore.isValid) {
         return false
       }
 
-      // Verificar si el token está por expirar
       if (this.tokenNeedsRefresh()) {
         try {
           const freshAuthData = await pb.collection('users').authRefresh()
           logger.auth('authRefresh successful - record ID:', freshAuthData.record?.id)
-          this.setSession(freshAuthData.record) // freshAuthData from authRefresh is { token, record }
+          this.setSession(freshAuthData.record)
 
-          // Actualizar token en syncStore
           const authDataToStoreOnTokenRefresh = {
             token: pb.authStore.token,
             model: pb.authStore.model
@@ -302,27 +268,22 @@ export const useAuthStore = defineStore('auth', {
         }
       }
 
-      // Token todavía válido y no necesita ser refrescado
       return true
     },
 
-    // Método para determinar si el token necesita ser refrescado
     tokenNeedsRefresh() {
       const syncStore = useSyncStore()
 
-      // Obtener timestamp del último login exitoso
       const lastSuccess = syncStore.loadFromLocalStorage('last_auth_success')
 
       if (!lastSuccess) {
-        // Si no hay registro, asumimos que sí necesita refresco
         return true
       }
 
       const now = Date.now()
       const timeSinceLastSuccess = now - lastSuccess
-      const refreshThreshold = 20 * 60 * 1000 // 20 minutos
+      const refreshThreshold = 20 * 60 * 1000
 
-      // Solo log si necesita refresh o si ha pasado más de 30 minutos (debug mode)
       const shouldRefresh = timeSinceLastSuccess > refreshThreshold
       if (shouldRefresh || import.meta.env.DEV && timeSinceLastSuccess > 30 * 60 * 1000) {
         logger.auth(
@@ -332,27 +293,20 @@ export const useAuthStore = defineStore('auth', {
         )
       }
 
-      // Refrescar si han pasado más de 20 minutos desde el último éxito
       return timeSinceLastSuccess > refreshThreshold
     },
 
-    /**
-     * Cache warming al login - precarga datos críticos
-     * @param {Object} user - Usuario autenticado
-     * @returns {Promise<Object>} Resultado del cache warming
-     */
     async warmUpCache(user) {
       const startTime = Date.now()
       logger.info(`[CacheWarming] Iniciando para usuario ${user.id}`)
 
       try {
-        // 1. Datos de lookup (L1 - más larga duración)
         const tiposActividadesStore = useActividadesStore()
         const tiposZonasStore = useZonasStore()
 
         await Promise.all([
-          tiposActividadesStore.fetchTiposActividades(),
-          tiposZonasStore.fetchTiposZonas()
+          tiposActividadesStore.fetchTiposActividades({ requestKey: null }),
+          tiposZonasStore.fetchTiposZonas({ requestKey: null })
         ])
 
         cache.setToLevel(
@@ -366,11 +320,9 @@ export const useAuthStore = defineStore('auth', {
           CACHE_LEVELS.LOOKUP
         )
 
-        // 2. Datos de hacienda del usuario (L1)
         const haciendaStore = useHaciendaStore()
-        await haciendaStore.fetchHaciendas()
+        await haciendaStore.fetchHaciendas({ requestKey: null })
 
-        // Usar getter reutilizable en lugar de filtro inline
         const userHaciendas = haciendaStore.userHaciendas(user.id)
 
         userHaciendas.forEach(h => {
@@ -381,12 +333,10 @@ export const useAuthStore = defineStore('auth', {
           )
         })
 
-        // 3. Programaciones activas (L2 - duración media)
-        // Parallelizar fetch para mejor performance
         const programacionesStore = useProgramacionesStore()
         await Promise.all(
           userHaciendas.map(async (hacienda) => {
-            await programacionesStore.fetchProgramaciones(hacienda.id)
+            await programacionesStore.fetchPage(1, 100, { hacienda: hacienda.id })
             cache.setToLevel(
               CacheKeys.programaciones(hacienda.id).key,
               [...programacionesStore.programaciones],
@@ -404,10 +354,10 @@ export const useAuthStore = defineStore('auth', {
           itemsCached: 2 + userHaciendas.length + userHaciendas.length
         }
       } catch (error) {
-        logger.error('[CacheWarming] Error:', error)
+        logger.debug('[CacheWarming] Error (no crítico):', error?.message || error)
         return {
           success: false,
-          error: error.message
+          error: error?.message || error
         }
       }
     },
@@ -415,11 +365,9 @@ export const useAuthStore = defineStore('auth', {
     async handleSuccessfulLogin(authData, rememberMe = false) {
       logger.auth('Iniciando handleSuccessfulLogin, rememberMe:', rememberMe)
 
-      // Set auth state
-      this.setSession(authData.record) // authData from pb.authWithPassword is { token, record }
+      this.setSession(authData.record)
       const syncStore = useSyncStore()
 
-      // Guardar datos de autenticación usando syncStore
       const authDataToStore = { token: pb.authStore.token, model: pb.authStore.model }
       syncStore.saveToLocalStorage('pocketbase_auth', authDataToStore)
       syncStore.saveToLocalStorage('last_auth_success', Date.now())
@@ -434,7 +382,6 @@ export const useAuthStore = defineStore('auth', {
         this.stopRefreshTimer()
       }
 
-      // Add logic for remembering user credentials
       if (rememberMe) {
         const rememberedCredentials = {
           username: authData.record.username,
@@ -447,15 +394,11 @@ export const useAuthStore = defineStore('auth', {
         logger.auth('Cleared remembered user credentials.')
       }
 
-      // RESTAURAR EL FLUJO ORIGINAL: primero inicializar syncStore
-      // y luego cargar los demás stores
       syncStore.init()
 
       const profileStore = useProfileStore()
       const haciendaStore = useHaciendaStore()
 
-      // Cargar datos críticos en paralelo (bloquean UI)
-      // Estos son necesarios para mostrar el dashboard correctamente
       await Promise.all([
         profileStore.setUser(authData.record),
         authData.record.hacienda
@@ -465,11 +408,8 @@ export const useAuthStore = defineStore('auth', {
 
       logger.auth('Critical stores loaded, redirecting to dashboard')
 
-      // Redirigir inmediatamente al dashboard
       router.push('/dashboard')
 
-      // Cache warming: precargar datos críticos en segundo plano
-      // No bloquea la navegación pero mejora rendimiento de siguientes cargas
       this.warmUpCache(authData.record).then(result => {
         if (result.success) {
           logger.auth(`Cache warming completado en ${result.elapsed}ms, ${result.itemsCached} items`)
@@ -477,11 +417,9 @@ export const useAuthStore = defineStore('auth', {
           logger.auth('Cache warming falló (no crítico):', result.error)
         }
       }).catch(err => {
-        logger.auth('Error en cache warming:', err)
+        logger.auth('Error en cache warming (no crítico):', err?.message || err)
       })
 
-      // Cargar datos diferidos después de la redirección
-      // Estos no bloquean la UI y se cargan en segundo plano
       setTimeout(async () => {
         logger.auth('Loading deferred stores in background')
         const planStore = usePlanStore()
@@ -505,38 +443,33 @@ export const useAuthStore = defineStore('auth', {
           logger.auth('Error loading deferred stores:', error.message)
           handleError(error, 'Error loading initial data')
         }
-      }, 100) // 100ms delay para no bloquear la transición de ruta
+      }, 100)
     },
 
     setSession(record) {
-      // record is pb.authStore.model or freshAuthData.record
       this.user = record
-      this.token = pb.authStore.token // pb.authStore is the source of truth for the token
+      this.token = pb.authStore.token
       this.isLoggedIn = true
     },
 
     async register(formData, new_role) {
       const snackbarStore = useSnackbarStore()
-      //   const validationStore = useValidationStore()
       const haciendaStore = useHaciendaStore()
       const planStore = usePlanStore()
 
       snackbarStore.showLoading()
 
       try {
-        // Obtener plan gratuito
         const gratisPlan = await planStore.getGratisPlan()
         if (!gratisPlan || !gratisPlan.id) {
           throw new Error('No se pudo obtener el plan gratuito')
         }
 
-        // Crear hacienda
         if (!formData.hacienda) {
           const newHacienda = await haciendaStore.createHacienda(formData.hacienda, gratisPlan.id)
           formData.hacienda = newHacienda.id
         }
 
-        // Crear usuario
         const userData = this.createUserData(
           formData.username,
           formData.email,
@@ -550,7 +483,6 @@ export const useAuthStore = defineStore('auth', {
 
         await pb.collection('users').create(userData)
 
-        // Enviar email de verificación
         await this.sendVerificationEmail(formData.email)
 
         snackbarStore.showSnackbar(
@@ -592,7 +524,6 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async sendVerificationEmail(email) {
-      //listo
       try {
         await pb.collection('users').requestVerification(email)
         return true
@@ -600,6 +531,7 @@ export const useAuthStore = defineStore('auth', {
         handleError(error, 'Failed to send verification email')
       }
     },
+
     async confirmEmail(token) {
       const snackbarStore = useSnackbarStore()
 
@@ -625,36 +557,29 @@ export const useAuthStore = defineStore('auth', {
         console.error('Error al solicitar restablecimiento de contraseña:', error)
         const message = error.message || 'No se pudo procesar la solicitud. Intente nuevamente.'
         snackbarStore.showSnackbar(message, 'error')
-        throw error // Opcional: relanzar el error si se necesita manejar en el componente
+        throw error
       }
     },
 
     async logout() {
       const snackbarStore = useSnackbarStore()
-      const syncStore = useSyncStore() // Ensure syncStore is available
+      const syncStore = useSyncStore()
 
       try {
-        // Detener el timer de refresco si está activo
         this.stopRefreshTimer()
 
-        // Redirigir PRIMERO para evitar errores de componentes
-        // que intentan renderizar mientras el estado se está limpiando
-        // Consider if router navigation should be here or handled by the caller
-        // For now, keeping it as it was.
         if (router.currentRoute.value.path !== '/') {
           await router.push('/')
         }
 
-        // Luego limpiar datos de autenticación
         pb.authStore.clear()
         this.user = null
         this.token = null
         this.isLoggedIn = false
-        this.initialized = false // Reset initialized state for next app load/user
+        this.initialized = false
 
-        // Limpiar datos en syncStore
         syncStore.removeFromLocalStorage('pocketbase_auth')
-        syncStore.removeFromLocalStorage('rememberMe_active') // Updated key
+        syncStore.removeFromLocalStorage('rememberMe_active')
         syncStore.removeFromLocalStorage('rememberedUser')
         logger.auth('Cleared remembered user credentials during logout.')
         syncStore.removeFromLocalStorage('last_auth_success')

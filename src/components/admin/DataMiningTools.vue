@@ -161,7 +161,11 @@
 import { ref, computed, onMounted } from 'vue'
 import { pb } from '@/utils/pocketbase'
 import { logger } from '@/utils/logger'
+import { useAnalyticsStore } from '@/stores/analyticsStore'
+import { formatDate } from '@/utils/formatters'
+import { exportToCSV } from '@/utils/exporters'
 
+const analyticsStore = useAnalyticsStore()
 const loading = ref(false)
 const results = ref([])
 const queryDuration = ref(null)
@@ -216,33 +220,27 @@ async function runQuery() {
   const startTime = Date.now()
 
   try {
-    let filterParts = []
-
-    if (filters.value.hacienda) {
-      filterParts.push(`hacienda="${filters.value.hacienda}"`)
-    }
-
-    if (filters.value.tipo) {
-      filterParts.push(`tipo_actividades="${filters.value.tipo}"`)
-    }
-
-    if (filters.value.dateFrom) {
-      filterParts.push(`created >= "${filters.value.dateFrom}T00:00:00Z"`)
-    }
-
-    if (filters.value.dateTo) {
-      filterParts.push(`created <= "${filters.value.dateTo}T23:59:59Z"`)
-    }
-
-    const filter = filterParts.length > 0 ? filterParts.join(' && ') : ''
-
-    const resultList = await pb.collection('actividades').getList(1, 1000, {
-      filter: filter || undefined,
-      sort: '-created',
-      expand: 'tipo_actividades,hacienda'
+    // Usar analytics API para patrones
+    const patternType = filters.value.tipo || 'siembra'
+    await analyticsStore.fetchPatterns({
+      type: patternType,
+      region: filters.value.hacienda,
+      cultivo: null
     })
 
-    results.value = resultList.items
+    // Convertir patrones a formato de tabla
+    if (analyticsStore.patterns?.patterns) {
+      results.value = analyticsStore.patterns.patterns.map(p => ({
+        id: `${p.cultivo}-${p.mes || p.promedio}`,
+        nombre: p.cultivo,
+        tipo_actividades: patternType,
+        hacienda: filters.value.hacienda || 'Todas',
+        estado: 'analizado',
+        created: new Date().toISOString(),
+        ...p
+      }))
+    }
+
     queryDuration.value = Date.now() - startTime
 
     logger.info('[DATA_MINING] Query ejecutada', {
@@ -268,30 +266,27 @@ function clearResults() {
 }
 
 function exportResults() {
-  const headers = ['ID', 'Nombre', 'Tipo', 'Hacienda', 'Fecha', 'Estado', 'Descripción']
-  const rows = results.value.map(r => [
-    r.id,
-    r.nombre,
-    r.tipo_actividades || 'Sin tipo',
-    getHaciendaName(r.hacienda),
-    r.created,
-    r.estado || 'N/A',
-    r.descripcion || ''
-  ])
+  if (results.value.length === 0) {
+    logger.warn('[DATA_MINING] No hay resultados para exportar')
+    return
+  }
 
-  const csv = [headers, ...rows]
-    .map(row => row.map(cell => `"${(cell || '').toString().replace(/"/g, '""')}"`).join(','))
-    .join('\n')
+  const exportData = results.value.map(r => ({
+    nombre: r.nombre,
+    tipo: r.tipo_actividades,
+    hacienda: r.hacienda,
+    mes: r.mes || '',
+    cultivo: r.cultivo || '',
+    probabilidad: r.probabilidad || '',
+    promedio: r.promedio || '',
+    rendimientoPromedio: r.rendimientoPromedio || '',
+    count: r.count || 0
+  }))
 
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `query_${new Date().toISOString().split('T')[0]}_${Date.now()}.csv`
-  a.click()
-  URL.revokeObjectURL(url)
+  const filename = `data_mining_${new Date().toISOString().split('T')[0]}.csv`
+  exportToCSV(exportData, filename)
 
-  logger.info('[DATA_MINING] CSV exportado', { rows: rows.length })
+  logger.info('[DATA_MINING] CSV exportado', { rows: exportData.length })
 }
 
 function getHaciendaName(haciendaId) {
@@ -318,17 +313,7 @@ function getEstadoColor(estado) {
   return colors[estado?.toLowerCase()] || 'grey'
 }
 
-function formatDate(dateString) {
-  if (!dateString) return 'N/A'
-  const date = new Date(dateString)
-  return date.toLocaleDateString('es-ES', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-}
+// formatDate ya está importado de @/utils/formatters
 
 function viewDetails(item) {
   logger.info('[DATA_MINING] Ver detalles', { item })
