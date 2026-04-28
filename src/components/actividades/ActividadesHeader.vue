@@ -146,23 +146,6 @@ const getStatusMsg = (status) => {
   padding: 1rem;
 }
 
-.avatar-container {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 80px;
-  height: 80px;
-}
-
-.avatar-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 50%;
-  border: 3px solid #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
 .profile-title {
   margin: 0;
   padding-right: 100px;

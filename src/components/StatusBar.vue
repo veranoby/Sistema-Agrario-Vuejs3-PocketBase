@@ -75,7 +75,7 @@ const schedulerStore = useSchedulerStore()
 
 const isOnline = computed(() => syncStore.isOnline)
 const isSyncing = computed(() => syncStore.syncStatus === 'syncing')
-const pendingOperations = computed(() => syncStore.queue.queue.length)
+const pendingOperations = computed(() => syncStore.queue?.length || 0)
 
 // Scheduler state
 const schedulerText = computed(() => schedulerStore.statusText)

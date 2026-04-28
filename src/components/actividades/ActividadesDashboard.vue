@@ -138,7 +138,7 @@ import { storeToRefs } from 'pinia'
 import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useAvatarStore } from '@/stores/avatarStore'
 import { useZonasStore } from '@/stores/zonasStore'
-import ActividadForm from '@/components/forms/ActividadForm.vue'
+import ActividadForm from '../forms/ActividadForm.vue'
 
 const { t } = useI18n()
 const router = useRouter()

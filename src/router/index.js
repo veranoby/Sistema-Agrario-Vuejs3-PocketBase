@@ -80,15 +80,6 @@ const routes = [
     }
   },
   {
-    path: '/siembras/config',
-    component: () => import('@/components/SiembrasConfig.vue'),
-    name: 'Gestion de Siembras y Proyectos',
-    meta: {
-      requiresAuth: true,
-      roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR, ROLES.OPERADOR]
-    }
-  },
-  {
     path: '/siembras/nueva',
     component: () => import('@/components/siembras/SiembraWorkspace.vue'),
     name: 'Nueva Siembra',
@@ -108,7 +99,7 @@ const routes = [
   },
   {
     path: '/actividades',
-    component: () => import('@/components/actividadesConfig.vue'),
+    component: () => import('@/components/actividades/ActividadesDashboard.vue'),
     name: 'Gestion de Actividades',
     meta: {
       requiresAuth: true,

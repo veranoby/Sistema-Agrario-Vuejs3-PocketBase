@@ -19,14 +19,14 @@
               <div class="flex items-center">
                 <v-icon>mdi-chevron-right</v-icon>
                 <span class="ml-1 text-sm font-extrabold text-gray-600" aria-current="page">
-                  {{ siembraInfo.nombre }}
+                  {{ siembraInfo?.nombre || t('sowing_workspace.loading') }}
                 </span>
               </div>
             </li>
             <li>
               <div class="flex items-center">
                 <span class="ml-1 text-sm font-bold text-gray-700" aria-current="page">
-                  {{ siembraInfo.tipo }}
+                  {{ siembraInfo?.tipo || '' }}
                 </span>
               </div>
             </li>
@@ -37,7 +37,7 @@
           <v-avatar start>
             <v-img :src="avatarHaciendaUrl" alt="Avatar"></v-img>
           </v-avatar>
-          {{ t('sowing_workspace.hacienda') }}: {{ mi_hacienda.name }}
+          {{ t('sowing_workspace.hacienda') }}: {{ mi_hacienda?.name || '' }}
         </v-chip>
 
         <v-chip variant="flat" size="x-small" color="grey-lighten-2" class="mx-1" pill>
@@ -47,12 +47,12 @@
           {{ userRole }}
         </v-chip>
 
-        <v-chip :color="getStatusColor(siembraInfo.estado)" size="x-small" variant="flat">
-          {{ siembraInfo.estado }}
+        <v-chip :color="getStatusColor(siembraInfo?.estado)" size="x-small" variant="flat">
+          {{ siembraInfo?.estado || '' }}
         </v-chip>
 
         <v-chip variant="flat" size="x-small" color="grey-lighten-2" class="mx-1" pill>
-          {{ t('sowing_workspace.start') }}: {{ formatDate(siembraInfo.fecha_inicio) }}
+          {{ t('sowing_workspace.start') }}: {{ formatDate(siembraInfo?.fecha_inicio) }}
         </v-chip>
       </h3>
       <div class="avatar-container">
@@ -65,6 +65,15 @@
 <script setup>
 import { useI18n } from 'vue-i18n'
 import { formatDate } from '@/utils/formatters'
+
+const props = defineProps({
+  siembraInfo: { type: Object, default: () => ({}) },
+  avatarUrl: { type: String, default: '' },
+  avatarHaciendaUrl: { type: String, default: '' },
+  mi_hacienda: { type: Object, default: () => ({}) },
+  userRole: { type: String, default: '' },
+  siembraAvatarUrl: { type: String, default: '' }
+})
 
 const { t } = useI18n()
 
@@ -83,23 +92,6 @@ const getStatusColor = (status) => {
 .profile-container {
   position: relative;
   padding: 1rem;
-}
-
-.avatar-container {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 80px;
-  height: 80px;
-}
-
-.avatar-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 50%;
-  border: 3px solid #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .profile-title {

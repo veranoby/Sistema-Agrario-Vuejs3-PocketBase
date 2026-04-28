@@ -83,16 +83,22 @@
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn
-          color="grey-darken-1"
-          variant="text"
+          size="small"
+          variant="flat"
+          rounded="lg"
+          prepend-icon="mdi-cancel"
+          color="red-lighten-3"
           @click="closeDialog"
           :disabled="executing"
         >
           Cancelar
         </v-btn>
         <v-btn
-          color="success"
-          variant="tonal"
+          size="small"
+          variant="flat"
+          rounded="lg"
+          prepend-icon="mdi-check"
+          color="green-lighten-3"
           @click="executeBatch"
           :loading="executing"
           :disabled="selectedFechas.length === 0"

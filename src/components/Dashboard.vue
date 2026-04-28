@@ -19,12 +19,6 @@
       </div>
     </header>
 
-    <div v-if="loadingMetrics && isDevelopment" class="bg-green-50 border-l-4 border-green-400 p-2 m-4" role="status" aria-live="polite">
-      <div class="text-sm text-green-700">
-        <strong>P3.1:</strong> {{ loadingMetrics.duration }}ms | {{ loadingMetrics.recordsLoaded }} registros | {{ loadingMetrics.recordsPerSecond }} rec/s
-      </div>
-    </div>
-
     <main role="main" aria-labelledby="dashboard-welcome-title" class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-8 p-6">
       <div class="bg-card text-card-foreground">
         <v-btn
@@ -173,7 +167,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useProfileStore } from '@/stores/profileStore'
@@ -199,29 +193,11 @@ const zonasStore = useZonasStore()
 const snackbarStore = useSnackbarStore()
 const syncStore = useSyncStore()
 
-const loadingMetrics = ref(null)
-const isDevelopment = computed(() => import.meta.env.DEV)
-
 onMounted(async () => {
-  const startTime = performance.now()
   try {
-    const optimizedResult = await syncStore.loadDashboardWithParallelRequests()
-    if (optimizedResult.success) {
-      loadingMetrics.value = {
-        method: 'parallel_requests_optimized',
-        ...optimizedResult.metrics
-      }
-      await syncStore.applyBatchDataToStores(optimizedResult)
-    } else {
-      await loadWithTraditionalMethod()
-      const endTime = performance.now()
-      loadingMetrics.value = {
-        method: 'traditional_fallback',
-        duration: Math.round(endTime - startTime)
-      }
-    }
-  } catch (error) {
-    handleError(error, t('dashboard.error_loading_dashboard'))
+    await syncStore.batchInitializeDashboard()
+  } catch (err) {
+    await loadWithTraditionalMethod()
   }
 })
 

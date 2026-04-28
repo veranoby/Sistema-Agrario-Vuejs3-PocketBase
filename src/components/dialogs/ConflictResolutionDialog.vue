@@ -11,7 +11,7 @@
         <span class="text-h5">Conflictos de Sincronización</span>
         <v-spacer />
         <v-chip color="error" variant="tonal">
-          {{ conflicts.length }} {{ conflicts.length === 1 ? 'conflicto' : 'conflictos' }}
+          {{ safeConflicts.length }} {{ safeConflicts.length === 1 ? 'conflicto' : 'conflictos' }}
         </v-chip>
       </v-card-title>
 
@@ -28,7 +28,7 @@
 
         <v-list class="conflict-list">
           <v-list-item
-            v-for="conflict in conflicts"
+            v-for="conflict in safeConflicts"
             :key="conflict.id"
             class="conflict-item mb-3"
             :class="{ 'conflict-resolved': conflict.resolved }"
@@ -143,20 +143,25 @@
         </v-btn>
         <v-spacer />
         <v-btn
-          variant="text"
-          color="grey"
+          size="small"
+          variant="flat"
+          rounded="lg"
+          prepend-icon="mdi-cancel"
+          color="red-lighten-3"
           @click="cancel"
         >
           Cancelar
         </v-btn>
         <v-btn
-          variant="tonal"
-          color="success"
+          size="small"
+          variant="flat"
+          rounded="lg"
+          prepend-icon="mdi-check"
+          color="green-lighten-3"
           :disabled="!allResolved"
           @click="applyResolutions"
         >
-          <v-icon start>mdi-check-circle</v-icon>
-          Aplicar Resoluciones ({{ resolvedCount }}/{{ conflicts.length }})
+          Aplicar Resoluciones ({{ resolvedCount }}/{{ safeConflicts.length }})
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -187,13 +192,18 @@ const show = computed({
   set: (val) => emit('update:modelValue', val)
 })
 
+const safeConflicts = computed(() => {
+  return Array.isArray(props.conflicts) ? props.conflicts : []
+})
+
 const localConflicts = ref([])
 
 // Sincronizar conflicts prop con localConflicts
 watch(
   () => props.conflicts,
   (newConflicts) => {
-    localConflicts.value = newConflicts.map(c => ({
+    const conflictsArray = Array.isArray(newConflicts) ? newConflicts : []
+    localConflicts.value = conflictsArray.map(c => ({
       ...c,
       resolved: false,
       resolution: null

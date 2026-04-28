@@ -69,7 +69,16 @@
     </v-card-text>
     <v-card-actions>
       <v-spacer />
-      <v-btn color="error" variant="text" @click="$emit('cancel')">Cancelar</v-btn>
+      <v-btn
+        size="small"
+        variant="flat"
+        rounded="lg"
+        prepend-icon="mdi-cancel"
+        color="red-lighten-3"
+        @click="$emit('cancel')"
+      >
+        Cancelar
+      </v-btn>
       <v-btn color="success" variant="flat" type="submit" :loading="loading" :disabled="!formValid">
         {{ isEditing ? 'Guardar Cambios' : 'Crear Usuario' }}
       </v-btn>

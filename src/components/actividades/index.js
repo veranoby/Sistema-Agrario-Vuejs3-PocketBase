@@ -1,4 +1,5 @@
-// Main component
+// Main components
+export { default as ActividadesDashboard } from './ActividadesDashboard.vue'
 export { default as ActividadesWorkspace } from './ActividadesWorkspace.vue'
 
 // Sub-components

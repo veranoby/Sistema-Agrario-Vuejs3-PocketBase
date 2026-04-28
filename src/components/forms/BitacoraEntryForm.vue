@@ -129,7 +129,16 @@
 
     <v-card-actions class="pa-4">
       <v-spacer></v-spacer>
-      <v-btn variant="text" @click="closeDialog">Cancelar</v-btn>
+      <v-btn
+        size="small"
+        variant="flat"
+        rounded="lg"
+        prepend-icon="mdi-cancel"
+        color="red-lighten-3"
+        @click="closeDialog"
+      >
+        Cancelar
+      </v-btn>
       <v-btn color="primary" variant="flat" @click="submitForm" :loading="isSubmitting">
         {{ isEditMode ? 'Guardar Cambios' : 'Crear Entrada' }}
       </v-btn>

@@ -19,11 +19,11 @@
       <v-chip
         variant="flat"
         :color="
-          totalArea < siembraInfo.area_total / 3
+          totalArea < (siembraInfo?.area_total || 0) / 3
             ? 'red'
-            : totalArea < (2 * siembraInfo.area_total) / 3
+            : totalArea < (2 * (siembraInfo?.area_total || 0)) / 3
               ? 'orange'
-              : totalArea === siembraInfo.area_total
+              : totalArea === (siembraInfo?.area_total || 0)
                 ? 'green'
                 : 'green-lighten-2'
         "
@@ -35,7 +35,7 @@
       </v-chip>
 
       <v-chip variant="flat" size="x-small" color="green" class="mx-1" pill>
-        {{ t('sowing_workspace.target_area') }}: {{ siembraInfo.area_total }} ha
+        {{ t('sowing_workspace.target_area') }}: {{ siembraInfo?.area_total || 0 }} ha
       </v-chip>
 
       <v-data-table

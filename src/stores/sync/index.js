@@ -51,6 +51,15 @@ export const useSyncStore = defineStore('sync', {
     errors: []
   }),
 
+  getters: {
+    conflicts() {
+      return this.conflictUI?.conflicts || []
+    },
+    conflictDialog() {
+      return this.conflictUI?.showDialog || false
+    }
+  },
+
   actions: {
     async init() {
       if (this.initialized) return
@@ -103,56 +112,63 @@ export const useSyncStore = defineStore('sync', {
 
     // IDENTIDAD (idMapper)
     generateTempId() {
+      if (!this.idMapper) return crypto.randomUUID()
       return this.idMapper.generateTempId()
     },
     isTempId(id) {
+      if (!this.idMapper) return false
       return this.idMapper.isTempId(id)
     },
     getRealId(tempId) {
+      if (!this.idMapper) return null
       return this.idMapper.getRealId(tempId)
     },
 
     // CONFIGURACIÓN (syncConfig)
     shouldSyncImmediately(col) {
+      if (!this.syncConfig) return true
       return this.syncConfig.shouldSyncImmediately(col)
     },
     getCollectionPriority(col) {
+      if (!this.syncConfig) return 5
       return this.syncConfig.getPriority(col)
     },
     configureSelectiveSync(config) {
+      if (!this.syncConfig) return
       return this.syncConfig.updateConfig(config)
     },
     getSelectiveSyncConfig() {
+      if (!this.syncConfig) return { enabled: false }
       return this.syncConfig.getConfig()
     },
 
     // CONFLICTOS UI (conflictUI)
     addConflict(conflict) {
+      if (!this.conflictUI) return
       this.conflictUI.addConflict(conflict)
     },
     resolveConflict(id, resolution) {
+      if (!this.conflictUI) return
       return this.conflictUI.resolveChoice(id, resolution)
     },
     clearResolvedConflicts() {
+      if (!this.conflictUI) return
       this.conflictUI.clearResolved()
-    },
-    get conflicts() {
-      return this.conflictUI.conflicts
-    },
-    get conflictDialog() {
-      return this.conflictUI.showDialog
     },
 
     // OFFLINE FEATURES (offline)
     async searchOffline(query, options) {
+      if (!this.offline) return []
       return this.offline.searchOffline(query, options)
     },
     async buildSearchIndex() {
+      if (!this.offline) return
       return this.offline.buildIndex()
     },
 
     // MÉTRICAS (processor)
     getPerformanceMetrics() {
+      if (!this.processor) return {}
       return this.processor.getMetrics()
     },
 

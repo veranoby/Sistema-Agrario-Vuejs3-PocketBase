@@ -47,10 +47,23 @@
         <v-btn variant="text" @click="toggleSelectAll(true)" v-if="missedDates.length && !isLoading">Seleccionar Todo</v-btn>
         <v-btn variant="text" @click="toggleSelectAll(false)" v-if="missedDates.length && !isLoading">Deseleccionar Todo</v-btn>
         <v-spacer></v-spacer>
-        <v-btn variant="text" @click="closeDialog" :disabled="isLoading">Cancelar</v-btn>
         <v-btn
-          color="orange-darken-1"
+          size="small"
           variant="flat"
+          rounded="lg"
+          prepend-icon="mdi-cancel"
+          color="red-lighten-3"
+          @click="closeDialog"
+          :disabled="isLoading"
+        >
+          Cancelar
+        </v-btn>
+        <v-btn
+          size="small"
+          variant="flat"
+          rounded="lg"
+          prepend-icon="mdi-check"
+          color="green-lighten-3"
           @click="handleSubmit"
           :loading="isLoading"
           :disabled="!hasSelectedDates"
