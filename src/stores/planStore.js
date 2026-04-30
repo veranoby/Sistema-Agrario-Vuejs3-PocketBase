@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { markRaw } from 'vue'
 import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
 import { useSnackbarStore } from './snackbarStore'
@@ -157,7 +158,7 @@ export const usePlanStore = defineStore('plan', {
 
       try {
         const plans = await pb.collection('planes').getFullList({ sort: 'precio' })
-        this.plans = plans
+        this.plans = markRaw(plans)
         syncStore.saveToLocalStorage('plans', plans)
 
         // Guardar el plan gratis en localStorage

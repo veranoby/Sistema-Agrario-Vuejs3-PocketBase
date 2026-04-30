@@ -92,14 +92,28 @@ export const useHaciendaStore = defineStore('hacienda', {
         throw new Error('No hay hacienda seleccionada para actualizar')
       }
 
-      const dataToUpdate = { ...haciendaData }
-      if (!dataToUpdate.avatar && this.mi_hacienda.avatar) {
-        dataToUpdate.avatar = this.mi_hacienda.avatar
+      // WHITELIST: Solo campos permitidos y limpios
+      const dataToUpdate = {}
+
+      const fields = ['name', 'location', 'gps', 'info', 'metricas', 'contacto_email', 'contacto_telefono']
+      fields.forEach(field => {
+        if (haciendaData[field] !== undefined) {
+          dataToUpdate[field] = haciendaData[field]
+        } else if (this.mi_hacienda[field] !== undefined) {
+          dataToUpdate[field] = this.mi_hacienda[field]
+        }
+      })
+
+      // Manejo especial relación 'plan'
+      if (haciendaData.plan) {
+        dataToUpdate.plan = typeof haciendaData.plan === 'object' ? haciendaData.plan.id : haciendaData.plan
+      } else if (this.mi_hacienda.plan) {
+        dataToUpdate.plan = typeof this.mi_hacienda.plan === 'object' ? this.mi_hacienda.plan.id : this.mi_hacienda.plan
       }
 
-      // Convertir el nombre a mayúsculas si está presente
-      if (dataToUpdate.name) {
-        dataToUpdate.name = dataToUpdate.name.toUpperCase()
+      // Manejo especial 'avatar' (solo incluir si se cambia o existe)
+      if (haciendaData.avatar) {
+        dataToUpdate.avatar = haciendaData.avatar
       }
 
       if (!syncStore.isOnline) {

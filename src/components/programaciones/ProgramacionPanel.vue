@@ -533,7 +533,7 @@
 import { defineProps, computed, ref } from 'vue'
 import { useActividadesStore } from '@/stores/actividadesStore'
 import { differenceInDays, differenceInMonths, isBefore, isValid } from 'date-fns'
-import { useProgramacionesStore } from '@/stores/programacionesStore'
+import { useProgramacionesStore } from '@/stores/programaciones'
 import { useBitacoraStore } from '@/stores/bitacoraStore'
 import BatchExecutionDialog from '@/components/dialogs/BatchExecutionDialog.vue';
 

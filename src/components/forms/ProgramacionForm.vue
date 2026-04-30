@@ -183,7 +183,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { useProgramacionesStore } from '@/stores/programacionesStore'
+import { useProgramacionesStore } from '@/stores/programaciones'
 import { useActividadesStore } from '@/stores/actividadesStore'
 import { storeToRefs } from 'pinia'
 import { useSiembrasStore } from '@/stores/siembrasStore'

@@ -43,10 +43,6 @@ brain/*
 .qwen/*
 qwen*.*
 
-# sistema gemini */
-.gemini/*
-gemini*.*
-
 # sistema superclaude */   
 .claude/*
 claude*.*

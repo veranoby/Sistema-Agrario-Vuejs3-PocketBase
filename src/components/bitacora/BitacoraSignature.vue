@@ -37,7 +37,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { digitalSignature, isWebCryptoSupported } from '@/utils/digitalSignature'
+import { digitalSignature, isWebCryptoSupported } from '@/services/digitalSignature'
 import { useAuthStore } from '@/stores/authStore'
 import { logger } from '@/utils/logger'
 

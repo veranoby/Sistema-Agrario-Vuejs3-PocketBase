@@ -16,6 +16,16 @@
             <v-icon class="m-0">mdi-map-marker-multiple</v-icon><strong>{{ t('hacienda_info.gps') }}:</strong>
             {{ formatGPS(mi_hacienda?.gps) }}
           </v-chip>
+          <div v-if="mi_hacienda?.contacto_email || mi_hacienda?.contacto_telefono" class="mt-2 text-xs">
+            <v-chip v-if="mi_hacienda?.contacto_email" variant="flat" size="small" color="green-lighten-3" class="mx-1 p-2">
+              <v-icon class="m-0" size="small">mdi-email</v-icon>
+              {{ mi_hacienda.contacto_email }}
+            </v-chip>
+            <v-chip v-if="mi_hacienda?.contacto_telefono" variant="flat" size="small" color="green-lighten-3" class="mx-1 p-2">
+              <v-icon class="m-0" size="small">mdi-phone</v-icon>
+              {{ mi_hacienda.contacto_telefono }}
+            </v-chip>
+          </div>
         </h3>
 
         <div class="mt-3 mb-1 text-xs">
@@ -81,22 +91,65 @@
               v-model="editedHacienda.location"
               :label="t('hacienda_info.location')"
             ></v-text-field>
-            <v-text-field
-              class="compact-form"
-              density="compact"
-              variant="outlined"
-              v-model="editedHacienda.gps.lat"
-              :label="t('hacienda_info.latitude')"
-              type="number"
-            ></v-text-field>
-            <v-text-field
-              class="compact-form"
-              variant="outlined"
-              density="compact"
-              v-model="editedHacienda.gps.lng"
-              :label="t('hacienda_info.longitude')"
-              type="number"
-            ></v-text-field>
+
+            <div class="d-flex align-center">
+              <v-text-field
+                class="compact-form flex-grow-1"
+                density="compact"
+                variant="outlined"
+                :model-value="formatGPS(editedHacienda.gps)"
+                :label="t('hacienda_info.gps')"
+                prepend-icon="mdi-crosshairs-gps"
+                readonly
+              ></v-text-field>
+              <v-btn
+                color="primary"
+                size="small"
+                class="ml-2"
+                :loading="loadingGPS"
+                :disabled="!gpsAvailable"
+                @click="autoLocate"
+                variant="tonal"
+              >
+                <v-icon start>mdi-crosshairs-gps</v-icon>
+                Auto
+              </v-btn>
+            </div>
+            <div v-if="gpsError" class="text-caption text-error mb-2">
+              <v-icon start size="x-small">mdi-alert</v-icon>
+              {{ gpsError }}
+            </div>
+            <div v-if="gpsAccuracy" class="text-caption text-success mb-2">
+              <v-icon start size="x-small">mdi-check-circle</v-icon>
+              Precisión: {{ gpsAccuracy }}m
+            </div>
+
+            <div class="mt-4">
+              <div class="flex items-center mb-2">
+                <v-icon class="mr-2">mdi-card-account-phone</v-icon>
+                <span class="font-bold">{{ t('hacienda_info.contact') }}</span>
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <v-text-field
+                  class="compact-form"
+                  density="compact"
+                  variant="outlined"
+                  v-model="editedHacienda.contacto_email"
+                  :label="t('hacienda_info.contact_email')"
+                  prepend-icon="mdi-email"
+                  type="email"
+                ></v-text-field>
+                <v-text-field
+                  class="compact-form"
+                  density="compact"
+                  variant="outlined"
+                  v-model="editedHacienda.contacto_telefono"
+                  :label="t('hacienda_info.contact_phone')"
+                  prepend-icon="mdi-phone"
+                  type="tel"
+                ></v-text-field>
+              </div>
+            </div>
           </div>
           <div>
             <AvatarForm
@@ -337,10 +390,12 @@ import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import AvatarForm from '@/components/forms/AvatarForm.vue'
+import { GeolocationService } from '@/utils/geolocation'
 
 const { t } = useI18n()
 const haciendaStore = useHaciendaStore()
 const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
+const geoService = new GeolocationService()
 
 const editDialog = ref(false)
 const showAvatarDialog = ref(false)
@@ -351,6 +406,12 @@ const newMetrica = ref({
   descripcion: '',
   tipo: 'text'
 })
+
+// Estado para GPS automático
+const loadingGPS = ref(false)
+const gpsAvailable = ref(true)
+const gpsError = ref('')
+const gpsAccuracy = ref(null)
 
 const openEditDialog = () => {
   editedHacienda.value = mi_hacienda.value ? { ...mi_hacienda.value } : {}
@@ -370,10 +431,18 @@ const closeEditDialog = () => {
 
 const saveHacienda = async () => {
   if (editedHacienda.value) {
+    // Solo campos permitidos
     const dataToUpdate = {
-      ...editedHacienda.value,
-      avatar: mi_hacienda.value.avatar
+      name: editedHacienda.value.name,
+      location: editedHacienda.value.location,
+      gps: editedHacienda.value.gps || { lat: null, lng: null },
+      info: editedHacienda.value.info,
+      plan: editedHacienda.value.plan?.id || editedHacienda.value.plan,
+      metricas: editedHacienda.value.metricas || {},
+      contacto_email: editedHacienda.value.contacto_email,
+      contacto_telefono: editedHacienda.value.contacto_telefono
     }
+
     await haciendaStore.updateHacienda(dataToUpdate)
     closeEditDialog()
   }
@@ -386,6 +455,47 @@ const handleAvatarUpdated = (updatedRecord) => {
       ...editedHacienda.value,
       avatar: updatedRecord.avatar
     }
+  }
+}
+
+async function autoLocate() {
+  if (!geoService.isAvailable()) {
+    gpsError.value = 'Geolocalización no soportada por este navegador'
+    return
+  }
+
+  loadingGPS.value = true
+  gpsError.value = ''
+  gpsAccuracy.value = null
+
+  try {
+    const position = await geoService.getCurrentPosition({
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 0
+    })
+
+    // HaciendaInfo usa objeto, no string
+    editedHacienda.value.gps = {
+      lat: position.latitude,
+      lng: position.longitude
+    }
+
+    if (position.accuracy !== null) {
+      gpsAccuracy.value = Math.round(position.accuracy)
+    }
+  } catch (error) {
+    let errorMsg = error.message
+    if (error.code === 'PERMISSION_DENIED') {
+      errorMsg = 'Permiso denegado. Activa la ubicación en tu navegador.'
+    } else if (error.code === 'POSITION_UNAVAILABLE') {
+      errorMsg = 'Ubicación no disponible. Verifica tu señal GPS.'
+    } else if (error.code === 'TIMEOUT') {
+      errorMsg = 'Tiempo de espera agotado. Intenta de nuevo en un lugar abierto.'
+    }
+    gpsError.value = errorMsg
+  } finally {
+    loadingGPS.value = false
   }
 }
 
@@ -435,5 +545,10 @@ const formatGPS = (gps) => {
 <style scoped>
 .compact-form {
   margin-bottom: 8px;
+}
+
+.rich-text-content {
+  min-height: 100px;
+  border-radius: 4px;
 }
 </style>

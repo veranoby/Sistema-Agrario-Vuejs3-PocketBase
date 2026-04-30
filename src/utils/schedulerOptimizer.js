@@ -9,7 +9,7 @@
  */
 
 import { pb } from '@/utils/pocketbase'
-import { useProgramacionesStore } from '@/stores/programacionesStore'
+import { useProgramacionesStore } from '@/stores/programaciones'
 
 export class SchedulerOptimizer {
   constructor() {

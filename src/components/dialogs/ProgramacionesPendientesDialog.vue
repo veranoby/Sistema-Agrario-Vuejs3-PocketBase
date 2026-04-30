@@ -77,7 +77,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue';
-import { useProgramacionesStore } from '@/stores/programacionesStore';
+import { useProgramacionesStore } from '@/stores/programaciones';
 import { useSnackbarStore } from '@/stores/snackbarStore';
 import { 
   format, parseISO, 

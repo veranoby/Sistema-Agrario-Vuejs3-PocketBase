@@ -1,13 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
-import LandingPage from '@/components/LandingPage.vue'
-import AboutUs from '@/components/public/AboutUs.vue'
-import OurPlans from '@/components/hacienda/OurPlans.vue'
-import DocumentationComponent from '@/components/public/Documentation.vue'
-import ContactUs from '@/components/public/ContactUs.vue'
-import FAQ from '@/components/public/FAQ.vue'
-import EmailConfirmation from '@/components/dialogs/ConfirmationDialog.vue'
 
 // Role definitions
 const ROLES = {
@@ -36,12 +29,12 @@ const ROUTE_ROLE_MATRIX = {
 }
 
 const routes = [
-  { path: '/', component: LandingPage },
-  { path: '/about', component: AboutUs },
-  { path: '/plans', component: OurPlans },
-  { path: '/documentation', component: DocumentationComponent },
-  { path: '/contact', component: ContactUs },
-  { path: '/faq', component: FAQ },
+  { path: '/', component: () => import('@/components/LandingPage.vue') },
+  { path: '/about', component: () => import('@/components/public/AboutUs.vue') },
+  { path: '/plans', component: () => import('@/components/hacienda/OurPlans.vue') },
+  { path: '/documentation', component: () => import('@/components/public/Documentation.vue') },
+  { path: '/contact', component: () => import('@/components/public/ContactUs.vue') },
+  { path: '/faq', component: () => import('@/components/public/FAQ.vue') },
   {
     path: '/profile',
     component: () => import('@/components/UserProfile.vue'),
@@ -53,7 +46,7 @@ const routes = [
   },
   {
     path: '/auth/confirm-verification/:token?',
-    component: EmailConfirmation,
+    component: () => import('@/components/dialogs/ConfirmationDialog.vue'),
     name: 'EmailConfirmation'
   },
   {

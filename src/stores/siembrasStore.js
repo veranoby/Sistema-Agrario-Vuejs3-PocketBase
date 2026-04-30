@@ -4,9 +4,9 @@ import { useSnackbarStore } from './snackbarStore'
 import { handleError } from '@/utils/errorHandler'
 import { useSyncStore } from '@/stores/sync/index'
 import { useHaciendaStore } from './haciendaStore'
-//import { useAvatarStore } from './avatarStore'
 import { computed } from 'vue'
 import { MAX_PAGE_SIZE, DEFAULT_PAGE_SIZE } from '@/constants/pagination'
+import { createSyncActions } from '@/utils/syncActions'
 
 export const useSiembrasStore = defineStore('siembras', {
   state: () => ({
@@ -25,6 +25,11 @@ export const useSiembrasStore = defineStore('siembras', {
     key: 'siembras',
     storage: localStorage,
     paths: ['siembras']
+  },
+
+  sync: {
+    collectionName: 'siembras',
+    stateProp: 'siembras'
   },
 
   getters: {
@@ -325,51 +330,6 @@ export const useSiembrasStore = defineStore('siembras', {
       const localSiembras = syncStore.loadFromLocalStorage('siembras');
       this.siembras = localSiembras || [];
       console.log('[SIEMBRAS_STORE] Initialized from localStorage. Siembras:', this.siembras.length);
-    },
-
-    // Standard sync methods
-    applySyncedCreate(tempId, realItem) {
-      const syncStore = useSyncStore();
-      console.log(`[SIEMBRAS_STORE] Applying synced create: tempId ${tempId} -> realId ${realItem.id}`);
-      const index = this.siembras.findIndex(s => s.id === tempId && s._isTemp);
-      if (index !== -1) {
-        this.siembras[index] = { ...realItem, _isTemp: false };
-      } else {
-        if (!this.siembras.some(s => s.id === realItem.id)) {
-            this.siembras.unshift({ ...realItem, _isTemp: false }); 
-            console.log('[SIEMBRAS_STORE] Synced item added as new (was not found by tempId).');
-        } else {
-            console.log('[SIEMBRAS_STORE] Synced item already exists by realId.');
-        }
-      }
-      syncStore.saveToLocalStorage('siembras', this.siembras);
-      console.log('[SIEMBRAS_STORE] Synced create applied, localStorage updated.');
-    },
-
-    applySyncedUpdate(id, updatedItemData) {
-      const syncStore = useSyncStore();
-      console.log(`[SIEMBRAS_STORE] Applying synced update for id: ${id}`);
-      const index = this.siembras.findIndex(s => s.id === id);
-      if (index !== -1) {
-        this.siembras[index] = { ...this.siembras[index], ...updatedItemData, _isTemp: false };
-        syncStore.saveToLocalStorage('siembras', this.siembras);
-        console.log('[SIEMBRAS_STORE] Synced update applied, localStorage updated.');
-      } else {
-         console.warn(`[SIEMBRAS_STORE] Could not find item with id ${id} to apply update.`);
-      }
-    },
-
-    applySyncedDelete(id) {
-      const syncStore = useSyncStore();
-      console.log(`[SIEMBRAS_STORE] Applying synced delete for id: ${id}`);
-      const initialLength = this.siembras.length;
-      this.siembras = this.siembras.filter(s => s.id !== id);
-      if (this.siembras.length < initialLength) {
-        syncStore.saveToLocalStorage('siembras', this.siembras);
-        console.log('[SIEMBRAS_STORE] Synced delete applied, localStorage updated.');
-      } else {
-        console.warn(`[SIEMBRAS_STORE] Could not find item with id ${id} to apply delete.`);
-      }
     }
   }
 })

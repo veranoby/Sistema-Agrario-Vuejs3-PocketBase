@@ -4,14 +4,14 @@
  * Búsqueda fuzzy y cache inteligente
  */
 
-import { cacheManager } from './cacheManager'
+import { cache } from '@/utils/cacheManager'
 
 /**
  * Crea gestor de funcionalidades offline
  * @param {Object} params - { stores: Array<Function>, cacheManager: Object }
  * @returns {Object} - { buildIndex, searchOffline }
  */
-export function createOfflineFeatures({ stores, cacheManager: cm = cacheManager }) {
+export function createOfflineFeatures({ stores, cacheManager: cm = cache }) {
   const searchIndex = new Map()
 
   /**

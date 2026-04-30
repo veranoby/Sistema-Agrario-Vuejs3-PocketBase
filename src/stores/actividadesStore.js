@@ -5,6 +5,7 @@ import { useSyncStore } from '@/stores/sync/index'
 import { useSnackbarStore } from './snackbarStore'
 import { handleError } from '@/utils/errorHandler'
 import { useHaciendaStore } from './haciendaStore'
+import { calculateBpaStatus } from '@/utils/agriMetrics'
 import { useAlertStore } from './alertStore'
 import { MAX_PAGE_SIZE } from '@/constants/pagination'
 
@@ -28,6 +29,22 @@ export const useActividadesStore = defineStore('actividades', {
     key: 'actividades',
     storage: localStorage,
     paths: ['actividades', 'tiposActividades']
+  },
+
+  sync: {
+    collectionName: 'actividades',
+    stateProp: 'actividades',
+    hooks: {
+      onCreate: function() {
+        this.buildActivityLookup()
+      },
+      onUpdate: function() {
+        this.buildActivityLookup()
+      },
+      onDelete: function(id) {
+        this.activityLookupMap.delete(id)
+      }
+    }
   },
 
   getters: {
@@ -151,7 +168,7 @@ export const useActividadesStore = defineStore('actividades', {
         hacienda: haciendaStore.mi_hacienda?.id,
         siembras: siembras,
         zonas: actividadData.zonas || [],
-        bpa_estado: this.calcularBpaEstado(actividadData.datos_bpa),
+        bpa_estado: this.calculateBpaStatus(actividadData.datos_bpa),
         activa: true,
         version: this.version,
         datos_bpa: actividadData.datos_bpa || [],
@@ -231,7 +248,7 @@ export const useActividadesStore = defineStore('actividades', {
           ? updateData.siembras
           : actividad?.siembras || [],
         zonas: Array.isArray(updateData.zonas) ? updateData.zonas : actividad?.zonas || [],
-        bpa_estado: this.calcularBpaEstado(updateData.datos_bpa || actividad?.datos_bpa || []),
+        bpa_estado: this.calculateBpaStatus(updateData.datos_bpa || actividad?.datos_bpa || []),
         version: this.version
       }
 
@@ -410,28 +427,8 @@ export const useActividadesStore = defineStore('actividades', {
       return useSyncStore().removeLocalItem('actividades', id, this.actividades)
     },
 
-    calcularBpaEstado(datosBpa) {
-      if (!datosBpa || datosBpa.length === 0) return 0
-
-      const puntosObtenidos = datosBpa.reduce((acc, pregunta) => {
-        if (
-          pregunta.respuesta === 'Implementado' ||
-          pregunta.respuesta === 'Implementados' ||
-          pregunta.respuesta === 'Implementadas' ||
-          pregunta.respuesta === 'Implementada' ||
-          pregunta.respuesta === 'Disponibles' ||
-          pregunta.respuesta === 'Realizado' ||
-          pregunta.respuesta === 'Utilizadas' ||
-          pregunta.respuesta === 'Realizados' ||
-          pregunta.respuesta === 'Cumplido' ||
-          pregunta.respuesta === 'Disponible'
-        )
-          return acc + 100
-        if (pregunta.respuesta === 'En proceso') return acc + 50
-        return acc
-      }, 0)
-
-      return Math.round((puntosObtenidos / (datosBpa.length * 100)) * 100)
+    calculateBpaStatus(datosBpa) {
+      return calculateBpaStatus(datosBpa)
     },
 
     async cargarTiposActividades() {
@@ -474,63 +471,10 @@ export const useActividadesStore = defineStore('actividades', {
       const syncStore = useSyncStore()
       const localActividades = syncStore.loadFromLocalStorage('actividades')
       this.actividades = localActividades || []
-
-      // CRITICAL: Reinicializar Map después de deserialización de Pinia persist
-      if (!(this.activityLookupMap instanceof Map)) {
-        this.activityLookupMap = new Map()
-      }
-
-      if (this.actividades.length > 0) {
-        this.buildActivityLookup()
-      }
-
       const localTiposActividades = syncStore.loadFromLocalStorage('tiposActividades')
       this.tiposActividades = localTiposActividades ? markRaw(localTiposActividades) : []
-      console.log('[ACT_STORE] Initialized from localStorage. Actividades:', this.actividades.length, 'Tipos:', this.tiposActividades.length)
-    },
-
-    applySyncedCreate(tempId, realItem) {
-      const syncStore = useSyncStore()
-      console.log(`[ACTIVIDADES_STORE] Applying synced create: tempId ${tempId} -> realId ${realItem.id}`)
-      const index = this.actividades.findIndex(a => a.id === tempId && a._isTemp)
-      if (index !== -1) {
-        this.actividades[index] = { ...realItem, _isTemp: false }
-      } else {
-        if (!this.actividades.some(a => a.id === realItem.id)) {
-          this.actividades.unshift({ ...realItem, _isTemp: false })
-          console.log('[ACTIVIDADES_STORE] Synced item added as new (was not found by tempId).')
-        } else {
-          console.log('[ACTIVIDADES_STORE] Synced item already exists by realId.')
-        }
-      }
-      syncStore.saveToLocalStorage('actividades', this.actividades)
-      console.log('[ACTIVIDADES_STORE] Synced create applied, localStorage updated.')
-    },
-
-    applySyncedUpdate(id, updatedItemData) {
-      const syncStore = useSyncStore()
-      console.log(`[ACTIVIDADES_STORE] Applying synced update for id: ${id}`)
-      const index = this.actividades.findIndex(a => a.id === id)
-      if (index !== -1) {
-        this.actividades[index] = { ...this.actividades[index], ...updatedItemData, _isTemp: false }
-        syncStore.saveToLocalStorage('actividades', this.actividades)
-        console.log('[ACTIVIDADES_STORE] Synced update applied, localStorage updated.')
-      } else {
-        console.warn(`[ACTIVIDADES_STORE] Could not find item with id ${id} to apply update.`)
-      }
-    },
-
-    applySyncedDelete(id) {
-      const syncStore = useSyncStore()
-      console.log(`[ACTIVIDADES_STORE] Applying synced delete for id: ${id}`)
-      const initialLength = this.actividades.length
-      this.actividades = this.actividades.filter(a => a.id !== id)
-      if (this.actividades.length < initialLength) {
-        syncStore.saveToLocalStorage('actividades', this.actividades)
-        console.log('[ACTIVIDADES_STORE] Synced delete applied, localStorage updated.')
-      } else {
-        console.warn(`[ACTIVIDADES_STORE] Could not find item with id ${id} to apply delete.`)
-      }
+      this.buildActivityLookup()
+      console.log('[ACTIVIDADES_STORE] Initialized from localStorage. Actividades:', this.actividades.length, 'Tipos:', this.tiposActividades.length)
     }
   }
 })

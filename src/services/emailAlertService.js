@@ -1,3 +1,4 @@
+import { emailService } from '@/services/emailService'
 import { logger } from '@/utils/logger'
 
 /**
@@ -21,7 +22,7 @@ export const alertFrequencies = {
 }
 
 /**
- * Envía una alerta por email usando el backend endpoint que integra con Resend
+ * Envía una alerta por email usando emailService
  * @param {Object} params - Parámetros de la alerta
  * @param {string} params.type - Tipo de alerta (ver alertTypes)
  * @param {string[]} params.recipients - Lista de emails destinatarios
@@ -33,27 +34,48 @@ export async function sendAlert(params) {
   const { type, recipients, data, hacienda } = params
 
   try {
-    // Llamar a backend endpoint que usa Resend
-    const response = await fetch('/api/alerts/send', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      },
-      body: JSON.stringify({ type, recipients, data, hacienda })
+    const html = buildAlertTemplate(type, data)
+    const subject = getAlertSubject(type)
+
+    const result = await emailService.sendEmail({
+      to: recipients,
+      subject,
+      html,
+      metadata: { type, hacienda, isAlert: true }
     })
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-    }
-
-    const result = await response.json()
     logger.info('[ALERT] Enviada exitosamente', { type, to: recipients.length })
     return result
   } catch (error) {
     logger.error('[ALERT] Error enviando alerta', error)
     throw error
   }
+}
+
+function getAlertSubject(type) {
+  const subjects = {
+    actividad_critica: '⚠ Actividad Crítica Requiere Atención',
+    bpa_vencido: '🔴 Certificación BPA Vencida',
+    recordatorio: '📋 Recordatorio de Actividad',
+    actividad_asignada: '✅ Nueva Actividad Asignada',
+    zona_atencion: '🗺 Zona Requiere Atención'
+  }
+  return subjects[type] || 'Notificación del Sistema'
+}
+
+function buildAlertTemplate(type, data) {
+  return `
+    <div style="font-family: Arial, sans-serif; padding: 20px;">
+      <h2>${getAlertSubject(type)}</h2>
+      <p><strong>Tipo:</strong> ${type}</p>
+      <p><strong>Fecha:</strong> ${new Date().toLocaleDateString()}</p>
+      <pre>${JSON.stringify(data, null, 2)}</pre>
+      <hr style="border: 1px solid #eee; margin: 20px 0;" />
+      <p style="font-size: 12px; color: #666;">
+        Este email fue generado automáticamente por ConAgri.
+      </p>
+    </div>
+  `
 }
 
 /**
@@ -142,4 +164,14 @@ export function formatEmailList(emails) {
   if (emails.length === 1) return emails[0]
   if (emails.length === 2) return emails.join(' y ')
   return `${emails.slice(0, 2).join(', ')} y ${emails.length - 2} más`
+}
+
+export const emailAlertService = {
+  sendAlert,
+  configureAlertPreferences,
+  getAlertPreferences,
+  validateEmails,
+  formatEmailList,
+  alertTypes,
+  alertFrequencies
 }

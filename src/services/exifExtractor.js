@@ -7,7 +7,7 @@
  * @module utils/exifExtractor
  */
 
-import { logger } from './logger'
+import { logger } from '@/utils/logger'
 
 /**
  * @typedef {Object} ExifData
@@ -546,7 +546,7 @@ export const exifExtractor = new ExifExtractor()
  * 
  * @example
  * // En un componente Vue
- * import { useExifExtractor } from '@/utils/exifExtractor'
+ * import { useExifExtractor } from '@/services/exifExtractor'
  * 
  * setup() {
  *   const { extract, isExtracting, error } = useExifExtractor()

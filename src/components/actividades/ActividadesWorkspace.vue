@@ -123,7 +123,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useProfileStore } from '@/stores/profileStore'
+import { useAuthStore } from '@/stores/authStore'
 import { useAvatarStore } from '@/stores/avatarStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import { useRecordatoriosStore } from '@/stores/recordatoriosStore'
@@ -147,7 +147,7 @@ import BitacoraEntryForm from '@/components/forms/BitacoraEntryForm.vue'
 
 const route = useRoute()
 const router = useRouter()
-const profileStore = useProfileStore()
+const authStore = useAuthStore()
 const avatarStore = useAvatarStore()
 const haciendaStore = useHaciendaStore()
 const recordatoriosStore = useRecordatoriosStore()
@@ -184,8 +184,8 @@ const {
   handleBitacoraSaveActividad
 } = useActividadesData(actividadId)
 
-const { user } = storeToRefs(profileStore)
-const avatarUrl = computed(() => profileStore.avatarUrl)
+const { user } = storeToRefs(authStore)
+const avatarUrl = computed(() => authStore.avatarUrl)
 
 const actividadAvatarUrl = computed(() => {
   return avatarStore.getAvatarUrl({ ...actividadInfo.value, type: 'actividades' }, 'actividades')
@@ -212,7 +212,7 @@ const handleGuardado = async () => {
 
 const handleRequestSingleExecution = async (programacion) => {
   try {
-    const { useProgramacionesStore } = await import('@/stores/programacionesStore')
+    const { useProgramacionesStore } = await import('@/stores/programaciones')
     const programacionesStore = useProgramacionesStore()
     const success = await programacionesStore.prepareForBitacoraEntryFromProgramacion(programacion)
     if (success) {

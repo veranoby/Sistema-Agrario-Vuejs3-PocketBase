@@ -2,6 +2,7 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import piniaPersist from 'pinia-plugin-persistedstate'
+import { syncPlugin } from '@/stores/plugins/syncPlugin'
 import { format } from 'date-fns' // Mantener porque se usa
 import { handleError } from '@/utils/errorHandler'
 
@@ -92,6 +93,7 @@ const vuetify = createVuetify({
 
 const app = createApp(App)
 const pinia = createPinia()
+pinia.use(syncPlugin)
 pinia.use(piniaPersist)
 
 // Capturar errores de Vue

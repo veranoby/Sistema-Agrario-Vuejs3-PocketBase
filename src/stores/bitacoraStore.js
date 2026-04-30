@@ -4,9 +4,13 @@ import { handleError } from '@/utils/errorHandler';
 import { useSyncStore } from '@/stores/sync/index'
 import { useAuthStore } from './authStore';
 import { useHaciendaStore } from './haciendaStore';
-import { useProgramacionesStore } from './programacionesStore';
+import { useProgramacionesStore } from './programaciones';
+import { useActividadesStore } from './actividadesStore';
+import { getHandlerForTipo } from '@/utils/bitacora/bitacoraHandlers'
 import { logger } from '@/utils/logger'
 import { useAlertTriggers } from '@/composables/useAlertTriggers'
+import { digitalSignature } from '@/services/digitalSignature'
+import { locationCoordinator } from '@/services/locationCoordinator'
 import { differenceInDays, format } from 'date-fns'
 
 export const useBitacoraStore = defineStore('bitacora', {
@@ -233,12 +237,57 @@ export const useBitacoraStore = defineStore('bitacora', {
       const syncStore = useSyncStore();
       const authStore = useAuthStore();
       const haciendaStore = useHaciendaStore();
+      const actividadesStore = useActividadesStore();
+
+      // NUEVO: Obtener handler y validar
+      const handler = await getHandlerForTipo(
+        entryData.actividad_realizada,
+        actividadesStore
+      )
+
+      const validation = handler.validate(entryData.metricas || {})
+      if (!validation.valid) {
+        handleError(
+          new Error(`Validación fallida: ${validation.errors.join(', ')}`),
+          'Error validando entrada de bitácora'
+        )
+        return null
+      }
+
+      // NUEVO: Transformar métricas
+      const transformedMetricas = handler.transform(entryData.metricas || {})
 
       const fullEntryData = {
         ...entryData,
+        metricas: transformedMetricas.flat,
         hacienda: entryData.hacienda || haciendaStore.mi_hacienda?.id,
         user_responsable: entryData.user_responsable || authStore.user?.id,
       };
+
+      // NUEVO: Auto-geolocalización
+      if (!fullEntryData.gps && !fullEntryData.ubicacion) {
+        try {
+          const position = await locationCoordinator.getPosition()
+          fullEntryData.gps = { lat: position.latitude, lng: position.longitude }
+          logger.info('[BITACORA_STORE] Ubicación GPS capturada automáticamente')
+        } catch (geoError) {
+          logger.debug('[BITACORA_STORE] No se pudo capturar ubicación automática:', geoError.message)
+        }
+      }
+
+      // NUEVO: Firmar antes de guardar
+      let signatureData = null
+      try {
+        signatureData = await digitalSignature.sign({
+          collection: 'bitacora',
+          data: fullEntryData,
+          timestamp: new Date().toISOString()
+        })
+      } catch (error) {
+        logger.warn('[BITACORA_STORE] No se pudo firmar, continuando sin firma:', error)
+      }
+
+      fullEntryData.signature = signatureData
 
       if (!fullEntryData.hacienda || !fullEntryData.programacion_origen || !fullEntryData.actividad_realizada || !fullEntryData.fecha_ejecucion) {
           handleError(new Error('Datos incompletos para la entrada de bitácora.'), 'Error creando entrada de bitácora');
@@ -282,10 +331,15 @@ export const useBitacoraStore = defineStore('bitacora', {
         this.bitacoraEntries.unshift(newEntry);
         syncStore.saveToLocalStorage('bitacoraEntries', this.bitacoraEntries);
         logger.debug('[BITACORA_STORE] Entry created on PocketBase (expanded) and added to store:', newEntry);
-        
+
+        // NUEVO: Post-procesamiento
+        if (record) {
+          await handler.postProcess(record, { actividadesStore })
+        }
+
         const programacionesStore = useProgramacionesStore();
         programacionesStore.clearComplianceStateCache();
-        
+
         return newEntry;
       } catch (error) {
         handleError(error, 'Error creando entrada de bitácora en PocketBase');

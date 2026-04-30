@@ -5,6 +5,7 @@ import { useSyncStore } from '@/stores/sync/index'
 import { useSnackbarStore } from './snackbarStore'
 import { handleError } from '@/utils/errorHandler'
 import { useHaciendaStore } from './haciendaStore'
+import { calculateBpaStatus } from '@/utils/agriMetrics'
 import { MAX_PAGE_SIZE, DEFAULT_PAGE_SIZE } from '@/constants/pagination'
 
 export const useZonasStore = defineStore('zonas', {
@@ -26,6 +27,11 @@ export const useZonasStore = defineStore('zonas', {
     key: 'zonas',
     storage: localStorage,
     paths: ['zonas', 'tiposZonas']
+  },
+
+  sync: {
+    collectionName: 'zonas',
+    stateProp: 'zonas'
   },
 
   getters: {
@@ -127,7 +133,7 @@ export const useZonasStore = defineStore('zonas', {
         ...zonaData,
         hacienda: haciendaStore.mi_hacienda?.id,
         version: this.version,
-        bpa_estado: this.calcularBpaEstado(zonaData.datos_bpa || [])
+        bpa_estado: this.calculateBpaStatus(zonaData.datos_bpa || [])
       }
 
       if (!syncStore.isOnline) {
@@ -179,7 +185,7 @@ export const useZonasStore = defineStore('zonas', {
       const zona = this.getZonaById(id)
       const enrichedData = {
         ...updateData,
-        bpa_estado: this.calcularBpaEstado(updateData.datos_bpa),
+        bpa_estado: this.calculateBpaStatus(updateData.datos_bpa),
         datos_bpa: updateData.datos_bpa || zona?.datos_bpa || [],
         metricas: updateData.metricas || zona?.metricas || {},
         version: this.version
@@ -278,28 +284,8 @@ export const useZonasStore = defineStore('zonas', {
       }
     },
 
-    calcularBpaEstado(datosBpa) {
-      if (!datosBpa || datosBpa.length === 0) return 0
-
-      const puntosObtenidos = datosBpa.reduce((acc, pregunta) => {
-        if (
-          pregunta.respuesta === 'Implementado' ||
-          pregunta.respuesta === 'Implementados' ||
-          pregunta.respuesta === 'Implementadas' ||
-          pregunta.respuesta === 'Implementada' ||
-          pregunta.respuesta === 'Disponibles' ||
-          pregunta.respuesta === 'Realizado' ||
-          pregunta.respuesta === 'Utilizadas' ||
-          pregunta.respuesta === 'Realizados' ||
-          pregunta.respuesta === 'Cumplido' ||
-          pregunta.respuesta === 'Disponible'
-        )
-          return acc + 100
-        if (pregunta.respuesta === 'En proceso') return acc + 50
-        return acc
-      }, 0)
-
-      return Math.round((puntosObtenidos / (datosBpa.length * 100)) * 100)
+    calculateBpaStatus(datosBpa) {
+      return calculateBpaStatus(datosBpa)
     },
 
     async cargarTiposZonas() {
@@ -405,51 +391,6 @@ export const useZonasStore = defineStore('zonas', {
       const localTiposZonas = syncStore.loadFromLocalStorage('tiposZonas');
       this.tiposZonas = localTiposZonas ? markRaw(localTiposZonas) : [];
       console.log('[ZONAS_STORE] Initialized from localStorage. Zonas:', this.zonas.length, 'Tipos:', this.tiposZonas.length);
-    },
-
-    // Standard sync methods
-    applySyncedCreate(tempId, realItem) {
-      const syncStore = useSyncStore();
-      console.log(`[ZONAS_STORE] Applying synced create: tempId ${tempId} -> realId ${realItem.id}`);
-      const index = this.zonas.findIndex(z => z.id === tempId && z._isTemp);
-      if (index !== -1) {
-        this.zonas[index] = { ...realItem, _isTemp: false };
-      } else {
-        if (!this.zonas.some(z => z.id === realItem.id)) {
-            this.zonas.unshift({ ...realItem, _isTemp: false }); 
-            console.log('[ZONAS_STORE] Synced item added as new (was not found by tempId).');
-        } else {
-            console.log('[ZONAS_STORE] Synced item already exists by realId.');
-        }
-      }
-      syncStore.saveToLocalStorage('zonas', this.zonas);
-      console.log('[ZONAS_STORE] Synced create applied, localStorage updated.');
-    },
-
-    applySyncedUpdate(id, updatedItemData) {
-      const syncStore = useSyncStore();
-      console.log(`[ZONAS_STORE] Applying synced update for id: ${id}`);
-      const index = this.zonas.findIndex(z => z.id === id);
-      if (index !== -1) {
-        this.zonas[index] = { ...this.zonas[index], ...updatedItemData, _isTemp: false };
-        syncStore.saveToLocalStorage('zonas', this.zonas);
-        console.log('[ZONAS_STORE] Synced update applied, localStorage updated.');
-      } else {
-         console.warn(`[ZONAS_STORE] Could not find item with id ${id} to apply update.`);
-      }
-    },
-
-    applySyncedDelete(id) {
-      const syncStore = useSyncStore();
-      console.log(`[ZONAS_STORE] Applying synced delete for id: ${id}`);
-      const initialLength = this.zonas.length;
-      this.zonas = this.zonas.filter(z => z.id !== id);
-      if (this.zonas.length < initialLength) {
-        syncStore.saveToLocalStorage('zonas', this.zonas);
-        console.log('[ZONAS_STORE] Synced delete applied, localStorage updated.');
-      } else {
-        console.warn(`[ZONAS_STORE] Could not find item with id ${id} to apply delete.`);
-      }
     }
   }
 })

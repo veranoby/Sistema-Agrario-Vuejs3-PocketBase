@@ -33,6 +33,19 @@ export const useFinanzaStore = defineStore('finanzas', {
     paths: ['registros', 'currentMonth', 'filterStatus', 'cachedMonths']
   },
 
+  sync: {
+    collectionName: 'finanzas',
+    stateProp: 'registros',
+    hooks: {
+      onCreate: function(item) {
+        this.updateMonthCache([item])
+      },
+      onUpdate: function(id, data) {
+        this.updateMonthCache([data])
+      }
+    }
+  },
+
   getters: {
     _registrosPorMesCache: (state) => {
       const start = startOfMonth(state.currentMonth)
@@ -605,6 +618,13 @@ export const useFinanzaStore = defineStore('finanzas', {
 
     removeLocalItem(id) {
       return useSyncStore().removeLocalItem('finanzas', id, this.registros)
+    },
+
+    initFromLocalStorage() {
+      const syncStore = useSyncStore()
+      const localRegistros = syncStore.loadFromLocalStorage('finanzas')
+      this.registros = localRegistros || []
+      console.log('[FINANZA_STORE] Initialized from localStorage. Registros:', this.registros.length)
     }
   }
 })

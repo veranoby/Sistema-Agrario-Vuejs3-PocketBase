@@ -4,9 +4,9 @@ import { useActividadesStore } from '@/stores/actividadesStore'
 import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useZonasStore } from '@/stores/zonasStore'
 import { useRecordatoriosStore } from '@/stores/recordatoriosStore'
-import { useProgramacionesStore } from '@/stores/programacionesStore'
+import { useProgramacionesStore } from '@/stores/programaciones'
 import { useSnackbarStore } from '@/stores/snackbarStore'
-import { useProfileStore } from '@/stores/profileStore'
+import { useAuthStore } from '@/stores/authStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import { handleError } from '@/utils/errorHandler'
 import { storeToRefs } from 'pinia'
@@ -29,7 +29,7 @@ export function useActividadesData(actividadId) {
   const selectedZonas = ref([])
   const showBitacoraFormDialogActividad = ref(false)
 
-  const { user } = storeToRefs(useProfileStore())
+  const { user } = storeToRefs(useAuthStore())
   const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(useHaciendaStore())
   const { tiposActividades } = storeToRefs(actividadesStore)
   const { siembras } = storeToRefs(siembrasStore)

@@ -3,6 +3,7 @@ import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
 import { useSnackbarStore } from './snackbarStore'
 import { useSyncStore } from '@/stores/sync/index'
+import { imageOptimizer } from '@/utils/imageOptimizer'
 
 import placeholderUser from '@/assets/placeholder-user.png'
 import placeholderHacienda from '@/assets/placeholder-hacienda.png'
@@ -57,8 +58,18 @@ export const useAvatarStore = defineStore('avatar', {
 
       snackbarStore.showLoading()
       try {
+        // OPTIMIZACIÓN: Comprimir imagen antes de subir
+        let fileToUpload = avatarFile
+        try {
+          const optimized = await imageOptimizer.compress(avatarFile)
+          fileToUpload = optimized.file
+          console.log(`[AvatarStore] Imagen optimizada: ${optimized.compressionRatio}% de ahorro`)
+        } catch (optError) {
+          console.warn('[AvatarStore] No se pudo optimizar la imagen, subiendo original:', optError)
+        }
+
         const formData = new FormData()
-        formData.append('avatar', avatarFile)
+        formData.append('avatar', fileToUpload)
 
         const updatedRecord = await pb.collection(collection).update(id, formData)
 

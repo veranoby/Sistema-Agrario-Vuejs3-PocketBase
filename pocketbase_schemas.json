@@ -42,7 +42,13 @@
         "info": "editor",
         "plan": "relation to planes",
         "avatar": "file (image)",
-        "metricas": "json (maxSize: 2MB)"
+        "metricas": "json (maxSize: 2MB)",
+        "status": "select ['active', 'suspended', 'inactive'] (default: 'active')",
+        "suspension_reason": "text (nullable)",
+        "owner": "relation to users (nullable)",
+        "active_modules": "json (default: [])",
+        "contacto_email": "email (nullable)",
+        "contacto_telefono": "text (nullable)"
       }
     },
 

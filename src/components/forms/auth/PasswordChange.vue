@@ -92,10 +92,10 @@
 <script setup>
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useProfileStore } from '@/stores/profileStore'
+import { useAuthStore } from '@/stores/authStore'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 
-const profileStore = useProfileStore()
+const authStore = useAuthStore()
 const snackbarStore = useSnackbarStore()
 const { t } = useI18n()
 
@@ -143,7 +143,7 @@ const changePassword = async () => {
 
   isLoading.value = true
   try {
-    await profileStore.changePassword(oldPassword.value, newPassword.value)
+    await authStore.changePassword(oldPassword.value, newPassword.value)
     snackbarStore.showSnackbar(t('password_change.password_changed_successfully'), 'success')
     oldPassword.value = ''
     newPassword.value = ''

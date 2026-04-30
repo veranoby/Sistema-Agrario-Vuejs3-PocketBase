@@ -4,14 +4,14 @@
  * Maneja lista de conflictos y estado del diálogo
  */
 
-import { cacheManager } from './cacheManager'
+import { cache } from '@/utils/cacheManager'
 
 /**
  * Crea gestor de UI de conflictos
  * @param {Object} params - { cacheManager: Object }
  * @returns {Object} - { conflicts, showDialog, addConflict, resolveChoice, clearResolved }
  */
-export function createConflictUI({ cacheManager: cm = cacheManager }) {
+export function createConflictUI({ cacheManager: cm = cache }) {
   let conflicts = cm.get('sync_conflicts') || []
   let showDialog = conflicts.some(c => !c.resolved)
 

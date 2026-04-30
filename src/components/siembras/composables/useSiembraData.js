@@ -5,7 +5,7 @@ import { useZonasStore } from '@/stores/zonasStore'
 import { useActividadesStore } from '@/stores/actividadesStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import { useSnackbarStore } from '@/stores/snackbarStore'
-import { useProfileStore } from '@/stores/profileStore'
+import { useAuthStore } from '@/stores/authStore'
 import { useAvatarStore } from '@/stores/avatarStore'
 import { handleError } from '@/utils/errorHandler'
 import { storeToRefs } from 'pinia'
@@ -30,12 +30,12 @@ export function useSiembraData(siembraId) {
   const showAvatarDialog = ref(false)
 
   const { zonas, tiposZonas } = storeToRefs(zonasStore)
-  const { user } = storeToRefs(useProfileStore())
+  const { user } = storeToRefs(useAuthStore())
   const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
   const { actividades } = storeToRefs(actividadesStore)
 
   const userRole = computed(() => user.value?.role || '')
-  const avatarUrl = computed(() => useProfileStore().avatarUrl)
+  const avatarUrl = computed(() => useAuthStore().avatarUrl)
 
   const totalArea = computed(() => {
     return zonas.value

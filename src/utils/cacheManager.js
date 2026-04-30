@@ -225,6 +225,20 @@ export class CacheManager {
   destroy() {
     this.clear()
   }
+
+  /**
+   * Invalida entradas que coincidan con un patrón de clave.
+   * @param {string} pattern - Patrón de clave (substring)
+   */
+  invalidatePattern(pattern) {
+    const keysToDelete = []
+    for (const key of this.cache.keys()) {
+      if (key.includes(pattern)) {
+        keysToDelete.push(key)
+      }
+    }
+    keysToDelete.forEach(key => this.delete(key))
+  }
 }
 
 /**
@@ -445,6 +459,7 @@ export const tieredCache = {
   getFromLevel: (key, level) => getGlobalTieredCache().getFromLevel(key, level),
   setToLevel: (key, data, level, ttl) => getGlobalTieredCache().setToLevel(key, data, level, ttl),
   invalidateAcrossLevels: (pattern) => getGlobalTieredCache().invalidateAcrossLevels(pattern),
+  invalidatePattern: (pattern) => getGlobalTieredCache().invalidatePattern(pattern),
   getStats: () => getGlobalTieredCache().getCombinedStats(),
   clear: () => getGlobalTieredCache().clear(),
   destroy: () => {

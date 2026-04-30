@@ -3,12 +3,14 @@
     <v-card-title class="d-flex justify-space-between align-center">
       {{ t('sowing_workspace.related_activities') }}
       <v-btn
-        class="agricultural-btn agricultural-btn--primary"
+        size="x-small"
+        color="green-lighten-2"
+        icon
+        rounded="circle"
+        class="ml-auto"
         @click="openAddActividad"
         @keydown.enter="openAddActividad"
         @keydown.space.prevent="openAddActividad"
-        icon
-        size="large"
         :aria-label="t('sowing_workspace.add_new_activity')"
         tabindex="0"
       >
@@ -152,26 +154,6 @@ const getAvatarUrl = (actividadId) => {
 </script>
 
 <style scoped>
-.agricultural-btn {
-  border-radius: 8px;
-  font-weight: 500;
-  letter-spacing: 0.025em;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  min-height: 44px;
-}
-
-.agricultural-btn--primary {
-  background: linear-gradient(45deg, var(--agri-green-primary, #2e7d32), var(--agri-green-light, #4caf50));
-  border: none;
-  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
-  color: white;
-}
-
-.agricultural-btn--primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(46, 125, 50, 0.4);
-}
-
 .rich-text-content {
   line-height: 1.6;
   color: #333;

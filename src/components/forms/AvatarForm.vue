@@ -111,7 +111,7 @@ import { useSnackbarStore } from '@/stores/snackbarStore'
 
 // Importar optimizador de imágenes
 import { ImageOptimizer } from '@/utils/imageOptimizer'
-import { ExifExtractor } from '@/utils/exifExtractor'
+import { ExifExtractor } from '@/services/exifExtractor'
 import { logger } from '@/utils/logger'
 
 const props = defineProps({

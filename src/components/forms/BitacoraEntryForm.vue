@@ -151,7 +151,7 @@ import { ref, reactive, onMounted, watch, computed } from 'vue';
 import { useActividadesStore } from '@/stores/actividadesStore';
 import { useSiembrasStore } from '@/stores/siembrasStore';
 import { useBitacoraStore } from '@/stores/bitacoraStore';
-import { useProgramacionesStore } from '@/stores/programacionesStore'; // Added
+import { useProgramacionesStore } from '@/stores/programaciones'; // Added
 import { useSnackbarStore } from '@/stores/snackbarStore';
 import { handleError } from '@/utils/errorHandler';
 

@@ -7,7 +7,29 @@
 import { COMPLIANCE_THRESHOLDS, COMPLIANCE_LEVELS } from '@/constants/bpa'
 
 /**
- * Calcula puntaje BPA de un conjunto de datos
+ * Calcula el porcentaje de cumplimiento BPA basado en respuestas
+ * @param {Array} datosBpa - Array de objetos con { pregunta, respuesta }
+ * @returns {number} Porcentaje de cumplimiento (0-100)
+ */
+export function calculateBpaStatus(datosBpa) {
+  if (!datosBpa?.length) return 0
+
+  const puntosObtenidos = datosBpa.reduce((acc, pregunta) => {
+    const respuestasPositivas = [
+      'Implementado', 'Implementados', 'Implementadas',
+      'Implementada', 'Disponibles', 'Realizado',
+      'Utilizadas', 'Realizados', 'Cumplido', 'Disponible'
+    ]
+    if (respuestasPositivas.includes(pregunta.respuesta)) return acc + 100
+    if (pregunta.respuesta === 'En proceso') return acc + 50
+    return acc
+  }, 0)
+
+  return Math.round((puntosObtenidos / (datosBpa.length * 100)) * 100)
+}
+
+/**
+ * Calcula puntaje BPA de un conjunto de datos (Genérico)
  * @param {Object} datosBpa - Objeto con respuestas BPA
  * @returns {number} Puntaje 0-100
  */

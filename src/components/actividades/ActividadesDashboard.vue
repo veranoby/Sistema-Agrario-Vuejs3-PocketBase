@@ -130,7 +130,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useProfileStore } from '@/stores/profileStore'
+import { useAuthStore } from '@/stores/authStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import { useActividadesStore } from '@/stores/actividadesStore'
 import { useSnackbarStore } from '@/stores/snackbarStore'
@@ -142,7 +142,7 @@ import ActividadForm from '../forms/ActividadForm.vue'
 
 const { t } = useI18n()
 const router = useRouter()
-const profileStore = useProfileStore()
+const authStore = useAuthStore()
 const haciendaStore = useHaciendaStore()
 const ActividadesStore = useActividadesStore()
 const zonasStore = useZonasStore()
@@ -155,8 +155,8 @@ const { actividades } = storeToRefs(ActividadesStore)
 const { cargarActividades, cargarTiposActividades } = ActividadesStore
 const { siembras } = storeToRefs(siembrasStore)
 
-const userRole = computed(() => profileStore.user.role)
-const avatarUrl = computed(() => profileStore.avatarUrl)
+const userRole = computed(() => authStore.user.role)
+const avatarUrl = computed(() => authStore.avatarUrl)
 
 const getActividadAvatarUrl = (actividad) => {
   return avatarStore.getAvatarUrl({ ...actividad, type: 'actividades' }, 'actividades')

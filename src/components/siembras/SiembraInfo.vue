@@ -6,14 +6,14 @@
         <span>{{ t('sowing_workspace.sowing_information') }}</span>
       </div>
       <v-btn
-        class="agricultural-btn agricultural-btn--edit"
+        size="x-small"
+        color="green-lighten-2"
+        icon
+        rounded="circle"
+        class="ml-auto"
         @click="openEditDialog"
         @keydown.enter="openEditDialog"
         @keydown.space.prevent="openEditDialog"
-        icon
-                            size="small"
-                    variant="flat"
-                    rounded="lg"
         :aria-label="t('sowing_workspace.edit_sowing_info')"
         tabindex="0"
       >
@@ -58,23 +58,4 @@ const openEditDialog = () => {
   color: #333;
 }
 
-.agricultural-btn {
-  border-radius: 8px;
-  font-weight: 500;
-  letter-spacing: 0.025em;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  min-height: 44px;
-}
-
-.agricultural-btn--edit {
-  border: 2px solid var(--agri-green-primary, #2e7d32);
-  color: var(--agri-green-primary, #2e7d32);
-  background: transparent;
-}
-
-.agricultural-btn--edit:hover {
-  background: var(--agri-green-primary, #2e7d32);
-  color: white;
-  transform: translateY(-1px);
-}
 </style>

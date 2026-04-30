@@ -202,7 +202,7 @@ import { exportSiembrasToMarkdown } from '@/utils/markdownExporter'
 import { formatDate } from '@/utils/formatters'
 import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useActividadesStore } from '@/stores/actividadesStore'
-import { useProgramacionesStore } from '@/stores/programacionesStore'
+import { useProgramacionesStore } from '@/stores/programaciones'
 import { useBitacoraStore } from '@/stores/bitacoraStore'
 
 const route = useRoute()

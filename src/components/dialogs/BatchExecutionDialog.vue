@@ -112,7 +112,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
-import { useProgramacionesStore } from '@/stores/programacionesStore';
+import { useProgramacionesStore } from '@/stores/programaciones';
 import { useActividadesStore } from '@/stores/actividadesStore';
 import BatchGeneralDataForm from '@/components/forms/BatchGeneralDataForm.vue';
 

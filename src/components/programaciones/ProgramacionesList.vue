@@ -142,24 +142,24 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useProgramacionesStore } from '@/stores/programacionesStore'
+import { useProgramacionesStore } from '@/stores/programaciones'
 import { useActividadesStore } from '@/stores/actividadesStore'
 import { useSyncStore } from '@/stores/sync'
 import ProgramacionForm from '@/components/forms/ProgramacionForm.vue'
 import ProgramacionPanel from './ProgramacionPanel.vue'
 import { useHaciendaStore } from '@/stores/haciendaStore'
-import { useProfileStore } from '@/stores/profileStore'
+import { useAuthStore } from '@/stores/authStore'
 import { storeToRefs } from 'pinia'
 import { useSiembrasStore } from '@/stores/siembrasStore'
 
 const { t } = useI18n()
-const profileStore = useProfileStore()
+const authStore = useAuthStore()
 const haciendaStore = useHaciendaStore()
 const siembrasStore = useSiembrasStore()
 
 const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
-const userRole = computed(() => profileStore.user.role)
-const avatarUrl = computed(() => profileStore.avatarUrl)
+const userRole = computed(() => authStore.user.role)
+const avatarUrl = computed(() => authStore.avatarUrl)
 
 const router = useRouter()
 const programacionesStore = useProgramacionesStore()

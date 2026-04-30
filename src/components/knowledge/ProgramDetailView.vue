@@ -132,7 +132,7 @@ import { useRoute } from 'vue-router'
 import { handleError } from '@/utils/errorHandler'
 import { exportProgramacionesToMarkdown } from '@/utils/markdownExporter'
 import { formatDate } from '@/utils/formatters'
-import { useProgramacionesStore } from '@/stores/programacionesStore'
+import { useProgramacionesStore } from '@/stores/programaciones'
 import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useBitacoraStore } from '@/stores/bitacoraStore'
 

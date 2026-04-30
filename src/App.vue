@@ -39,16 +39,18 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount, defineAsyncComponent } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useThemeStore } from './stores/themeStore'
 import { useAuthStore } from '@/stores/authStore'
-import { checkProximoActivities } from '@/stores/programacionesStore'
+import { checkProximoActivities } from '@/stores/programaciones'
 import { checkBPACertificados } from '@/stores/bitacoraStore'
 import Header from './components/Header.vue'
 import Sidebar from './components/Sidebar.vue'
-import AuthModal from './components/forms/auth/AuthModal.vue'
-import ConflictResolutionDialog from './components/dialogs/ConflictResolutionDialog.vue'
+
+// Componentes asíncronos para optimización de bundle inicial
+const AuthModal = defineAsyncComponent(() => import('./components/forms/auth/AuthModal.vue'))
+const ConflictResolutionDialog = defineAsyncComponent(() => import('./components/dialogs/ConflictResolutionDialog.vue'))
 
 import SnackbarComponent from '@/components/SnackbarComponent.vue'
 import { useSyncStore } from '@/stores/sync'

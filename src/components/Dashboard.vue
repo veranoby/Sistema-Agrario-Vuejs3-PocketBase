@@ -12,6 +12,25 @@
             <v-avatar start> <v-img :src="avatarHaciendaUrl" alt="Avatar de hacienda"></v-img> </v-avatar>
             {{ t('dashboard.hacienda') }}: {{ mi_hacienda.name }}
           </v-chip>
+          <v-menu>
+            <template v-slot:activator="{ props }">
+              <v-btn v-bind="props" color="primary" variant="tonal" size="small">
+                <v-icon start>mdi-export</v-icon>
+                Exportar
+              </v-btn>
+            </template>
+            <v-list>
+              <v-list-item @click="exportReport('json')">
+                <v-list-item-title>JSON</v-list-item-title>
+              </v-list-item>
+              <v-list-item @click="exportReport('csv')">
+                <v-list-item-title>CSV</v-list-item-title>
+              </v-list-item>
+              <v-list-item @click="exportReport('txt')">
+                <v-list-item-title>Texto</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
         </h3>
         <div class="avatar-container">
           <img :src="avatarHaciendaUrl" alt="Avatar de hacienda" class="avatar-image" />
@@ -161,37 +180,69 @@
             </div>
           </div>
         </div>
+
+        <v-card v-if="recentBitacoras.length" class="mt-4">
+          <v-card-title>
+            <v-icon start>mdi-shield-check</v-icon>
+            Auditoría de Firmas
+          </v-card-title>
+          <v-card-text>
+            <v-list density="compact">
+              <v-list-item v-for="b in recentBitacoras" :key="b.id">
+                <template v-slot:prepend>
+                  <v-icon :color="b.signature ? 'success' : 'warning'">
+                    {{ b.signature ? 'mdi-check-circle' : 'mdi-alert-circle' }}
+                  </v-icon>
+                </template>
+                <v-list-item-title>
+                  {{ b.expand?.actividad_realizada?.nombre || 'Sin actividad' }}
+                </v-list-item-title>
+                <v-list-item-subtitle>
+                  {{ new Date(b.created).toLocaleString() }}
+                  {{ b.signature ? '✓ Firmado' : '⚠ Sin firma' }}
+                </v-list-item-subtitle>
+              </v-list-item>
+            </v-list>
+          </v-card-text>
+        </v-card>
       </div>
     </main>
   </div>
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
-import { useProfileStore } from '@/stores/profileStore'
+import { useAuthStore } from '@/stores/authStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import { useRecordatoriosStore } from '@/stores/recordatoriosStore'
 import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useActividadesStore } from '@/stores/actividadesStore'
 import { useZonasStore } from '@/stores/zonasStore'
+import { useBitacoraStore } from '@/stores/bitacoraStore'
 import { handleError } from '@/utils/errorHandler'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 import { useSyncStore } from '@/stores/sync'
+import { reportingModule } from '@/modules/reporting'
 
 import StatusPanel from '@/components/recordatorios/RecordatoriosStatusPanel.vue'
 import RecordatorioForm from '@/components/forms/RecordatorioForm.vue'
 
 const { t } = useI18n()
-const profileStore = useProfileStore()
+const authStore = useAuthStore()
 const haciendaStore = useHaciendaStore()
 const recordatoriosStore = useRecordatoriosStore()
 const siembrasStore = useSiembrasStore()
 const actividadesStore = useActividadesStore()
 const zonasStore = useZonasStore()
+const bitacoraStore = useBitacoraStore()
 const snackbarStore = useSnackbarStore()
 const syncStore = useSyncStore()
+
+const recentBitacoras = computed(() => {
+  return bitacoraStore.bitacoraEntries.slice(0, 5)
+})
 
 onMounted(async () => {
   try {
@@ -211,7 +262,15 @@ async function loadWithTraditionalMethod() {
   ])
 }
 
-const { fullName, userRole, avatarUrl } = storeToRefs(profileStore)
+async function exportReport(format = 'json') {
+  const config = { haciendaId: haciendaStore.mi_hacienda?.id }
+  const report = await reportingModule.generate('bpa_compliance', config)
+  if (report) {
+    await reportingModule.export(report, format)
+  }
+}
+
+const { fullName, userRole, avatarUrl } = storeToRefs(authStore)
 const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
 
 async function handleFormSubmit(data) {

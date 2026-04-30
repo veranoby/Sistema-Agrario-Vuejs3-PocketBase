@@ -84,7 +84,7 @@
 import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
-import { useProfileStore } from '@/stores/profileStore'
+import { useAuthStore } from '@/stores/authStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import { useRecordatoriosStore } from '@/stores/recordatoriosStore'
 import { useSiembrasStore } from '@/stores/siembrasStore'
@@ -96,7 +96,7 @@ import { useSnackbarStore } from '@/stores/snackbarStore'
 import RecordatorioForm from '@/components/forms/RecordatorioForm.vue'
 
 const { t } = useI18n()
-const profileStore = useProfileStore()
+const authStore = useAuthStore()
 const haciendaStore = useHaciendaStore()
 const recordatoriosStore = useRecordatoriosStore()
 const siembrasStore = useSiembrasStore()
@@ -105,8 +105,8 @@ const zonasStore = useZonasStore()
 const snackbarStore = useSnackbarStore()
 
 const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
-const userRole = computed(() => profileStore.user.role)
-const avatarUrl = computed(() => profileStore.avatarUrl)
+const userRole = computed(() => authStore.user.role)
+const avatarUrl = computed(() => authStore.avatarUrl)
 
 onMounted(async () => {
   await Promise.all([

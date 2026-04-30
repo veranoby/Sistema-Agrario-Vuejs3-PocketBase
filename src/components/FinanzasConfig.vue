@@ -377,7 +377,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSyncStore } from '@/stores/sync'
 import { useHaciendaStore } from '@/stores/haciendaStore'
-import { useProfileStore } from '@/stores/profileStore'
+import { useAuthStore } from '@/stores/authStore'
 import { useFinanzaStore } from '@/stores/finanzaStore'
 import { useAuthStore } from '@/stores/authStore'
 import { storeToRefs } from 'pinia'
@@ -386,14 +386,14 @@ import FinanzasForm from '@/components/forms/FinanzasForm.vue'
 import FinanzasImportExcel from '@/components/forms/FinanzasImportExcel.vue'
 
 const { t } = useI18n()
-const profileStore = useProfileStore()
+const authStore = useAuthStore()
 const haciendaStore = useHaciendaStore()
 const finanzaStore = useFinanzaStore()
 const authStore = useAuthStore()
 
 const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
-const userRole = computed(() => profileStore.user.role)
-const avatarUrl = computed(() => profileStore.avatarUrl)
+const userRole = computed(() => authStore.user.role)
+const avatarUrl = computed(() => authStore.avatarUrl)
 
 const showForm = ref(false)
 const itemEditando = ref(null)

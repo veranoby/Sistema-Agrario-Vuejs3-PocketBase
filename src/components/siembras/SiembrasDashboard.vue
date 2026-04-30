@@ -208,7 +208,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useZonasStore } from '@/stores/zonasStore'
-import { useProfileStore } from '@/stores/profileStore'
+import { useAuthStore } from '@/stores/authStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import { storeToRefs } from 'pinia'
 import { format } from 'date-fns'
@@ -220,7 +220,7 @@ import SiembraCreateDialog from './SiembraCreateDialog.vue'
 const router = useRouter()
 const siembrasStore = useSiembrasStore()
 const zonasStore = useZonasStore()
-const profileStore = useProfileStore()
+const authStore = useAuthStore()
 const haciendaStore = useHaciendaStore()
 
 const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
@@ -228,8 +228,8 @@ const siembras = ref([])
 const zonas = ref([])
 const dialogNuevaSiembra = ref(false)
 
-const userRole = computed(() => profileStore.user?.role || '')
-const avatarUrl = computed(() => profileStore.avatarUrl)
+const userRole = computed(() => authStore.user?.role || '')
+const avatarUrl = computed(() => authStore.avatarUrl)
 
 // Cargar datos
 onMounted(async () => {

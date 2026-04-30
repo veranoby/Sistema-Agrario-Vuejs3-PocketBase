@@ -8,7 +8,7 @@
  */
 
 import { pb } from '@/utils/pocketbase'
-import { useProgramacionesStore } from '@/stores/programacionesStore'
+import { useProgramacionesStore } from '@/stores/programaciones'
 import { useNotificationStore } from '@/stores/notificationStore'
 import { handleError } from '@/utils/errorHandler'
 import { getSchedulerOptimizer } from '@/utils/schedulerOptimizer'

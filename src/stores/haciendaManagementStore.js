@@ -4,6 +4,7 @@ import { handleError } from '@/utils/errorHandler'
 import { useEvents } from '@/composables/useEvents'
 import { EVENTS } from '@/utils/eventBus'
 import { logger } from '@/utils/logger'
+import { useSyncStore } from '@/stores/sync'
 
 /**
  * Store administrativo: CRUD global de haciendas (SuperAdmin)
@@ -103,23 +104,44 @@ export const useHaciendaManagementStore = defineStore('haciendaManagement', {
     },
 
     /**
-     * Crear hacienda
+     * Crear hacienda (con soporte offline)
      */
     async createHacienda(haciendaData) {
       this.loading = true
       this.error = null
+      const syncStore = useSyncStore()
 
       try {
         const { emit } = useEvents()
 
-        const hacienda = await pb.collection('Haciendas').create({
+        // Preparar datos
+        const data = {
           name: haciendaData.name,
           descripcion: haciendaData.descripcion,
-          ubicacion: haciendaData.ubicacion,
-          plan: haciendaData.plan,
+          location: haciendaData.location,
+          gps: haciendaData.gps,
+          info: haciendaData.info,
+          plan: haciendaData.plan?.id || haciendaData.plan,
           status: haciendaData.status || 'active',
-          active_modules: haciendaData.active_modules || []
-        })
+          contacto_email: haciendaData.contacto_email,
+          contacto_telefono: haciendaData.contacto_telefono
+        }
+
+        if (!syncStore.isOnline) {
+          // Modo offline: encolar operación
+          const tempId = await syncStore.queueOperation({
+            type: 'create',
+            collection: 'Haciendas',
+            data
+          })
+          const tempHacienda = { ...data, id: tempId, _pending: true }
+          this.haciendas.unshift(tempHacienda)
+          logger.info('[HACIENDA_MANAGEMENT] Hacienda creada offline (pendiente)', { tempId })
+          return tempHacienda
+        }
+
+        // Modo online: crear directamente
+        const hacienda = await pb.collection('Haciendas').create(data)
 
         // Emitir evento
         emit(EVENTS.HACIENDA_UPDATED, { haciendaId: hacienda.id })
@@ -138,11 +160,12 @@ export const useHaciendaManagementStore = defineStore('haciendaManagement', {
     },
 
     /**
-     * Actualizar hacienda
+     * Actualizar hacienda (con soporte offline)
      */
     async updateHacienda(haciendaId, haciendaData) {
       this.loading = true
       this.error = null
+      const syncStore = useSyncStore()
 
       try {
         const { emit } = useEvents()
@@ -150,12 +173,38 @@ export const useHaciendaManagementStore = defineStore('haciendaManagement', {
         const updateData = {
           name: haciendaData.name,
           descripcion: haciendaData.descripcion,
-          ubicacion: haciendaData.ubicacion,
-          plan: haciendaData.plan,
+          location: haciendaData.location,
+          gps: haciendaData.gps,
+          info: haciendaData.info,
+          plan: haciendaData.plan?.id || haciendaData.plan,
+          avatar: haciendaData.avatar,
+          metricas: haciendaData.metricas,
           status: haciendaData.status,
-          active_modules: haciendaData.active_modules
+          suspension_reason: haciendaData.suspension_reason,
+          owner: haciendaData.owner?.id || haciendaData.owner,
+          active_modules: haciendaData.active_modules,
+          contacto_email: haciendaData.contacto_email,
+          contacto_telefono: haciendaData.contacto_telefono
         }
 
+        if (!syncStore.isOnline) {
+          // Modo offline: encolar operación
+          await syncStore.queueOperation({
+            type: 'update',
+            collection: 'Haciendas',
+            id: haciendaId,
+            data: updateData
+          })
+          // Actualizar localmente con flag pending
+          const index = this.haciendas.findIndex(h => h.id === haciendaId)
+          if (index !== -1) {
+            this.haciendas[index] = { ...this.haciendas[index], ...updateData, _pending: true }
+          }
+          logger.info('[HACIENDA_MANAGEMENT] Hacienda actualizada offline (pendiente)', { haciendaId })
+          return this.haciendas[index]
+        }
+
+        // Modo online: actualizar directamente
         const hacienda = await pb.collection('Haciendas').update(haciendaId, updateData)
 
         // Actualizar en estado local

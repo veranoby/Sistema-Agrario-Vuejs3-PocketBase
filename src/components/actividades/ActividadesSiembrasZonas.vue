@@ -4,8 +4,15 @@
       <h2 class="text-md font-bold mt-2">
         <span v-if="actividadInfo.siembras.length > 0">{{ t('activity_workspace.associated_sowings') }}</span>
       </h2>
-      <v-btn size="x-small" color="green-lighten-2" @click="openAddSiembrasZonas" icon>
-        <v-icon>mdi-pencil</v-icon>
+      <v-btn
+        size="x-small"
+        color="green-lighten-2"
+        icon
+        rounded="circle"
+        class="ml-auto"
+        @click="openAddSiembrasZonas"
+      >
+        <v-icon>mdi-plus</v-icon>
       </v-btn>
     </v-card-title>
     <v-card-text>

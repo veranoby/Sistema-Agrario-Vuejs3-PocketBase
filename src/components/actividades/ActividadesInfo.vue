@@ -3,7 +3,14 @@
     <v-card-title class="headline d-flex flex-column">
       <div class="d-flex justify-space-between align-center w-100">
         <span>{{ t('activity_workspace.activity_information') }}</span>
-        <v-btn color="green-lighten-2" @click="openEditDialog" icon>
+        <v-btn
+          size="x-small"
+          color="green-lighten-2"
+          icon
+          rounded="circle"
+          class="ml-auto"
+          @click="openEditDialog"
+        >
           <v-icon>mdi-pencil</v-icon>
         </v-btn>
       </div>

@@ -12,7 +12,6 @@
  */
 
 import { pb } from '@/utils/pocketbase'
-import { handleError } from '@/utils/errorHandler'
 
 // Resend API configuration
 const RESEND_API_KEY = import.meta.env.VITE_RESEND_API_KEY || ''
@@ -34,6 +33,17 @@ export const emailService = {
    * @param {Object} [options.metadata] - Additional metadata for logging
    * @returns {Promise<Object>} Send result
    */
+  /**
+   * Send email with optional PDF attachment and retry logic
+   * @param {Object} options - Email options
+   * @param {string|string[]} options.to - Recipient email(s)
+   * @param {string} options.subject - Email subject
+   * @param {string} options.html - HTML content
+   * @param {string} [options.pdfBase64] - Base64 encoded PDF
+   * @param {string} [options.pdfFilename] - PDF filename
+   * @param {Object} [options.metadata] - Additional metadata for logging
+   * @returns {Promise<Object>} Send result
+   */
   async sendEmail({
     to,
     subject,
@@ -42,75 +52,96 @@ export const emailService = {
     pdfFilename = 'documento.pdf',
     metadata = {}
   }) {
-    try {
-      // Validate API key
-      if (!RESEND_API_KEY) {
-        console.warn('[EmailService] RESEND_API_KEY not configured. Using mock mode.')
-        return this.logEmail({ to, subject, status: 'mock', metadata })
-      }
+    const maxRetries = 3
+    let lastError
 
-      // Prepare attachments
-      const attachments = []
-      if (pdfBase64) {
-        attachments.push({
-          filename: pdfFilename,
-          content: pdfBase64,
-          type: 'application/pdf'
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const result = await this._sendEmailInternal({
+          to, subject, html, pdfBase64, pdfFilename, metadata
         })
+        return result
+      } catch (error) {
+        lastError = error
+        console.warn(`[EmailService] Attempt ${attempt + 1} failed:`, error.message)
+        if (attempt < maxRetries - 1) {
+          const delay = Math.pow(2, attempt) * 1000 // 1s, 2s, 4s
+          console.log(`[EmailService] Retrying in ${delay}ms...`)
+          await new Promise(r => setTimeout(r, delay))
+        }
       }
-
-      // Prepare email payload
-      const payload = {
-        from: FROM_EMAIL,
-        to: Array.isArray(to) ? to : [to],
-        subject,
-        html,
-        attachments: attachments.length > 0 ? attachments : undefined
-      }
-
-      // Send via Resend API
-      const response = await fetch(RESEND_API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${RESEND_API_KEY}`
-        },
-        body: JSON.stringify(payload)
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Failed to send email')
-      }
-
-      const result = await response.json()
-
-      // Log successful send
-      await this.logEmail({
-        to,
-        subject,
-        status: 'sent',
-        resendId: result.id,
-        metadata
-      })
-
-      console.log('[EmailService] Email sent successfully:', result.id)
-      return { success: true, id: result.id }
-    } catch (error) {
-      console.error('[EmailService] Error sending email:', error)
-      
-      // Log failed send
-      await this.logEmail({
-        to,
-        subject,
-        status: 'failed',
-        error: error.message,
-        metadata
-      })
-
-      handleError(error, 'Error enviando email')
-      return { success: false, error: error.message }
     }
+
+    // All retries failed
+    console.error('[EmailService] All retry attempts failed')
+    throw lastError
+  },
+
+  /**
+   * Internal email sending implementation
+   * @private
+   */
+  async _sendEmailInternal({
+    to,
+    subject,
+    html,
+    pdfBase64 = null,
+    pdfFilename = 'documento.pdf',
+    metadata = {}
+  }) {
+    // Validate API key
+    if (!RESEND_API_KEY) {
+      console.warn('[EmailService] RESEND_API_KEY not configured. Using mock mode.')
+      return this.logEmail({ to, subject, status: 'mock', metadata })
+    }
+
+    // Prepare attachments
+    const attachments = []
+    if (pdfBase64) {
+      attachments.push({
+        filename: pdfFilename,
+        content: pdfBase64,
+        type: 'application/pdf'
+      })
+    }
+
+    // Prepare email payload
+    const payload = {
+      from: FROM_EMAIL,
+      to: Array.isArray(to) ? to : [to],
+      subject,
+      html,
+      attachments: attachments.length > 0 ? attachments : undefined
+    }
+
+    // Send via Resend API
+    const response = await fetch(RESEND_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${RESEND_API_KEY}`
+      },
+      body: JSON.stringify(payload)
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.message || 'Failed to send email')
+    }
+
+    const result = await response.json()
+
+    // Log successful send
+    await this.logEmail({
+      to,
+      subject,
+      status: 'sent',
+      resendId: result.id,
+      metadata
+    })
+
+    console.log('[EmailService] Email sent successfully:', result.id)
+    return { success: true, id: result.id }
   },
 
   /**

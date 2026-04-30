@@ -121,14 +121,15 @@
                     <v-img :src="siembraAvatarUrl" alt="Avatar de Siembra"></v-img>
                   </v-avatar>
                   <v-btn
-                    icon
-                    size="small"
-                    color="green-lighten-2"
-                    class="absolute bottom-0 right-0"
-                    @click="showAvatarDialog = true"
-                  >
-                    <v-icon>mdi-pencil</v-icon>
-                  </v-btn>
+                  size="x-small"
+                  color="green-lighten-2"
+                  icon
+                  rounded="circle"
+                  class="absolute bottom-0 right-0"
+                  @click="showAvatarDialog = true"
+                >
+                  <v-icon>mdi-pencil</v-icon>
+                </v-btn>
                 </div>
               </div>
             </div>
@@ -149,32 +150,24 @@
           <v-card-actions>
             <v-spacer></v-spacer>
             <v-btn
-              size="large"
-              variant="elevated"
-              rounded="lg"
-              prepend-icon="mdi-check-circle"
-              class="agricultural-btn agricultural-btn--primary"
-              @click="saveSiembraEdit"
-              @keydown.enter="saveSiembraEdit"
-              @keydown.space.prevent="saveSiembraEdit"
-              :aria-label="t('sowing_workspace.save')"
-              tabindex="0"
-            >
-              {{ t('sowing_workspace.save') }}
-            </v-btn>
-            <v-btn
-              size="large"
-              variant="elevated"
+              size="small"
+              variant="flat"
               rounded="lg"
               prepend-icon="mdi-cancel"
-              class="agricultural-btn agricultural-btn--secondary"
+              color="red-lighten-3"
               @click="editSiembraDialog = false"
-              @keydown.enter="editSiembraDialog = false"
-              @keydown.space.prevent="editSiembraDialog = false"
-              :aria-label="t('sowing_workspace.cancel')"
-              tabindex="0"
             >
               {{ t('sowing_workspace.cancel') }}
+            </v-btn>
+            <v-btn
+              size="small"
+              variant="flat"
+              rounded="lg"
+              prepend-icon="mdi-check"
+              color="green-lighten-3"
+              @click="saveSiembraEdit"
+            >
+              {{ t('sowing_workspace.save') }}
             </v-btn>
           </v-card-actions>
         </v-form>
@@ -277,7 +270,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useProfileStore } from '@/stores/profileStore'
+import { useAuthStore } from '@/stores/authStore'
 import { useZonasStore } from '@/stores/zonasStore'
 import { useActividadesStore } from '@/stores/actividadesStore'
 import { useSnackbarStore } from '@/stores/snackbarStore'
@@ -304,7 +297,7 @@ import '@vueup/vue-quill/dist/vue-quill.snow.css'
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
-const profileStore = useProfileStore()
+const authStore = useAuthStore()
 const zonasStore = useZonasStore()
 const actividadesStore = useActividadesStore()
 const snackbarStore = useSnackbarStore()
@@ -494,61 +487,4 @@ onMounted(async () => {
   --agri-surface-card: #ffffff;
 }
 
-.agricultural-btn {
-  border-radius: 8px;
-  font-weight: 500;
-  letter-spacing: 0.025em;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  min-height: 44px;
-}
-
-.agricultural-btn--primary {
-  background: linear-gradient(45deg, var(--agri-green-primary), var(--agri-green-light));
-  border: none;
-  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
-  color: white;
-}
-
-.agricultural-btn--primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(46, 125, 50, 0.4);
-}
-
-.agricultural-btn--secondary {
-  background: linear-gradient(45deg, var(--agri-warning-red), #e57373);
-  border: none;
-  box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3);
-  color: white;
-}
-
-.agricultural-btn--secondary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(211, 47, 47, 0.4);
-}
-
-.agricultural-btn:focus-visible {
-  outline: 3px solid var(--agri-sky-blue);
-  outline-offset: 2px;
-  box-shadow: 0 0 0 2px var(--agri-surface-card), 0 0 0 5px var(--agri-sky-blue);
-}
-
-.agricultural-btn:active {
-  transform: translateY(0);
-  transition: transform 0.1s;
-}
-
-@media (max-width: 1024px) {
-  .agricultural-btn {
-    min-height: 48px;
-    font-size: 0.95rem;
-  }
-}
-
-@media (max-width: 768px) {
-  .agricultural-btn {
-    min-height: 52px;
-    width: 100%;
-    margin-bottom: 8px;
-  }
-}
 </style>

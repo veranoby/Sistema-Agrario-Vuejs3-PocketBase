@@ -135,6 +135,7 @@ import { useSubscriptionLimits } from '@/composables/useSubscriptionLimits'
 import { useEvents } from '@/composables/useEvents'
 import { EVENTS } from '@/utils/eventBus'
 import { storeToRefs } from 'pinia'
+import UserForm from '@/components/forms/auth/UserForm.vue'
 
 const { t } = useI18n()
 const haciendaStore = useHaciendaStore()

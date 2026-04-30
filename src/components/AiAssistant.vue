@@ -97,6 +97,7 @@
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { geminiService } from '@/services/geminiService'
+import { buildSiembraContext } from '@/services/aiContextBuilder'
 
 const { t } = useI18n()
 
@@ -146,11 +147,11 @@ const formattedSuggestion = computed(() => {
 const generateSuggestion = async () => {
   loading.value = true
   try {
-    const context = {
-      siembra: props.siembra,
-      actividades: props.actividades,
-      zonas: props.zonas
-    }
+    const context = buildSiembraContext(
+      props.siembra,
+      props.actividades,
+      props.zonas
+    )
     const result = await geminiService.getAiSuggestion(context)
     if (result) {
       suggestion.value = result

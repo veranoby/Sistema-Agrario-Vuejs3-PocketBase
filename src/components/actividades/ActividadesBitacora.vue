@@ -3,13 +3,15 @@
     <v-card-title class="d-flex justify-space-between align-center text-body-1">
       <span>{{ t('activity_workspace.recent_log') }}</span>
       <v-btn
-        color="secondary"
+        size="x-small"
+        color="green-lighten-2"
+        icon
+        rounded="circle"
+        class="ml-auto"
         @click="openNewBitacoraEntryDialog"
-        size="small"
-        variant="elevated"
+        :aria-label="t('activity_workspace.new_entry')"
       >
-        <v-icon start>mdi-plus-box-outline</v-icon>
-        {{ t('activity_workspace.new_entry') }}
+        <v-icon>mdi-plus</v-icon>
       </v-btn>
     </v-card-title>
     <v-card-text class="pa-2">

@@ -247,7 +247,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useZonasStore } from '@/stores/zonasStore'
-import { useProfileStore } from '@/stores/profileStore'
+import { useAuthStore } from '@/stores/authStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import { useSiembrasStore } from '@/stores/siembrasStore'
 import { storeToRefs } from 'pinia'
@@ -260,14 +260,14 @@ const { t } = useI18n()
 const zonasStore = useZonasStore()
 const siembrasStore = useSiembrasStore()
 const snackbarStore = useSnackbarStore()
-const profileStore = useProfileStore()
+const authStore = useAuthStore()
 const haciendaStore = useHaciendaStore()
 const avatarStore = useAvatarStore()
 
-const { user } = storeToRefs(profileStore)
+const { user } = storeToRefs(authStore)
 const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
 const userRole = computed(() => user.value.role)
-const avatarUrl = computed(() => profileStore.avatarUrl)
+const avatarUrl = computed(() => authStore.avatarUrl)
 
 const promedioBpaEstado = computed(() => zonasStore.promedioBpaEstado)
 const colorBpaEstado = computed(() => {

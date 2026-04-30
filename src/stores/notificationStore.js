@@ -10,6 +10,7 @@
 
 import { defineStore } from 'pinia'
 import { handleError } from '@/utils/errorHandler'
+import { emailAlertService } from '@/services/emailAlertService'
 
 export const useNotificationStore = defineStore('notifications', {
   state: () => ({
@@ -256,6 +257,52 @@ export const useNotificationStore = defineStore('notifications', {
       } catch (error) {
         handleError(error, 'Error cargando notificaciones')
         this.notifications = []
+      }
+    },
+
+    /**
+     * Dispatcher de alertas críticas - Orquesta múltiples canales
+     * @param {Object} alert - Datos de la alerta
+     * @param {string} alert.title - Título de la alerta
+     * @param {string} alert.message - Mensaje de la alerta
+     * @param {string} alert.type - Tipo de alerta
+     * @param {boolean} alert.sendEmail - Si debe enviar email
+     * @param {Array} alert.recipients - Destinatarios del email
+     * @param {Object} alert.data - Datos adicionales
+     * @param {string} alert.hacienda - ID de hacienda
+     */
+    async dispatchCriticalAlert(alert) {
+      // 1. UI In-App
+      this.addNotification({
+        title: alert.title,
+        message: alert.message,
+        type: 'critical',
+        data: alert.data
+      })
+
+      // 2. Browser Push (si está permitido)
+      if (this.canShowBrowserNotifications) {
+        this.showBrowserNotification({
+          title: alert.title,
+          body: alert.message,
+          tag: `critical-${alert.type}-${Date.now()}`,
+          requireInteraction: true
+        })
+      }
+
+      // 3. Email (si está configurado)
+      if (alert.sendEmail && alert.recipients?.length > 0) {
+        try {
+          await emailAlertService.sendAlert({
+            type: alert.type,
+            recipients: alert.recipients,
+            data: alert.data,
+            hacienda: alert.hacienda
+          })
+          console.log('[NotificationStore] Email de alerta enviado')
+        } catch (error) {
+          handleError(error, 'Error enviando alerta por email')
+        }
       }
     },
 

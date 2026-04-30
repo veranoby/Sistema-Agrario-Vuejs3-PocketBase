@@ -19,7 +19,7 @@
 <script setup>
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useProfileStore } from '@/stores/profileStore'
+import { useAuthStore } from '@/stores/authStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 
 // Importa los componentes aquí
@@ -29,9 +29,9 @@ import HaciendaInfo from '@/components/hacienda/HaciendaInfo.vue'
 import PlanManagement from '@/components/hacienda/PlanManagement.vue'
 import HaciendaUserManagement from '@/components/hacienda/HaciendaUserManagement.vue'
 
-const profileStore = useProfileStore()
+const authStore = useAuthStore()
 const haciendaStore = useHaciendaStore()
-const { user } = storeToRefs(profileStore)
+const { user } = storeToRefs(authStore)
 
 const { mi_hacienda } = storeToRefs(haciendaStore)
 

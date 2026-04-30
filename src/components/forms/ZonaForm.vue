@@ -598,6 +598,7 @@ async function autoLocate() {
   gpsAccuracy.value = null
 
   try {
+    // Intentar obtener ubicación con alta precisión
     const position = await geoService.getCurrentPosition({
       enableHighAccuracy: true,
       timeout: 15000,
@@ -614,9 +615,9 @@ async function autoLocate() {
     // Guardar precisión si está disponible
     if (position.accuracy !== null) {
       gpsAccuracy.value = Math.round(position.accuracy)
-      snackbarStore.showSuccess(`Ubicación obtenida (precisión: ${gpsAccuracy.value}m)`)
+      snackbarStore.showSnackbar(`Ubicación obtenida (precisión: ${gpsAccuracy.value}m)`, 'success')
     } else {
-      snackbarStore.showSuccess('Ubicación obtenida exitosamente')
+      snackbarStore.showSnackbar('Ubicación obtenida exitosamente', 'success')
     }
 
     logger.debug('[ZonaForm] Coordenadas GPS obtenidas:', {
@@ -625,8 +626,19 @@ async function autoLocate() {
       accuracy: position.accuracy
     })
   } catch (error) {
-    gpsError.value = error.message
-    snackbarStore.showError(`Error GPS: ${error.message}`)
+    // Manejo específico de errores para guiar al usuario
+    let errorMsg = error.message
+    
+    if (error.code === 'PERMISSION_DENIED') {
+      errorMsg = 'Permiso denegado. Activa la ubicación en tu navegador.'
+    } else if (error.code === 'POSITION_UNAVAILABLE') {
+      errorMsg = 'Ubicación no disponible. Verifica tu señal GPS.'
+    } else if (error.code === 'TIMEOUT') {
+      errorMsg = 'Tiempo de espera agotado. Intenta de nuevo en un lugar abierto.'
+    }
+
+    gpsError.value = errorMsg
+    snackbarStore.showError(`Error GPS: ${errorMsg}`)
     logger.error('[ZonaForm] Error obteniendo ubicación:', error)
   } finally {
     loadingGPS.value = false
@@ -636,10 +648,20 @@ async function autoLocate() {
 async function guardar() {
   if (form.value.validate()) {
     try {
+      // Normalizar GPS a objeto antes de guardar si es una cadena JSON
+      let gpsData = zonaLocal.gps
+      if (typeof gpsData === 'string' && gpsData.trim().startsWith('{')) {
+        try {
+          gpsData = JSON.parse(gpsData)
+        } catch (e) {
+          console.error('Error al parsear GPS antes de guardar:', e)
+        }
+      }
+
       const zonaToSave = {
         ...zonaLocal,
         nombre: zonaLocal.nombre.toUpperCase(),
-
+        gps: gpsData,
         avatar: zonaLocal.avatar || null // Asegúrate de que el avatar se incluya correctamente
       }
 
@@ -701,6 +723,7 @@ watch(
       // Modo edición - Preservar los valores existentes
       Object.assign(zonaLocal, {
         ...newZona,
+        gps: typeof newZona.gps === 'object' ? JSON.stringify(newZona.gps) : newZona.gps || '',
         datos_bpa: Array.isArray(newZona.datos_bpa) ? newZona.datos_bpa : [],
         metricas: typeof newZona.metricas === 'object' ? newZona.metricas : {}
       })

@@ -12,7 +12,7 @@ import { useActividadesStore } from '@/stores/actividadesStore'
 import { useHaciendaStore } from '../haciendaStore'
 import { useSnackbarStore } from '../snackbarStore'
 import { useBitacoraStore } from '../bitacoraStore'
-import { safeLocalStorage } from '@/utils/safeLocalStorage'
+import { cache } from '@/utils/cacheManager'
 import { logger } from '@/utils/logger'
 
 // Import modular functions
@@ -744,15 +744,15 @@ export const useProgramacionesStore = defineStore('programaciones', {
 
     saveToStorage() {
       try {
-        safeLocalStorage.saveToLocalStorage('programaciones', this.programaciones)
+        cache.set('programaciones', this.programaciones)
       } catch (error) {
-        logger.error('[PROGRAMACIONES_STORE] Error guardando en localStorage:', error)
+        logger.error('[PROGRAMACIONES_STORE] Error guardando:', error)
       }
     },
 
     loadFromStorage() {
       try {
-        const data = safeLocalStorage.loadFromLocalStorage('programaciones')
+        const data = cache.get('programaciones')
         if (data && Array.isArray(data)) {
           this.programaciones = data.map(this.enriquecerProgramacion.bind(this))
           this.loaded = true
@@ -760,7 +760,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
         }
         return false
       } catch (error) {
-        logger.error('[PROGRAMACIONES_STORE] Error cargando desde localStorage:', error)
+        logger.error('[PROGRAMACIONES_STORE] Error cargando:', error)
         return false
       }
     }

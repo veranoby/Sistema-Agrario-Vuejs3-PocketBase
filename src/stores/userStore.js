@@ -5,6 +5,7 @@ import { createUserData, createUserUpdateData } from '@/utils/userDataFactory'
 import { useEvents } from '@/composables/useEvents'
 import { EVENTS } from '@/utils/eventBus'
 import { logger } from '@/utils/logger'
+import { useSyncStore } from '@/stores/sync'
 
 export const useUserStore = defineStore('user', {
   state: () => ({
@@ -108,9 +109,26 @@ export const useUserStore = defineStore('user', {
 
     async createUser(data) {
       this.loading = true
+      const syncStore = useSyncStore()
+
       try {
+        if (!syncStore.isOnline) {
+          // Modo offline: encolar operación
+          const tempId = await syncStore.queueOperation({
+            type: 'create',
+            collection: 'users',
+            data
+          })
+          const tempRecord = { ...data, id: tempId, _pending: true }
+          this.users.push(tempRecord)
+          logger.info('[USER_STORE] Usuario creado offline (pendiente)', { tempId })
+          return tempRecord
+        }
+
+        // Modo online: crear directamente
         const record = await pb.collection('users').create(data)
         this.users.push(record)
+        logger.info('[USER_STORE] Usuario creado online', { userId: record.id })
         return record
       } catch (error) {
         handleError(error, 'Error al crear usuario')
@@ -122,12 +140,33 @@ export const useUserStore = defineStore('user', {
 
     async updateUser(userId, data) {
       this.loading = true
+      const syncStore = useSyncStore()
+
       try {
+        if (!syncStore.isOnline) {
+          // Modo offline: encolar operación
+          await syncStore.queueOperation({
+            type: 'update',
+            collection: 'users',
+            id: userId,
+            data
+          })
+          // Actualizar localmente con flag pending
+          const index = this.users.findIndex(u => u.id === userId)
+          if (index !== -1) {
+            this.users[index] = { ...this.users[index], ...data, _pending: true }
+          }
+          logger.info('[USER_STORE] Usuario actualizado offline (pendiente)', { userId })
+          return this.users[index]
+        }
+
+        // Modo online: actualizar directamente
         const record = await pb.collection('users').update(userId, data)
         const index = this.users.findIndex(u => u.id === userId)
         if (index !== -1) {
           this.users[index] = record
         }
+        logger.info('[USER_STORE] Usuario actualizado online', { userId })
         return record
       } catch (error) {
         handleError(error, 'Error al actualizar usuario')

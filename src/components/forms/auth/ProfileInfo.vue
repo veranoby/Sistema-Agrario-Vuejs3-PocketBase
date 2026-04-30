@@ -222,16 +222,16 @@
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
-import { useProfileStore } from '@/stores/profileStore'
+import { useAuthStore } from '@/stores/authStore'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 import { useAuthStore } from '@/stores/authStore'
 import AvatarForm from '@/components/forms/AvatarForm.vue'
 
-const profileStore = useProfileStore()
+const authStore = useAuthStore()
 const snackbarStore = useSnackbarStore()
 const authStore = useAuthStore()
 const { t } = useI18n()
-const { user } = storeToRefs(profileStore)
+const { user } = storeToRefs(authStore)
 
 const resendingEmail = ref(false)
 
@@ -247,7 +247,7 @@ const dialogOpen = ref(false)
 const showAvatarDialog = ref(false)
 
 const userRole = computed(() => user.value?.role || '')
-const avatarUrl = computed(() => profileStore.avatarUrl)
+const avatarUrl = computed(() => authStore.avatarUrl)
 
 const openDialog = () => {
   if (user.value) {
@@ -263,13 +263,13 @@ const openDialog = () => {
 }
 
 const handleAvatarUpdated = (updatedRecord) => {
-  profileStore.setUser(updatedRecord)
+  authStore.setUser(updatedRecord)
 }
 
 const saveProfileChanges = async () => {
   isLoading.value = true
   try {
-    await profileStore.updateProfile({
+    await authStore.updateProfile({
       name: name.value,
       lastname: lastname.value,
       username: username.value,

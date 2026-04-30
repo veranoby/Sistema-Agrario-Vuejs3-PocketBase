@@ -1,8 +1,7 @@
 import { defineStore } from 'pinia'
-import { pb } from '@/utils/pocketbase'
+import { authProvider } from '@/services/authProvider'
 import { handleError } from '@/utils/errorHandler'
 import { useSnackbarStore } from './snackbarStore'
-import { useProfileStore } from './profileStore'
 import { useHaciendaStore } from './haciendaStore'
 import { usePlanStore } from './planStore'
 import router from '@/router'
@@ -11,11 +10,11 @@ import { useActividadesStore } from '@/stores/actividadesStore'
 import { useZonasStore } from '@/stores/zonasStore'
 import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useRecordatoriosStore } from '@/stores/recordatoriosStore'
-import { useProgramacionesStore } from '@/stores/programacionesStore'
+import { useProgramacionesStore } from '@/stores/programaciones'
 import { debounce } from '@/utils/debounce'
 import { logger } from '@/utils/logger'
-import { cache, CacheKeys } from '@/utils/cacheManager'
-import { CACHE_LEVELS } from '@/constants/bpa'
+import { warmUpCache } from '@/services/cacheWarmingService'
+import { useAvatarStore } from './avatarStore'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -27,12 +26,104 @@ export const useAuthStore = defineStore('auth', {
     rememberMe: null,
     showLoginDialog: false,
     initialized: false,
-    refreshTimer: null
+    refreshTimer: null,
+    version: 1
   }),
+
+  getters: {
+    avatarUrl: (state) => {
+      const avatarStore = useAvatarStore()
+      return avatarStore.getAvatarUrl({ ...state.user, type: 'user' }, 'users')
+    },
+    userRole: (state) => (state.user ? state.user.role : ''),
+    fullName: (state) => (state.user ? `${state.user.name} ${state.user.lastname}` : '')
+  },
 
   actions: {
     $dispose() {
       this.stopRefreshTimer()
+    },
+
+    async changePassword(oldPassword, newPassword) {
+      if (!this.user) {
+        throw new Error('No hay usuario autenticado para cambiar la contraseña.')
+      }
+
+      const syncStore = useSyncStore()
+      if (!syncStore.isOnline) {
+        await syncStore.queueOperation({
+          type: 'changePassword',
+          collection: 'users',
+          id: this.user.id,
+          data: { oldPassword, newPassword }
+        })
+        return
+      }
+
+      const snackbarStore = useSnackbarStore()
+      snackbarStore.showLoading()
+
+      try {
+        await pb.collection('users').update(this.user.id, {
+          oldPassword,
+          password: newPassword,
+          passwordConfirm: newPassword
+        })
+        snackbarStore.showSnackbar('Password changed successfully', 'success')
+      } catch (error) {
+        handleError(error, 'Failed to change password')
+        throw error
+      } finally {
+        snackbarStore.hideLoading()
+      }
+    },
+
+    async updateProfile(profileData) {
+      const snackbarStore = useSnackbarStore()
+      snackbarStore.showLoading()
+      const syncStore = useSyncStore()
+
+      // Verificar que el usuario existe
+      if (!this.user || !this.user.id) {
+        snackbarStore.hideLoading()
+        throw new Error('No hay usuario autenticado para actualizar')
+      }
+
+      if (!syncStore.isOnline) {
+        // Actualizar localmente
+        this.user = { 
+          ...this.user, 
+          ...profileData,
+          updated: new Date().toISOString()
+        }
+        
+        // Guardar en localStorage
+        syncStore.saveToLocalStorage('user', this.user)
+        
+        // Encolar para sincronización
+        await syncStore.queueOperation({
+          type: 'updateProfile',
+          collection: 'users',
+          id: this.user.id,
+          data: profileData
+        })
+        
+        snackbarStore.hideLoading()
+        return this.user
+      }
+
+      try {
+        const updatedUser = await pb.collection('users').update(this.user.id, profileData)
+        this.user = updatedUser
+        syncStore.saveToLocalStorage('user', this.user)
+        snackbarStore.showSnackbar('Perfil actualizado con éxito', 'success')
+        return updatedUser
+      } catch (error) {
+        handleError(error, 'Error al actualizar el perfil')
+        throw error
+      } finally {
+        snackbarStore.hideLoading()
+      }
     },
 
     async attemptTokenRefresh() {
@@ -40,13 +131,13 @@ export const useAuthStore = defineStore('auth', {
       logger.auth('Attempting token refresh...')
 
       try {
-        const freshAuthData = await pb.collection('users').authRefresh()
+        const freshAuthData = await authProvider.refreshSession()
         logger.auth('Token refresh successful - record ID:', freshAuthData.record?.id)
 
         this.setSession(freshAuthData.record)
         const authDataToStore = {
-          token: pb.authStore.token,
-          model: pb.authStore.model
+          token: authProvider.authStore.token,
+          model: authProvider.authStore.model
         }
         syncStore.saveToLocalStorage('pocketbase_auth', authDataToStore)
         syncStore.saveToLocalStorage('last_auth_success', Date.now())
@@ -75,10 +166,10 @@ export const useAuthStore = defineStore('auth', {
         return false
       }
 
-      pb.authStore.save(loadedAuthData.token, loadedAuthData.model)
-      logger.auth('Session valid:', pb.authStore.isValid)
+      authProvider.authStore.save(loadedAuthData.token, loadedAuthData.model)
+      logger.auth('Session valid:', authProvider.authStore.isValid)
 
-      if (pb.authStore.isValid) {
+      if (authProvider.authStore.isValid) {
         logger.auth('Valid session, setting up user')
 
         if (this.tokenNeedsRefresh()) {
@@ -91,7 +182,7 @@ export const useAuthStore = defineStore('auth', {
             return false
           }
         } else {
-          this.setSession(pb.authStore.model)
+          this.setSession(authProvider.authStore.model)
         }
 
         this.startRefreshTimerIfNeeded(rememberMeIsActive)
@@ -147,7 +238,7 @@ export const useAuthStore = defineStore('auth', {
       } else {
         logger.auth('ensureAuthInitialized: Already attempted initialization.')
       }
-      return pb.authStore.isValid
+      return authProvider.authStore.isValid
     },
 
     startRefreshTimer() {
@@ -190,44 +281,14 @@ export const useAuthStore = defineStore('auth', {
       try {
         let authData = null
 
-        if (username) {
-          try {
-            authData = await pb
-              .collection('users')
-              .authWithPassword(username.toUpperCase(), password)
-            console.log(
-              '[AUTH] Datos de autenticación recibidos:',
-              JSON.parse(
-                JSON.stringify({
-                  token: pb.authStore.token,
-                  record: pb.authStore.model,
-                  isValid: pb.authStore.isValid
-                })
-              )
-            )
-            if (pb.authStore.isValid) {
-              this.handleSuccessfulLogin(authData, rememberMe)
-              return true
-            }
-          } catch (error) {
-            logger.auth('Error al intentar login con username:', error.message)
+        try {
+          authData = await authProvider.login(username, email, password)
+          if (authProvider.authStore.isValid) {
+            this.handleSuccessfulLogin(authData, rememberMe)
+            return true
           }
-        }
-
-        if (email && !authData) {
-          try {
-            authData = await pb.collection('users').authWithPassword(email, password)
-            if (pb.authStore.isValid) {
-              this.handleSuccessfulLogin(authData, rememberMe)
-              return true
-            }
-          } catch (error) {
-            logger.auth('Error al intentar login con email:', error.message)
-          }
-        }
-
-        if (!authData) {
-          throw new Error('Credenciales incorrectas')
+        } catch (error) {
+          logger.auth('Error al intentar login:', error.message)
         }
 
         return true
@@ -241,22 +302,22 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async refreshToken() {
-      logger.auth('Attempting to refresh token. Current pb.authStore.isValid:', pb.authStore.isValid)
+      logger.auth('Attempting to refresh token. Current authProvider.authStore.isValid:', authProvider.authStore.isValid)
       const syncStore = useSyncStore()
 
-      if (!pb.authStore.isValid) {
+      if (!authProvider.authStore.isValid) {
         return false
       }
 
       if (this.tokenNeedsRefresh()) {
         try {
-          const freshAuthData = await pb.collection('users').authRefresh()
+          const freshAuthData = await authProvider.refreshSession()
           logger.auth('authRefresh successful - record ID:', freshAuthData.record?.id)
           this.setSession(freshAuthData.record)
 
           const authDataToStoreOnTokenRefresh = {
-            token: pb.authStore.token,
-            model: pb.authStore.model
+            token: authProvider.authStore.token,
+            model: authProvider.authStore.model
           }
           syncStore.saveToLocalStorage('pocketbase_auth', authDataToStoreOnTokenRefresh)
           syncStore.saveToLocalStorage('last_auth_success', Date.now())
@@ -296,79 +357,13 @@ export const useAuthStore = defineStore('auth', {
       return timeSinceLastSuccess > refreshThreshold
     },
 
-    async warmUpCache(user) {
-      const startTime = Date.now()
-      logger.info(`[CacheWarming] Iniciando para usuario ${user.id}`)
-
-      try {
-        const tiposActividadesStore = useActividadesStore()
-        const tiposZonasStore = useZonasStore()
-
-        await Promise.all([
-          tiposActividadesStore.fetchTiposActividades({ requestKey: null }),
-          tiposZonasStore.fetchTiposZonas({ requestKey: null })
-        ])
-
-        cache.setToLevel(
-          CacheKeys.tiposActividades().key,
-          tiposActividadesStore.tiposActividades,
-          CACHE_LEVELS.LOOKUP
-        )
-        cache.setToLevel(
-          CacheKeys.tiposZonas().key,
-          tiposZonasStore.tiposZonas,
-          CACHE_LEVELS.LOOKUP
-        )
-
-        const haciendaStore = useHaciendaStore()
-        await haciendaStore.fetchHaciendas({ requestKey: null })
-
-        const userHaciendas = haciendaStore.userHaciendas(user.id)
-
-        userHaciendas.forEach(h => {
-          cache.setToLevel(
-            `hacienda:${h.id}`,
-            h,
-            CACHE_LEVELS.LOOKUP
-          )
-        })
-
-        const programacionesStore = useProgramacionesStore()
-        await Promise.all(
-          userHaciendas.map(async (hacienda) => {
-            await programacionesStore.fetchPage(1, 100, { hacienda: hacienda.id })
-            cache.setToLevel(
-              CacheKeys.programaciones(hacienda.id).key,
-              [...programacionesStore.programaciones],
-              CACHE_LEVELS.RECENT
-            )
-          })
-        )
-
-        const elapsed = Date.now() - startTime
-        logger.info(`[CacheWarming] Completado en ${elapsed}ms`)
-
-        return {
-          success: true,
-          elapsed,
-          itemsCached: 2 + userHaciendas.length + userHaciendas.length
-        }
-      } catch (error) {
-        logger.debug('[CacheWarming] Error (no crítico):', error?.message || error)
-        return {
-          success: false,
-          error: error?.message || error
-        }
-      }
-    },
-
     async handleSuccessfulLogin(authData, rememberMe = false) {
       logger.auth('Iniciando handleSuccessfulLogin, rememberMe:', rememberMe)
 
       this.setSession(authData.record)
       const syncStore = useSyncStore()
 
-      const authDataToStore = { token: pb.authStore.token, model: pb.authStore.model }
+      const authDataToStore = { token: authProvider.authStore.token, model: authProvider.authStore.model }
       syncStore.saveToLocalStorage('pocketbase_auth', authDataToStore)
       syncStore.saveToLocalStorage('last_auth_success', Date.now())
 
@@ -396,11 +391,10 @@ export const useAuthStore = defineStore('auth', {
 
       syncStore.init()
 
-      const profileStore = useProfileStore()
       const haciendaStore = useHaciendaStore()
 
       await Promise.all([
-        profileStore.setUser(authData.record),
+        this.setUser(authData.record),
         authData.record.hacienda
           ? haciendaStore.fetchHacienda(authData.record.hacienda)
           : Promise.resolve()
@@ -410,7 +404,7 @@ export const useAuthStore = defineStore('auth', {
 
       router.push('/dashboard')
 
-      this.warmUpCache(authData.record).then(result => {
+      warmUpCache(authData.record).then(result => {
         if (result.success) {
           logger.auth(`Cache warming completado en ${result.elapsed}ms, ${result.itemsCached} items`)
         } else {
@@ -448,7 +442,7 @@ export const useAuthStore = defineStore('auth', {
 
     setSession(record) {
       this.user = record
-      this.token = pb.authStore.token
+      this.token = authProvider.authStore.token
       this.isLoggedIn = true
     },
 
@@ -481,7 +475,7 @@ export const useAuthStore = defineStore('auth', {
           false
         )
 
-        await pb.collection('users').create(userData)
+        await authProvider.register(userData)
 
         await this.sendVerificationEmail(formData.email)
 
@@ -525,7 +519,7 @@ export const useAuthStore = defineStore('auth', {
 
     async sendVerificationEmail(email) {
       try {
-        await pb.collection('users').requestVerification(email)
+        await authProvider.requestVerification(email)
         return true
       } catch (error) {
         handleError(error, 'Failed to send verification email')
@@ -536,7 +530,7 @@ export const useAuthStore = defineStore('auth', {
       const snackbarStore = useSnackbarStore()
 
       try {
-        await pb.collection('users').confirmVerification(token)
+        await authProvider.confirmVerification(token)
         snackbarStore.showSnackbar(
           'Email confirmado exitosamente! Ya puede iniciar sesión.',
           'success'
@@ -551,7 +545,7 @@ export const useAuthStore = defineStore('auth', {
     async requestPasswordReset(email) {
       const snackbarStore = useSnackbarStore()
       try {
-        await pb.collection('users').requestPasswordReset(email)
+        await authProvider.requestPasswordReset(email)
         return true
       } catch (error) {
         handleError(error, 'Error al solicitar restablecimiento de contraseña')
@@ -563,7 +557,7 @@ export const useAuthStore = defineStore('auth', {
 
     async confirmPasswordReset(token, password, passwordConfirm) {
       try {
-        await pb.collection('users').confirmPasswordReset(token, password, passwordConfirm)
+        await authProvider.confirmPasswordReset(token, password, passwordConfirm)
         return true
       } catch (error) {
         handleError(error, 'Error al confirmar reset de contraseña')
@@ -582,7 +576,7 @@ export const useAuthStore = defineStore('auth', {
           await router.push('/')
         }
 
-        pb.authStore.clear()
+        authProvider.logout()
         this.user = null
         this.token = null
         this.isLoggedIn = false
