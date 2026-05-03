@@ -224,12 +224,10 @@ import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useAuthStore } from '@/stores/authStore'
 import { useSnackbarStore } from '@/stores/snackbarStore'
-import { useAuthStore } from '@/stores/authStore'
 import AvatarForm from '@/components/forms/AvatarForm.vue'
 
 const authStore = useAuthStore()
 const snackbarStore = useSnackbarStore()
-const authStore = useAuthStore()
 const { t } = useI18n()
 const { user } = storeToRefs(authStore)
 

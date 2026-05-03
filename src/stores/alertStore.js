@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { sendAlert, configureAlertPreferences, alertTypes, getAlertPreferences } from '@/services/emailAlertService'
 import { logger } from '@/utils/logger'
+import { useNotificationStore } from './notificationStore'
 
 export const useAlertStore = defineStore('alerts', {
   state: () => ({
@@ -81,6 +82,15 @@ export const useAlertStore = defineStore('alerts', {
 
       try {
         this.loading = true
+
+        // In-app notification
+        const notificationStore = useNotificationStore()
+        notificationStore.addNotification({
+          title: `Actividad Crítica: ${activity.nombre}`,
+          message: activity.descripcion || 'Se requiere atención inmediata en esta actividad.',
+          type: 'error'
+        })
+
         await sendAlert({
           type: alertTypes.ACTIVIDAD_CRITICA,
           recipients: this.preferences.recipients,
@@ -120,6 +130,15 @@ export const useAlertStore = defineStore('alerts', {
 
       try {
         this.loading = true
+
+        // In-app notification
+        const notificationStore = useNotificationStore()
+        notificationStore.addNotification({
+          title: `BPA Vencido: ${zona.nombre}`,
+          message: `La certificación BPA para la zona ${zona.nombre} ha vencido o está próxima a vencer.`,
+          type: 'warning'
+        })
+
         await sendAlert({
           type: alertTypes.BPA_VENCIDO,
           recipients: this.preferences.recipients,
@@ -158,6 +177,15 @@ export const useAlertStore = defineStore('alerts', {
 
       try {
         this.loading = true
+
+        // In-app notification
+        const notificationStore = useNotificationStore()
+        notificationStore.addNotification({
+          title: `Recordatorio: ${recordatorio.titulo}`,
+          message: recordatorio.descripcion,
+          type: 'info'
+        })
+
         await sendAlert({
           type: alertTypes.RECORDATORIO,
           recipients: this.preferences.recipients,
@@ -197,6 +225,15 @@ export const useAlertStore = defineStore('alerts', {
 
       try {
         this.loading = true
+
+        // In-app notification
+        const notificationStore = useNotificationStore()
+        notificationStore.addNotification({
+          title: `Actividad Asignada: ${activity.nombre}`,
+          message: `Se ha asignado la actividad a ${responsableNombre}.`,
+          type: 'success'
+        })
+
         await sendAlert({
           type: alertTypes.ACTIVIDAD_ASIGNADA,
           recipients: this.preferences.recipients,
@@ -235,6 +272,15 @@ export const useAlertStore = defineStore('alerts', {
 
       try {
         this.loading = true
+
+        // In-app notification
+        const notificationStore = useNotificationStore()
+        notificationStore.addNotification({
+          title: `Atención en Zona: ${zona.nombre}`,
+          message: motivo,
+          type: 'warning'
+        })
+
         await sendAlert({
           type: alertTypes.ZONA_REQUIERE_ATENCION,
           recipients: this.preferences.recipients,

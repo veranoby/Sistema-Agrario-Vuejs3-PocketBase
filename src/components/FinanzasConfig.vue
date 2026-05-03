@@ -379,7 +379,6 @@ import { useSyncStore } from '@/stores/sync'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useFinanzaStore } from '@/stores/finanzaStore'
-import { useAuthStore } from '@/stores/authStore'
 import { storeToRefs } from 'pinia'
 import { format, parseISO, getMonth, getYear, setMonth, setYear } from 'date-fns'
 import FinanzasForm from '@/components/forms/FinanzasForm.vue'
@@ -389,7 +388,6 @@ const { t } = useI18n()
 const authStore = useAuthStore()
 const haciendaStore = useHaciendaStore()
 const finanzaStore = useFinanzaStore()
-const authStore = useAuthStore()
 
 const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
 const userRole = computed(() => authStore.user.role)

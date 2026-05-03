@@ -390,12 +390,11 @@ import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import AvatarForm from '@/components/forms/AvatarForm.vue'
-import { GeolocationService } from '@/utils/geolocation'
+import { locationCoordinator } from '@/services/locationCoordinator'
 
 const { t } = useI18n()
 const haciendaStore = useHaciendaStore()
 const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
-const geoService = new GeolocationService()
 
 const editDialog = ref(false)
 const showAvatarDialog = ref(false)
@@ -459,21 +458,12 @@ const handleAvatarUpdated = (updatedRecord) => {
 }
 
 async function autoLocate() {
-  if (!geoService.isAvailable()) {
-    gpsError.value = 'Geolocalización no soportada por este navegador'
-    return
-  }
-
   loadingGPS.value = true
   gpsError.value = ''
   gpsAccuracy.value = null
 
   try {
-    const position = await geoService.getCurrentPosition({
-      enableHighAccuracy: true,
-      timeout: 15000,
-      maximumAge: 0
-    })
+    const position = await locationCoordinator.getPosition()
 
     // HaciendaInfo usa objeto, no string
     editedHacienda.value.gps = {
@@ -486,12 +476,8 @@ async function autoLocate() {
     }
   } catch (error) {
     let errorMsg = error.message
-    if (error.code === 'PERMISSION_DENIED') {
+    if (error.message.includes('denegado')) {
       errorMsg = 'Permiso denegado. Activa la ubicación en tu navegador.'
-    } else if (error.code === 'POSITION_UNAVAILABLE') {
-      errorMsg = 'Ubicación no disponible. Verifica tu señal GPS.'
-    } else if (error.code === 'TIMEOUT') {
-      errorMsg = 'Tiempo de espera agotado. Intenta de nuevo en un lugar abierto.'
     }
     gpsError.value = errorMsg
   } finally {

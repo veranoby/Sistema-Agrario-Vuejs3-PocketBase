@@ -89,97 +89,29 @@
       </div>
 
       <div class="rounded-lg border bg-card text-card-foreground shadow-sm" aria-label="Últimas actividades">
-        <div class="flex flex-col space-y-1.5 p-6">
-          <h3 class="whitespace-nowrap text-2xl font-semibold leading-none tracking-tight" id="last-activities-title">
-            {{ t('dashboard.last_activities') }}
-          </h3>
-        </div>
-        <div class="p-6" aria-labelledby="last-activities-title">
-          <div class="space-y-4">
-            <div class="flex items-start gap-4">
-              <div class="bg-muted rounded-md flex items-center justify-center aspect-square w-10">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  class="w-5 h-5 text-muted-foreground"
-                >
-                  <path d="M12 22h6a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v10"></path>
-                  <path d="M14 2v4a2 2 0 0 0 2 2h4"></path>
-                  <path d="M10.4 12.6a2 2 0 1 1 3 3L8 21l-4 1 1-4Z"></path>
-                </svg>
-              </div>
-              <div class="grid gap-1">
-                <div class="flex items-center gap-2">
-                  <div class="font-medium">John Doe</div>
-                  <div class="text-xs text-muted-foreground">{{ t('dashboard.edited_a_post') }}</div>
-                </div>
-                <p class="text-sm">{{ t('dashboard.updated_roadmap') }}</p>
-              </div>
-            </div>
-            <div class="flex items-start gap-4">
-              <div class="bg-muted rounded-md flex items-center justify-center aspect-square w-10">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  class="w-5 h-5 text-muted-foreground"
-                >
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="17 8 12 3 7 8"></polyline>
-                  <line x1="12" x2="12" y1="3" y2="15"></line>
-                </svg>
-              </div>
-              <div class="grid gap-1">
-                <div class="flex items-center gap-2">
-                  <div class="font-medium">Jane Smith</div>
-                  <div class="text-xs text-muted-foreground">{{ t('dashboard.uploaded_a_file') }}</div>
-                </div>
-                <p class="text-sm">{{ t('dashboard.shared_mockups') }}</p>
-              </div>
-            </div>
-            <div class="flex items-start gap-4">
-              <div class="bg-muted rounded-md flex items-center justify-center aspect-square w-10">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  class="w-5 h-5 text-muted-foreground"
-                >
-                  <path d="M8 2v4"></path>
-                  <path d="M16 2v4"></path>
-                  <rect width="18" height="18" x="3" y="4" rx="2"></rect>
-                  <path d="M3 10h18"></path>
-                </svg>
-              </div>
-              <div class="grid gap-1">
-                <div class="flex items-center gap-2">
-                  <div class="font-medium">Sarah Lee</div>
-                  <div class="text-xs text-muted-foreground">{{ t('dashboard.created_an_event') }}</div>
-                </div>
-                <p class="text-sm">{{ t('dashboard.scheduled_meeting') }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <v-card v-if="notifications.length" class="mt-4" color="grey-lighten-4">
+          <v-card-title class="text-subtitle-1">
+            <v-icon start color="amber-darken-2">mdi-bell-ring</v-icon>
+            Alertas del Sistema
+          </v-card-title>
+          <v-card-text>
+            <v-list density="compact" bg-color="transparent">
+              <v-list-item v-for="n in notifications" :key="n.id" :active="!n.read">
+                <template v-slot:prepend>
+                  <v-icon :color="n.type === 'error' ? 'error' : 'warning'">
+                    {{ n.type === 'error' ? 'mdi-alert-decagram' : 'mdi-alert' }}
+                  </v-icon>
+                </template>
+                <v-list-item-title class="text-caption font-weight-bold">
+                  {{ n.title }}
+                </v-list-item-title>
+                <v-list-item-subtitle class="text-wrap text-caption">
+                  {{ n.message }}
+                </v-list-item-subtitle>
+              </v-list-item>
+            </v-list>
+          </v-card-text>
+        </v-card>
 
         <v-card v-if="recentBitacoras.length" class="mt-4">
           <v-card-title>
@@ -224,6 +156,7 @@ import { useBitacoraStore } from '@/stores/bitacoraStore'
 import { handleError } from '@/utils/errorHandler'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 import { useSyncStore } from '@/stores/sync'
+import { useNotificationStore } from '@/stores/notificationStore'
 import { reportingModule } from '@/modules/reporting'
 
 import StatusPanel from '@/components/recordatorios/RecordatoriosStatusPanel.vue'
@@ -239,9 +172,14 @@ const zonasStore = useZonasStore()
 const bitacoraStore = useBitacoraStore()
 const snackbarStore = useSnackbarStore()
 const syncStore = useSyncStore()
+const notificationStore = useNotificationStore()
 
 const recentBitacoras = computed(() => {
   return bitacoraStore.bitacoraEntries.slice(0, 5)
+})
+
+const notifications = computed(() => {
+  return notificationStore.recentNotifications(5)
 })
 
 onMounted(async () => {

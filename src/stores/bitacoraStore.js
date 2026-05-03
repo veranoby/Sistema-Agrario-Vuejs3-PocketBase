@@ -35,6 +35,25 @@ export const useBitacoraStore = defineStore('bitacora', {
     }
   }),
 
+  sync: {
+    collectionName: 'bitacora',
+    stateProp: 'bitacoraEntries',
+    hooks: {
+      onCreate: function() {
+        const programacionesStore = useProgramacionesStore();
+        programacionesStore.clearComplianceStateCache();
+      },
+      onUpdate: function() {
+        const programacionesStore = useProgramacionesStore();
+        programacionesStore.clearComplianceStateCache();
+      },
+      onDelete: function() {
+        const programacionesStore = useProgramacionesStore();
+        programacionesStore.clearComplianceStateCache();
+      }
+    }
+  },
+
   getters: {
     getBitacoraByProgramacion: (state) => (programacionId) => {
       return state.bitacoraEntries.filter(entry => entry.programacion_origen === programacionId);
@@ -349,85 +368,7 @@ export const useBitacoraStore = defineStore('bitacora', {
       }
     },
 
-    async applySyncedCreate(tempId, realItem) {
-      logger.debug(`[BITACORA_STORE] Applying synced create: tempId ${tempId} -> realId ${realItem.id}`);
-      const syncStore = useSyncStore();
-      let itemIndex = this.bitacoraEntries.findIndex(entry => entry.id === tempId && entry._isTemp);
 
-      try {
-        const freshEnrichedItem = await pb.collection('bitacora').getOne(realItem.id, { 
-            expand: "actividad_realizada,actividad_realizada.tipo_actividades,siembra_asociada,user_responsable" 
-        });
-        if (itemIndex !== -1) {
-            this.bitacoraEntries[itemIndex] = { ...freshEnrichedItem, _isTemp: false };
-        } else {
-            itemIndex = this.bitacoraEntries.findIndex(entry => entry.id === realItem.id);
-            if (itemIndex !== -1) {
-                this.bitacoraEntries[itemIndex] = { ...freshEnrichedItem, _isTemp: false };
-            } else {
-                this.bitacoraEntries.unshift({ ...freshEnrichedItem, _isTemp: false });
-            }
-        }
-      } catch (e) {
-        handleError(e, 'Error re-fetching enriched item for applySyncedCreate')
-        if (itemIndex !== -1) {
-            this.bitacoraEntries[itemIndex] = { ...realItem, _isTemp: false };
-        } else {
-            if (!this.bitacoraEntries.some(entry => entry.id === realItem.id)) {
-                this.bitacoraEntries.unshift({ ...realItem, _isTemp: false });
-            }
-        }
-      }
-      syncStore.saveToLocalStorage('bitacoraEntries', this.bitacoraEntries);
-      logger.debug('[BITACORA_STORE] Synced create applied, localStorage updated.');
-      
-      const programacionesStore = useProgramacionesStore();
-      programacionesStore.clearComplianceStateCache();
-    },
-
-    async applySyncedUpdate(id, updatedItemData) {
-      logger.debug(`[BITACORA_STORE] Applying synced update for id: ${id}`);
-      const syncStore = useSyncStore();
-      let itemIndex = this.bitacoraEntries.findIndex(entry => entry.id === id);
-
-      try {
-        const freshEnrichedItem = await pb.collection('bitacora').getOne(id, { 
-            expand: "actividad_realizada,actividad_realizada.tipo_actividades,siembra_asociada,user_responsable" 
-        });
-        if (itemIndex !== -1) {
-            this.bitacoraEntries[itemIndex] = { ...freshEnrichedItem, _isTemp: false };
-        } else {
-            this.bitacoraEntries.unshift({ ...freshEnrichedItem, _isTemp: false });
-        }
-      } catch (e) {
-        handleError(e, 'Error re-fetching enriched item for applySyncedUpdate')
-        if (itemIndex !== -1) {
-            this.bitacoraEntries[itemIndex] = { ...this.bitacoraEntries[itemIndex], ...updatedItemData, _isTemp: false };
-        } else {
-            console.warn(`[BITACORA_STORE] Could not find item with id ${id} to apply fallback update.`);
-        }
-      }
-      syncStore.saveToLocalStorage('bitacoraEntries', this.bitacoraEntries);
-      logger.debug('[BITACORA_STORE] Synced update applied, localStorage updated.');
-      
-      const programacionesStore = useProgramacionesStore();
-      programacionesStore.clearComplianceStateCache();
-    },
-
-    applySyncedDelete(id) {
-      logger.debug(`[BITACORA_STORE] Applying synced delete for id: ${id}`);
-      const initialLength = this.bitacoraEntries.length;
-      this.bitacoraEntries = this.bitacoraEntries.filter(entry => entry.id !== id);
-      if (this.bitacoraEntries.length < initialLength) {
-        useSyncStore().saveToLocalStorage('bitacoraEntries', this.bitacoraEntries);
-        logger.debug('[BITACORA_STORE] Synced delete applied.');
-      } else {
-        console.warn(`[BITACORA_STORE] Could not find item with id ${id} to apply delete.`);
-      }
-      
-      const programacionesStore = useProgramacionesStore();
-      programacionesStore.clearComplianceStateCache();
-    },
     
     async updateBitacoraEntry(id, dataToUpdate) {
         const syncStore = useSyncStore();

@@ -75,6 +75,7 @@
     </v-card-text>
     <v-divider v-if="entry.id"></v-divider>
      <v-card-actions v-if="entry.id">
+        <BitacoraSignature :bitacoraId="entry.id" :existingSignature="entry.signature" />
         <v-spacer></v-spacer>
         <v-chip variant="outlined" size="x-small" pill>ID: {{ entry.id }}</v-chip>
     </v-card-actions>
@@ -83,6 +84,7 @@
 
 <script setup>
 import { computed } from 'vue';
+import BitacoraSignature from './BitacoraSignature.vue';
 
 const props = defineProps({
   entry: {

@@ -113,13 +113,24 @@ export const useHaciendaManagementStore = defineStore('haciendaManagement', {
 
       try {
         const { emit } = useEvents()
+        const { locationCoordinator } = await import('@/services/locationCoordinator')
+
+        let gps = haciendaData.gps || { lat: null, lng: null }
+        if (!gps.lat) {
+          try {
+            const pos = await locationCoordinator.getPosition()
+            gps = { lat: pos.latitude, lng: pos.longitude }
+          } catch (e) {
+            logger.warn('[HACIENDA_MANAGEMENT] No se pudo capturar GPS automático:', e.message)
+          }
+        }
 
         // Preparar datos
         const data = {
           name: haciendaData.name,
           descripcion: haciendaData.descripcion,
           location: haciendaData.location,
-          gps: haciendaData.gps,
+          gps: gps,
           info: haciendaData.info,
           plan: haciendaData.plan?.id || haciendaData.plan,
           status: haciendaData.status || 'active',

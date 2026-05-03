@@ -357,4 +357,9 @@ export class PdfExporter {
 
 // Singleton instance
 export const pdfExporter = new PdfExporter()
+
+export const exportToPDF = (entry, actividad, tipoActividad, hacienda) => {
+  return pdfExporter.exportBitacora(entry, actividad, tipoActividad, hacienda)
+}
+
 export default pdfExporter

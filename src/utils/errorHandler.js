@@ -60,27 +60,31 @@ const POCKETBASE_ERROR_MAP = {
 // FUNCIÓN PRINCIPAL DE MANEJO DE ERRORES
 // ============================================================================
 
-export function handleError(error, customMessage = null) {
+export function handleError(error, customMessage = null, options = { silent: false }) {
+  const showMsg = (msg) => {
+    if (!options.silent) showErrorMessage(msg)
+  }
+
   // Si ya es un AgriError, usar su mensaje
   if (error instanceof AgriError) {
-    showErrorMessage(error.message)
+    showMsg(error.message)
     logError(error)
     return error
   }
 
-  // Errores de PocketBase
-  if (error?.status) {
+  // Errores de PocketBase (status 0 es network error en PB)
+  if (error?.status && error.status !== 0) {
     const friendlyMessage = POCKETBASE_ERROR_MAP[error.status] || error.message
     const agriError = mapPocketBaseError(error, friendlyMessage)
-    showErrorMessage(customMessage || friendlyMessage)
+    showMsg(customMessage || friendlyMessage)
     logError(agriError)
     return agriError
   }
 
-  // Errores de red
-  if (error?.message?.includes('Failed to fetch') || error?.message?.includes('NetworkError')) {
+  // Errores de red (MANTENER la lógica original, pero usar showMsg y contemplar status === 0)
+  if (error?.message?.includes('Failed to fetch') || error?.message?.includes('NetworkError') || error?.status === 0) {
     const networkError = new NetworkError('Sin conexión a internet. Los cambios se guardarán localmente.')
-    showErrorMessage(networkError.message)
+    showMsg(networkError.message)
     logError(networkError)
     return networkError
   }
@@ -91,7 +95,7 @@ export function handleError(error, customMessage = null) {
     'UNKNOWN',
     { originalError: error?.message }
   )
-  showErrorMessage(genericError.message)
+  showMsg(genericError.message)
   logError(genericError)
   return genericError
 }

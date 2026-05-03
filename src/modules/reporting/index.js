@@ -41,29 +41,19 @@ export const reportingModule = {
    * @param {string} format - Formato (pdf, excel, csv, json, html)
    */
   async export(report, format) {
+    const exporters = await import('@/utils/exporters')
+    
     switch (format) {
-      case 'pdf': {
-        const { PdfExporter } = await import('@/utils/exporters/pdfExporter')
-        const exporter = new PdfExporter()
-        return exporter.export(report)
-      }
-      case 'excel': {
-        const { ExcelExporter } = await import('@/utils/exporters/excelExporter')
-        const exporter = new ExcelExporter()
-        return exporter.export(report)
-      }
-      case 'csv': {
-        const { csvExporter } = await import('@/utils/exporters/csvExporter')
-        return csvExporter.export(report.data)
-      }
-      case 'json': {
-        const { jsonExporter } = await import('@/utils/exporters/jsonExporter')
-        return jsonExporter.export(report)
-      }
-      case 'html': {
-        const { htmlExporter } = await import('@/utils/exporters/htmlExporter')
-        return htmlExporter.export(report)
-      }
+      case 'pdf':
+        return exporters.exportToPDF(report)
+      case 'excel':
+        return exporters.excelExporter.exportBitacoras(report.data) // Simplified for now
+      case 'csv':
+        return exporters.exportToCSV(report.data)
+      case 'json':
+        return exporters.exportToJSON(report)
+      case 'html':
+        return exporters.exportToHTML(report)
       default:
         throw new Error(`Formato no soportado: ${format}`)
     }

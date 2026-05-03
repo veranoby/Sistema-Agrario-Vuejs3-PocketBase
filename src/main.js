@@ -103,7 +103,12 @@ app.config.errorHandler = (error, instance, info) => {
 
 // Capturar errores de promesas
 window.addEventListener('unhandledrejection', (event) => {
-  handleError(event.reason, 'Error no manejado')
+  const isNetworkError = event.reason?.message?.includes('Failed to fetch') || 
+                         event.reason?.message?.includes('NetworkError') ||
+                         event.reason?.status === 0;
+
+  // Silenciar visualmente errores de red huérfanos (típicos de syncStore o background)
+  handleError(event.reason, 'Error no manejado', { silent: isNetworkError })
   event.preventDefault()
 })
 
@@ -156,12 +161,15 @@ const initApp = async () => {
       try {
         await syncStore.init()
       } catch (syncError) {
-        console.error('Error initializing sync store:', syncError)
-        // Continuar con la aplicación incluso si hay error en sync
+        console.warn('[App] Sync init falló o estamos offline, continuando...', syncError.message)
       }
     }
   } catch (error) {
-    console.error('Error during app initialization:', error)
+    // Enviar a handleError pero en modo silencioso si es de red
+    const isNetworkError = error?.message?.includes('Failed to fetch') || 
+                           error?.message?.includes('NetworkError') || 
+                           error?.status === 0;
+    handleError(error, 'Error durante inicialización', { silent: isNetworkError })
   } finally {
     // Montar la aplicación en cualquier caso
     app.mount('#app')

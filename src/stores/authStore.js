@@ -15,6 +15,7 @@ import { debounce } from '@/utils/debounce'
 import { logger } from '@/utils/logger'
 import { warmUpCache } from '@/services/cacheWarmingService'
 import { useAvatarStore } from './avatarStore'
+import { profileService } from '@/services/profileService'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -45,33 +46,12 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async changePassword(oldPassword, newPassword) {
-      if (!this.user) {
-        throw new Error('No hay usuario autenticado para cambiar la contraseña.')
-      }
-
-      const syncStore = useSyncStore()
-      if (!syncStore.isOnline) {
-        await syncStore.queueOperation({
-          type: 'changePassword',
-          collection: 'users',
-          id: this.user.id,
-          data: { oldPassword, newPassword }
-        })
-        return
-      }
-
       const snackbarStore = useSnackbarStore()
       snackbarStore.showLoading()
-
       try {
-        await pb.collection('users').update(this.user.id, {
-          oldPassword,
-          password: newPassword,
-          passwordConfirm: newPassword
-        })
+        await profileService.changePassword(this.user?.id, oldPassword, newPassword)
         snackbarStore.showSnackbar('Password changed successfully', 'success')
       } catch (error) {
-        handleError(error, 'Failed to change password')
         throw error
       } finally {
         snackbarStore.hideLoading()
@@ -81,45 +61,13 @@ export const useAuthStore = defineStore('auth', {
     async updateProfile(profileData) {
       const snackbarStore = useSnackbarStore()
       snackbarStore.showLoading()
-      const syncStore = useSyncStore()
-
-      // Verificar que el usuario existe
-      if (!this.user || !this.user.id) {
-        snackbarStore.hideLoading()
-        throw new Error('No hay usuario autenticado para actualizar')
-      }
-
-      if (!syncStore.isOnline) {
-        // Actualizar localmente
-        this.user = { 
-          ...this.user, 
-          ...profileData,
-          updated: new Date().toISOString()
-        }
-        
-        // Guardar en localStorage
-        syncStore.saveToLocalStorage('user', this.user)
-        
-        // Encolar para sincronización
-        await syncStore.queueOperation({
-          type: 'updateProfile',
-          collection: 'users',
-          id: this.user.id,
-          data: profileData
-        })
-        
-        snackbarStore.hideLoading()
-        return this.user
-      }
-
       try {
-        const updatedUser = await pb.collection('users').update(this.user.id, profileData)
+        const updatedUser = await profileService.updateProfile(this.user, profileData)
         this.user = updatedUser
-        syncStore.saveToLocalStorage('user', this.user)
+        localStorage.setItem('user', JSON.stringify(this.user))
         snackbarStore.showSnackbar('Perfil actualizado con éxito', 'success')
         return updatedUser
       } catch (error) {
-        handleError(error, 'Error al actualizar el perfil')
         throw error
       } finally {
         snackbarStore.hideLoading()
@@ -139,8 +87,8 @@ export const useAuthStore = defineStore('auth', {
           token: authProvider.authStore.token,
           model: authProvider.authStore.model
         }
-        syncStore.saveToLocalStorage('pocketbase_auth', authDataToStore)
-        syncStore.saveToLocalStorage('last_auth_success', Date.now())
+        localStorage.setItem('pocketbase_auth', JSON.stringify(authDataToStore))
+        localStorage.setItem('last_auth_success', Date.now().toString())
 
         return true
       } catch (error) {
@@ -150,11 +98,16 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async init() {
-      const syncStore = useSyncStore()
       logger.auth('Starting initialization...')
 
-      const loadedAuthData = syncStore.loadFromLocalStorage('pocketbase_auth')
-      const rememberMeIsActive = syncStore.loadFromLocalStorage('rememberMe_active')
+      let loadedAuthData = null
+      try {
+        const authJson = localStorage.getItem('pocketbase_auth')
+        if (authJson) loadedAuthData = JSON.parse(authJson)
+      } catch (e) {
+        logger.auth('Error parsing pocketbase_auth from localStorage:', e)
+      }
+      const rememberMeIsActive = localStorage.getItem('rememberMe_active') === 'true'
 
       logger.auth('Loaded auth data:', loadedAuthData ? 'found' : 'not found')
       logger.auth('Remember me active:', rememberMeIsActive)
@@ -319,8 +272,8 @@ export const useAuthStore = defineStore('auth', {
             token: authProvider.authStore.token,
             model: authProvider.authStore.model
           }
-          syncStore.saveToLocalStorage('pocketbase_auth', authDataToStoreOnTokenRefresh)
-          syncStore.saveToLocalStorage('last_auth_success', Date.now())
+          localStorage.setItem('pocketbase_auth', JSON.stringify(authDataToStoreOnTokenRefresh))
+          localStorage.setItem('last_auth_success', Date.now().toString())
 
           return true
         } catch (error) {
@@ -333,9 +286,8 @@ export const useAuthStore = defineStore('auth', {
     },
 
     tokenNeedsRefresh() {
-      const syncStore = useSyncStore()
-
-      const lastSuccess = syncStore.loadFromLocalStorage('last_auth_success')
+      const lastSuccessStr = localStorage.getItem('last_auth_success')
+      const lastSuccess = lastSuccessStr ? parseInt(lastSuccessStr, 10) : null
 
       if (!lastSuccess) {
         return true
@@ -364,15 +316,15 @@ export const useAuthStore = defineStore('auth', {
       const syncStore = useSyncStore()
 
       const authDataToStore = { token: authProvider.authStore.token, model: authProvider.authStore.model }
-      syncStore.saveToLocalStorage('pocketbase_auth', authDataToStore)
-      syncStore.saveToLocalStorage('last_auth_success', Date.now())
+      localStorage.setItem('pocketbase_auth', JSON.stringify(authDataToStore))
+      localStorage.setItem('last_auth_success', Date.now().toString())
 
       if (rememberMe) {
-        syncStore.saveToLocalStorage('rememberMe_active', true)
+        localStorage.setItem('rememberMe_active', 'true')
         logger.auth('rememberMe_active guardado como true')
         this.startRefreshTimer()
       } else {
-        syncStore.removeFromLocalStorage('rememberMe_active')
+        localStorage.removeItem('rememberMe_active')
         logger.auth('rememberMe_active eliminado')
         this.stopRefreshTimer()
       }
@@ -382,10 +334,10 @@ export const useAuthStore = defineStore('auth', {
           username: authData.record.username,
           email: authData.record.email
         }
-        syncStore.saveToLocalStorage('rememberedUser', rememberedCredentials)
+        localStorage.setItem('rememberedUser', JSON.stringify(rememberedCredentials))
         logger.auth('Remembered user credentials saved for user:', authData.record.username)
       } else {
-        syncStore.removeFromLocalStorage('rememberedUser')
+        localStorage.removeItem('rememberedUser')
         logger.auth('Cleared remembered user credentials.')
       }
 
@@ -444,6 +396,10 @@ export const useAuthStore = defineStore('auth', {
       this.user = record
       this.token = authProvider.authStore.token
       this.isLoggedIn = true
+    },
+
+    setUser(record) {
+      this.user = record
     },
 
     async register(formData, new_role) {
@@ -582,11 +538,11 @@ export const useAuthStore = defineStore('auth', {
         this.isLoggedIn = false
         this.initialized = false
 
-        syncStore.removeFromLocalStorage('pocketbase_auth')
-        syncStore.removeFromLocalStorage('rememberMe_active')
-        syncStore.removeFromLocalStorage('rememberedUser')
+        localStorage.removeItem('pocketbase_auth')
+        localStorage.removeItem('rememberMe_active')
+        localStorage.removeItem('rememberedUser')
         logger.auth('Cleared remembered user credentials during logout.')
-        syncStore.removeFromLocalStorage('last_auth_success')
+        localStorage.removeItem('last_auth_success')
 
         snackbarStore.showSnackbar('Logged out successfully', 'success')
       } catch (error) {

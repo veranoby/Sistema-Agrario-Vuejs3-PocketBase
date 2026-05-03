@@ -50,7 +50,14 @@ const syncCache = {
 export const useSyncStore = defineStore('sync', {
   state: () => ({
     isOnline: navigator.onLine,
-    queue: syncCache.get('syncQueue') || [],
+    queue: (() => {
+      try {
+        const q = localStorage.getItem('agri_syncQueue')
+        return q ? JSON.parse(q) : []
+      } catch (e) {
+        return []
+      }
+    })(),
     lastSyncTime: null,
     syncStatus: 'idle',
     initialized: false,
@@ -75,7 +82,10 @@ export const useSyncStore = defineStore('sync', {
         actividades: () => import('@/stores/actividadesStore'),
         recordatorios: () => import('@/stores/recordatoriosStore'),
         programaciones: () => import('@/stores/programaciones'),
-        bitacora: () => import('@/stores/bitacoraStore')
+        bitacora: () => import('@/stores/bitacoraStore'),
+        finanzas: () => import('@/stores/finanzaStore'),
+        Haciendas: () => import('@/stores/haciendaStore'),
+        users: () => import('@/stores/userStore')
       }
       if (!map[name]) return null
       const module = await map[name]()
@@ -122,11 +132,15 @@ export const useSyncStore = defineStore('sync', {
       this.offline = createOfflineFeatures({ stores, cacheManager: syncCache })
 
       // RESTAURAR ESTADO
-      this.queue = syncCache.get('syncQueue') || []
-
-      const savedIdMap = syncCache.get('idMap')
-      if (savedIdMap) {
-        this.idMapper.setMap(savedIdMap)
+      try {
+        const q = localStorage.getItem('agri_syncQueue')
+        this.queue = q ? JSON.parse(q) : []
+        const savedIdMapStr = localStorage.getItem('agri_idMap')
+        if (savedIdMapStr) {
+          this.idMapper.setMap(JSON.parse(savedIdMapStr))
+        }
+      } catch (e) {
+        logger.error('[SYNC] Error restoring state from localStorage', e)
       }
 
       this.initialized = true
@@ -145,8 +159,12 @@ export const useSyncStore = defineStore('sync', {
 
     // PERSISTENCIA
     persistQueueState() {
-      syncCache.save('syncQueue', this.queue)
-      syncCache.save('idMap', this.idMapper.getMap())
+      try {
+        localStorage.setItem('agri_syncQueue', JSON.stringify(this.queue))
+        localStorage.setItem('agri_idMap', JSON.stringify(this.idMapper.getMap()))
+      } catch (error) {
+        logger.error('[SYNC] Error saving queue to localStorage', error)
+      }
     },
 
     loadFromLocalStorage(key) {

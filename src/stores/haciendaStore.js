@@ -27,7 +27,6 @@ export const useHaciendaStore = defineStore('hacienda', {
 
     return {
       mi_hacienda: syncStore.loadFromLocalStorage('mi_hacienda'),
-      haciendas: [], // Lista de todas las haciendas
       haciendaUsers
     }
   },
@@ -43,15 +42,6 @@ export const useHaciendaStore = defineStore('hacienda', {
     avatarHaciendaUrl: (state) => {
       const avatarStore = useAvatarStore()
       return avatarStore.getAvatarUrl({ ...state.mi_hacienda, type: 'hacienda' }, 'Haciendas')
-    },
-    /**
-     * Filtra haciendas por usuario
-     * @param {string} userId - ID del usuario
-     * @returns {Array} Haciendas donde el usuario es miembro
-     */
-    userHaciendas: (state) => (userId) => {
-      if (!userId || !Array.isArray(state.haciendas)) return []
-      return state.haciendas.filter(h => h.users?.includes(userId))
     }
   },
 
@@ -155,30 +145,6 @@ export const useHaciendaStore = defineStore('hacienda', {
       } finally {
         snackbarStore.hideLoading()
       }
-    },
-
-    /**
-     * Obtiene listado completo de haciendas
-     * @returns {Promise<Array>} Lista de haciendas
-     */
-    async fetchHaciendas() {
-      const syncStore = useSyncStore()
-
-      try {
-        if (syncStore.isOnline) {
-          this.haciendas = await pb.collection('Haciendas').getFullList({
-            sort: '-created'
-          })
-        } else {
-          // Offline: usar datos en caché si existen
-          this.haciendas = []
-        }
-      } catch (error) {
-        handleError(error, 'Error fetching haciendas list')
-        this.haciendas = []
-      }
-
-      return this.haciendas
     },
 
     async fetchHacienda(haciendaId) {
@@ -331,13 +297,23 @@ export const useHaciendaStore = defineStore('hacienda', {
           }
         }
 
+        const { locationCoordinator } = await import('@/services/locationCoordinator')
+        let gps = { lat: null, lng: null }
+        try {
+          const pos = await locationCoordinator.getPosition()
+          gps = { lat: pos.latitude, lng: pos.longitude }
+          console.log('[HaciendaStore] GPS capturado para nueva hacienda')
+        } catch (e) {
+          console.warn('[HaciendaStore] No se pudo capturar GPS para nueva hacienda:', e.message)
+        }
+
         const haciendaData = {
           name: haciendaName.toUpperCase(), // Convertir a mayúsculas
           location: '',
           info: '',
           plan: haciendaPlan,
           metricas: metricasDefault, // Agregar métricas predeterminadas
-          gps: { lat: null, lng: null }
+          gps: gps
         }
 
         const newHacienda = await pb.collection('Haciendas').create(haciendaData)

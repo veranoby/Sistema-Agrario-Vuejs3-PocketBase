@@ -1,208 +1,115 @@
-Plan Optimizado Final                                                                                               
+# Diagnóstico y Feedback
 
-Fase 23: Corrección de Emergencia                                                                                   
+El diagnóstico que has realizado es excelente al identificar que un fallo de inicialización está filtrándose como un `NetworkError` visible para el usuario. Sin embargo, hay un detalle crítico con respecto a la detección de errores de red y la librería de PocketBase.
 
-Paso 1: Corregir src/utils/cacheManager.js                                                                          
+**Feedback sobre tu plan:**
+1. **`errorHandler.js`**: El cambio propuesto a `error?.name === 'TypeError'` **romperá la detección de desconexión de PocketBase**. Cuando PocketBase falla por red, lanza una clase `ClientResponseError` (no `TypeError`) con `status: 0`. Si restringimos la detección solo a `TypeError`, la app dejará de mostrar el mensaje de "Sin conexión a internet" cuando realmente el usuario intente realizar una acción (como guardar) sin conexión.
+2. **`main.js`**: El stack trace indica que el error está llegando a `handleError` a través del listener global `unhandledrejection` (línea ~106). Esto significa que hay promesas asíncronas (probablemente dentro de `syncStore.init()`) que fallan en background y no están siendo esperadas (`await`), por lo que escapan del `try/catch` principal de `initApp` y disparan el error global no manejado.
 
-Agregar invalidatePattern a CacheManager:                                                                           
+---
 
-                                                                                                                    
-/**                                                                                                                 
- * Invalida entradas que coincidan con un patrón                                                                    
- * @param {string} pattern - Patrón de clave a invalidar                                                            
- */                                                                                                                 
-invalidatePattern(pattern) {                                                                                        
-  const keysToDelete = []                                                                                           
-  for (const key of this.cache.keys()) {                                                                            
-    if (key.includes(pattern)) {                                                                                    
-      keysToDelete.push(key)                                                                                        
-    }                                                                                                               
-  }                                                                                                                 
-  keysToDelete.forEach(key => this.delete(key))                                                                     
-}                                                                                                                   
-                                                                                                                    
+# Plan de Implementación Optimizado
 
-Corregir invalidateAcrossLevels en TieredCacheManager:                                                              
+Vamos a optimizar el manejador de errores para que soporte un "modo silencioso" y vamos a ignorar visualmente los errores de red que ocurren en background, manteniendo la UI limpia pero registrando todo en consola para el debugging.
 
-                                                                                                                    
-/**                                                                                                                 
- * Invalida en todos los niveles de cache                                                                           
- * @param {string} keyPattern - Patrón de clave                                                                     
- */                                                                                                                 
-invalidateAcrossLevels(keyPattern) {                                                                                
-  ;[this.l1Cache, this.l2Cache, this.l3Cache].forEach(cache => {                                                    
-    if (cache.invalidatePattern) {                                                                                  
-      cache.invalidatePattern(keyPattern)                                                                           
-    }                                                                                                               
-  })                                                                                                                
-}                                                                                                                   
-                                                                                                                    
+### Archivo: `src/utils/errorHandler.js`
 
-Agregar invalidatePattern al wrapper tieredCache:                                                                   
+**Cambio:** Permitir que `handleError` reciba un parámetro de opciones para silenciar el error, evitando mostrar el snackbar pero manteniendo el log.
 
-                                                                                                                    
-export const tieredCache = {                                                                                        
-  // ... métodos existentes ...                                                                                     
-  invalidateAcrossLevels: (pattern) => getGlobalTieredCache().invalidateAcrossLevels(pattern),                      
-  invalidatePattern: (pattern) => getGlobalTieredCache().invalidatePattern(pattern)                                 
-}                                                                                                                   
-                                                                                                                    
+```javascript
+// MODIFICAR FIRMA DE LA FUNCIÓN
+export function handleError(error, customMessage = null, options = { silent: false }) {
+  
+  const showMsg = (msg) => {
+    if (!options.silent) showErrorMessage(msg);
+  };
 
-Paso 2: Corregir src/services/cacheWarmingService.js                                                                
+  // Si ya es un AgriError
+  if (error instanceof AgriError) {
+    showMsg(error.message)
+    logError(error)
+    return error
+  }
 
-                                                                                                                    
-// ANTES (INCORRECTO)                                                                                               
-import { cache, CacheKeys } from '@/utils/cacheManager'                                                             
-cache.setToLevel(...)                                                                                               
-                                                                                                                    
-// DESPUÉS (CORRECTO)                                                                                               
-import { tieredCache, CacheKeys } from '@/utils/cacheManager'                                                       
-tieredCache.setToLevel(...)                                                                                         
-                                                                                                                    
+  // Errores de PocketBase (status 0 es network error en PB)
+  if (error?.status && error.status !== 0) {
+    const friendlyMessage = POCKETBASE_ERROR_MAP[error.status] || error.message
+    const agriError = mapPocketBaseError(error, friendlyMessage)
+    showMsg(customMessage || friendlyMessage)
+    logError(agriError)
+    return agriError
+  }
 
-Cambios específicos:                                                                                                
+  // Errores de red (MANTENER la lógica original, pero usar showMsg y contemplar status === 0)
+  if (error?.message?.includes('Failed to fetch') || error?.message?.includes('NetworkError') || error?.status === 0) {
+    const networkError = new NetworkError('Sin conexión a internet. Los cambios se guardarán localmente.')
+    showMsg(networkError.message)
+    logError(networkError)
+    return networkError
+  }
 
-                                                                                                                    
-// Todas las llamadas cambiar de:                                                                                   
-cache.setToLevel(key, data, level)                                                                                  
-// A:                                                                                                               
-tieredCache.setToLevel(key, data, level)                                                                            
-                                                                                                                    
+  // Error genérico
+  const genericError = new AgriError(
+    customMessage || error?.message || 'Ha ocurrido un error inesperado',
+    'UNKNOWN',
+    { originalError: error?.message }
+  )
+  showMsg(genericError.message)
+  logError(genericError)
+  return genericError
+}
+```
 
-Paso 3: Corregir ciclo de dependencias en src/stores/sync/index.js                                                  
+### Archivo: `src/main.js`
 
-                                                                                                                    
-// ANTES (import estático - riesgo de ciclo)                                                                        
-import { useZonasStore } from '@/stores/zonasStore'                                                                 
-import { useSiembrasStore } from '@/stores/siembrasStore'                                                           
-// ...                                                                                                              
-                                                                                                                    
-const ALL_STORES = [useZonasStore, useSiembrasStore, ...]                                                           
-                                                                                                                    
-// DESPUÉS (lazy resolution - sin ciclo)                                                                            
-const STORE_MAP = {                                                                                                 
-  zonas: () => useZonasStore(),                                                                                     
-  siembras: () => useSiembrasStore(),                                                                               
-  actividades: () => useActividadesStore(),                                                                         
-  recordatorios: () => useRecordatoriosStore(),                                                                     
-  programaciones: () => useProgramacionesStore(),                                                                   
-  bitacora: () => useBitacoraStore()                                                                                
-}                                                                                                                   
-                                                                                                                    
-const ALL_STORES = [                                                                                                
-  useZonasStore,                                                                                                    
-  useSiembrasStore,                                                                                                 
-  useActividadesStore,                                                                                              
-  useRecordatoriosStore,                                                                                            
-  useProgramacionesStore,                                                                                           
-  useBitacoraStore                                                                                                  
-]                                                                                                                   
-                                                                                                                    
-// Cambiar getStoreByCollectionName:                                                                                
-getStoreByCollectionName(name) {                                                                                    
-  return STORE_MAP[name]?.()  // ← Resolución lazy                                                                  
-}                                                                                                                   
-                                                                                                                    
+**Cambio:** Configurar los manejadores globales para que los fallos de red asíncronos (como inicializaciones de stores o background syncs) no interrumpan la UI.
 
---------------------------------------------------------------------------------------------------------------------
+```javascript
+// 1. Mejorar el listener de unhandledrejection
+window.addEventListener('unhandledrejection', (event) => {
+  const isNetworkError = event.reason?.message?.includes('Failed to fetch') || 
+                         event.reason?.message?.includes('NetworkError') ||
+                         event.reason?.status === 0;
 
-Fase 24: Lazy Loading (solo lo que falta)                                                                           
+  // Silenciar visualmente errores de red huérfanos (típicos de syncStore o background)
+  handleError(event.reason, 'Error no manejado', { silent: isNetworkError })
+  event.preventDefault()
+})
 
-Verificar estado actual                                                                                             
+// 2. Refinar initApp (similar a tu propuesta)
+const initApp = async () => {
+  const authStore = useAuthStore()
+  const syncStore = useSyncStore()
+  const themeStore = useThemeStore()
 
-                                                                                                                    
-grep -n "component:" src/router/index.js | grep -v "() =>"                                                          
-                                                                                                                    
+  try {
+    const currentTheme = themeStore.currentTheme
+    document.documentElement.setAttribute('data-theme', currentTheme)
 
-Solo aplicar lazy loading a rutas que NO lo tengan.                                                                 
+    const isAuthenticated = await authStore.ensureAuthInitialized()
+    
+    if (isAuthenticated) {
+      try {
+        await syncStore.init()
+      } catch (syncError) {
+        console.warn('[App] Sync init falló o estamos offline, continuando...', syncError.message)
+      }
+    }
+  } catch (error) {
+    // Enviar a handleError pero en modo silencioso si es de red
+    const isNetworkError = error?.message?.includes('Failed to fetch') || 
+                           error?.message?.includes('NetworkError') || 
+                           error?.status === 0;
+    handleError(error, 'Error durante inicialización', { silent: isNetworkError })
+  } finally {
+    app.mount('#app')
+  }
+}
+```
 
-Archivo: src/router/index.js                                                                                        
+---
 
-                                                                                                                    
-// Si alguna ruta usa import estático, cambiar a:                                                                   
-{ path: '/ruta', component: () => import('@/components/Componente.vue') }                                           
-                                                                                                                    
-
---------------------------------------------------------------------------------------------------------------------
-
-Fase 25: Consolidación UI/UX                                                                                        
-
-Paso 1: Mover colores a tailwind.config.js                                                                          
-
-                                                                                                                    
-// tailwind.config.js                                                                                               
-export default {                                                                                                    
-  theme: {                                                                                                          
-    extend: {                                                                                                       
-      colors: {                                                                                                     
-        priority: {                                                                                                 
-          baja: '#4caf50',                                                                                          
-          media: '#ff9800',                                                                                         
-          alta: '#f44336',                                                                                          
-          critica: '#b71c1c'                                                                                        
-        },                                                                                                          
-        season: {                                                                                                   
-          primavera: '#81c784',                                                                                     
-          verano: '#ffb74d',                                                                                        
-          otono: '#ff8a65',                                                                                         
-          invierno: '#64b5f6'                                                                                       
-        }                                                                                                           
-      }                                                                                                             
-    }                                                                                                               
-  }                                                                                                                 
-}                                                                                                                   
-                                                                                                                    
-
-Paso 2: Actualizar componentes                                                                                      
-
-                                                                                                                    
-<!-- ANTES -->                                                                                                      
-<div :style="{ color: PRIORITY_COLORS.alta }">                                                                      
-                                                                                                                    
-<!-- DESPUÉS -->                                                                                                    
-<div class="text-priority-alta">                                                                                    
-                                                                                                                    
-
---------------------------------------------------------------------------------------------------------------------
-
-Fase 26: Tests (futuro)                                                                                             
-
-                                                      
- Test           Archivo                               
- ──────────────────────────────────────────────────── 
- Auth Provider  src/services/authProvider.test.js     
- Sync Plugin    src/stores/plugins/syncPlugin.test.js 
-                                                      
-
---------------------------------------------------------------------------------------------------------------------
-
-
-Resumen ejecutivo                                                                                                   
-
-                                                                                         
- Fase  Crear            Modificar                                               Eliminar 
- ─────────────────────────────────────────────────────────────────────────────────────── 
- 23    —                cacheManager.js, cacheWarmingService.js, sync/index.js  —        
- 24    —                router/index.js (solo rutas sin lazy)                   —        
- 25    —                tailwind.config.js, componentes                         —        
- 26    2 archivos test  —                                                       —        
-                                                                                         
-
---------------------------------------------------------------------------------------------------------------------
-
-
-Orden de ejecución                                                                                                  
-
-                                                                  
- Paso  Fase  Acción                            Tiempo  Prioridad  
- ──────────────────────────────────────────────────────────────── 
- 1     23    Corregir cacheManager.js          10 min  🔴 Crítica 
- 2     23    Corregir cacheWarmingService.js   5 min   🔴 Crítica 
- 3     23    Corregir sync/index.js            10 min  🔴 Crítica 
- 4     23    Build test + login test           5 min   🔴 Crítica 
- 5     24    Verificar lazy loading existente  5 min   🟡 Media   
- 6     24    Aplicar lazy loading faltante     10 min  🟡 Media   
- 7     25    Mover colores a Tailwind          15 min  🟢 Baja    
- 8     26    Crear tests (futuro)              30 min  ⚪ Futuro  
-                                                                  
-
+### Resumen de Beneficios
+1. **Robustez**: PocketBase sigue alertando de falta de red cuando el usuario hace acciones directas (con `status: 0`), sin quedar censurado por la validación de `TypeError`.
+2. **Resiliencia Offline**: Los procesos asíncronos en segundo plano que rebotan por red no contaminarán la UI con notificaciones de error.
+3. **Mantenibilidad**: Se centraliza la regla de notificaciones en `errorHandler.js` vía el parámetro de modo silencioso.

@@ -371,7 +371,7 @@ import { required, minLength, sameAs, helpers } from '@vuelidate/validators'
 import { useSyncStore } from '@/stores/sync'
 import { debounce } from '@/utils/debounce'
 import { useRouter } from 'vue-router'
-import { calculatePasswordStrength, getPasswordStrengthColor, getPasswordStrengthLabel } from '@/utils/validators'
+import { calculatePasswordStrength, getPasswordStrengthColor, getPasswordStrengthLabel } from '@/utils/validators/index'
 
 const props = defineProps({
   isOpen: Boolean,

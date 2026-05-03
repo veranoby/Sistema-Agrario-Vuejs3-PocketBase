@@ -453,8 +453,7 @@ const haciendaStore = useHaciendaStore()
 const avatarStore = useAvatarStore()
 
 // Importar servicio de geolocalización
-import { GeolocationService } from '@/utils/geolocation'
-const geoService = new GeolocationService()
+import { locationCoordinator } from '@/services/locationCoordinator'
 
 // Importar logger
 import { logger } from '@/utils/logger'
@@ -587,23 +586,13 @@ function removeMetrica(index) {
  * GPS Automático - Obtiene coordenadas actuales del dispositivo
  */
 async function autoLocate() {
-  if (!geoService.isAvailable()) {
-    gpsError.value = 'Geolocalización no soportada por este navegador'
-    snackbarStore.showError('Geolocalización no disponible')
-    return
-  }
-
   loadingGPS.value = true
   gpsError.value = ''
   gpsAccuracy.value = null
 
   try {
-    // Intentar obtener ubicación con alta precisión
-    const position = await geoService.getCurrentPosition({
-      enableHighAccuracy: true,
-      timeout: 15000,
-      maximumAge: 0
-    })
+    // Intentar obtener ubicación a través del coordinador
+    const position = await locationCoordinator.getPosition()
 
     // Actualizar campo GPS con coordenadas
     const gpsString = JSON.stringify({
@@ -628,13 +617,9 @@ async function autoLocate() {
   } catch (error) {
     // Manejo específico de errores para guiar al usuario
     let errorMsg = error.message
-    
-    if (error.code === 'PERMISSION_DENIED') {
+
+    if (error.message.includes('denegado')) {
       errorMsg = 'Permiso denegado. Activa la ubicación en tu navegador.'
-    } else if (error.code === 'POSITION_UNAVAILABLE') {
-      errorMsg = 'Ubicación no disponible. Verifica tu señal GPS.'
-    } else if (error.code === 'TIMEOUT') {
-      errorMsg = 'Tiempo de espera agotado. Intenta de nuevo en un lugar abierto.'
     }
 
     gpsError.value = errorMsg
@@ -644,7 +629,6 @@ async function autoLocate() {
     loadingGPS.value = false
   }
 }
-
 async function guardar() {
   if (form.value.validate()) {
     try {
