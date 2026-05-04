@@ -6,7 +6,7 @@ import { useSnackbarStore } from './snackbarStore'
 import { handleError } from '@/utils/errorHandler'
 import { useHaciendaStore } from './haciendaStore'
 import { calculateBpaStatus } from '@/utils/agriMetrics'
-import { MAX_PAGE_SIZE, DEFAULT_PAGE_SIZE } from '@/constants/pagination'
+
 
 export const useZonasStore = defineStore('zonas', {
   state: () => ({
@@ -70,7 +70,7 @@ export const useZonasStore = defineStore('zonas', {
     async cargarZonas() {
       // Local storage loading is now handled by initFromLocalStorage.
       // This method maintains backward compatibility by loading all items.
-      return this.fetchPage(1, MAX_PAGE_SIZE)
+      return this.fetchPage(1, 100)
     },
 
     async fetchPage(page = 1, perPage = 20) {
@@ -290,7 +290,7 @@ export const useZonasStore = defineStore('zonas', {
 
     async cargarTiposZonas() {
       // Local storage loading is now handled by initFromLocalStorage.
-      const syncStore = useSyncStore(); // Keep for saving later.
+
 
       if (this.tiposZonas.length > 0 && !navigator.onLine) {
         return this.tiposZonas;

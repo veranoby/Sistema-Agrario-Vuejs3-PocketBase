@@ -5,8 +5,10 @@ import { handleError } from '@/utils/errorHandler'
 import { useSyncStore } from '@/stores/sync/index'
 import { useHaciendaStore } from './haciendaStore'
 import { computed } from 'vue'
-import { MAX_PAGE_SIZE, DEFAULT_PAGE_SIZE } from '@/constants/pagination'
-import { createSyncActions } from '@/utils/syncActions'
+
+
+import { offlineGeoStorage } from '@/utils/offlineGeoStorage' // NUEVO: Importar offlineGeoStorage
+import { logger } from '@/utils/logger'
 
 export const useSiembrasStore = defineStore('siembras', {
   state: () => ({
@@ -69,7 +71,7 @@ export const useSiembrasStore = defineStore('siembras', {
     async cargarSiembras() {
       // Local storage loading is now handled by initFromLocalStorage.
       // This method maintains backward compatibility by loading all items.
-      return this.fetchPage(1, MAX_PAGE_SIZE)
+      return this.fetchPage(1, 100)
     },
 
     async fetchPage(page = 1, perPage = 20) {
@@ -100,6 +102,16 @@ export const useSiembrasStore = defineStore('siembras', {
         this.totalPages = resultList.totalPages
 
         syncStore.saveToLocalStorage('siembras', resultList.items)
+        
+        // NUEVO: Guardar en offlineGeoStorage para mapas
+        for (const siembra of resultList.items) {
+          if (siembra.gps || siembra.geometria) {
+            await offlineGeoStorage.saveSiembra(siembra).catch(e => 
+              logger.warn('[SIEMBRAS_STORE] Error guardando en offlineGeoStorage:', e)
+            )
+          }
+        }
+
         return resultList
       } catch (error) {
         handleError(error, 'Error al cargar siembras')
@@ -164,6 +176,14 @@ export const useSiembrasStore = defineStore('siembras', {
         const record = await pb.collection('siembras').create(enrichedData)
         this.siembras.unshift(record)
         syncStore.saveToLocalStorage('siembras', this.siembras)
+        
+        // NUEVO: Guardar en offlineGeoStorage
+        if (record.gps || record.geometria) {
+          await offlineGeoStorage.saveSiembra(record).catch(e => 
+            logger.warn('[SIEMBRAS_STORE] Error guardando en offlineGeoStorage:', e)
+          )
+        }
+        
         useSnackbarStore().showSnackbar('Siembra creada exitosamente')
         return record
       } catch (error) {
@@ -226,6 +246,14 @@ export const useSiembrasStore = defineStore('siembras', {
           this.siembras[index] = record
         }
         syncStore.saveToLocalStorage('siembras', this.siembras)
+        
+        // NUEVO: Actualizar en offlineGeoStorage
+        if (record.gps || record.geometria) {
+          await offlineGeoStorage.saveSiembra(record).catch(e => 
+            logger.warn('[SIEMBRAS_STORE] Error actualizando en offlineGeoStorage:', e)
+          )
+        }
+        
         useSnackbarStore().showSnackbar('Siembra actualizada exitosamente')
         return record
       } catch (error) {
@@ -265,6 +293,12 @@ export const useSiembrasStore = defineStore('siembras', {
         await pb.collection('siembras').delete(id)
         this.siembras = this.siembras.filter((s) => s.id !== id)
         syncStore.saveToLocalStorage('siembras', this.siembras)
+        
+        // NUEVO: Eliminar de offlineGeoStorage
+        await offlineGeoStorage.deleteSiembra(id).catch(e => 
+          logger.warn('[SIEMBRAS_STORE] Error eliminando de offlineGeoStorage:', e)
+        )
+        
         useSnackbarStore().showSnackbar('Siembra eliminada exitosamente')
         return true
       } catch (error) {

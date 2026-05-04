@@ -96,7 +96,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { geminiService } from '@/services/geminiService'
+import { generateAIResponse } from '@/services/aiService'
 import { buildSiembraContext } from '@/services/aiContextBuilder'
 
 const { t } = useI18n()
@@ -152,7 +152,11 @@ const generateSuggestion = async () => {
       props.actividades,
       props.zonas
     )
-    const result = await geminiService.getAiSuggestion(context)
+    const result = await generateAIResponse(
+      `Genera una recomendación agrícola estructurada para el siguiente contexto: ${context}`,
+      'recomendacion_agricola',
+      { priority: 'local' }
+    )
     if (result) {
       suggestion.value = result
     }

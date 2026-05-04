@@ -6,6 +6,7 @@
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { ROLE_COLORS, ROLE_LABELS, STATUS_COLORS, STATUS_LABELS } from '@/constants/roles'
+export { downloadFile, downloadMarkdown } from './fileDownload'
 
 /**
  * Cache memoizado para instancias de Intl.NumberFormat

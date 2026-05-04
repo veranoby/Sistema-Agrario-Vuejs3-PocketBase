@@ -7,7 +7,7 @@ import { handleError } from '@/utils/errorHandler'
 import { useHaciendaStore } from './haciendaStore'
 import { calculateBpaStatus } from '@/utils/agriMetrics'
 import { useAlertStore } from './alertStore'
-import { MAX_PAGE_SIZE } from '@/constants/pagination'
+
 
 export const useActividadesStore = defineStore('actividades', {
   state: () => ({
@@ -93,7 +93,7 @@ export const useActividadesStore = defineStore('actividades', {
     },
 
     async cargarActividades() {
-      return this.fetchPage(1, MAX_PAGE_SIZE)
+      return this.fetchPage(1, 100)
     },
 
     async fetchPage(page = 1, perPage = 20) {

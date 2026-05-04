@@ -1,7 +1,7 @@
 /**
- * OfflineGeoStorage - Almacenamiento offline para geometrías y datos GIS
+ * OfflineGeoStorage - Almacenamiento offline para geometrías y datos GIS.
  * 
- * Usa IndexedDB para almacenar polígonos, puntos y otras geometrías
+ * Usa IndexedDB para almacenar polígonos, puntos y otras geometrías.
  * cuando no hay conexión, permitiendo trabajo offline completo de mapas.
  * 
  * @module utils/offlineGeoStorage
@@ -26,7 +26,8 @@ const STORES = {
   ZONAS: 'zonas',
   SIEMBRAS: 'siembras',
   PUNTOS_INTERES: 'puntos',
-  TRAZAS_GPS: 'trazas_gps'
+  TRAZAS_GPS: 'trazas_gps',
+  TILES: 'map_tiles' // NUEVO: Store para tiles
 }
 
 export class OfflineGeoStorage {
@@ -38,7 +39,7 @@ export class OfflineGeoStorage {
   }
 
   /**
-   * Inicializa la conexión a IndexedDB
+   * Inicializa la conexión a IndexedDB.
    * 
    * @returns {Promise<void>}
    */
@@ -74,14 +75,13 @@ export class OfflineGeoStorage {
       request.onupgradeneeded = (event) => {
         logger.debug('[OfflineGeoStorage] Actualizando esquema de DB...')
         const db = event.target.result
-
         this.createStores(db)
       }
     })
   }
 
   /**
-   * Crea los object stores necesarios
+   * Crea los object stores necesarios.
    * 
    * @param {IDBDatabase} db - Base de datos
    * @private
@@ -120,6 +120,15 @@ export class OfflineGeoStorage {
       trazasStore.createIndex('usuario', 'usuario', { unique: false })
       logger.debug('[OfflineGeoStorage] Store "trazas_gps" creado')
     }
+
+    // NUEVO: Store para tiles de mapas
+    if (!db.objectStoreNames.contains(STORES.TILES)) {
+      const tilesStore = db.createObjectStore(STORES.TILES, { keyPath: 'id' })
+      tilesStore.createIndex('z', 'z', { unique: false })
+      tilesStore.createIndex('x', 'x', { unique: false })
+      tilesStore.createIndex('y', 'y', { unique: false })
+      logger.debug('[OfflineGeoStorage] Store "map_tiles" creado')
+    }
   }
 
   // ============================================================================
@@ -127,14 +136,13 @@ export class OfflineGeoStorage {
   // ============================================================================
 
   /**
-   * Guarda una zona con su geometría
+   * Guarda una zona con su geometría.
    * 
    * @param {GeoZona} zona - Zona a guardar
    * @returns {Promise<void>}
    */
   async saveZona(zona) {
     await this.ensureInit()
-
     return this.transaction(STORES.ZONAS, 'readwrite', (store) => {
       const zonaWithTimestamp = {
         ...zona,
@@ -146,33 +154,30 @@ export class OfflineGeoStorage {
   }
 
   /**
-   * Obtiene una zona por ID
+   * Obtiene una zona por ID.
    * 
    * @param {string} id - ID de la zona
    * @returns {Promise<GeoZona|null>}
    */
   async getZona(id) {
     await this.ensureInit()
-
     return this.transaction(STORES.ZONAS, 'readonly', (store) => {
       return store.get(id)
     })
   }
 
   /**
-   * Obtiene todas las zonas de una hacienda
+   * Obtiene todas las zonas de una hacienda.
    * 
    * @param {string} haciendaId - ID de hacienda
    * @returns {Promise<GeoZona[]>}
    */
   async getAllZonas(haciendaId) {
     await this.ensureInit()
-
-    return this.transaction(STORES.ZONAS, 'readonly', async (store) => {
+    return this.transaction(STORES.ZONAS, 'readonly', (store) => {
       return new Promise((resolve, reject) => {
         const index = store.index('hacienda')
         const request = index.getAll(haciendaId)
-
         request.onsuccess = () => resolve(request.result || [])
         request.onerror = () => reject(request.error)
       })
@@ -180,17 +185,15 @@ export class OfflineGeoStorage {
   }
 
   /**
-   * Obtiene todas las zonas sin filtrar
+   * Obtiene todas las zonas sin filtrar.
    * 
    * @returns {Promise<GeoZona[]>}
    */
   async getAllZonasUnfiltered() {
     await this.ensureInit()
-
     return this.transaction(STORES.ZONAS, 'readonly', (store) => {
       return new Promise((resolve, reject) => {
         const request = store.getAll()
-
         request.onsuccess = () => resolve(request.result || [])
         request.onerror = () => reject(request.error)
       })
@@ -198,14 +201,13 @@ export class OfflineGeoStorage {
   }
 
   /**
-   * Elimina una zona
+   * Elimina una zona.
    * 
    * @param {string} id - ID de la zona
    * @returns {Promise<void>}
    */
   async deleteZona(id) {
     await this.ensureInit()
-
     return this.transaction(STORES.ZONAS, 'readwrite', (store) => {
       store.delete(id)
       logger.debug('[OfflineGeoStorage] Zona eliminada:', id)
@@ -217,14 +219,13 @@ export class OfflineGeoStorage {
   // ============================================================================
 
   /**
-   * Guarda una siembra con su geometría
+   * Guarda una siembra con su geometría.
    * 
    * @param {Object} siembra - Siembra a guardar
    * @returns {Promise<void>}
    */
   async saveSiembra(siembra) {
     await this.ensureInit()
-
     return this.transaction(STORES.SIEMBRAS, 'readwrite', (store) => {
       const siembraWithTimestamp = {
         ...siembra,
@@ -236,33 +237,30 @@ export class OfflineGeoStorage {
   }
 
   /**
-   * Obtiene una siembra por ID
+   * Obtiene una siembra por ID.
    * 
    * @param {string} id - ID de la siembra
    * @returns {Promise<Object|null>}
    */
   async getSiembra(id) {
     await this.ensureInit()
-
     return this.transaction(STORES.SIEMBRAS, 'readonly', (store) => {
       return store.get(id)
     })
   }
 
   /**
-   * Obtiene todas las siembras de una zona
+   * Obtiene todas las siembras de una zona.
    * 
    * @param {string} zonaId - ID de la zona
    * @returns {Promise<Object[]>}
    */
   async getSiembrasByZona(zonaId) {
     await this.ensureInit()
-
-    return this.transaction(STORES.SIEMBRAS, 'readonly', async (store) => {
+    return this.transaction(STORES.SIEMBRAS, 'readonly', (store) => {
       return new Promise((resolve, reject) => {
         const index = store.index('zona')
         const request = index.getAll(zonaId)
-
         request.onsuccess = () => resolve(request.result || [])
         request.onerror = () => reject(request.error)
       })
@@ -274,14 +272,13 @@ export class OfflineGeoStorage {
   // ============================================================================
 
   /**
-   * Guarda un punto de interés
+   * Guarda un punto de interés.
    * 
    * @param {Object} punto - Punto a guardar
    * @returns {Promise<void>}
    */
   async savePunto(punto) {
     await this.ensureInit()
-
     return this.transaction(STORES.PUNTOS_INTERES, 'readwrite', (store) => {
       store.put({
         ...punto,
@@ -292,19 +289,17 @@ export class OfflineGeoStorage {
   }
 
   /**
-   * Obtiene puntos de una zona
+   * Obtiene puntos de una zona.
    * 
    * @param {string} zonaId - ID de la zona
    * @returns {Promise<Object[]>}
    */
   async getPuntosByZona(zonaId) {
     await this.ensureInit()
-
-    return this.transaction(STORES.PUNTOS_INTERES, 'readonly', async (store) => {
+    return this.transaction(STORES.PUNTOS_INTERES, 'readonly', (store) => {
       return new Promise((resolve, reject) => {
         const index = store.index('zona')
         const request = index.getAll(zonaId)
-
         request.onsuccess = () => resolve(request.result || [])
         request.onerror = () => reject(request.error)
       })
@@ -316,14 +311,13 @@ export class OfflineGeoStorage {
   // ============================================================================
 
   /**
-   * Guarda una traza GPS (tracking de campo)
+   * Guarda una traza GPS (tracking de campo).
    * 
    * @param {Object} traza - Traza GPS a guardar
    * @returns {Promise<void>}
    */
   async saveTrazaGPS(traza) {
     await this.ensureInit()
-
     return this.transaction(STORES.TRAZAS_GPS, 'readwrite', (store) => {
       store.put(traza)
       logger.debug('[OfflineGeoStorage] Traza GPS guardada:', traza.id)
@@ -331,20 +325,79 @@ export class OfflineGeoStorage {
   }
 
   /**
-   * Obtiene trazas GPS de una fecha
+   * Obtiene trazas GPS de una fecha.
    * 
    * @param {string} fecha - Fecha en formato YYYY-MM-DD
    * @returns {Promise<Object[]>}
    */
   async getTrazasByFecha(fecha) {
     await this.ensureInit()
-
-    return this.transaction(STORES.TRAZAS_GPS, 'readonly', async (store) => {
+    return this.transaction(STORES.TRAZAS_GPS, 'readonly', (store) => {
       return new Promise((resolve, reject) => {
         const index = store.index('fecha')
         const request = index.getAll(fecha)
-
         request.onsuccess = () => resolve(request.result || [])
+        request.onerror = () => reject(request.error)
+      })
+    })
+  }
+
+  // ============================================================================
+  // NUEVO: OPERACIONES PARA TILES DE MAPAS (Hito 3)
+  // ============================================================================
+
+  /**
+   * Guarda un tile de mapa para uso offline.
+   * @param {Object} tile - { z, x, y, imageData (blob) }
+   */
+  async saveTile(tile) {
+    await this.ensureInit()
+    const id = `tile_${tile.z}_${tile.x}_${tile.y}`
+    return this.transaction(STORES.TILES, 'readwrite', (store) => {
+      store.put({
+        id,
+        ...tile,
+        timestamp: Date.now()
+      })
+      logger.debug('[OfflineGeoStorage] Tile guardado:', id)
+    })
+  }
+
+  /**
+   * Obtiene un tile de mapa.
+   * @param {number} z - Zoom
+   * @param {number} x - Coordenada X
+   * @param {number} y - Coordenada Y
+   */
+  async getTile(z, x, y) {
+    await this.ensureInit()
+    const id = `tile_${z}_${x}_${y}`
+    return this.transaction(STORES.TILES, 'readonly', (store) => {
+      return store.get(id)
+    })
+  }
+
+  /**
+   * Elimina tiles antiguos para limpieza.
+   * @param {number} olderThanDays - Días de antigüedad
+   */
+  async cleanOldTiles(olderThanDays = 30) {
+    await this.ensureInit()
+    const threshold = Date.now() - (olderThanDays * 24 * 60 * 60 * 1000)
+    return this.transaction(STORES.TILES, 'readwrite', (store) => {
+      return new Promise((resolve, reject) => {
+        const request = store.openCursor()
+        request.onsuccess = (event) => {
+          const cursor = event.target.result
+          if (cursor) {
+            if (cursor.value.timestamp < threshold) {
+              cursor.delete()
+            }
+            cursor.continue()
+          } else {
+            resolve()
+          }
+        }
         request.onerror = () => reject(request.error)
       })
     })
@@ -355,7 +408,7 @@ export class OfflineGeoStorage {
   // ============================================================================
 
   /**
-   * Ejecuta una transacción en la base de datos
+   * Ejecuta una transacción en la base de datos.
    * 
    * @param {string} storeName - Nombre del store
    * @param {string} mode - Modo de transacción (readonly/readwrite)
@@ -368,7 +421,16 @@ export class OfflineGeoStorage {
       try {
         const transaction = this.db.transaction(storeName, mode)
         const store = transaction.objectStore(storeName)
-        const result = callback(store)
+        let result = callback(store)
+
+        // Manejar IDBRequest (de store.get, store.getAll, etc.)
+        if (result && typeof result.onsuccess !== 'undefined') {
+          const request = result
+          result = new Promise((res, rej) => {
+            request.onsuccess = () => res(request.result)
+            request.onerror = () => rej(request.error)
+          })
+        }
 
         if (result instanceof Promise) {
           result.then(resolve).catch(reject)
@@ -384,7 +446,7 @@ export class OfflineGeoStorage {
   }
 
   /**
-   * Asegura que la DB esté inicializada
+   * Asegura que la DB esté inicializada.
    * 
    * @returns {Promise<void>}
    * @private
@@ -396,34 +458,29 @@ export class OfflineGeoStorage {
   }
 
   /**
-   * Limpia todos los datos de la base de datos
+   * Limpia todos los datos de la base de datos.
    * 
    * @returns {Promise<void>}
    */
   async clearAll() {
     await this.ensureInit()
-
     const stores = Object.values(STORES)
-
     for (const storeName of stores) {
       await this.transaction(storeName, 'readwrite', (store) => {
         store.clear()
       })
     }
-
     logger.warn('[OfflineGeoStorage] Todos los datos fueron limpiados')
   }
 
   /**
-   * Exporta todos los datos para backup
+   * Exporta todos los datos para backup.
    * 
    * @returns {Promise<Object>}
    */
   async exportData() {
     await this.ensureInit()
-
     const data = {}
-
     for (const [key, storeName] of Object.entries(STORES)) {
       data[key] = await this.transaction(storeName, 'readonly', (store) => {
         return new Promise((resolve, reject) => {
@@ -433,43 +490,37 @@ export class OfflineGeoStorage {
         })
       })
     }
-
     return data
   }
 
   /**
-   * Importa datos desde un backup
+   * Importa datos desde un backup.
    * 
    * @param {Object} data - Datos a importar
    * @returns {Promise<void>}
    */
   async importData(data) {
     await this.ensureInit()
-
     for (const [key, items] of Object.entries(data)) {
       const storeName = STORES[key]
       if (!storeName) continue
-
       for (const item of items) {
         await this.transaction(storeName, 'readwrite', (store) => {
           store.put(item)
         })
       }
     }
-
     logger.info('[OfflineGeoStorage] Datos importados exitosamente')
   }
 
   /**
-   * Obtiene estadísticas de almacenamiento
+   * Obtiene estadísticas de almacenamiento.
    * 
    * @returns {Promise<Object>}
    */
   async getStats() {
     await this.ensureInit()
-
     const stats = {}
-
     for (const [key, storeName] of Object.entries(STORES)) {
       stats[key] = await this.transaction(storeName, 'readonly', (store) => {
         return new Promise((resolve, reject) => {
@@ -479,15 +530,13 @@ export class OfflineGeoStorage {
         })
       })
     }
-
     stats.totalItems = Object.values(stats).reduce((a, b) => a + b, 0)
     stats.lastUpdated = new Date().toISOString()
-
     return stats
   }
 
   /**
-   * Cierra la conexión a la base de datos
+   * Cierra la conexión a la base de datos.
    */
   close() {
     if (this.db) {
@@ -499,11 +548,11 @@ export class OfflineGeoStorage {
   }
 }
 
-// Exportar instancia singleton
+// Exportar instancia singleton.
 export const offlineGeoStorage = new OfflineGeoStorage()
 
 /**
- * Hook conveniente para Vue 3 Composition API
+ * Hook conveniente para Vue 3 Composition API.
  * 
  * @example
  * // En un componente Vue
@@ -547,6 +596,17 @@ export function useOfflineGeoStorage() {
     return storage.getSiembrasByZona(zonaId)
   }
 
+  // NUEVO: Métodos para tiles
+  const saveTile = async (tile) => {
+    await storage.init()
+    return storage.saveTile(tile)
+  }
+
+  const getTile = async (z, x, y) => {
+    await storage.init()
+    return storage.getTile(z, x, y)
+  }
+
   return {
     init: () => storage.init(),
     saveZona,
@@ -554,6 +614,8 @@ export function useOfflineGeoStorage() {
     getAllZonas,
     saveSiembra,
     getSiembrasByZona,
+    saveTile,
+    getTile,
     close: () => storage.close()
   }
 }

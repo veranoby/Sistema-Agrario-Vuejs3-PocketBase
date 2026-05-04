@@ -1,65 +1,123 @@
-# Plan Maestro: Estabilización, Consolidación e Integración (v9.3)
-> **Versión**: 9.3 (Rigor Arquitectónico y Valor de Producto - 29/04/2026)
-> **Estado**: EN EJECUCIÓN (Fase 28-30)
+┃ Plan Consolidado Optimizado - Fase 2: Integración, Limpieza y Nuevas Funcionalidades                                                                                                                                                         ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-## ⚠️ INDICACIONES NO NEGOCIABLES (ACTUALIZADO)
-1. **Unificación de Fuentes de Verdad**: Prohibido duplicar lógica de cálculo (ej. BPA) en múltiples archivos. Usar `src/utils/agriMetrics.js` como único motor.
-2. **Desacoplamiento de Estado**: Fusionar stores satélites en stores principales para reducir el overhead de imports y reactividad.
-3. **Integración Activa**: Las utilidades de optimización (imágenes, geolocalización) deben estar inyectadas en los flujos de persistencia, no solo existir como archivos sueltos.
+Basado en: Propuesta original (conductor/plan-integracion-limpieza-profunda.md), análisis de archivos añadidos (todos los mencionados en el chat), y mejores prácticas de arquitectura Vue/Pinia.                                               
 
----
 
-## 1. Hitos Alcanzados (V9.2)
-- [x] **Core Stability**: Restaurada persistencia en `syncStore`.
-- [x] **ESM Fix**: Eliminados `require()` incompatibles.
-- [x] **Performance**: Lazy loading inicial de componentes pesados en `App.vue`.
+Objetivo General                                                                                                                                                                                                                                
 
----
+Mejorar mantenibilidad, eliminar fragmentación de servicios, preparar arquitectura offline-first, e integrar funcionalidades de geolocalización y AI, respetando abstracción de flujo y resiliencia offline.                                    
 
-## 2. Fase 28: Unificación Core (Limpieza y Redundancia)
-**Objetivo**: Reducir el ruido arquitectónico y unificar estados.
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-### Pasos de Ejecución:
-1. **Fusión Auth/Profile**:
-   - Mover estado `user`, `version` y getters de `profileStore.js` a `authStore.js`.
-   - Eliminar `src/stores/profileStore.js`.
-   - Actualizar masivamente imports en componentes (reemplazar `useProfileStore` por `useAuthStore`).
-2. **Unificación BPA**:
-   - Migrar lógica de `src/utils/bpaCalculator.js` a `src/utils/agriMetrics.js`.
-   - Actualizar `actividadesStore.js` y `zonasStore.js` para usar `agriMetrics.calculateBPAScore`.
-   - Eliminar `src/utils/bpaCalculator.js`.
-3. **Simplificación Sync Store**:
-   - Colapsar `idMapper.js`, `conflictResolver.js` y `syncConfig.js` en `src/stores/sync/core.js`.
 
----
+1. Consolidación de Tests y Limpieza de Código                                                                                                                                                                                                  
 
-## 3. Fase 29: Inyección de Valor Agregado (Integración Real)
-**Objetivo**: Conectar las joyas de la corona a la experiencia del usuario.
+Correcciones a original: Valida tests antes de mover, actualiza imports, limpia código duplicado.                                                                                                                                               
 
-### Pasos de Ejecución:
-1. **Avatar Inteligente**:
-   - Modificar `src/stores/avatarStore.js`: Importar `imageOptimizer` y procesar/comprimir imágenes antes de subirlas a PocketBase.
-2. **Bitácora Geo-Asistida**:
-   - Modificar `src/stores/bitacoraStore.js`: En `crearBitacoraEntry`, invocar `locationCoordinator.getPosition()` para auto-llenar coordenadas si no están presentes.
-3. **Alertas Centralizadas**:
-   - Integrar `useAlertTriggers` en `Dashboard.vue` para mostrar banners de cumplimiento crítico basados en la configuración de la hacienda.
+Tareas                                                                                                                                                                                                                                          
 
----
+1.1 Validar tests existentes:                                                                                                                                                                                                                   
 
-## 4. Fase 30: Auditoría Final de Producto
-**Objetivo**: Validar que el valor agregado sea visible y funcional.
+ • Ejecutar syncStore.test.js y cacheManager.tiered.test.js localmente.                                                                                                                                                                         
+ • Corregir fallos: El test syncStore.test.js usa syncStore.conflicts pero el actual sync/index.js usa conflictUI; actualizar test o ajustar store. 1.2 Mover tests a estructura centralizada:                                                  
+ • Mover src/stores/syncStore.test.js a tests/stores/sync/index.test.js                                                                                                                                                                         
+ • Mover src/utils/cacheManager.tiered.test.js a tests/utils/cacheManager.tiered.test.js                                                                                                                                                        
+ • Mantener estructura espejo de src/ en tests/. 1.3 Actualizar imports:                                                                                                                                                                        
+ • Verificar aliases de vitest (@/ apunta a src/).                                                                                                                                                                                              
+ • Eliminar mocks obsoletos tras cambios en stores. 1.4 Limpieza de duplicados:                                                                                                                                                                 
+ • Centralizar función downloadFile duplicada en formatters.js, csvExporter.js, htmlExporter.js, jsonExporter.js en src/utils/fileDownload.js.                                                                                                  
 
-### Checklist de Verificación:
-- [ ] **Firma Digital**: ¿Es visible el sello de integridad en la Bitácora?
-- [ ] **Modo Avión**: ¿Avisa el `StatusBar` cuando el usuario pierde conexión?
-- [ ] **Ahorro de Datos**: ¿Las imágenes subidas ocupan < 200KB gracias al optimizer?
+Criterio de aceptación                                                                                                                                                                                                                          
 
----
+100% tests pasan, 0 archivos huérfanos en src/, estructura tests/ espejo de src/.                                                                                                                                                               
 
-## Resumen de Verificación Senior
-| Fase | Verificación | Resultado |
-| :--- | :--- | :--- |
-| 28 | `ls src/stores/` | `profileStore.js` NO debe existir. |
-| 28 | `grep "bpaCalculator"` | 0 coincidencias en el proyecto. |
-| 29 | Upload Avatar | Monitor de red muestra carga de archivo comprimido. |
-| 29 | Create Bitacora | Objeto JSON incluye coordenadas GPS automáticamente. |
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+2. Auditoría de Dependencias y Estrategia Offline-First                                                                                                                                                                                         
+
+Correcciones a original: Usa madge para auditoría, aprovecha offlineGeoStorage.js existente, prioriza colecciones para IndexedDB.                                                                                                               
+
+Tareas                                                                                                                                                                                                                                          
+
+2.1 Auditoría de dependencias:                                                                                                                                                                                                                  
+
+ • Usar madge para detectar ciclos entre:                                                                                                                                                                                                       
+    • Servicios: profileService.js (importa useSyncStore), locationCoordinator.js                                                                                                                                                               
+    • Stores: sync/index.js (importa todos los stores), authStore.js (importa useSyncStore, profileService), snackbarStore.js                                                                                                                   
+    • Constantes: bpa.js (importado en cacheManager.js)                                                                                                                                                                                         
+ • Corregir ciclos: Usar import dinámico como ya implementa sync/index.js en resolveStore. 2.2 Evolución Offline-First:                                                                                                                         
+ • Migrar colecciones pesadas a IndexedDB aprovechando offlineGeoStorage.js (ya usa IndexedDB):                                                                                                                                                 
+    1 Bitácoras/trazas GPS (ya soportado)                                                                                                                                                                                                       
+    2 Siembras/zonas (añadir a offlineGeoStorage.js)                                                                                                                                                                                            
+    3 Cola de sincronización (syncQueue): Mantener en localStorage (bajo volumen).                                                                                                                                                              
+ • Migrar syncCache (en sync/index.js, usa tieredCache de cacheManager.js) a IndexedDB vía localForage para niveles L2/L3, mantener L1 (lookup data) en localStorage.                                                                           
+ • Actualizar sync/index.js para usar nueva capa de persistencia.                                                                                                                                                                               
+
+Criterio de aceptación                                                                                                                                                                                                                          
+
+0 ciclos de dependencia, carga offline de datos pesados 50% más rápida, syncQueue funcional sin conexión.                                                                                                                                       
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+3. Unificación de Servicios de Geolocalización y Mapas                                                                                                                                                                                          
+
+Correcciones a original: No ignora locationCoordinator.js existente, aprovecha offlineGeoStorage.js, define stack para tiles offline.                                                                                                           
+
+Tareas                                                                                                                                                                                                                                          
+
+3.1 Consolidar servicios en locationCoordinator.js (ya existente, no crear nuevo mapService):                                                                                                                                                   
+
+ • Integrar offlineGeoStorage.js en locationCoordinator.js para gestionar tracking + almacenamiento offline de geometrías.                                                                                                                      
+ • Eliminar instancias singleton duplicadas: Usar la instancia exportada de locationCoordinator.js en toda la app. 3.2 Integrar capacidades de dibujo:                                                                                          
+ • Añadir Leaflet + Leaflet.draw para trazar polígonos de lotes/zonas, reutilizando estructura GeoZona de offlineGeoStorage.js.                                                                                                                 
+ • Guardar polígonos dibujados directamente vía locationCoordinator.js. 3.3 Renderizado Offline:                                                                                                                                                
+ • Implementar cacheo de tiles cartográficos con leaflet-offline o localForage (IndexedDB).                                                                                                                                                     
+ • Garantizar visualización de mapas base y geometrías sin conexión.                                                                                                                                                                            
+
+Criterio de aceptación                                                                                                                                                                                                                          
+
+0 servicios de geolocalización duplicados, tracking + dibujo + visualización offline funcionales, soporte para polígonos de zonas/siembras.                                                                                                     
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+4. Integración del Asistente AI                                                                                                                                                                                                                 
+
+Correcciones a original: Define proveedor, estrategia offline, seguridad de datos.                                                                                                                                                              
+
+Tareas                                                                                                                                                                                                                                          
+
+4.1 Arquitectura y proveedor:                                                                                                                                                                                                                   
+
+ • Modelo self-hosted (Llama 3) para datos sensibles (bitácoras, haciendas), fallback a OpenAI solo para datos no sensibles.                                                                                                                    
+ • Crear aiService.js desacoplado de UI, con cache de respuestas en IndexedDB. 4.2 Integración por módulo:                                                                                                                                      
+ • Actividades: Autocompletar bitácoras, detección de anomalías en dosis, soporte in situ para plagas (usa actividadesStore.js, bitacoraStore.js).                                                                                              
+ • Programaciones: Sugerir calendarios cruzando datos de programacionesStore.js, clima cacheado, disponibilidad de maquinaria. 4.3 Resiliencia offline:                                                                                         
+ • Cachear respuestas frecuentes en IndexedDB para funcionamiento offline parcial.                                                                                                                                                              
+
+Criterio de aceptación                                                                                                                                                                                                                          
+
+80% precisión mínima en sugerencias, funcionamiento offline parcial, 0 fuga de datos sensibles a terceros.                                                                                                                                      
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+Hitos Temporales (1 semana/hito)                                                                                                                                                                                                                
+
+ 1 Hito 1 (S1): Completar Sección 1 (Tests y Limpieza)                                                                                                                                                                                          
+ 2 Hito 2 (S2): Completar Sección 2 (Dependencias y Offline-First) - Depende de Hito 1                                                                                                                                                          
+ 3 Hito 3 (S3): Completar Sección 3 (Geolocalización y Mapas) - Depende de Hito 2                                                                                                                                                               
+ 4 Hito 4 (S4): Completar Sección 4 (Integración AI) - Depende de Hito 3                                                                                                                                                                        
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+Gestión de Riesgos                                                                                                                                                                                                                              
+
+ 1 Ciclos de dependencia no detectados: Validar con madge en cada paso de auditoría.                                                                                                                                                            
+ 2 Pérdida de datos en migración a IndexedDB: Backup de localStorage antes de migrar, transiciones graduales.                                                                                                                                   
+ 3 Latencia/costos de AI: Priorizar modelo self-hosted, implementar rate limits.                                                                                                                                                                
+ 4 Peso de tiles offline: Limpieza periódica de cache (eliminar tiles no usados en 30 días). 

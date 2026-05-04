@@ -124,6 +124,9 @@ app.use(i18n)
 app.use(useVuelidate)
 app.component('QuillEditor', QuillEditor)
 
+import { vRole } from '@/directives/v-role'
+app.directive('role', vRole)
+
 app.config.globalProperties.$filters = {
   formatDate(value) {
     if (!value) return ''

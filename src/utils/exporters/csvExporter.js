@@ -1,4 +1,5 @@
 import { formatDate } from '@/utils/formatters'
+import { downloadFile } from '@/utils/fileDownload'
 
 export function exportToCSV(data, filename = 'export.csv', options = {}) {
   const { headers = null, separator = ',', includeHeader = true } = options
@@ -22,16 +23,4 @@ export function exportToCSV(data, filename = 'export.csv', options = {}) {
   const csv = [...headerRow, ...rows].join('\n')
   downloadFile(csv, filename, 'text/csv;charset=utf-8;')
   return true
-}
-
-function downloadFile(content, filename, mimeType) {
-  const blob = new Blob([content], { type: mimeType })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  URL.revokeObjectURL(url)
 }

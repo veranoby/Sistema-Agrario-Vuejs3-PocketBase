@@ -1,4 +1,5 @@
 import { formatDate } from '@/utils/formatters'
+import { downloadFile } from '@/utils/fileDownload'
 
 export function exportToHTML(data, filename = 'export.html', options = {}) {
   const { title = 'Exportación de Datos', headers = null } = options
@@ -38,16 +39,4 @@ export function exportToHTML(data, filename = 'export.html', options = {}) {
 
   downloadFile(html, filename, 'text/html;charset=utf-8;')
   return true
-}
-
-function downloadFile(content, filename, mimeType) {
-  const blob = new Blob([content], { type: mimeType })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  URL.revokeObjectURL(url)
 }

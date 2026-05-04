@@ -4,7 +4,7 @@ import { handleError } from '@/utils/errorHandler';
 import { useSyncStore } from '@/stores/sync/index'
 import { useAuthStore } from './authStore';
 import { useHaciendaStore } from './haciendaStore';
-import { useProgramacionesStore } from './programaciones';
+
 import { useActividadesStore } from './actividadesStore';
 import { getHandlerForTipo } from '@/utils/bitacora/bitacoraHandlers'
 import { logger } from '@/utils/logger'
@@ -12,6 +12,9 @@ import { useAlertTriggers } from '@/composables/useAlertTriggers'
 import { digitalSignature } from '@/services/digitalSignature'
 import { locationCoordinator } from '@/services/locationCoordinator'
 import { differenceInDays, format } from 'date-fns'
+// NUEVO: Importar servicio de IA
+import { autocompleteBitacora } from '@/services/aiService'
+import { storeEvents } from '@/services/storeEvents'
 
 export const useBitacoraStore = defineStore('bitacora', {
   state: () => ({
@@ -40,16 +43,13 @@ export const useBitacoraStore = defineStore('bitacora', {
     stateProp: 'bitacoraEntries',
     hooks: {
       onCreate: function() {
-        const programacionesStore = useProgramacionesStore();
-        programacionesStore.clearComplianceStateCache();
+        storeEvents.emit('bitacora-updated');
       },
       onUpdate: function() {
-        const programacionesStore = useProgramacionesStore();
-        programacionesStore.clearComplianceStateCache();
+        storeEvents.emit('bitacora-updated');
       },
       onDelete: function() {
-        const programacionesStore = useProgramacionesStore();
-        programacionesStore.clearComplianceStateCache();
+        storeEvents.emit('bitacora-updated');
       }
     }
   },
@@ -251,6 +251,18 @@ export const useBitacoraStore = defineStore('bitacora', {
       };
     },
 
+    // NUEVO: Autocompletar bitácora usando IA
+    async autocompleteEntry(informalInput, metricasConfig) {
+      try {
+        logger.info('[BITACORA_STORE] Solicitando autocompletado de IA...')
+        const result = await autocompleteBitacora(informalInput, metricasConfig)
+        return result
+      } catch (error) {
+        logger.error('[BITACORA_STORE] Error en autocompletado IA:', error)
+        throw error
+      }
+    },
+
     async crearBitacoraEntry(entryData) {
       logger.debug('[BITACORA_STORE] Attempting to create bitacora entry:', entryData);
       const syncStore = useSyncStore();
@@ -306,7 +318,7 @@ export const useBitacoraStore = defineStore('bitacora', {
         logger.warn('[BITACORA_STORE] No se pudo firmar, continuando sin firma:', error)
       }
 
-      fullEntryData.signature = signatureData
+      fullEntryData.signature = signatureData;
 
       if (!fullEntryData.hacienda || !fullEntryData.programacion_origen || !fullEntryData.actividad_realizada || !fullEntryData.fecha_ejecucion) {
           handleError(new Error('Datos incompletos para la entrada de bitácora.'), 'Error creando entrada de bitácora');
@@ -334,8 +346,7 @@ export const useBitacoraStore = defineStore('bitacora', {
         });
         logger.debug('[BITACORA_STORE] Temporary entry created and queued:', tempEntry);
         
-        const programacionesStore = useProgramacionesStore();
-        programacionesStore.clearComplianceStateCache();
+        storeEvents.emit('bitacora-updated');
         
         return tempEntry;
       }
@@ -356,8 +367,7 @@ export const useBitacoraStore = defineStore('bitacora', {
           await handler.postProcess(record, { actividadesStore })
         }
 
-        const programacionesStore = useProgramacionesStore();
-        programacionesStore.clearComplianceStateCache();
+        storeEvents.emit('bitacora-updated');
 
         return newEntry;
       } catch (error) {
@@ -383,8 +393,7 @@ export const useBitacoraStore = defineStore('bitacora', {
             }
             syncStore.saveToLocalStorage('bitacoraEntries', this.bitacoraEntries);
             
-            const programacionesStore = useProgramacionesStore();
-            programacionesStore.clearComplianceStateCache();
+            storeEvents.emit('bitacora-updated');
             
             await syncStore.queueOperation({
                 type: 'update',
@@ -407,8 +416,7 @@ export const useBitacoraStore = defineStore('bitacora', {
             }
             syncStore.saveToLocalStorage('bitacoraEntries', this.bitacoraEntries);
             
-            const programacionesStore = useProgramacionesStore();
-            programacionesStore.clearComplianceStateCache();
+            storeEvents.emit('bitacora-updated');
             
             return updatedEntry;
         } catch (error) {
@@ -430,8 +438,7 @@ export const useBitacoraStore = defineStore('bitacora', {
             if (this.bitacoraEntries.length < initialLength) {
                 syncStore.saveToLocalStorage('bitacoraEntries', this.bitacoraEntries);
                 
-                const programacionesStore = useProgramacionesStore();
-                programacionesStore.clearComplianceStateCache();
+                storeEvents.emit('bitacora-updated');
             } else {
                 console.warn(`[BITACORA_STORE] Cannot delete locally: item with id ${id} not found.`);
                 return false;
@@ -452,8 +459,7 @@ export const useBitacoraStore = defineStore('bitacora', {
             this.bitacoraEntries = this.bitacoraEntries.filter(entry => entry.id !== id);
             syncStore.saveToLocalStorage('bitacoraEntries', this.bitacoraEntries);
             
-            const programacionesStore = useProgramacionesStore();
-            programacionesStore.clearComplianceStateCache();
+            storeEvents.emit('bitacora-updated');
             
             return true;
         } catch (error) {
@@ -467,7 +473,7 @@ export const useBitacoraStore = defineStore('bitacora', {
 });
 
 export async function checkBPACertificados(haciendaId) {
-  if (!haciendaId) return
+  if (!haciendaId) return;
 
   const { triggerAlert } = useAlertTriggers()
   const bitacoraStore = useBitacoraStore()
@@ -477,12 +483,12 @@ export async function checkBPACertificados(haciendaId) {
       hacienda: haciendaId
     })
 
-    if (!items || items.length === 0) return
+    if (!items || items.length === 0) return;
 
     const hoy = new Date()
 
     for (const cert of items) {
-      if (!cert.fecha_vencimiento) continue
+      if (!cert.fecha_vencimiento) continue;
 
       const fechaVenc = new Date(cert.fecha_vencimiento)
       const diasRestantes = differenceInDays(fechaVenc, hoy)

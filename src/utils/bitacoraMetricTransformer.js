@@ -4,7 +4,7 @@
  */
 
 import { logger } from '@/utils/logger'
-import { formatDate } from '@/utils/formatters'
+import { format as formatDate } from 'date-fns'
 
 /**
  * Mapeo de transformaciones específicas por tipo de actividad

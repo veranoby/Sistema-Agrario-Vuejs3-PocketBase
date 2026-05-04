@@ -5,6 +5,7 @@
 
 import { logger } from '@/utils/logger'
 import { CACHE_LEVELS, CACHE_KEYS } from '@/constants/bpa'
+import { IndexedDBStorage } from '@/utils/indexedDBStorage'
 
 /**
  * Configuración por defecto del cache
@@ -360,9 +361,12 @@ export class TieredCacheManager extends CacheManager {
     })
 
     // Cachés separados por nivel
+    // L1: Mantiene en memoria/localStorage (Lookup)
     this.l1Cache = new CacheManager({ ttl: 3600000, maxSize: 50 })   // 1 hora
-    this.l2Cache = new CacheManager({ ttl: 600000, maxSize: 150 })   // 10 min
-    this.l3Cache = new CacheManager({ ttl: 300000, maxSize: 100 })   // 5 min
+    
+    // L2 y L3: Migrados a IndexedDB (Hito 2)
+    this.l2Storage = new IndexedDBStorage('agriCacheL2', 'recent')
+    this.l3Storage = new IndexedDBStorage('agriCacheL3', 'pagination')
   }
 
   /**
@@ -370,13 +374,21 @@ export class TieredCacheManager extends CacheManager {
    * @param {string} key - Clave del cache
    * @param {string} level - 'l1' | 'l2' | 'l3'
    */
-  getFromLevel(key, level = CACHE_LEVELS.RECENT) {
-    const cache = this[`${level}Cache`]
-    if (!cache) {
+  async getFromLevel(key, level = CACHE_LEVELS.RECENT) {
+    try {
+      if (level === CACHE_LEVELS.LOOKUP) {
+        return this.l1Cache.get(key)
+      } else if (level === CACHE_LEVELS.RECENT) {
+        return await this.l2Storage.getItem(key)
+      } else if (level === CACHE_LEVELS.PAGINATION) {
+        return await this.l3Storage.getItem(key)
+      }
       logger.warn(`[TieredCache] Nivel inválido: ${level}`)
       return null
+    } catch (error) {
+      logger.error('[TieredCache] Error obteniendo de IndexedDB:', error)
+      return null
     }
-    return cache.get(key)
   }
 
   /**
@@ -386,52 +398,65 @@ export class TieredCacheManager extends CacheManager {
    * @param {string} level - 'l1' | 'l2' | 'l3'
    * @param {number} [customTtl] - TTL personalizado opcional
    */
-  setToLevel(key, data, level = CACHE_LEVELS.RECENT, customTtl = null) {
-    const cache = this[`${level}Cache`]
-    if (!cache) {
-      logger.warn(`[TieredCache] Nivel inválido: ${level}`)
-      return
+  async setToLevel(key, data, level = CACHE_LEVELS.RECENT, customTtl = null) {
+    try {
+      if (level === CACHE_LEVELS.LOOKUP) {
+        this.l1Cache.set(key, data, customTtl)
+      } else if (level === CACHE_LEVELS.RECENT) {
+        await this.l2Storage.setItem(key, { data, timestamp: Date.now(), ttl: customTtl || 600000 })
+      } else if (level === CACHE_LEVELS.PAGINATION) {
+        await this.l3Storage.setItem(key, { data, timestamp: Date.now(), ttl: customTtl || 300000 })
+      } else {
+        logger.warn(`[TieredCache] Nivel inválido: ${level}`)
+      }
+    } catch (error) {
+      logger.error('[TieredCache] Error guardando en IndexedDB:', error)
     }
-    cache.set(key, data, customTtl)
   }
 
   /**
    * Invalida across all levels
    * @param {string} keyPattern - Patrón de claves a invalidar
    */
-  invalidateAcrossLevels(keyPattern) {
-    ;[this.l1Cache, this.l2Cache, this.l3Cache].forEach(cache => {
-      if (cache.invalidatePattern) {
-        cache.invalidatePattern(keyPattern)
-      }
-    })
+  async invalidateAcrossLevels(keyPattern) {
+    // L1
+    this.l1Cache.invalidatePattern(keyPattern)
+    // L2 y L3 (IndexedDB)
+    // Nota: IndexedDB no soporta búsqueda por patrón fácilmente, se limpia todo el store o se hace por clave exacta.
+    // Por simplicidad, si el patrón es una clave exacta, la eliminamos.
+    try {
+      await this.l2Storage.removeItem(keyPattern)
+      await this.l3Storage.removeItem(keyPattern)
+    } catch (error) {
+      logger.error('[TieredCache] Error invalidando en IndexedDB:', error)
+    }
   }
 
   /**
    * Obtiene estadísticas combinadas
    * @returns {Object} Estadísticas de todos los niveles
    */
-  getCombinedStats() {
+  async getCombinedStats() {
     return {
       l1: this.l1Cache.getStats(),
-      l2: this.l2Cache.getStats(),
-      l3: this.l3Cache.getStats(),
-      totalSize: this.l1Cache.cache.size + this.l2Cache.cache.size + this.l3Cache.cache.size
+      l2: { size: 'N/A (IndexedDB)', note: 'Check IndexedDB directly' },
+      l3: { size: 'N/A (IndexedDB)', note: 'Check IndexedDB directly' },
+      totalSize: this.l1Cache.cache.size // Solo cuenta L1 en memoria
     }
   }
 
   /**
    * Override del método get para usar L2 por defecto
    */
-  get(key) {
+  async get(key) {
     return this.getFromLevel(key, 'l2')
   }
 
   /**
    * Override del método set para usar L2 por defecto
    */
-  set(key, data, ttl = null) {
-    this.setToLevel(key, data, 'l2', ttl)
+  async set(key, data, ttl = null) {
+    await this.setToLevel(key, data, 'l2', ttl)
   }
 }
 

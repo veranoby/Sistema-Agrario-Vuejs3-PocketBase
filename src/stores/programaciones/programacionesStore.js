@@ -12,6 +12,7 @@ import { useActividadesStore } from '@/stores/actividadesStore'
 import { useHaciendaStore } from '../haciendaStore'
 import { useSnackbarStore } from '../snackbarStore'
 import { useBitacoraStore } from '../bitacoraStore'
+import { storeEvents } from '@/services/storeEvents'
 import { cache } from '@/utils/cacheManager'
 import { logger } from '@/utils/logger'
 
@@ -19,12 +20,10 @@ import { logger } from '@/utils/logger'
 import {
   calcularProximaEjecucion,
   obtenerEstadoVisual,
-  calcularEjecucionesPendientes,
-  formatToISOString
+  calcularEjecucionesPendientes
 } from './utils/dateCalculators'
 import {
   FREQUENCY_TYPES,
-  calculateNextExecutionByFrequency,
   calculateInitialExecutionDate,
   validateFrequencyConfig
 } from './utils/frequencyHandlers'
@@ -44,6 +43,8 @@ import {
   updateProgramacionAfterBatch,
   validateSiembraContext
 } from './batchOperations'
+// NUEVO: Importar servicio de IA
+import { suggestActivityCalendar } from '@/services/aiService'
 
 export const useProgramacionesStore = defineStore('programaciones', {
   state: () => ({
@@ -124,6 +125,11 @@ export const useProgramacionesStore = defineStore('programaciones', {
 
     async init() {
       try {
+        storeEvents.on('bitacora-updated', () => {
+          if (typeof this.clearComplianceStateCache === 'function') {
+            this.clearComplianceStateCache()
+          }
+        })
         await this.cargarProgramaciones()
         return true
       } catch (error) {
@@ -137,7 +143,6 @@ export const useProgramacionesStore = defineStore('programaciones', {
     },
 
     async fetchPage(page = 1, perPage = 50, filters = {}) {
-      const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore()
 
       const targetHacienda = filters.hacienda || haciendaStore.mi_hacienda?.id
@@ -470,7 +475,6 @@ export const useProgramacionesStore = defineStore('programaciones', {
       if (missingIds.length > 0) {
         try {
           const filter = missingIds.map(id => `id="${id}"`).join(' || ')
-
           const actividades = await pb.collection('actividades')
             .getFullList({ filter, batch: 100 })
 
@@ -599,7 +603,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
     },
 
     async finalizeProgramacionExecution(payload) {
-      const { programacionId, fechaEjecucionReal } = payload
+      const { programacionId } = payload
       const programacionIndex = this.programaciones.findIndex(p => p.id === programacionId)
 
       if (programacionIndex === -1) {
@@ -619,7 +623,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
     },
 
     async ejecutarProgramacionesBatch(payload) {
-      const { programacionId, fechasEjecucion, observacionesAdicionales = '', siembraId = null, metricasSeleccionadas = [] } = payload
+      const { programacionId, fechasEjecucion, siembraId = null } = payload
 
       const snackbarStore = useSnackbarStore()
       const actividadesStore = useActividadesStore()
@@ -673,14 +677,13 @@ export const useProgramacionesStore = defineStore('programaciones', {
 
     isFechaProcessedInBitacora(programacionId, fecha, siembraId = null) {
       const bitacoraStore = useBitacoraStore()
-
-      if (!bitacoraStore.bitacoras || !Array.isArray(bitacoraStore.bitacoras)) {
+      if (!bitacoraStore.bitacoraEntries || !Array.isArray(bitacoraStore.bitacoraEntries)) {
         return false
       }
 
       const fechaStr = format(fecha, 'yyyy-MM-dd')
 
-      return bitacoraStore.bitacoras.some(bitacora => {
+      return bitacoraStore.bitacoraEntries.some(bitacora => {
         if (bitacora.programaciones !== programacionId) {
           return false
         }
@@ -701,12 +704,11 @@ export const useProgramacionesStore = defineStore('programaciones', {
 
     hasBitacoraEntryForSiembra(programacionId, siembraId = null) {
       const bitacoraStore = useBitacoraStore()
-
-      if (!bitacoraStore.bitacoras || !Array.isArray(bitacoraStore.bitacoras)) {
+      if (!bitacoraStore.bitacoraEntries || !Array.isArray(bitacoraStore.bitacoraEntries)) {
         return false
       }
 
-      return bitacoraStore.bitacoras.some(bitacora => {
+      return bitacoraStore.bitacoraEntries.some(bitacora => {
         if (bitacora.programaciones !== programacionId) {
           return false
         }
@@ -738,6 +740,18 @@ export const useProgramacionesStore = defineStore('programaciones', {
 
     validateSiembraContext(programacionId, siembraId) {
       return validateSiembraContext(programacionId, siembraId, this.programaciones)
+    },
+
+    // NUEVO: Sugerir calendario usando IA
+    async suggestCalendar(siembraContext, weatherForecast) {
+      try {
+        logger.info('[PROGRAMACIONES_STORE] Solicitando sugerencia de calendario a IA...')
+        const suggestion = await suggestActivityCalendar(siembraContext, weatherForecast)
+        return suggestion
+      } catch (error) {
+        logger.error('[PROGRAMACIONES_STORE] Error obteniendo sugerencia IA:', error)
+        throw error
+      }
     },
 
     // ========== Storage ==========

@@ -31,7 +31,7 @@
         <div class="mt-3 mb-1 text-xs">
           <v-tooltip v-for="(metrica, key) in mi_hacienda.metricas" :key="key" location="bottom">
             <template v-slot:activator="{ props }">
-              <v-chip variant="flat" size="small" color="green-lighten-3" class="m-0 p-2" pill>
+              <v-chip v-bind="props" variant="flat" size="small" color="green-lighten-3" class="m-0 p-2" pill>
                 {{ key.replace(/_/g, ' ').toUpperCase() }}:
                 {{ formatMetricValue(metrica.valor) }}
               </v-chip>
@@ -149,6 +149,24 @@
                   type="tel"
                 ></v-text-field>
               </div>
+            </div>
+            
+            <div class="mt-4">
+              <div class="flex items-center mb-2">
+                <v-icon class="mr-2">mdi-robot</v-icon>
+                <span class="font-bold">Inteligencia Artificial (BYOK)</span>
+              </div>
+              <v-text-field
+                class="compact-form"
+                density="compact"
+                variant="outlined"
+                v-model="editedHacienda.openrouter_key"
+                label="API Key (OpenRouter)"
+                prepend-icon="mdi-key"
+                type="password"
+                hint="Opcional. Clave propia para consultas AI (Bring Your Own Key)"
+                persistent-hint
+              ></v-text-field>
             </div>
           </div>
           <div>
@@ -439,7 +457,8 @@ const saveHacienda = async () => {
       plan: editedHacienda.value.plan?.id || editedHacienda.value.plan,
       metricas: editedHacienda.value.metricas || {},
       contacto_email: editedHacienda.value.contacto_email,
-      contacto_telefono: editedHacienda.value.contacto_telefono
+      contacto_telefono: editedHacienda.value.contacto_telefono,
+      openrouter_key: editedHacienda.value.openrouter_key
     }
 
     await haciendaStore.updateHacienda(dataToUpdate)

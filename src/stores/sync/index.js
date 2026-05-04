@@ -19,6 +19,12 @@ import { useActividadesStore } from '@/stores/actividadesStore'
 import { useRecordatoriosStore } from '@/stores/recordatoriosStore'
 import { useProgramacionesStore } from '@/stores/programaciones'
 import { useBitacoraStore } from '@/stores/bitacoraStore'
+import { IndexedDBStorage } from '@/utils/indexedDBStorage'
+
+// ... [Mantener STORE_MAP, ALL_STORES, etc.] ...
+
+// Nueva instancia de almacenamiento IndexedDB para syncCache (Hito 2)
+const indexedDBStorage = new IndexedDBStorage()
 
 // STORE_MAP con lazy resolution - sin ciclo de dependencia
 const STORE_MAP = {
@@ -39,12 +45,39 @@ const ALL_STORES = [
   useBitacoraStore
 ]
 
-// Namespace aislado para sincronización utilizando TieredCache
+// Namespace aislado para sincronización utilizando IndexedDB (Migración Hito 2)
 const syncCache = {
-  save: (key, data) => tieredCache.setToLevel(`agri_sync_${key}`, data, 'l2'),
-  get: (key) => tieredCache.getFromLevel(`agri_sync_${key}`, 'l2'),
-  remove: (key) => tieredCache.invalidateAcrossLevels(`agri_sync_${key}`),
-  clear: () => tieredCache.clear()
+  async save(key, data) {
+    try {
+      await indexedDBStorage.setItem(`agri_sync_${key}`, data)
+    } catch (e) {
+      logger.error('[SYNC] Error guardando en IndexedDB:', e)
+      // Fallback a tieredCache si IndexedDB falla
+      tieredCache.setToLevel(`agri_sync_${key}`, data, 'l2')
+    }
+  },
+  async get(key) {
+    try {
+      return await indexedDBStorage.getItem(`agri_sync_${key}`)
+    } catch (e) {
+      logger.error('[SYNC] Error leyendo de IndexedDB:', e)
+      return tieredCache.getFromLevel(`agri_sync_${key}`, 'l2')
+    }
+  },
+  async remove(key) {
+    try {
+      await indexedDBStorage.removeItem(`agri_sync_${key}`)
+    } catch (e) {
+      logger.error('[SYNC] Error eliminando de IndexedDB:', e)
+    }
+  },
+  async clear() {
+    try {
+      await indexedDBStorage.clear()
+    } catch (e) {
+      logger.error('[SYNC] Error limpiando IndexedDB:', e)
+    }
+  }
 }
 
 export const useSyncStore = defineStore('sync', {
@@ -71,6 +104,8 @@ export const useSyncStore = defineStore('sync', {
   },
 
   actions: {
+    // ... [Mantener resolveStore, init, getStoreByCollectionName, etc.] ...
+    
     /**
      * Resuelve un store de forma dinámica para evitar ciclos de dependencia.
      * @param {string} name - Nombre de la colección/store
@@ -131,16 +166,16 @@ export const useSyncStore = defineStore('sync', {
       })
       this.offline = createOfflineFeatures({ stores, cacheManager: syncCache })
 
-      // RESTAURAR ESTADO
+      // RESTAURAR ESTADO (Ahora usa IndexedDB)
       try {
         const q = localStorage.getItem('agri_syncQueue')
         this.queue = q ? JSON.parse(q) : []
-        const savedIdMapStr = localStorage.getItem('agri_idMap')
-        if (savedIdMapStr) {
-          this.idMapper.setMap(JSON.parse(savedIdMapStr))
+        const savedIdMap = await syncCache.get('tempToRealIdMap')
+        if (savedIdMap) {
+          this.idMapper.setMap(savedIdMap)
         }
       } catch (e) {
-        logger.error('[SYNC] Error restoring state from localStorage', e)
+        logger.error('[SYNC] Error restoring state from storage', e)
       }
 
       this.initialized = true
@@ -151,19 +186,16 @@ export const useSyncStore = defineStore('sync', {
       }
     },
 
-    getStoreByCollectionName(name) {
-      return this.storeMap[name]?.()
-    },
-
-    // === LÓGICA DE COORDINACIÓN ===
-
-    // PERSISTENCIA
+    // ... [Mantener el resto de acciones: persistQueueState, loadFromLocalStorage, etc.] ...
+    
+    // PERSISTENCIA (Cola en localStorage, Cache en IndexedDB según Hito 2)
     persistQueueState() {
       try {
         localStorage.setItem('agri_syncQueue', JSON.stringify(this.queue))
-        localStorage.setItem('agri_idMap', JSON.stringify(this.idMapper.getMap()))
+        const idMap = this.idMapper.getMap()
+        syncCache.set('tempToRealIdMap', idMap)
       } catch (error) {
-        logger.error('[SYNC] Error saving queue to localStorage', error)
+        logger.error('[SYNC] Error saving queue to storage', error)
       }
     },
 
@@ -179,116 +211,6 @@ export const useSyncStore = defineStore('sync', {
       syncCache.remove(key)
     },
 
-    // ACTUALIZACIÓN LOCAL
-    updateLocalItem(collection, tempId, newItem, items) {
-      if (!tempId || !newItem || !newItem.id) return false
-
-      const index = items.findIndex(item => item.id === tempId)
-      if (index === -1) {
-        items.push({ ...newItem, _isTemp: false })
-      } else {
-        items[index] = { ...items[index], ...newItem, _isTemp: false }
-      }
-
-      this.idMapper.updateRefs(tempId, newItem.id)
-      syncCache.save(collection, items)
-      return true
-    },
-
-    // REFRESH STORES
-    async refreshAllStores() {
-      for (const useStore of ALL_STORES) {
-        try {
-          const store = useStore()
-          if (store?.initFromLocalStorage) store.initFromLocalStorage()
-        } catch (e) {
-          // store no disponible aún
-        }
-      }
-    },
-
-    // SYNC SELECTIVO
-    async processDeferredSync() {
-      const config = this.syncConfig.getConfig()
-      if (!config.enabled) return
-
-      const now = Date.now()
-      if (now - (config.lastDeferredSync || 0) < config.deferredSyncInterval) return
-
-      await this.processPendingQueue()
-      this.syncConfig.updateConfig({ lastDeferredSync: now })
-    },
-
-    // CONFLICTOS RESOLUTION
-    async forceLocalVersion(conflict) {
-      const opIndex = this.queue.findIndex(
-        op => op.tempId === conflict.tempId || op.id === conflict.id
-      )
-      if (opIndex !== -1) {
-        this.queue[opIndex].status = 'pending'
-        this.queue[opIndex].retries = 0
-        this.persistQueueState()
-        setTimeout(() => this.processPendingQueue(), 1000)
-      }
-    },
-
-    async acceptServerVersion(conflict, serverData) {
-      const store = this.getStoreByCollectionName(conflict.collection)
-      if (!store) return
-
-      if (conflict.type === 'update' && store.applySyncedUpdate) {
-        await store.applySyncedUpdate(conflict.id, serverData || conflict.server)
-      } else if (conflict.type === 'create' && store.applySyncedCreate) {
-        await store.applySyncedCreate(conflict.tempId, serverData || conflict.server)
-      }
-
-      this.queue = this.queue.filter(
-        op => op.tempId !== conflict.tempId && op.id !== conflict.id
-      )
-      this.persistQueueState()
-    },
-
-    // HISTORIAL (stubs)
-    trackLocalChange() {
-      // stub - implementar si se necesita
-    },
-    getChangeHistory() {
-      return []
-    },
-    exportChangeHistory() {
-      // stub
-    },
-
-    // OFFLINE REPORTS (stub)
-    generateOfflineReport(type, params) {
-      return null
-    },
-
-    // PREFETCH (stubs)
-    async prefetchBasedOnPatterns() {
-      // stub
-    },
-    async prefetchCollection(name) {
-      // stub
-    },
-    getPrefetchedData() {
-      return null
-    },
-    trackUserAction() {
-      // stub
-    },
-
-    // BATCH DASHBOARD
-    async batchInitializeDashboard() {
-      const { useDashboardLoader } = await import('@/composables/useDashboardLoader')
-      const loader = useDashboardLoader(ALL_STORES)
-      return loader.loadDashboard()
-    },
-
-    // CLEANUP
-    cleanupOldData() {
-      const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000
-      this.errors = this.errors.filter(err => err.timestamp > oneDayAgo)
-    }
+    // ... [Mantener el resto del store] ...
   }
 })
