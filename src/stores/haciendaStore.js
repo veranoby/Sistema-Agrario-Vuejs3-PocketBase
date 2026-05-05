@@ -136,6 +136,16 @@ export const useHaciendaStore = defineStore('hacienda', {
         throw new Error('ID de hacienda no proporcionado')
       }
 
+      // Idempotencia: si ya está cargado con el mismo ID, no re-fetch
+      if (this.mi_hacienda?.id === haciendaId && !this.loading) {
+        return this.mi_hacienda
+      }
+
+      // Evitar peticiones concurrentes (loading en curso)
+      if (this.loading) {
+        return this.mi_hacienda
+      }
+
       const syncStore = useSyncStore()
       this.loading = true
 

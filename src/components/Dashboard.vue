@@ -190,11 +190,9 @@ const notifications = computed(() => {
 })
 
 onMounted(async () => {
-  try {
-    await syncStore.batchInitializeDashboard()
-  } catch (err) {
-    await loadWithTraditionalMethod()
-  }
+  // Si la hacienda ya fue cargada en main.js (refresh flow), 
+  // loadWithTraditionalMethod hace fetch idempotente (no duplica peticiones).
+  await loadWithTraditionalMethod()
 })
 
 async function loadWithTraditionalMethod() {

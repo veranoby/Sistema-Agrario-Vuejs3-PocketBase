@@ -1,40 +1,122 @@
-# Plan de Integración y Limpieza Profunda - Fase 2
+# Bug: Pérdida de Datos de Hacienda en Refresh
 
-Este documento detalla los siguientes pasos de integración, limpieza arquitectónica y desarrollo de nuevas funcionalidades (Geolocalización y AI), acordados tras la finalización de la Fase 1.
+## Root Cause Analysis
 
-## 1. Consolidación de Tests y Limpieza de Código
-* **Objetivo:** Mejorar la organización del proyecto moviendo archivos huérfanos a su ubicación correspondiente.
-* **Acciones:**
-  * Identificar y mover archivos de prueba dispersos, como `syncStore.test.js` y `cacheManager.tiered.test.js`, hacia el directorio central `/tests/`.
-  * *Nota:* La implementación de pruebas E2E automatizadas ha sido pospuesta para etapas futuras.
-
-## 2. Auditoría de Dependencias y Estrategia Offline-First
-* **Objetivo:** Prevenir bucles de dependencias y preparar la arquitectura para escalar el almacenamiento local.
-* **Acciones:**
-  * **Auditoría Estricta:** Revisar los flujos de importación entre los nuevos servicios (ej. `profileService.js`), los stores de Pinia y el `syncPlugin` para asegurar que no existan dependencias circulares que afecten el ciclo de vida de la app.
-  * **Evolución Offline-First:** Diseñar la hoja de ruta para migrar colecciones de datos pesadas hacia `IndexedDB` (utilizando herramientas como localForage), reservando `localStorage` estrictamente para credenciales, preferencias y la cola de sincronización de bajo volumen.
-
-## 3. Unificación de Servicios de Geolocalización y Mapas
-* **Objetivo:** Solucionar la fragmentación técnica actual (`geoUtils.js`, `geolocation.js`, `locationTracker.js`, `offlineGeoStorage.js`).
-* **Acciones:**
-  * **Motor Cartográfico Central (`mapService`):** Consolidar todo el tracking, captura y sincronización de coordenadas en un único orquestador.
-  * **Capacidades de Dibujo (Draw):** Integrar de manera unificada herramientas sobre el mapa (ej. Leaflet Draw o equivalentes) que permitan a los usuarios trazar polígonos para definir lotes, sectores y zonas de riesgo.
-  * **Renderizado Offline:** Implementar la descarga y cacheo local de *tiles* cartográficos, garantizando que tanto los mapas base como las geometrías guardadas se visualicen sin problemas en zonas sin cobertura.
-
-## 4. Integración del Asistente AI según Contexto Operativo
-* **Objetivo:** Acoplar agentes de inteligencia artificial adaptados a la naturaleza de cada módulo.
-* **A. Sección de Actividades (Registro y Ejecución In Situ):**
-  * **Rol:** *Copiloto Técnico y Supervisor.*
-  * **Funciones:**
-    * Autocompletar bitácoras traduciendo entradas informales en datos estructurados.
-    * Detección de anomalías en tiempo real al ingresar insumos (ej. alerta por dosis inusualmente altas).
-    * Soporte rápido in situ: sugerencias ante reporte de plagas o enfermedades basadas en bases de datos agronómicas.
-* **B. Sección de Programaciones (Planificación a Futuro):**
-  * **Rol:** *Orquestador Estratégico.*
-  * **Funciones:**
-    * Sugerencia de calendarios óptimos cruzando variables climáticas pronosticadas, disponibilidad de maquinaria y tiempos de reingreso/carencia.
-    * Prevención de conflictos logísticos: alertar preventivamente sobre cuellos de botella por escasez de personal en semanas de alta demanda y sugerir rebalanceos.
+El bug tiene **dos causas concurrentes** que convergen para producir el fallo:
 
 ---
-> **Regla de Integridad (Recordatorio para el equipo):** 
-> Todo el desarrollo de la Fase 2, en particular los módulos de Mapas y AI, debe diseñarse respetando el principio de abstracción de flujo completo. Los servicios deben estar desacoplados de la UI y mantener resiliencia total frente a cortes de conexión.
+
+### Causa #1: Race Condition — `batchInitializeDashboard` inexistente
+
+En `Dashboard.vue:194` se llama a `syncStore.batchInitializeDashboard()`, pero **este método no existe en `sync/index.js`**. Esto provoca que el `try/catch` siempre active el `catch` y caiga a `loadWithTraditionalMethod()`.
+
+```
+// Dashboard.vue:192-198
+onMounted(async () => {
+  try {
+    await syncStore.batchInitializeDashboard() // ← SIEMPRE FALLA (no existe)
+  } catch (err) {
+    await loadWithTraditionalMethod() // ← siempre termina aquí
+  }
+})
+```
+
+`loadWithTraditionalMethod` llama a `haciendaStore.init()` que a su vez llama a `fetchHaciendaFromCache()`, que necesita `syncStore.loadFromLocalStorage('mi_hacienda')`. Esto es una operación **asíncrona sobre IndexedDB**. 
+
+---
+
+### Causa #2: Secuencia de init — La hacienda se inicializa en flujo de login, no en refresh
+
+En `authStore.init()` (línea 100), el flujo de restauración de sesión:
+1. Valida el token de `localStorage`
+2. Llama a `setSession(record)` — solo fija `user`, `token`, `isLoggedIn`
+3. **NUNCA llama a `haciendaStore.fetchHacienda()`**
+
+El `haciendaId` existe en `authProvider.authStore.model` (el record del usuario restaurado), pero nadie lo usa para cargar la hacienda durante el init post-refresh.
+
+Comparación:
+| Flujo | ¿Carga hacienda? |
+|---|---|
+| Login normal (`handleSuccessfulLogin`) | ✅ `haciendaStore.fetchHacienda(haciendaId)` |
+| Refresh del navegador (`init()`) | ❌ Solo restaura `user`/`token` |
+
+---
+
+### Causa #3: `fetchHaciendaFromCache` depende de IndexedDB (async)
+
+`haciendaStore.fetchHaciendaFromCache()` llama a `syncStore.loadFromLocalStorage('mi_hacienda')`, que internamente usa **IndexedDB** (async). Si el `syncStore` aún no está inicializado cuando llega el `onMounted` del Dashboard, `loadFromLocalStorage` retorna `null` y `mi_hacienda` queda en `null`.
+
+---
+
+## Secuencia del bug post-refresh:
+
+```
+1. Browser refresh
+2. main.js: initApp() → authStore.ensureAuthInitialized() → authStore.init()
+3. authStore.init(): restaura token → setSession(record) → isLoggedIn=true  
+4. authStore.init(): NI llama fetchHacienda NI espera syncStore.init()
+5. App.vue: watch(isLoggedIn) detecta true, router avanza
+6. Dashboard.vue: onMounted → batchInitializeDashboard() → THROW (no existe)
+7. Dashboard.vue: catch → loadWithTraditionalMethod() → haciendaStore.init()
+8. haciendaStore.init(): fetchHaciendaFromCache() → syncStore.loadFromLocalStorage()
+9. syncStore aún no inicializado (o IndexedDB aún cargando) → retorna null
+10. mi_hacienda = null → UI muestra error "No se encontró hacienda"
+```
+
+---
+
+## Fix Propuesto
+
+> [!IMPORTANT]
+> El fix correcto es en `authStore.init()` — restaurar la hacienda durante la reinicialización de sesión, igual que ocurre en el login.
+> No hay que tocar Dashboard.vue excepto para limpiar el método inexistente.
+
+---
+
+## Proposed Changes
+
+### [MODIFY] [authStore.js](file:///home/veranoby/sistema-agri/src/stores/authStore.js)
+
+En `setSession()` o después de validar la sesión en `init()`, extraer el `haciendaId` del modelo y llamar `haciendaStore.fetchHacienda(haciendaId)`.
+
+```javascript
+// En authStore.init(), después de setSession() exitoso (línea ~138):
+const rawHacienda = authProvider.authStore.model?.hacienda
+const haciendaId = typeof rawHacienda === 'object' && rawHacienda?.id
+  ? rawHacienda.id
+  : rawHacienda
+
+if (haciendaId) {
+  const haciendaStore = useHaciendaStore()
+  // No-await: dejar que cargue en background, Dashboard tiene guard v-if
+  haciendaStore.fetchHacienda(haciendaId).catch(err => 
+    logger.auth('Error cargando hacienda en init:', err.message)
+  )
+}
+```
+
+> [!WARNING]
+> Usamos fire-and-forget aquí para no bloquear el mount de la app. El Dashboard ya tiene `v-if="!mi_hacienda"` con un mensaje de advertencia. El timing entre mount y load de hacienda puede mejorarse con un watcher, pero el error actual desaparece con esta corrección.
+
+### [MODIFY] [Dashboard.vue](file:///home/veranoby/sistema-agri/src/components/Dashboard.vue)
+
+Limpiar `batchInitializeDashboard()` que no existe. Simplificar el `onMounted`:
+
+```javascript
+onMounted(async () => {
+  await loadWithTraditionalMethod()
+})
+```
+
+### [MODIFY] [syncStore/index.js](file:///home/veranoby/sistema-agri/src/stores/sync/index.js) (opcional/menor)
+
+Si se quiere agregar `batchInitializeDashboard`, se puede en el futuro. Por ahora simplemente se elimina la referencia errónea del Dashboard.
+
+---
+
+## Verification Plan
+
+1. Login normal → navegar → hacer refresh → verificar que la hacienda carga correctamente.
+2. Verificar consola: no debe aparecer `[ZONAS_STORE] No haciendaId provided`.
+3. Verificar que `haciendaStore.mi_hacienda` no es null después del refresh.
+4. Testear con `rememberMe` activo y sin él.

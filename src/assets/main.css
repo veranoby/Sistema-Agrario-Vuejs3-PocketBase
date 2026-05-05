@@ -16,7 +16,7 @@
 
 /* Asegúrate de que la fuente se aplique globalmente */
 :root {
-  --v-font-family: 'Plus Jakarta Sans', sans-serif !important;
+  --v-font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
 body {
@@ -37,7 +37,7 @@ body {
 .v-application .v-select,
 .v-application .v-chip,
 .v-application .v-dialog {
-  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
 .ql-editor {
@@ -76,13 +76,25 @@ body {
   width: 100%;
   margin: 0;
   padding: 0;
-  font-family: 'Plus Jakarta Sans';
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-weight: 500;
+  color: var(--color-text);
 }
-*,
-*::before,
-*::after {
-  font-weight: 600;
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 700;
+  color: var(--color_titulo);
+}
+
+.v-btn {
+  font-weight: 600 !important;
+  text-transform: none !important;
+  letter-spacing: 0.02em !important;
 }
 
 /* Centrar el contenido de la aplicación */
@@ -197,9 +209,7 @@ body {
   */
 
 .compact-chips {
-  transform: scale(0.9);
-  transform-origin: left;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .checkbox-container {
@@ -210,10 +220,6 @@ body {
 }
 
 .checkbox-item {
-  /* If you still want the scaling effect */
-  transform: scale(0.75);
-  transform-origin: left;
-  /* Prevent the transform from affecting layout */
   margin-right: 0.8rem;
   flex: 0 0 auto;
 }

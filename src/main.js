@@ -8,21 +8,10 @@ import { handleError } from '@/utils/errorHandler'
 
 import App from './App.vue'
 import router from './router'
-import 'vuetify/styles'
-import { createVuetify } from 'vuetify'
-import * as components from 'vuetify/components'
-import * as directives from 'vuetify/directives'
-import { aliases, mdi } from 'vuetify/iconsets/mdi'
-import '@mdi/font/css/materialdesignicons.css'
-import { useAuthStore } from './stores/authStore'
-import { useSyncStore } from './stores/sync/index'
-import { useThemeStore } from './stores/themeStore'
-
 // Estilos
+import 'vuetify/styles'
 import './assets/main.css'
 import './index.css'
-import 'vuetify/styles'
-// Eliminar: import '@fortawesome/fontawesome-free/css/all.css'  // No necesario si solo usas MDI
 import '@mdi/font/css/materialdesignicons.css'
 import '@fontsource/plus-jakarta-sans/500.css'
 import '@fontsource/plus-jakarta-sans/600.css'
@@ -35,6 +24,15 @@ import i18n from './i18n'; // Import the I18n instance
 
 import { QuillEditor } from '@vueup/vue-quill'
 import '@vueup/vue-quill/dist/vue-quill.snow.css'
+
+import { createVuetify } from 'vuetify'
+import * as components from 'vuetify/components'
+import * as directives from 'vuetify/directives'
+import { aliases, mdi } from 'vuetify/iconsets/mdi'
+import { useAuthStore } from './stores/authStore'
+import { useSyncStore } from './stores/sync/index'
+import { useThemeStore } from './stores/themeStore'
+import { useHaciendaStore } from './stores/haciendaStore'
 
 // ... resto del código
 
@@ -71,9 +69,9 @@ const vuetify = createVuetify({
       }
     }
   },
-  // Añade esta configuración para las fuentes
   defaults: {
     global: {
+      density: 'comfortable',
       font: {
         family: "'Plus Jakarta Sans', sans-serif"
       }
@@ -85,10 +83,16 @@ const vuetify = createVuetify({
       style: [{ fontFamily: "'Plus Jakarta Sans', sans-serif" }]
     },
     VTextField: {
-      style: [{ fontFamily: "'Plus Jakarta Sans', sans-serif" }]
+      variant: 'outlined',
+      density: 'comfortable'
     },
     VSelect: {
-      style: [{ fontFamily: "'Plus Jakarta Sans', sans-serif" }]
+      variant: 'outlined',
+      density: 'comfortable'
+    },
+    VTextarea: {
+      variant: 'outlined',
+      density: 'comfortable'
     }
   }
 })
@@ -167,6 +171,22 @@ const initApp = async () => {
         await syncStore.init()
       } catch (syncError) {
         console.warn('[App] Sync init falló o estamos offline, continuando...', syncError.message)
+      }
+
+      // Cargar hacienda tras syncStore (IndexedDB listo). 
+      // haciendaId viene de this.user (seteado en setSession() dentro de authStore.init())
+      try {
+        const haciendaStore = useHaciendaStore()
+        const rawHacienda = authStore.user?.hacienda
+        const haciendaId = typeof rawHacienda === 'object' && rawHacienda?.id
+          ? rawHacienda.id
+          : rawHacienda
+
+        if (haciendaId && !haciendaStore.mi_hacienda) {
+          await haciendaStore.fetchHacienda(haciendaId)
+        }
+      } catch (haciendaError) {
+        console.warn('[App] Hacienda init falló, Dashboard mostrará fallback:', haciendaError.message)
       }
     }
   } catch (error) {
