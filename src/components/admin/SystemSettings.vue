@@ -268,9 +268,9 @@
 import { ref, onMounted } from 'vue'
 import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
-import { useSnackbarStore } from '@/stores/snackbarStore'
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 
-const snackbarStore = useSnackbarStore()
+const uiFeedbackStore = useUiFeedbackStore()
 
 // Estado
 const snackbar = ref(false)

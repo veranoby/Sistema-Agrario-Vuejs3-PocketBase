@@ -93,10 +93,10 @@
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/authStore'
-import { useSnackbarStore } from '@/stores/snackbarStore'
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 
 const authStore = useAuthStore()
-const snackbarStore = useSnackbarStore()
+const uiFeedbackStore = useUiFeedbackStore()
 const { t } = useI18n()
 
 const dialogOpen = ref(false)
@@ -144,13 +144,13 @@ const changePassword = async () => {
   isLoading.value = true
   try {
     await authStore.changePassword(oldPassword.value, newPassword.value)
-    snackbarStore.showSnackbar(t('password_change.password_changed_successfully'), 'success')
+    uiFeedbackStore.showSnackbar(t('password_change.password_changed_successfully'), 'success')
     oldPassword.value = ''
     newPassword.value = ''
     confirmPassword.value = ''
     dialogOpen.value = false
   } catch (error) {
-    snackbarStore.showSnackbar(t('password_change.failed_to_change_password') + ': ' + error.message, 'error')
+    uiFeedbackStore.showSnackbar(t('password_change.failed_to_change_password') + ': ' + error.message, 'error')
   } finally {
     isLoading.value = false
   }

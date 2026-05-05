@@ -3,15 +3,25 @@ import { sendAlert, configureAlertPreferences, alertTypes, getAlertPreferences }
 import { logger } from '@/utils/logger'
 import { useNotificationStore } from './notificationStore'
 
-export const useAlertStore = defineStore('alerts', {
+export const useUiFeedbackStore = defineStore('uiFeedback', {
   state: () => ({
+    // Toast (Snackbar) state - Mensajes efímeros
+    toast: {
+      show: false,
+      text: '',
+      color: 'success',
+      timeout: 3000
+    },
+    
+    // Alerts persistentes state
     preferences: {
       enabledTypes: [],
       recipients: [],
       frequency: 'immediate'
     },
     loading: false,
-    error: null
+    error: null,
+    globalLoading: false // Nuevo: estado para indicador de carga global
   }),
 
   getters: {
@@ -44,6 +54,42 @@ export const useAlertStore = defineStore('alerts', {
   },
 
   actions: {
+    /**
+     * Muestra un mensaje efímero (Snackbar/Toast)
+     * @param {string} text - Texto a mostrar
+     * @param {string} color - Color (success, error, warning, info)
+     * @param {number} timeout - Tiempo en ms
+     */
+    showSnackbar(text, color = 'success', timeout = 3000) {
+      this.toast = {
+        show: true,
+        text,
+        color,
+        timeout
+      }
+    },
+
+    /**
+     * Oculta el Snackbar actual
+     */
+    hideSnackbar() {
+      this.toast.show = false
+    },
+
+    /**
+     * Muestra indicador de carga global (usado en login, cambio de contraseña, etc.)
+     */
+    showLoading() {
+      this.globalLoading = true
+    },
+
+    /**
+     * Oculta indicador de carga global
+     */
+    hideLoading() {
+      this.globalLoading = false
+    },
+
     /**
      * Carga las preferencias de alertas desde el backend
      * @param {string} haciendaId - ID de la hacienda
@@ -385,6 +431,7 @@ export const useAlertStore = defineStore('alerts', {
       }
       this.loading = false
       this.error = null
+      this.globalLoading = false
       logger.info('[ALERT_STORE] Store reseteado')
     }
   }

@@ -1,13 +1,11 @@
 import { defineStore } from 'pinia'
-import { markRaw } from 'vue'
+import { markRaw, toRaw } from 'vue'
 import { pb } from '@/utils/pocketbase'
 import { useSyncStore } from '@/stores/sync/index'
-import { useSnackbarStore } from './snackbarStore'
+import { useUiFeedbackStore } from './uiFeedbackStore'
 import { handleError } from '@/utils/errorHandler'
 import { useHaciendaStore } from './haciendaStore'
 import { calculateBpaStatus } from '@/utils/agriMetrics'
-import { useAlertStore } from './alertStore'
-
 
 export const useActividadesStore = defineStore('actividades', {
   state: () => ({
@@ -35,13 +33,13 @@ export const useActividadesStore = defineStore('actividades', {
     collectionName: 'actividades',
     stateProp: 'actividades',
     hooks: {
-      onCreate: function() {
+      onCreate: function () {
         this.buildActivityLookup()
       },
-      onUpdate: function() {
+      onUpdate: function () {
         this.buildActivityLookup()
       },
-      onDelete: function(id) {
+      onDelete: function (id) {
         this.activityLookupMap.delete(id)
       }
     }
@@ -80,7 +78,7 @@ export const useActividadesStore = defineStore('actividades', {
 
   actions: {
     async init() {
-      this.loading = true
+      this.loading = true;
 
       try {
         await this.cargarTiposActividades()
@@ -117,7 +115,7 @@ export const useActividadesStore = defineStore('actividades', {
         const previousLength = this.actividades.length
         this.actividades = resultList.items
         this.totalItems = resultList.totalItems
-        this.currentPage = page
+        this.currentPage = resultList.page
         this.totalPages = resultList.totalPages
         this.lastSync = Date.now()
 
@@ -125,7 +123,8 @@ export const useActividadesStore = defineStore('actividades', {
           this.buildActivityLookup()
         }
 
-        syncStore.saveToLocalStorage('actividades', resultList.items)
+        // CORRECTO: Sanitizar con JSON.parse(JSON.stringify()) para IndexedDB
+        syncStore.saveToLocalStorage('actividades', JSON.parse(JSON.stringify(toRaw(this.actividades))));
         return resultList
       } catch (error) {
         handleError(error, 'Error al cargar actividades')
@@ -148,8 +147,8 @@ export const useActividadesStore = defineStore('actividades', {
     },
 
     async crearActividad(actividadData) {
-      const snackbarStore = useSnackbarStore()
-      snackbarStore.showLoading()
+      const uiFeedbackStore = useUiFeedbackStore()
+      uiFeedbackStore.showLoading()
       const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore()
 
@@ -186,7 +185,8 @@ export const useActividadesStore = defineStore('actividades', {
 
         this.actividades.unshift(tempActividad)
         this.activityLookupMap.set(tempId, tempActividad)
-        syncStore.saveToLocalStorage('actividades', this.actividades)
+        // CORRECTO: Sanitizar para IndexedDB
+        syncStore.saveToLocalStorage('actividades', JSON.parse(JSON.stringify(toRaw(this.actividades))));
 
         await syncStore.queueOperation({
           type: 'create',
@@ -195,7 +195,7 @@ export const useActividadesStore = defineStore('actividades', {
           tempId
         })
 
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
         return tempActividad
       }
 
@@ -203,12 +203,13 @@ export const useActividadesStore = defineStore('actividades', {
         const record = await pb.collection('actividades').create(enrichedData)
         this.actividades.push(record)
         this.activityLookupMap.set(record.id, record)
-        syncStore.saveToLocalStorage('actividades', this.actividades)
+        // CORRECTO: Sanitizar para IndexedDB
+        syncStore.saveToLocalStorage('actividades', JSON.parse(JSON.stringify(toRaw(this.actividades))));
 
         if (actividadData.prioridad === 'alta') {
           try {
-            const alertStore = useAlertStore()
-            await alertStore.triggerCriticalActivityAlert(record)
+            const uiFeedbackStore = useUiFeedbackStore()
+            await uiFeedbackStore.triggerCriticalActivityAlert(record)
           } catch (alertError) {
             handleError(alertError, 'Error enviando alerta crítica')
           }
@@ -219,23 +220,23 @@ export const useActividadesStore = defineStore('actividades', {
         handleError(error, 'Error al crear actividad')
         throw error
       } finally {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
       }
     },
 
     async updateActividad(id, updateData) {
-      const snackbarStore = useSnackbarStore()
-      snackbarStore.showLoading()
+      const uiFeedbackStore = useUiFeedbackStore()
+      uiFeedbackStore.showLoading()
       const syncStore = useSyncStore()
 
       if (!id) {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
         throw new Error('ID de actividad no proporcionado para actualización')
       }
 
       const actividad = this.activityLookupMap.get(id)
       if (!actividad) {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
         throw new Error(`No se encontró actividad con ID: ${id}`)
       }
 
@@ -260,21 +261,20 @@ export const useActividadesStore = defineStore('actividades', {
             ...enrichedData,
             updated: new Date().toISOString()
           }
-
-          await syncStore.queueOperation({
-            type: 'update',
-            collection: 'actividades',
-            id: id,
-            data: enrichedData
-          })
-
-          this.activityLookupMap.set(id, this.actividades[index])
-          syncStore.saveToLocalStorage('actividades', this.actividades)
-          snackbarStore.hideLoading()
-          return this.actividades[index]
         }
-        snackbarStore.hideLoading()
-        throw new Error('Actividad no encontrada')
+
+        await syncStore.queueOperation({
+          type: 'update',
+          collection: 'actividades',
+          id,
+          data: enrichedData
+        })
+
+        this.activityLookupMap.set(id, this.actividades[index])
+        // CORRECTO: Sanitizar para IndexedDB
+        syncStore.saveToLocalStorage('actividades', JSON.parse(JSON.stringify(toRaw(this.actividades))));
+        uiFeedbackStore.hideLoading()
+        return this.actividades[index]
       }
 
       try {
@@ -284,31 +284,32 @@ export const useActividadesStore = defineStore('actividades', {
         const index = this.actividades.findIndex((a) => a.id === id)
         if (index !== -1) {
           this.actividades[index] = record
-          syncStore.saveToLocalStorage('actividades', this.actividades)
         }
+        // CORRECTO: Sanitizar para IndexedDB
+        syncStore.saveToLocalStorage('actividades', JSON.parse(JSON.stringify(toRaw(this.actividades))));
         return record
       } catch (error) {
         handleError(error, 'Error al actualizar actividad')
         throw error
       } finally {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
       }
     },
 
     async deleteActividad(id) {
-      const snackbarStore = useSnackbarStore()
-      snackbarStore.showLoading()
+      const uiFeedbackStore = useUiFeedbackStore()
+      uiFeedbackStore.showLoading()
       const syncStore = useSyncStore()
 
       if (!id) {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
         throw new Error('ID de actividad no proporcionado para eliminación')
       }
 
       if (!syncStore.isOnline) {
         const actividadExiste = this.activityLookupMap.has(id)
         if (!actividadExiste) {
-          snackbarStore.hideLoading()
+          uiFeedbackStore.hideLoading()
           throw new Error(`No se encontró actividad con ID: ${id}`)
         }
 
@@ -320,9 +321,10 @@ export const useActividadesStore = defineStore('actividades', {
           collection: 'actividades',
           id
         })
-        snackbarStore.hideLoading()
-        syncStore.saveToLocalStorage('actividades', this.actividades)
 
+        uiFeedbackStore.hideLoading()
+        // CORRECTO: Sanitizar para IndexedDB
+        syncStore.saveToLocalStorage('actividades', JSON.parse(JSON.stringify(toRaw(this.actividades))));
         return true
       }
 
@@ -330,23 +332,21 @@ export const useActividadesStore = defineStore('actividades', {
         await pb.collection('actividades').delete(id)
         this.actividades = this.actividades.filter((a) => a.id !== id)
         this.activityLookupMap.delete(id)
-        syncStore.saveToLocalStorage('actividades', this.actividades)
+        // CORRECTO: Sanitizar para IndexedDB
+        syncStore.saveToLocalStorage('actividades', JSON.parse(JSON.stringify(toRaw(this.actividades))));
         return true
       } catch (error) {
         handleError(error, 'Error al eliminar actividad')
         throw error
       } finally {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
       }
     },
 
     async fetchActividadById(id, options = {}) {
-      if (!id) {
-        throw new Error('ID de actividad no proporcionado')
-      }
+      if (!id) throw new Error('ID de actividad no proporcionado')
 
       try {
-        // Asegurar que activityLookupMap sea un Map válido
         if (!(this.activityLookupMap instanceof Map)) {
           this.buildActivityLookup()
         }
@@ -376,7 +376,8 @@ export const useActividadesStore = defineStore('actividades', {
           } else {
             this.actividades.push(record)
           }
-          syncStore.saveToLocalStorage('actividades', this.actividades)
+          // CORRECTO: Sanitizar para IndexedDB
+          syncStore.saveToLocalStorage('actividades', JSON.parse(JSON.stringify(toRaw(this.actividades))));
           this.buildActivityLookup()
           return record
         }
@@ -459,7 +460,7 @@ export const useActividadesStore = defineStore('actividades', {
           datos_bpa: record.datos_bpa,
           metricas: record.metricas
         })))
-        useSyncStore().saveToLocalStorage('tiposActividades', this.tiposActividades)
+        useSyncStore().saveToLocalStorage('tiposActividades', JSON.parse(JSON.stringify(toRaw(this.tiposActividades))));
       } catch (error) {
         handleError(error, 'Error al cargar tipos de actividades')
       } finally {
@@ -467,12 +468,16 @@ export const useActividadesStore = defineStore('actividades', {
       }
     },
 
-    initFromLocalStorage() {
-      const syncStore = useSyncStore()
-      const localActividades = syncStore.loadFromLocalStorage('actividades')
-      this.actividades = localActividades || []
-      const localTiposActividades = syncStore.loadFromLocalStorage('tiposActividades')
-      this.tiposActividades = localTiposActividades ? markRaw(localTiposActividades) : []
+    async initFromLocalStorage() {
+      const syncStore = useSyncStore();
+      // CORRECTO: Usar await para loadFromLocalStorage
+      const localActividades = await syncStore.loadFromLocalStorage('actividades');
+      // CORRECTO: Validar que sea array
+      this.actividades = (localActividades && Array.isArray(localActividades)) ? localActividades : [];
+      // CORRECTO: Usar await para loadFromLocalStorage
+      const localTiposActividades = await syncStore.loadFromLocalStorage('tiposActividades');
+      // CORRECTO: Validar que sea array
+      this.tiposActividades = (localTiposActividades && Array.isArray(localTiposActividades)) ? markRaw(localTiposActividades) : [];
       this.buildActivityLookup()
       console.log('[ACTIVIDADES_STORE] Initialized from localStorage. Actividades:', this.actividades.length, 'Tipos:', this.tiposActividades.length)
     }

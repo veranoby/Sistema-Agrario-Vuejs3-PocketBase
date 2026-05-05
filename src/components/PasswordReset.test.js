@@ -33,9 +33,9 @@ vi.mock('@/utils/pocketbase', () => ({
   }
 }))
 
-// Mock de snackbarStore
-vi.mock('@/stores/snackbarStore', () => ({
-  useSnackbarStore: vi.fn(() => ({
+// Mock de uiFeedbackStore
+vi.mock('@/stores/uiFeedbackStore', () => ({
+  useUiFeedbackStore: vi.fn(() => ({
     showSnackbar: vi.fn()
   }))
 }))

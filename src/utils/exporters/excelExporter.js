@@ -8,7 +8,7 @@
  * - Columnas dinámicas según métricas
  */
 
-import * as XLSX from 'xlsx'
+// Importación dinámica de xlsx para code-splitting
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
@@ -20,9 +20,11 @@ export class ExcelExporter {
   /**
    * Exporta bitácoras a Excel
    */
-  exportBitacoras(bitacoras, actividades, tipoActividades, options = {}) {
+  async exportBitacoras(bitacoras, actividades, tipoActividades, options = {}) {
     try {
       const { fechaInicio, fechaFin, filtros = {} } = options
+
+      const XLSX = await import('xlsx')
 
       // Preparar datos para exportación
       const data = this.prepareData(bitacoras, actividades, tipoActividades, filtros)
@@ -157,15 +159,17 @@ export class ExcelExporter {
   /**
    * Exporta bitácoras con resumen agrupado
    */
-  exportBitacorasWithSummary(bitacoras, actividades, tipoActividades, options = {}) {
+  async exportBitacorasWithSummary(bitacoras, actividades, tipoActividades, options = {}) {
     try {
+      const XLSX = await import('xlsx')
+
       // Crear hoja principal de datos
       const data = this.prepareData(bitacoras, actividades, tipoActividades, options.filtros || {})
       const mainSheet = XLSX.utils.json_to_sheet(data)
       this.adjustColumnWidths(mainSheet)
 
       // Crear hoja de resumen
-      const summarySheet = this.createSummarySheet(bitacoras, actividades)
+      const summarySheet = this.createSummarySheet(bitacoras, actividades, XLSX)
 
       // Crear libro de trabajo
       this.workbook = XLSX.utils.book_new()
@@ -190,7 +194,7 @@ export class ExcelExporter {
   /**
    * Crea hoja de resumen
    */
-  createSummarySheet(bitacoras, actividades) {
+  createSummarySheet(bitacoras, actividades, XLSX) {
     const summary = []
 
     // Agrupar por actividad

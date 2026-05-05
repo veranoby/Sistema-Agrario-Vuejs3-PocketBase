@@ -5,7 +5,7 @@ import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useZonasStore } from '@/stores/zonasStore'
 import { useRecordatoriosStore } from '@/stores/recordatoriosStore'
 import { useProgramacionesStore } from '@/stores/programaciones'
-import { useSnackbarStore } from '@/stores/snackbarStore'
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import { handleError } from '@/utils/errorHandler'
@@ -18,7 +18,7 @@ export function useActividadesData(actividadId) {
   const zonasStore = useZonasStore()
   const recordatoriosStore = useRecordatoriosStore()
   const programacionesStore = useProgramacionesStore()
-  const snackbarStore = useSnackbarStore()
+  const uiFeedbackStore = useUiFeedbackStore()
 
   const actividadInfo = ref({})
   const editedActividad = ref({ metricas: {} })
@@ -85,7 +85,7 @@ export function useActividadesData(actividadId) {
           actividadInfo.value.metricas = {}
         }
       } else {
-        snackbarStore.showError(t('activity_workspace.activity_not_loaded'))
+        uiFeedbackStore.showError(t('activity_workspace.activity_not_loaded'))
       }
     }
   }

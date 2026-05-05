@@ -102,7 +102,7 @@ import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePlanStore } from '@/stores/planStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
-import { useSnackbarStore } from '@/stores/snackbarStore'
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import { storeToRefs } from 'pinia'
 
 export default {
@@ -112,7 +112,7 @@ export default {
     const { t } = useI18n()
     const planStore = usePlanStore()
     const haciendaStore = useHaciendaStore()
-    const snackbarStore = useSnackbarStore()
+    const uiFeedbackStore = useUiFeedbackStore()
     const { currentPlan } = storeToRefs(planStore)
 
     const changePlanModalOpen = ref(false)
@@ -138,7 +138,7 @@ export default {
         selectedPlan.value = haciendaStore.mi_hacienda.plan
         changePlanModalOpen.value = true
       } catch (error) {
-        snackbarStore.showSnackbar(t('plan_management.error_loading_plans'), 'error')
+        uiFeedbackStore.showSnackbar(t('plan_management.error_loading_plans'), 'error')
         console.error('Error al cargar los planes disponibles:', error)
       }
     }
@@ -154,7 +154,7 @@ export default {
         await haciendaStore.fetchHacienda(haciendaStore.mi_hacienda.id)
         changePlanModalOpen.value = false
       } catch (error) {
-        snackbarStore.showSnackbar(t('plan_management.error_changing_plan'), 'error')
+        uiFeedbackStore.showSnackbar(t('plan_management.error_changing_plan'), 'error')
         console.error('Error al cambiar el plan:', error)
       }
     }

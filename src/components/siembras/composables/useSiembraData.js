@@ -4,7 +4,7 @@ import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useZonasStore } from '@/stores/zonasStore'
 import { useActividadesStore } from '@/stores/actividadesStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
-import { useSnackbarStore } from '@/stores/snackbarStore'
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useAvatarStore } from '@/stores/avatarStore'
 import { handleError } from '@/utils/errorHandler'
@@ -17,7 +17,7 @@ export function useSiembraData(siembraId) {
   const zonasStore = useZonasStore()
   const actividadesStore = useActividadesStore()
   const haciendaStore = useHaciendaStore()
-  const snackbarStore = useSnackbarStore()
+  const uiFeedbackStore = useUiFeedbackStore()
 
   const siembraInfo = ref({})
   const isLoading = ref(true)
@@ -140,7 +140,7 @@ export function useSiembraData(siembraId) {
       await siembrasStore.updateSiembra(siembraId.value, siembraToUpdate)
       siembraInfo.value = await siembrasStore.fetchSiembraById(siembraId.value)
       editSiembraDialog.value = false
-      snackbarStore.showSnackbar(t('sowing_workspace.sowing_updated_successfully'), 'success')
+      uiFeedbackStore.showSnackbar(t('sowing_workspace.sowing_updated_successfully'), 'success')
     } catch (error) {
       handleError(error, t('sowing_workspace.error_updating_sowing'))
     }

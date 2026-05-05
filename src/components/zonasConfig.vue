@@ -251,7 +251,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import { useSiembrasStore } from '@/stores/siembrasStore'
 import { storeToRefs } from 'pinia'
-import { useSnackbarStore } from '@/stores/snackbarStore'
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import { useAvatarStore } from '@/stores/avatarStore'
 import ZonaForm from '@/components/forms/ZonaForm.vue'
 import { useDebouncedSearch } from '@/composables/useDebouncedSearch'
@@ -259,7 +259,7 @@ import { useDebouncedSearch } from '@/composables/useDebouncedSearch'
 const { t } = useI18n()
 const zonasStore = useZonasStore()
 const siembrasStore = useSiembrasStore()
-const snackbarStore = useSnackbarStore()
+const uiFeedbackStore = useUiFeedbackStore()
 const authStore = useAuthStore()
 const haciendaStore = useHaciendaStore()
 const avatarStore = useAvatarStore()
@@ -349,7 +349,7 @@ onMounted(async () => {
     }
   } catch (error) {
     console.error('Error loading data:', error)
-    snackbarStore.showError(t('zones.error_loading_data'))
+    uiFeedbackStore.showError(t('zones.error_loading_data'))
   }
 })
 
@@ -420,7 +420,7 @@ const confirmarEliminarZona = (zona) => {
   if (confirm(t('zones.confirm_delete_zone', { zoneName: zona.nombre }))) {
     eliminarZona(zona.id)
       .then(() => cargarZonas())
-      .catch(() => snackbarStore.showError(t('zones.error_deleting_zone')))
+      .catch(() => uiFeedbackStore.showError(t('zones.error_deleting_zone')))
   }
 }
 
@@ -440,7 +440,7 @@ watch(
 const onZonaSaved = async () => {
   dialogoCrear.value = false
   await cargarZonas()
-  snackbarStore.showSnackbar(t('zones.zone_saved_successfully'), 'success')
+  uiFeedbackStore.showSnackbar(t('zones.zone_saved_successfully'), 'success')
 }
 
 // Updated function to use debounced values

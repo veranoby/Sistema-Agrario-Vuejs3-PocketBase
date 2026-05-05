@@ -130,7 +130,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { handleError } from '@/utils/errorHandler'
-import { exportProgramacionesToMarkdown } from '@/utils/markdownExporter'
+import { exportProgramacionesToMarkdown } from '@/utils/exporters/markdownExporter'
 import { formatDate } from '@/utils/formatters'
 import { useProgramacionesStore } from '@/stores/programaciones'
 import { useSiembrasStore } from '@/stores/siembrasStore'

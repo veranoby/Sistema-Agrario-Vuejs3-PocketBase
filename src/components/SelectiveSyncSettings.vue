@@ -173,10 +173,10 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useSyncStore } from '@/stores/sync'
-import { useSnackbarStore } from '@/stores/snackbarStore'
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 
 const syncStore = useSyncStore()
-const snackbarStore = useSnackbarStore()
+const uiFeedbackStore = useUiFeedbackStore()
 
 const saving = ref(false)
 const localConfig = ref({
@@ -261,13 +261,13 @@ async function saveConfiguration() {
     const success = syncStore.configureSelectiveSync(localConfig.value)
 
     if (success) {
-      snackbarStore.showSnackbar('Configuración guardada exitosamente', 'success')
+      uiFeedbackStore.showSnackbar('Configuración guardada exitosamente', 'success')
     } else {
       throw new Error('Error guardando configuración')
     }
   } catch (error) {
     console.error('Error guardando configuración:', error)
-    snackbarStore.showSnackbar('Error guardando configuración', 'error')
+    uiFeedbackStore.showSnackbar('Error guardando configuración', 'error')
   } finally {
     saving.value = false
   }
@@ -297,7 +297,7 @@ onMounted(() => {
 // Watch para detectar cambios importantes y mostrar advertencias
 watch(() => localConfig.value.enabled, (newValue) => {
   if (newValue) {
-    snackbarStore.showSnackbar('Sincronización selectiva habilitada. Configure las prioridades según sus necesidades.', 'info')
+    uiFeedbackStore.showSnackbar('Sincronización selectiva habilitada. Configure las prioridades según sus necesidades.', 'info')
   }
 })
 </script>

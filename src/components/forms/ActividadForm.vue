@@ -138,7 +138,7 @@
 import { ref, defineEmits, watch, onMounted, computed } from 'vue'
 import { useActividadesStore } from '@/stores/actividadesStore'
 import { useSiembrasStore } from '@/stores/siembrasStore'
-import { useSnackbarStore } from '@/stores/snackbarStore'
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import { handleError } from '@/utils/errorHandler'
 
 import { useSyncStore } from '@/stores/sync'
@@ -160,7 +160,7 @@ const emit = defineEmits(['update:modelValue', 'actividad-creada'])
 
 const actividadesStore = useActividadesStore()
 const siembrasStore = useSiembrasStore()
-const snackbarStore = useSnackbarStore()
+const uiFeedbackStore = useUiFeedbackStore()
 const syncStore = useSyncStore()
 
 const { tiposActividades } = storeToRefs(actividadesStore)
@@ -253,7 +253,7 @@ const initializeMetricas = (tipoActividad) => {
 
 const crearActividad = async () => {
   if (!isFormValid()) {
-    snackbarStore.showError('Nombre y tipo son requeridos')
+    uiFeedbackStore.showError('Nombre y tipo son requeridos')
     return
   }
 

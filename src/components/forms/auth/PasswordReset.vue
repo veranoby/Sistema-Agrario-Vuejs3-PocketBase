@@ -121,14 +121,14 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/authStore'
-import { useSnackbarStore } from '@/stores/snackbarStore'
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import { calculatePasswordStrength, getPasswordStrengthColor, getPasswordStrengthLabel } from '@/utils/validators/index'
 
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
 const authStore = useAuthStore()
-const snackbarStore = useSnackbarStore()
+const uiFeedbackStore = useUiFeedbackStore()
 
 // Estado del componente
 const token = ref('')
@@ -195,7 +195,7 @@ const handlePasswordReset = async () => {
     await authStore.confirmPasswordReset(token.value, password.value, passwordConfirm.value)
 
     resetSuccess.value = true
-    snackbarStore.showSnackbar(t('auth.password_reset_success'), 'success')
+    uiFeedbackStore.showSnackbar(t('auth.password_reset_success'), 'success')
 
     // Redirigir a login después de 3 segundos
     redirectTimer = setTimeout(() => {

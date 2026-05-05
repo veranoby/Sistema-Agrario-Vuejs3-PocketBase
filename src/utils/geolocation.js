@@ -34,6 +34,8 @@ export class GeolocationService {
     this.lastPosition = null
     this.watchId = null
     this.isWatching = false
+    this.locationHistory = []
+    this.maxHistorySize = 100
   }
 
   /**
@@ -129,6 +131,12 @@ export class GeolocationService {
       (position) => {
         const formattedPosition = this.formatPosition(position)
         this.lastPosition = formattedPosition
+        
+        this.locationHistory.push(formattedPosition)
+        if (this.locationHistory.length > this.maxHistorySize) {
+          this.locationHistory = this.locationHistory.slice(-this.maxHistorySize)
+        }
+        
         onUpdate(formattedPosition)
       },
       (error) => {
@@ -167,6 +175,47 @@ export class GeolocationService {
    */
   getLastKnownPosition() {
     return this.lastPosition
+  }
+
+  /**
+   * Obtiene el historial de ubicaciones
+   * @param {number} limit - Máximo número de ubicaciones
+   */
+  getHistory(limit = 50) {
+    return this.locationHistory.slice(-limit)
+  }
+
+  /**
+   * Limpia el historial de ubicaciones
+   */
+  clearHistory() {
+    this.locationHistory = []
+  }
+
+  /**
+   * Calcula la distancia total recorrida
+   */
+  getTotalDistance() {
+    if (this.locationHistory.length < 2) return 0
+    let total = 0
+    for (let i = 1; i < this.locationHistory.length; i++) {
+      const prev = this.locationHistory[i - 1]
+      const curr = this.locationHistory[i]
+      total += this.calculateDistance(prev.latitude, prev.longitude, curr.latitude, curr.longitude)
+    }
+    return total
+  }
+
+  /**
+   * Exporta historial para logs
+   */
+  exportForLog() {
+    return {
+      currentLocation: this.lastPosition,
+      history: this.locationHistory,
+      distance: this.getTotalDistance(),
+      exportedAt: new Date().toISOString()
+    }
   }
 
   /**
@@ -349,6 +398,11 @@ export function useGeolocation() {
     return geo.getLastKnownPosition()
   }
 
+  const exportForLog = () => geo.exportForLog()
+  const getHistory = () => geo.getHistory()
+  const clearHistory = () => geo.clearHistory()
+  const getTotalDistance = () => geo.getTotalDistance()
+
   return {
     position,
     error,
@@ -357,6 +411,10 @@ export function useGeolocation() {
     watchPosition,
     stopTracking,
     getLastKnownPosition,
+    exportForLog,
+    getHistory,
+    clearHistory,
+    getTotalDistance,
     isAvailable: () => geo.isAvailable(),
     isTracking: geo.isTracking
   }

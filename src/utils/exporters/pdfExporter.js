@@ -9,8 +9,7 @@
  * - Notas y observaciones
  */
 
-import { jsPDF } from 'jspdf'
-import autoTable from 'jspdf-autotable'
+// Importación dinámica de jspdf y jspdf-autotable para code-splitting
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
@@ -26,8 +25,12 @@ export class PdfExporter {
   /**
    * Exporta una bitácora a PDF
    */
-  exportBitacora(entry, actividad, tipoActividad, hacienda) {
+  async exportBitacora(entry, actividad, tipoActividad, hacienda) {
     try {
+      const { jsPDF } = await import('jspdf')
+      const autoTableModule = await import('jspdf-autotable')
+      const autoTable = autoTableModule.default || autoTableModule
+
       // Inicializar documento PDF (landscape orientation)
       this.doc = new jsPDF({
         orientation: 'landscape',
@@ -306,8 +309,12 @@ export class PdfExporter {
   /**
    * Exporta múltiples bitácoras en un solo PDF
    */
-  exportBitacorasMultiple(bitacoras, actividades, tipoActividades, hacienda) {
+  async exportBitacorasMultiple(bitacoras, actividades, tipoActividades, hacienda) {
     try {
+      const { jsPDF } = await import('jspdf')
+      const autoTableModule = await import('jspdf-autotable')
+      const autoTable = autoTableModule.default || autoTableModule
+
       this.doc = new jsPDF({
         orientation: 'landscape',
         unit: 'mm',
@@ -358,8 +365,8 @@ export class PdfExporter {
 // Singleton instance
 export const pdfExporter = new PdfExporter()
 
-export const exportToPDF = (entry, actividad, tipoActividad, hacienda) => {
-  return pdfExporter.exportBitacora(entry, actividad, tipoActividad, hacienda)
+export const exportToPDF = async (entry, actividad, tipoActividad, hacienda) => {
+  return await pdfExporter.exportBitacora(entry, actividad, tipoActividad, hacienda)
 }
 
 export default pdfExporter

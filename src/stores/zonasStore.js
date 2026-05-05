@@ -1,11 +1,12 @@
 import { defineStore } from 'pinia'
-import { markRaw } from 'vue'
+import { markRaw, toRaw } from 'vue'
 import { pb } from '@/utils/pocketbase'
 import { useSyncStore } from '@/stores/sync/index'
-import { useSnackbarStore } from './snackbarStore'
+import { useUiFeedbackStore } from './uiFeedbackStore'
 import { handleError } from '@/utils/errorHandler'
 import { useHaciendaStore } from './haciendaStore'
 import { calculateBpaStatus } from '@/utils/agriMetrics'
+import { logger } from '@/utils/logger'
 
 
 export const useZonasStore = defineStore('zonas', {
@@ -20,7 +21,16 @@ export const useZonasStore = defineStore('zonas', {
     currentPage: 1,
     perPage: 20,
     totalItems: 0,
-    totalPages: 0
+    totalPages: 0,
+    // NUEVO: Filtros (faltaba)
+    filters: {
+      hacienda: null,
+      siembra_asociada: null,
+      programacion_origen: null,
+      actividad_realizada: null,
+      fecha_desde: null,
+      fecha_hasta: null
+    }
   }),
 
   persist: {
@@ -54,7 +64,7 @@ export const useZonasStore = defineStore('zonas', {
 
   actions: {
     async init() {
-      this.loading = true
+      this.loading = true;
 
       try {
         await this.cargarTiposZonas()
@@ -73,40 +83,81 @@ export const useZonasStore = defineStore('zonas', {
       return this.fetchPage(1, 100)
     },
 
-    async fetchPage(page = 1, perPage = 20) {
+    async fetchPage(page = 1, perPage = 20, filters = this.filters) {
       const syncStore = useSyncStore()
-      const haciendaStore = useHaciendaStore()
-      this.error = null
-      this.loading = true
-
-      // If data already populated by initFromLocalStorage, and offline, return.
-      if (this.zonas.length > 0 && !navigator.onLine) {
-        this.loading = false;
-        return this.zonas;
+      const haciendaStore = useHaciendaStore();
+      
+      // CORRECTO: Usar safeFilters para evitar undefined
+      const safeFilters = (filters && typeof filters === 'object') ? filters : (this.filters || {});
+      const targetHacienda = safeFilters.hacienda || haciendaStore.mi_hacienda?.id;
+      
+      if (!targetHacienda) {
+        console.warn('[ZONAS_STORE] No haciendaId provided to fetchPage.');
+        return { items: [], pagination: this.pagination };
       }
-
+      
+      logger.debug(`[ZONAS_STORE] Fetching page ${page} with ${perPage} items per page for hacienda: ${targetHacienda}`);
+      this.loading = true;
+      
       try {
-        // Obtener solo las zonas de la hacienda actual
-        const resultList = await pb.collection('zonas').getList(page, perPage, {
-          sort: 'nombre',
-          filter: `hacienda="${haciendaStore.mi_hacienda?.id}"`,
-          expand: 'tipos_zonas'
-        })
-
-        this.zonas = resultList.items
-        this.totalItems = resultList.totalItems
-        this.currentPage = page
-        this.totalPages = resultList.totalPages
-        this.lastSync = Date.now()
-
-        // Guardar zonas en localStorage para uso offline
-        syncStore.saveToLocalStorage('zonas', resultList.items)
-        return resultList
+        const filterParts = [`hacienda="${targetHacienda}"`];
+        
+        if (safeFilters.siembra_asociada) {
+          filterParts.push(`siembra_asociada="${safeFilters.siembra_asociada}"`);
+        }
+        if (safeFilters.programacion_origen) {
+          filterParts.push(`programacion_origen="${safeFilters.programacion_origen}"`);
+        }
+        if (safeFilters.actividad_realizada) {
+          filterParts.push(`actividad_realizada="${safeFilters.actividad_realizada}"`);
+        }
+        if (safeFilters.fecha_desde) {
+          filterParts.push(`fecha_ejecucion>"${safeFilters.fecha_desde}"`);
+        }
+        if (safeFilters.fecha_hasta) {
+          filterParts.push(`fecha_ejecucion<"${safeFilters.fecha_hasta}"`);
+        }
+        
+        const filterString = filterParts.join(' && ');
+        
+        const result = await pb.collection('zonas').getList(page, perPage, {
+          filter: filterString,
+          sort: '-created',
+          expand: "actividad_realizada,actividad_realizada.tipo_actividades,siembra_asociada,user_responsable"
+        });
+        
+        this.pagination = {
+          page: result.page,
+          perPage: result.perPage,
+          totalItems: result.totalItems,
+          totalPages: result.totalPages,
+          hasMore: result.page < result.totalPages
+        };
+        
+        this.filters = { ...this.filters, ...safeFilters };
+        
+        const entries = result.items.map(entry => ({...entry, _isTemp: false }));
+        
+        if (page === 1) {
+          this.zonas = entries;
+        } else {
+          this.zonas = [...this.zonas, ...entries];
+        }
+        
+        this.lastSync = Date.now();
+        // CORRECTO: Sanitizar con JSON.parse(JSON.stringify()) para IndexedDB
+        syncStore.saveToLocalStorage('zonas', JSON.parse(JSON.stringify(toRaw(this.zonas))));
+        logger.debug(`[ZONAS_STORE] Fetched page ${page}: ${entries.length} items (Total: ${result.totalItems})`);
+        
+        return {
+          items: entries,
+          pagination: this.pagination
+        };
       } catch (error) {
-        handleError(error, 'Error al cargar zonas')
-        throw error
+        handleError(error, 'Error cargando página de zonas');
+        return { items: [], pagination: this.pagination };
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
 
@@ -125,8 +176,8 @@ export const useZonasStore = defineStore('zonas', {
     async crearZona(zonaData) {
       const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore()
-      const snackbarStore = useSnackbarStore()
-      snackbarStore.showLoading()
+      const uiFeedbackStore = useUiFeedbackStore()
+      uiFeedbackStore.showLoading()
 
       // Enriquecer datos con contexto de hacienda
       const enrichedData = {
@@ -155,7 +206,8 @@ export const useZonasStore = defineStore('zonas', {
               _isTemp: true
             }
             this.zonas.unshift(tempZona)
-            syncStore.saveToLocalStorage('zonas', this.zonas)
+            // CORRECTO: Sanitizar para IndexedDB
+            syncStore.saveToLocalStorage('zonas', JSON.parse(JSON.stringify(toRaw(this.zonas))))
             return tempZona
           }
         )
@@ -167,19 +219,20 @@ export const useZonasStore = defineStore('zonas', {
           expand: 'tipos_zonas'
         })
         this.zonas.push(record)
-        syncStore.saveToLocalStorage('zonas', this.zonas)
+        // CORRECTO: Sanitizar para IndexedDB
+        syncStore.saveToLocalStorage('zonas', JSON.parse(JSON.stringify(toRaw(this.zonas))));
         return record
       } catch (error) {
         handleError(error, 'Error al crear zona')
         throw error
       } finally {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
       }
     },
 
     async updateZona(id, updateData) {
-      const snackbarStore = useSnackbarStore()
-      snackbarStore.showLoading()
+      const uiFeedbackStore = useUiFeedbackStore()
+      uiFeedbackStore.showLoading()
       const syncStore = useSyncStore()
 
       const zona = this.getZonaById(id)
@@ -209,7 +262,8 @@ export const useZonasStore = defineStore('zonas', {
                 ...enrichedData,
                 updated: new Date().toISOString()
               }
-              syncStore.saveToLocalStorage('zonas', this.zonas)
+              // CORRECTO: Sanitizar para IndexedDB
+              syncStore.saveToLocalStorage('zonas', JSON.parse(JSON.stringify(toRaw(this.zonas))));
               return this.zonas[index]
             }
             return null
@@ -226,24 +280,25 @@ export const useZonasStore = defineStore('zonas', {
         if (index !== -1) {
           this.zonas[index] = record
         }
-        syncStore.saveToLocalStorage('zonas', this.zonas)
+        // CORRECTO: Sanitizar para IndexedDB
+        syncStore.saveToLocalStorage('zonas', JSON.parse(JSON.stringify(toRaw(this.zonas))));
         return record
       } catch (error) {
         handleError(error, 'Error al actualizar zona')
         throw error
       } finally {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
       }
     },
 
     async eliminarZona(id) {
-      const snackbarStore = useSnackbarStore()
-      snackbarStore.showLoading()
+      const uiFeedbackStore = useUiFeedbackStore()
+      uiFeedbackStore.showLoading()
       const syncStore = useSyncStore()
 
       // Verificar que el ID existe
       if (!id) {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
         throw new Error('ID de zona no proporcionado para eliminación')
       }
 
@@ -251,7 +306,7 @@ export const useZonasStore = defineStore('zonas', {
         // Verificar si la zona existe antes de eliminarla
         const zonaExiste = this.zonas.some((z) => z.id === id)
         if (!zonaExiste) {
-          snackbarStore.hideLoading()
+          uiFeedbackStore.hideLoading()
           throw new Error(`No se encontró zona con ID: ${id}`)
         }
 
@@ -265,7 +320,8 @@ export const useZonasStore = defineStore('zonas', {
           () => {
             // Función de actualización local
             this.zonas = this.zonas.filter((z) => z.id !== id)
-            syncStore.saveToLocalStorage('zonas', this.zonas)
+            // CORRECTO: Sanitizar para IndexedDB
+            syncStore.saveToLocalStorage('zonas', JSON.parse(JSON.stringify(toRaw(this.zonas))));
             return true
           }
         )
@@ -274,13 +330,14 @@ export const useZonasStore = defineStore('zonas', {
       try {
         await pb.collection('zonas').delete(id)
         this.zonas = this.zonas.filter((z) => z.id !== id)
-        syncStore.saveToLocalStorage('zonas', this.zonas)
+        // CORRECTO: Sanitizar para IndexedDB
+        syncStore.saveToLocalStorage('zonas', JSON.parse(JSON.stringify(toRaw(this.zonas))));
         return true
       } catch (error) {
         handleError(error, 'Error al eliminar zona')
         throw error
       } finally {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
       }
     },
 
@@ -303,7 +360,7 @@ export const useZonasStore = defineStore('zonas', {
         // markRaw: lookup data doesn't need deep reactivity
         this.tiposZonas = markRaw(records)
         // Guardar zonas en localStorage para uso offline
-        useSyncStore().saveToLocalStorage('tiposZonas', records)
+        useSyncStore().saveToLocalStorage('tiposZonas', JSON.parse(JSON.stringify(toRaw(this.tiposZonas))))
       } catch (error) {
         handleError(error, 'Error al cargar tipos de zonas')
       }
@@ -311,7 +368,7 @@ export const useZonasStore = defineStore('zonas', {
 
     async cargarZonasPorSiembras(siembraIds) {
       // const zonasStore = useZonasStore()
-      this.loading = true
+      this.loading = true;
 
       try {
         // Usar directamente el store de zonas para obtener las zonas filtradas
@@ -326,7 +383,7 @@ export const useZonasStore = defineStore('zonas', {
 
     async cargarZonasPrecargadas() {
       // const zonasStore = useZonasStore()
-      this.loading = true
+      this.loading = true;
 
       try {
         // Filtrar zonas que no pertenecen a siembras
@@ -344,8 +401,8 @@ export const useZonasStore = defineStore('zonas', {
     },
 
     async updateZonaAvatar(zonaId, avatarFile) {
-      const snackbarStore = useSnackbarStore()
-      snackbarStore.showLoading()
+      const uiFeedbackStore = useUiFeedbackStore()
+      uiFeedbackStore.showLoading()
       try {
         const formData = new FormData()
         formData.append('avatar', avatarFile)
@@ -362,7 +419,7 @@ export const useZonasStore = defineStore('zonas', {
         handleError(error, 'Error al actualizar el avatar de la zona')
         throw error
       } finally {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
       }
     },
 
@@ -384,12 +441,16 @@ export const useZonasStore = defineStore('zonas', {
       return useSyncStore().removeLocalItem('zonas', id, this.zonas)
     },
 
-    initFromLocalStorage() {
+    async initFromLocalStorage() {
       const syncStore = useSyncStore();
-      const localZonas = syncStore.loadFromLocalStorage('zonas');
-      this.zonas = localZonas || [];
-      const localTiposZonas = syncStore.loadFromLocalStorage('tiposZonas');
-      this.tiposZonas = localTiposZonas ? markRaw(localTiposZonas) : [];
+      // CORRECTO: Usar await para loadFromLocalStorage
+      const localZonas = await syncStore.loadFromLocalStorage('zonas');
+      // CORRECTO: Validar que sea array
+      this.zonas = (localZonas && Array.isArray(localZonas)) ? localZonas : [];
+      // CORRECTO: Usar await para loadFromLocalStorage
+      const localTiposZonas = await syncStore.loadFromLocalStorage('tiposZonas');
+      // CORRECTO: Validar que sea array
+      this.tiposZonas = (localTiposZonas && Array.isArray(localTiposZonas)) ? markRaw(localTiposZonas) : [];
       console.log('[ZONAS_STORE] Initialized from localStorage. Zonas:', this.zonas.length, 'Tipos:', this.tiposZonas.length);
     }
   }

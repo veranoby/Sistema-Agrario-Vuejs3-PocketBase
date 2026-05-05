@@ -79,14 +79,14 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useFinanzaStore } from '@/stores/finanzaStore'
-import { useSnackbarStore } from '@/stores/snackbarStore'
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import { read, utils } from 'xlsx'
 import { format, parse } from 'date-fns'
 
 const finanzaStore = useFinanzaStore()
-const snackbarStore = useSnackbarStore()
+const uiFeedbackStore = useUiFeedbackStore()
 const authStore = useAuthStore()
 const haciendaStore = useHaciendaStore()
 
@@ -255,7 +255,7 @@ const handleFileSelect = async (file) => {
     })
   } catch (error) {
     console.error('Error al leer archivo:', error)
-    snackbarStore.showSnackbar(`Error al leer archivo: ${error.message}`, 'error')
+    uiFeedbackStore.showSnackbar(`Error al leer archivo: ${error.message}`, 'error')
     selectedFile.value = null
     previewData.value = []
   }
@@ -397,7 +397,7 @@ const startImport = async () => {
     }
 
     console.log(message)
-    snackbarStore.showSnackbar(message, successCount > 0 ? 'success' : 'error')
+    uiFeedbackStore.showSnackbar(message, successCount > 0 ? 'success' : 'error')
     dialogVisible.value = false
 
     // Eliminar el array de registros en localStorage para forzar una recarga desde PocketBase
@@ -407,7 +407,7 @@ const startImport = async () => {
     await finanzaStore.cargarRegistros()
   } catch (error) {
     console.error('Error durante la importación:', error)
-    snackbarStore.showSnackbar(`Error durante la importación: ${error.message}`, 'error')
+    uiFeedbackStore.showSnackbar(`Error durante la importación: ${error.message}`, 'error')
   } finally {
     importing.value = false
     importProgress.value = 0

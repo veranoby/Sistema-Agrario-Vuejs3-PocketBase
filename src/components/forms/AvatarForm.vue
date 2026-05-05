@@ -107,7 +107,7 @@
 <script setup>
 import { ref, computed, onUnmounted } from 'vue'
 import { useAvatarStore } from '@/stores/avatarStore'
-import { useSnackbarStore } from '@/stores/snackbarStore'
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 
 // Importar optimizador de imágenes
 import { ImageOptimizer } from '@/utils/imageOptimizer'
@@ -125,7 +125,7 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'avatar-updated'])
 
 const avatarStore = useAvatarStore()
-const snackbarStore = useSnackbarStore()
+const uiFeedbackStore = useUiFeedbackStore()
 const avatarFile = ref(null)
 const previewUrl = ref(null)
 const fileError = ref('')
@@ -205,7 +205,7 @@ const handleFileChange = async (file) => {
             ratio: result.compressionRatio + '%'
           })
 
-          snackbarStore.showSuccess(
+          uiFeedbackStore.showSuccess(
             `Imagen optimizada: ${result.compressionRatio}% de reducción`
           )
         } catch (error) {

@@ -223,11 +223,11 @@ import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useAuthStore } from '@/stores/authStore'
-import { useSnackbarStore } from '@/stores/snackbarStore'
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import AvatarForm from '@/components/forms/AvatarForm.vue'
 
 const authStore = useAuthStore()
-const snackbarStore = useSnackbarStore()
+const uiFeedbackStore = useUiFeedbackStore()
 const { t } = useI18n()
 const { user } = storeToRefs(authStore)
 
@@ -276,10 +276,10 @@ const saveProfileChanges = async () => {
 
       info: info.value
     })
-    snackbarStore.showSnackbar(t('profile.profile_updated_successfully'), 'success')
+    uiFeedbackStore.showSnackbar(t('profile.profile_updated_successfully'), 'success')
     dialogOpen.value = false
   } catch (error) {
-    snackbarStore.showSnackbar(t('profile.failed_to_update_profile'), 'error')
+    uiFeedbackStore.showSnackbar(t('profile.failed_to_update_profile'), 'error')
   } finally {
     isLoading.value = false
   }
@@ -289,9 +289,9 @@ const resendVerificationEmail = async () => {
   resendingEmail.value = true
   try {
     await authStore.sendVerificationEmail(user.value.email)
-    snackbarStore.showSnackbar(t('profile.verification_email_sent'), 'success')
+    uiFeedbackStore.showSnackbar(t('profile.verification_email_sent'), 'success')
   } catch (error) {
-    snackbarStore.showSnackbar(t('profile.verification_email_error'), 'error')
+    uiFeedbackStore.showSnackbar(t('profile.verification_email_error'), 'error')
   } finally {
     resendingEmail.value = false
   }

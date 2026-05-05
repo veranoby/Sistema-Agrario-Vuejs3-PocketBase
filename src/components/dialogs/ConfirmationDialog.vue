@@ -44,7 +44,7 @@
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
-import { useSnackbarStore } from '@/stores/snackbarStore'
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 
 export default {
   name: 'EmailConfirmation',
@@ -59,24 +59,24 @@ export default {
     const authStore = useAuthStore()
     const route = useRoute()
     const router = useRouter()
-    const snackbarStore = useSnackbarStore()
+    const uiFeedbackStore = useUiFeedbackStore()
     const token = ref('')
     const isOpenLocal = ref(props.isOpen)
 
     const confirmEmail = async () => {
       if (!token.value) {
-        snackbarStore.showSnackbar('Please enter a confirmation token.', 'error')
+        uiFeedbackStore.showSnackbar('Please enter a confirmation token.', 'error')
         isOpenLocal.value = true
         return
       }
 
       try {
         await authStore.confirmEmail(token.value)
-        snackbarStore.showSnackbar('Email confirmed successfully!', 'success')
+        uiFeedbackStore.showSnackbar('Email confirmed successfully!', 'success')
         isOpenLocal.value = false
         router.push({ name: 'Login' })
       } catch (error) {
-        snackbarStore.showSnackbar(
+        uiFeedbackStore.showSnackbar(
           'Failed to confirm email. Please check your token and try again.',
           'error'
         )
@@ -91,11 +91,11 @@ export default {
         token.value = queryToken
         try {
           await authStore.confirmEmail(token.value)
-          snackbarStore.showSnackbar('Email confirmado exitosamente!', 'success')
+          uiFeedbackStore.showSnackbar('Email confirmado exitosamente!', 'success')
           isOpenLocal.value = false
           router.push({ name: 'Login' })
         } catch (error) {
-          snackbarStore.showSnackbar(
+          uiFeedbackStore.showSnackbar(
             'Error al confirmar el email. Por favor verifique el token e intente nuevamente.',
             'error'
           )

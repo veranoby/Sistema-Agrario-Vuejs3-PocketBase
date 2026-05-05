@@ -239,7 +239,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { handleError } from '@/utils/errorHandler'
 import { debounce } from '@/utils/debounce'
-import { exportKnowledgeHubToMarkdown } from '@/utils/markdownExporter'
+import { exportKnowledgeHubToMarkdown } from '@/utils/exporters/markdownExporter'
 import { useSyncStore } from '@/stores/sync/index'
 
 const router = useRouter()

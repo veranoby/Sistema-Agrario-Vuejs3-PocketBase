@@ -328,10 +328,10 @@
 <script setup>
 import { ref, computed, onMounted, reactive } from 'vue'
 import { useSyncStore } from '@/stores/sync'
-import { useSnackbarStore } from '@/stores/snackbarStore'
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 
 const syncStore = useSyncStore()
-const snackbarStore = useSnackbarStore()
+const uiFeedbackStore = useUiFeedbackStore()
 
 // Estado reactivo
 const loading = ref(false)
@@ -461,7 +461,7 @@ async function refreshHistory() {
 
   } catch (error) {
     console.error('Error actualizando historial:', error)
-    snackbarStore.showSnackbar('Error actualizando historial', 'error')
+    uiFeedbackStore.showSnackbar('Error actualizando historial', 'error')
   } finally {
     loading.value = false
   }
@@ -486,13 +486,13 @@ async function exportHistory() {
   try {
     const success = syncStore.exportChangeHistory()
     if (success) {
-      snackbarStore.showSnackbar('Historial exportado exitosamente', 'success')
+      uiFeedbackStore.showSnackbar('Historial exportado exitosamente', 'success')
     } else {
       throw new Error('Error exportando historial')
     }
   } catch (error) {
     console.error('Error exportando historial:', error)
-    snackbarStore.showSnackbar('Error exportando historial', 'error')
+    uiFeedbackStore.showSnackbar('Error exportando historial', 'error')
   }
 }
 

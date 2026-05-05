@@ -1,4 +1,4 @@
-import { useSnackbarStore } from '@/stores/snackbarStore'
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 
 // ============================================================================
 // CLASES DE ERROR PERSONALIZADAS
@@ -116,7 +116,7 @@ function extractValidationFields(error) {
 
 function showErrorMessage(message) {
   try {
-    const snackbar = useSnackbarStore()
+    const snackbar = useUiFeedbackStore()
     snackbar.showSnackbar(message, 'error')
   } catch {
     console.error('[AgriError]', message)

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { authProvider } from '@/services/authProvider'
 import { handleError } from '@/utils/errorHandler'
-import { useSnackbarStore } from './snackbarStore'
+import { useUiFeedbackStore } from './uiFeedbackStore'
 import { useHaciendaStore } from './haciendaStore'
 import { usePlanStore } from './planStore'
 import router from '@/router'
@@ -46,31 +46,31 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async changePassword(oldPassword, newPassword) {
-      const snackbarStore = useSnackbarStore()
-      snackbarStore.showLoading()
+      const uiFeedbackStore = useUiFeedbackStore()
+      uiFeedbackStore.showLoading()
       try {
         await profileService.changePassword(this.user?.id, oldPassword, newPassword)
-        snackbarStore.showSnackbar('Password changed successfully', 'success')
+        uiFeedbackStore.showSnackbar('Password changed successfully', 'success')
       } catch (error) {
         throw error
       } finally {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
       }
     },
 
     async updateProfile(profileData) {
-      const snackbarStore = useSnackbarStore()
-      snackbarStore.showLoading()
+      const uiFeedbackStore = useUiFeedbackStore()
+      uiFeedbackStore.showLoading()
       try {
         const updatedUser = await profileService.updateProfile(this.user, profileData)
         this.user = updatedUser
         localStorage.setItem('user', JSON.stringify(this.user))
-        snackbarStore.showSnackbar('Perfil actualizado con éxito', 'success')
+        uiFeedbackStore.showSnackbar('Perfil actualizado con éxito', 'success')
         return updatedUser
       } catch (error) {
         throw error
       } finally {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
       }
     },
 
@@ -222,35 +222,35 @@ export const useAuthStore = defineStore('auth', {
       if (this.loading) return
       this.loading = true
 
-      const snackbarStore = useSnackbarStore()
+      const uiFeedbackStore = useUiFeedbackStore()
 
       if (!syncStore.isOnline) {
         this.loading = false
+        uiFeedbackStore.hideLoading()
         throw new Error('Se requiere conexión a internet para el primer inicio de sesión')
       }
 
-      snackbarStore.showLoading()
+      uiFeedbackStore.showLoading()
 
       try {
-        let authData = null
-
-        try {
-          authData = await authProvider.login(username, email, password)
-          if (authProvider.authStore.isValid) {
-            this.handleSuccessfulLogin(authData, rememberMe)
-            return true
-          }
-        } catch (error) {
-          logger.auth('Error al intentar login:', error.message)
+        const authData = await authProvider.login(username, email, password)
+        
+        if (!authProvider.authStore.isValid) {
+          throw new Error('Credenciales incorrectas')
         }
 
+        await this.handleSuccessfulLogin(authData, rememberMe)
         return true
       } catch (error) {
-        handleError(error, 'Credenciales incorrectas')
+        const isAuthError = error?.status === 400 || error?.code === 'VALIDATION_ERROR'
+        handleError(
+          error,
+          isAuthError ? 'Credenciales incorrectas' : `Error al iniciar sesión: ${error.message}`
+        )
         return false
       } finally {
         this.loading = false
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
       }
     },
 
@@ -298,7 +298,7 @@ export const useAuthStore = defineStore('auth', {
       const refreshThreshold = 20 * 60 * 1000
 
       const shouldRefresh = timeSinceLastSuccess > refreshThreshold
-      if (shouldRefresh || import.meta.env.DEV && timeSinceLastSuccess > 30 * 60 * 1000) {
+      if (shouldRefresh || (import.meta.env.DEV && timeSinceLastSuccess > 30 * 60 * 1000)) {
         logger.auth(
           'Token refresh check:',
           shouldRefresh ? 'NEEDS REFRESH' : 'DEBUG',
@@ -345,11 +345,20 @@ export const useAuthStore = defineStore('auth', {
 
       const haciendaStore = useHaciendaStore()
 
+      // Normalizar haciendaId (soporta string ID o objeto expandido de PocketBase)
+      const rawHacienda = authData.record.hacienda
+      const haciendaId = typeof rawHacienda === 'object' && rawHacienda?.id 
+        ? rawHacienda.id 
+        : rawHacienda
+
+      if (!haciendaId) {
+        const uiFeedbackStore = useUiFeedbackStore()
+        uiFeedbackStore.showSnackbar('No tienes una hacienda asignada. Contacta al administrador.', 'warning')
+      }
+
       await Promise.all([
         this.setUser(authData.record),
-        authData.record.hacienda
-          ? haciendaStore.fetchHacienda(authData.record.hacienda)
-          : Promise.resolve()
+        haciendaId ? haciendaStore.fetchHacienda(haciendaId) : Promise.resolve()
       ])
 
       logger.auth('Critical stores loaded, redirecting to dashboard')
@@ -403,11 +412,11 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async register(formData, new_role) {
-      const snackbarStore = useSnackbarStore()
+      const uiFeedbackStore = useUiFeedbackStore()
       const haciendaStore = useHaciendaStore()
       const planStore = usePlanStore()
 
-      snackbarStore.showLoading()
+      uiFeedbackStore.showLoading()
 
       try {
         const gratisPlan = await planStore.getGratisPlan()
@@ -435,7 +444,7 @@ export const useAuthStore = defineStore('auth', {
 
         await this.sendVerificationEmail(formData.email)
 
-        snackbarStore.showSnackbar(
+        uiFeedbackStore.showSnackbar(
           'Registrado con éxito. Por favor, verifique su email.',
           'success'
         )
@@ -444,7 +453,7 @@ export const useAuthStore = defineStore('auth', {
         this.registrationSuccess = false
         handleError(error, 'Error en el registro')
       } finally {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
       }
     },
 
@@ -483,11 +492,11 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async confirmEmail(token) {
-      const snackbarStore = useSnackbarStore()
+      const uiFeedbackStore = useUiFeedbackStore()
 
       try {
         await authProvider.confirmVerification(token)
-        snackbarStore.showSnackbar(
+        uiFeedbackStore.showSnackbar(
           'Email confirmado exitosamente! Ya puede iniciar sesión.',
           'success'
         )
@@ -499,14 +508,14 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async requestPasswordReset(email) {
-      const snackbarStore = useSnackbarStore()
+      const uiFeedbackStore = useUiFeedbackStore()
       try {
         await authProvider.requestPasswordReset(email)
         return true
       } catch (error) {
         handleError(error, 'Error al solicitar restablecimiento de contraseña')
         const message = error.message || 'No se pudo procesar la solicitud. Intente nuevamente.'
-        snackbarStore.showSnackbar(message, 'error')
+        uiFeedbackStore.showSnackbar(message, 'error')
         throw error
       }
     },
@@ -522,7 +531,7 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async logout() {
-      const snackbarStore = useSnackbarStore()
+      const uiFeedbackStore = useUiFeedbackStore()
       const syncStore = useSyncStore()
 
       try {
@@ -544,10 +553,10 @@ export const useAuthStore = defineStore('auth', {
         logger.auth('Cleared remembered user credentials during logout.')
         localStorage.removeItem('last_auth_success')
 
-        snackbarStore.showSnackbar('Logged out successfully', 'success')
+        uiFeedbackStore.showSnackbar('Logged out successfully', 'success')
       } catch (error) {
         handleError(error, 'Error al cerrar sesión')
-        snackbarStore.showSnackbar('Error al cerrar sesión', 'error')
+        uiFeedbackStore.showSnackbar('Error al cerrar sesión', 'error')
       }
     }
   }

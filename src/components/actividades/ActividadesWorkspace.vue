@@ -127,7 +127,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { useAvatarStore } from '@/stores/avatarStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import { useRecordatoriosStore } from '@/stores/recordatoriosStore'
-import { useSnackbarStore } from '@/stores/snackbarStore'
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import { handleError } from '@/utils/errorHandler'
 import { storeToRefs } from 'pinia'
 
@@ -151,7 +151,7 @@ const authStore = useAuthStore()
 const avatarStore = useAvatarStore()
 const haciendaStore = useHaciendaStore()
 const recordatoriosStore = useRecordatoriosStore()
-const snackbarStore = useSnackbarStore()
+const uiFeedbackStore = useUiFeedbackStore()
 
 const actividadId = ref(route.params.id)
 
@@ -218,14 +218,14 @@ const handleRequestSingleExecution = async (programacion) => {
     if (success) {
       router.push({ name: 'Dashboard de Inicio' })
     } else {
-      snackbarStore.showSnackbar(
+      uiFeedbackStore.showSnackbar(
         'No se pudo preparar la entrada de bitácora desde la programación.',
         'warning'
       )
     }
   } catch (error) {
     console.error('Error preparing for bitacora entry from programacion:', error)
-    snackbarStore.showSnackbar('Error crítico preparando bitácora desde la programación.', 'error')
+    uiFeedbackStore.showSnackbar('Error crítico preparando bitácora desde la programación.', 'error')
   }
 }
 

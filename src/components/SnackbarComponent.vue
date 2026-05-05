@@ -11,26 +11,26 @@
 </template>
 
 <script>
-import { useSnackbarStore } from '@/stores/snackbarStore'
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import { computed } from 'vue'
 
 export default {
   setup() {
-    const snackbarStore = useSnackbarStore()
+    const uiFeedbackStore = useUiFeedbackStore()
 
     const isVisible = computed({
-      get: () => snackbarStore.show,
-      set: (val) => (val ? snackbarStore.showSnackbar() : snackbarStore.hideSnackbar())
+      get: () => uiFeedbackStore.show,
+      set: (val) => (val ? uiFeedbackStore.showSnackbar() : uiFeedbackStore.hideSnackbar())
     })
-    const message = computed(() => snackbarStore.message)
-    const color = computed(() => snackbarStore.color)
+    const message = computed(() => uiFeedbackStore.message)
+    const color = computed(() => uiFeedbackStore.color)
 
-    const loadComp = computed(() => snackbarStore.loading) // nuevo estado para mostrar un loading mientras se procesa algo
-    const cloaseComp = computed(() => snackbarStore.closing) // nuevo estado para mostrar un CERRAR mientras sale mensaje
+    const loadComp = computed(() => uiFeedbackStore.loading) // nuevo estado para mostrar un loading mientras se procesa algo
+    const cloaseComp = computed(() => uiFeedbackStore.closing) // nuevo estado para mostrar un CERRAR mientras sale mensaje
 
     const closeSnackbar = () => {
-      snackbarStore.hideSnackbar()
-      // snackbarStore.show = false
+      uiFeedbackStore.hideSnackbar()
+      // uiFeedbackStore.show = false
     }
 
     return {

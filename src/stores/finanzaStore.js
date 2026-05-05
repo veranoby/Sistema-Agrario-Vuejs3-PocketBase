@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
-import { useSnackbarStore } from './snackbarStore'
+import { useUiFeedbackStore } from './uiFeedbackStore'
 import { useHaciendaStore } from './haciendaStore'
 import { useSyncStore } from '@/stores/sync/index'
 import {
@@ -252,9 +252,9 @@ export const useFinanzaStore = defineStore('finanzas', {
 
     async crearRegistro(registroData) {
       const syncStore = useSyncStore()
-      const snackbarStore = useSnackbarStore()
+      const uiFeedbackStore = useUiFeedbackStore()
       const haciendaStore = useHaciendaStore()
-      snackbarStore.showLoading()
+      uiFeedbackStore.showLoading()
 
       const processedData = { ...registroData }
 
@@ -301,7 +301,7 @@ export const useFinanzaStore = defineStore('finanzas', {
           tempId
         })
 
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
         return tempRegistro
       }
 
@@ -314,14 +314,14 @@ export const useFinanzaStore = defineStore('finanzas', {
         handleError(error, 'Error al crear registro')
         throw error
       } finally {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
       }
     },
 
     async updateRegistro(id, updateData) {
       const syncStore = useSyncStore()
-      const snackbarStore = useSnackbarStore()
-      snackbarStore.showLoading()
+      const uiFeedbackStore = useUiFeedbackStore()
+      uiFeedbackStore.showLoading()
 
       const processedData = { ...updateData }
 
@@ -342,13 +342,13 @@ export const useFinanzaStore = defineStore('finanzas', {
       }
 
       if (!id) {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
         throw new Error('ID de registro no proporcionado para actualización')
       }
 
       const registro = this.registros.find((r) => r.id === id)
       if (!registro) {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
         throw new Error(`No se encontró registro con ID: ${id}`)
       }
 
@@ -370,7 +370,7 @@ export const useFinanzaStore = defineStore('finanzas', {
           data: processedData
         })
 
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
         return this.registros[index]
       }
 
@@ -386,17 +386,17 @@ export const useFinanzaStore = defineStore('finanzas', {
         handleError(error, 'Error al actualizar registro')
         throw error
       } finally {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
       }
     },
 
     async eliminarRegistro(id) {
       const syncStore = useSyncStore()
-      const snackbarStore = useSnackbarStore()
-      snackbarStore.showLoading()
+      const uiFeedbackStore = useUiFeedbackStore()
+      uiFeedbackStore.showLoading()
 
       if (!id) {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
         throw new Error('ID de registro no proporcionado para eliminación')
       }
 
@@ -410,7 +410,7 @@ export const useFinanzaStore = defineStore('finanzas', {
           id
         })
 
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
         return true
       }
 
@@ -418,13 +418,13 @@ export const useFinanzaStore = defineStore('finanzas', {
         await pb.collection('finanzas').delete(id)
         this.registros = this.registros.filter((r) => r.id !== id)
         syncStore.saveToLocalStorage('finanzas', this.registros)
-        useSnackbarStore().showSnackbar('Registro financiero eliminado exitosamente')
+        useUiFeedbackStore().showSnackbar('Registro financiero eliminado exitosamente')
         return true
       } catch (error) {
         handleError(error, 'Error al eliminar registro financiero')
         throw error
       } finally {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
       }
     },
 
@@ -433,7 +433,7 @@ export const useFinanzaStore = defineStore('finanzas', {
     },
 
     async exportToExcel(yearParam = null, monthParam = null) {
-      const snackbarStore = useSnackbarStore()
+      const uiFeedbackStore = useUiFeedbackStore()
       const haciendaStore = useHaciendaStore()
 
       const meses = [
@@ -441,7 +441,7 @@ export const useFinanzaStore = defineStore('finanzas', {
         'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
       ]
 
-      snackbarStore.showLoading()
+      uiFeedbackStore.showLoading()
 
       try {
         let year = yearParam
@@ -600,11 +600,11 @@ export const useFinanzaStore = defineStore('finanzas', {
 
         writeFile(wb, fileName)
 
-        snackbarStore.showSnackbar('Datos exportados exitosamente', 'success')
+        uiFeedbackStore.showSnackbar('Datos exportados exitosamente', 'success')
       } catch (error) {
         handleError(error, 'Error al exportar datos')
       } finally {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
       }
     },
 

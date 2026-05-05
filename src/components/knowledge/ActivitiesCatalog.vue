@@ -166,7 +166,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { handleError } from '@/utils/errorHandler'
-import { exportTiposActividadesToMarkdown } from '@/utils/markdownExporter'
+import { exportTiposActividadesToMarkdown } from '@/utils/exporters/markdownExporter'
 import { formatDate } from '@/utils/formatters'
 import { useActividadesStore } from '@/stores/actividadesStore'
 

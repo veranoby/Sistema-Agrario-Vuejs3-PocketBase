@@ -1,13 +1,12 @@
 import { defineStore } from 'pinia'
+import { markRaw, toRaw } from 'vue'
 import { pb } from '@/utils/pocketbase'
-import { useSnackbarStore } from './snackbarStore'
+import { useUiFeedbackStore } from './uiFeedbackStore'
 import { handleError } from '@/utils/errorHandler'
 import { useSyncStore } from '@/stores/sync/index'
 import { useHaciendaStore } from './haciendaStore'
 import { computed } from 'vue'
-
-
-import { offlineGeoStorage } from '@/utils/offlineGeoStorage' // NUEVO: Importar offlineGeoStorage
+import { offlineGeoStorage } from '@/utils/offlineGeoStorage'
 import { logger } from '@/utils/logger'
 
 export const useSiembrasStore = defineStore('siembras', {
@@ -39,7 +38,6 @@ export const useSiembrasStore = defineStore('siembras', {
       return state.siembras.find((siembra) => siembra.id === id)
     },
 
-    // Function to get the activity type based on the activity ID
     getSiembraNombre: (state) => (id) => {
       const siembra = state.siembras.find((s) => s.id === id)
       return siembra ? `${siembra.nombre}-${siembra.tipo}` : 'Sin siembras registradas'
@@ -52,7 +50,6 @@ export const useSiembrasStore = defineStore('siembras', {
     activeSiembrasWithMemo: (state) =>
       computed(() => state.siembras.filter((s) => s.estado !== 'finalizada')),
 
-    // Pagination getters
     hasNextPage: (state) => state.currentPage < state.totalPages,
     hasPrevPage: (state) => state.currentPage > 1
   },
@@ -69,18 +66,15 @@ export const useSiembrasStore = defineStore('siembras', {
     },
 
     async cargarSiembras() {
-      // Local storage loading is now handled by initFromLocalStorage.
-      // This method maintains backward compatibility by loading all items.
       return this.fetchPage(1, 100)
     },
 
     async fetchPage(page = 1, perPage = 20) {
       const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore()
-      this.loading = true
+      this.loading = true;
 
       try {
-        // If data already populated by initFromLocalStorage, and offline, return.
         if (this.siembras.length > 0 && !navigator.onLine) {
           this.loading = false;
           return this.siembras;
@@ -98,12 +92,12 @@ export const useSiembrasStore = defineStore('siembras', {
 
         this.siembras = resultList.items
         this.totalItems = resultList.totalItems
-        this.currentPage = page
+        this.currentPage = resultList.page
         this.totalPages = resultList.totalPages
 
-        syncStore.saveToLocalStorage('siembras', resultList.items)
+        // CORRECTO: Sanitizar con JSON.parse(JSON.stringify()) para IndexedDB
+        syncStore.saveToLocalStorage('siembras', JSON.parse(JSON.stringify(toRaw(this.siembras))));
         
-        // NUEVO: Guardar en offlineGeoStorage para mapas
         for (const siembra of resultList.items) {
           if (siembra.gps || siembra.geometria) {
             await offlineGeoStorage.saveSiembra(siembra).catch(e => 
@@ -136,10 +130,9 @@ export const useSiembrasStore = defineStore('siembras', {
     async crearSiembra(siembraData) {
       const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore()
-      const snackbarStore = useSnackbarStore()
-      snackbarStore.showLoading()
+      const uiFeedbackStore = useUiFeedbackStore()
+      uiFeedbackStore.showLoading()
 
-      // Enriquecer datos con contexto de hacienda
       const enrichedData = {
         ...siembraData,
         hacienda: haciendaStore.mi_hacienda?.id,
@@ -147,7 +140,6 @@ export const useSiembrasStore = defineStore('siembras', {
       }
 
       if (!syncStore.isOnline) {
-        // Usar la función unificada para generar ID temporal
         const tempId = syncStore.generateTempId()
 
         const tempSiembra = {
@@ -155,11 +147,12 @@ export const useSiembrasStore = defineStore('siembras', {
           id: tempId,
           created: new Date().toISOString(),
           updated: new Date().toISOString(),
-          _isTemp: true // Marcar como temporal para mejor seguimiento
+          _isTemp: true
         }
 
         this.siembras.unshift(tempSiembra)
-        syncStore.saveToLocalStorage('siembras', this.siembras)
+        // CORRECTO: Sanitizar para IndexedDB
+        syncStore.saveToLocalStorage('siembras', JSON.parse(JSON.stringify(toRaw(this.siembras))));
 
         await syncStore.queueOperation({
           type: 'create',
@@ -168,50 +161,49 @@ export const useSiembrasStore = defineStore('siembras', {
           tempId
         })
 
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
         return tempSiembra
       }
 
       try {
         const record = await pb.collection('siembras').create(enrichedData)
         this.siembras.unshift(record)
-        syncStore.saveToLocalStorage('siembras', this.siembras)
+        // CORRECTO: Sanitizar para IndexedDB
+        syncStore.saveToLocalStorage('siembras', JSON.parse(JSON.stringify(toRaw(this.siembras))));
         
-        // NUEVO: Guardar en offlineGeoStorage
         if (record.gps || record.geometria) {
           await offlineGeoStorage.saveSiembra(record).catch(e => 
             logger.warn('[SIEMBRAS_STORE] Error guardando en offlineGeoStorage:', e)
           )
         }
         
-        useSnackbarStore().showSnackbar('Siembra creada exitosamente')
+        useUiFeedbackStore().showSnackbar('Siembra creada exitosamente')
         return record
       } catch (error) {
-        handleError(error, 'Error al crear la siembra')
+        handleError(error, 'Error al crear siembra')
         throw error
       } finally {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
       }
     },
 
     async updateSiembra(id, updateData) {
+      const uiFeedbackStore = useUiFeedbackStore()
+      uiFeedbackStore.showLoading()
       const syncStore = useSyncStore()
-      const snackbarStore = useSnackbarStore()
-      snackbarStore.showLoading()
 
-      // Verificar que el ID existe
       if (!id) {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
         throw new Error('ID de siembra no proporcionado para actualización')
       }
 
       const siembra = this.getSiembraById(id)
       if (!siembra) {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
         throw new Error(`No se encontró siembra con ID: ${id}`)
       }
 
-      const dataToUpdate = {
+      const enrichedData = {
         ...updateData,
         avatar: updateData.avatar || siembra?.avatar
       }
@@ -221,63 +213,69 @@ export const useSiembrasStore = defineStore('siembras', {
         if (index !== -1) {
           this.siembras[index] = {
             ...this.siembras[index],
-            ...dataToUpdate,
+            ...enrichedData,
             updated: new Date().toISOString()
           }
-          syncStore.saveToLocalStorage('siembras', this.siembras)
         }
 
-        // Generar un tempId para la operación de actualización
         await syncStore.queueOperation({
           type: 'update',
           collection: 'siembras',
           id,
-          data: dataToUpdate
+          data: enrichedData
         })
 
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
+        // CORRECTO: Sanitizar para IndexedDB
+        syncStore.saveToLocalStorage('siembras', JSON.parse(JSON.stringify(toRaw(this.siembras))));
         return this.siembras[index]
       }
 
       try {
-        const record = await pb.collection('siembras').update(id, dataToUpdate)
+        const record = await pb.collection('siembras').update(id, enrichedData, {
+          expand: 'tipos_zonas'
+        })
         const index = this.siembras.findIndex((s) => s.id === id)
         if (index !== -1) {
           this.siembras[index] = record
         }
-        syncStore.saveToLocalStorage('siembras', this.siembras)
+        // CORRECTO: Sanitizar para IndexedDB
+        syncStore.saveToLocalStorage('siembras', JSON.parse(JSON.stringify(toRaw(this.siembras))));
         
-        // NUEVO: Actualizar en offlineGeoStorage
         if (record.gps || record.geometria) {
           await offlineGeoStorage.saveSiembra(record).catch(e => 
             logger.warn('[SIEMBRAS_STORE] Error actualizando en offlineGeoStorage:', e)
           )
         }
         
-        useSnackbarStore().showSnackbar('Siembra actualizada exitosamente')
+        useUiFeedbackStore().showSnackbar('Siembra actualizada exitosamente')
         return record
       } catch (error) {
-        handleError(error, 'Error al actualizar la siembra')
+        handleError(error, 'Error al actualizar siembra')
         throw error
       } finally {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
       }
     },
 
     async eliminarSiembra(id) {
+      const uiFeedbackStore = useUiFeedbackStore()
+      uiFeedbackStore.showLoading()
       const syncStore = useSyncStore()
-      const snackbarStore = useSnackbarStore()
-      snackbarStore.showLoading()
 
-      // Verificar que el ID existe
       if (!id) {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
         throw new Error('ID de siembra no proporcionado para eliminación')
       }
 
       if (!syncStore.isOnline) {
+        const siembraExiste = this.siembras.some((s) => s.id === id)
+        if (!siembraExiste) {
+          uiFeedbackStore.hideLoading()
+          throw new Error(`No se encontró siembra con ID: ${id}`)
+        }
+
         this.siembras = this.siembras.filter((s) => s.id !== id)
-        syncStore.saveToLocalStorage('siembras', this.siembras)
 
         await syncStore.queueOperation({
           type: 'delete',
@@ -285,48 +283,51 @@ export const useSiembrasStore = defineStore('siembras', {
           id
         })
 
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
+        // CORRECTO: Sanitizar para IndexedDB
+        syncStore.saveToLocalStorage('siembras', JSON.parse(JSON.stringify(toRaw(this.siembras))));
         return true
       }
 
       try {
         await pb.collection('siembras').delete(id)
         this.siembras = this.siembras.filter((s) => s.id !== id)
-        syncStore.saveToLocalStorage('siembras', this.siembras)
+        // CORRECTO: Sanitizar para IndexedDB
+        syncStore.saveToLocalStorage('siembras', JSON.parse(JSON.stringify(toRaw(this.siembras))));
         
-        // NUEVO: Eliminar de offlineGeoStorage
         await offlineGeoStorage.deleteSiembra(id).catch(e => 
           logger.warn('[SIEMBRAS_STORE] Error eliminando de offlineGeoStorage:', e)
         )
         
-        useSnackbarStore().showSnackbar('Siembra eliminada exitosamente')
+        useUiFeedbackStore().showSnackbar('Siembra eliminada exitosamente')
         return true
       } catch (error) {
-        handleError(error, 'Error al eliminar la siembra')
+        handleError(error, 'Error al eliminar siembra')
         throw error
       } finally {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
       }
     },
 
     async fetchSiembraById(id) {
       if (!id) throw new Error('ID de siembra no proporcionado')
 
-      // Buscar en array local primero
       const local = this.siembras.find((s) => s.id === id)
       if (local) return local
 
-      // Fallback a PocketBase
       const syncStore = useSyncStore()
       if (syncStore.isOnline) {
         const record = await pb.collection('siembras').getOne(id, {
           expand: 'hacienda,zona'
         })
-        // Agregar al array local
-        if (!this.siembras.some(s => s.id === record.id)) {
+        const siembraIndex = this.siembras.findIndex((s) => s.id === id)
+        if (siembraIndex !== -1) {
+          this.siembras[siembraIndex] = record
+        } else {
           this.siembras.push(record)
-          syncStore.saveToLocalStorage('siembras', this.siembras)
         }
+        // CORRECTO: Sanitizar para IndexedDB
+        syncStore.saveToLocalStorage('siembras', JSON.parse(JSON.stringify(toRaw(this.siembras))));
         return record
       }
 
@@ -340,29 +341,33 @@ export const useSiembrasStore = defineStore('siembras', {
       }
       return pb.collection('siembras').getFullList({
         filter: `programaciones ~ "${programacionId}"`,
-        sort: '-created'
+        sort: '-fecha_ejecucion'
       }).catch(() => [])
     },
 
-    // Método para actualizar un elemento local
     updateLocalItem(tempId, newItem) {
       return useSyncStore().updateLocalItem('siembras', tempId, newItem, this.siembras)
     },
 
-    // Método para actualizar referencias
     updateReferencesToItem(tempId, realId) {
-      return useSyncStore().updateReferencesToItem('siembras', tempId, realId, this.siembras)
+      return useSyncStore().updateReferencesToItem(
+        'siembras',
+        tempId,
+        realId,
+        this.siembras
+      )
     },
 
-    // Método para eliminar un elemento local
     removeLocalItem(id) {
       return useSyncStore().removeLocalItem('siembras', id, this.siembras)
     },
 
-    initFromLocalStorage() {
+    async initFromLocalStorage() {
       const syncStore = useSyncStore();
-      const localSiembras = syncStore.loadFromLocalStorage('siembras');
-      this.siembras = localSiembras || [];
+      // CORRECTO: Usar await para loadFromLocalStorage
+      const localSiembras = await syncStore.loadFromLocalStorage('siembras');
+      // CORRECTO: Validar que sea array
+      this.siembras = (localSiembras && Array.isArray(localSiembras)) ? localSiembras : [];
       console.log('[SIEMBRAS_STORE] Initialized from localStorage. Siembras:', this.siembras.length);
     }
   }

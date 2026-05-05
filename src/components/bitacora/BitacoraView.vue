@@ -138,13 +138,13 @@ import { useActividadesStore } from '@/stores/actividadesStore'; // For filter
 import BitacoraEntryCard from './BitacoraEntryCard.vue'; // Import the new card component
 import { pdfExporter } from '@/utils/exporters/pdfExporter';
 import { excelExporter } from '@/utils/exporters/excelExporter';
-import { useSnackbarStore } from '@/stores/snackbarStore';
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore';
 
 const bitacoraStore = useBitacoraStore();
 const haciendaStore = useHaciendaStore();
 const siembrasStore = useSiembrasStore();
 const actividadesStore = useActividadesStore();
-const snackbarStore = useSnackbarStore();
+const uiFeedbackStore = useUiFeedbackStore();
 
 const exportingPDF = ref(false);
 const exportingExcel = ref(false);
@@ -249,10 +249,10 @@ async function exportToPDF() {
       haciendaStore.mi_hacienda
     );
 
-    snackbarStore.showSnackbar('PDF exportado correctamente', 'success');
+    uiFeedbackStore.showSnackbar('PDF exportado correctamente', 'success');
   } catch (error) {
     console.error('Error exporting PDF:', error);
-    snackbarStore.showSnackbar(`Error exportando PDF: ${error.message}`, 'error');
+    uiFeedbackStore.showSnackbar(`Error exportando PDF: ${error.message}`, 'error');
   } finally {
     exportingPDF.value = false;
   }
@@ -277,10 +277,10 @@ async function exportToExcel() {
       }
     );
 
-    snackbarStore.showSnackbar('Excel exportado correctamente', 'success');
+    uiFeedbackStore.showSnackbar('Excel exportado correctamente', 'success');
   } catch (error) {
     console.error('Error exporting Excel:', error);
-    snackbarStore.showSnackbar(`Error exportando Excel: ${error.message}`, 'error');
+    uiFeedbackStore.showSnackbar(`Error exportando Excel: ${error.message}`, 'error');
   } finally {
     exportingExcel.value = false;
   }

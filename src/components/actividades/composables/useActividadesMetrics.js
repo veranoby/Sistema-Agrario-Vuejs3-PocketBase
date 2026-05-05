@@ -1,10 +1,10 @@
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useSnackbarStore } from '@/stores/snackbarStore'
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 
 export function useActividadesMetrics(editedActividad) {
   const { t } = useI18n()
-  const snackbarStore = useSnackbarStore()
+  const uiFeedbackStore = useUiFeedbackStore()
   const addMetricaDialog = ref(false)
   const showOpcionesField = ref(false)
   const newMetrica = ref({
@@ -65,7 +65,7 @@ export function useActividadesMetrics(editedActividad) {
       showOpcionesField.value = false
       addMetricaDialog.value = false
     } else {
-      snackbarStore.showError(t('activity_workspace.required_field', { field: 'Título y tipo' }))
+      uiFeedbackStore.showError(t('activity_workspace.required_field', { field: 'Título y tipo' }))
     }
   }
 

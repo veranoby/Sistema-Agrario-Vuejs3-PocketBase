@@ -152,7 +152,7 @@ import { useActividadesStore } from '@/stores/actividadesStore';
 import { useSiembrasStore } from '@/stores/siembrasStore';
 import { useBitacoraStore } from '@/stores/bitacoraStore';
 import { useProgramacionesStore } from '@/stores/programaciones'; // Added
-import { useSnackbarStore } from '@/stores/snackbarStore';
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore';
 import { handleError } from '@/utils/errorHandler';
 
 const props = defineProps({
@@ -176,7 +176,7 @@ const actividadesStore = useActividadesStore();
 const siembrasStore = useSiembrasStore();
 const bitacoraStore = useBitacoraStore();
 const programacionesStore = useProgramacionesStore(); // Added
-const snackbarStore = useSnackbarStore();
+const uiFeedbackStore = useUiFeedbackStore();
 
 const bitacoraFormRef = ref(null);
 const isSubmitting = ref(false);
@@ -267,7 +267,7 @@ onMounted(async () => {
 
   } catch (error) {
     handleError(error, 'Error inicializando formulario de bitácora');
-    snackbarStore.showSnackbar('Error cargando datos para el formulario.', 'error');
+    uiFeedbackStore.showSnackbar('Error cargando datos para el formulario.', 'error');
   }
 });
 
@@ -325,7 +325,7 @@ async function loadActividadDetails(actividadId) {
     selectedActividadDetalles.value = null;
     formData.metricas_values = {};
     formData.notas = '';
-    snackbarStore.showSnackbar(`No se pudieron cargar los detalles de la actividad.`, 'error');
+    uiFeedbackStore.showSnackbar(`No se pudieron cargar los detalles de la actividad.`, 'error');
   }
 }
 
@@ -418,7 +418,7 @@ function initializeMetricasValues() {
     }
   } catch (error) {
     console.error('[BitacoraEntryForm] Error initializing metric values:', error);
-    snackbarStore.showSnackbar('Error inicializando métricas de la actividad', 'warning');
+    uiFeedbackStore.showSnackbar('Error inicializando métricas de la actividad', 'warning');
   }
   formData.metricas_values = newMetricasValues;
 }
@@ -520,7 +520,7 @@ const metricasParaFormulario = computed(() => {
 async function submitForm() {
   const { valid } = await bitacoraFormRef.value.validate();
   if (!valid) {
-    snackbarStore.showSnackbar('Por favor, corrija los errores en el formulario.', 'error');
+    uiFeedbackStore.showSnackbar('Por favor, corrija los errores en el formulario.', 'error');
     return;
   }
 
@@ -538,14 +538,14 @@ async function submitForm() {
 
     if (isEditMode.value) {
       await bitacoraStore.updateBitacoraEntry(props.entryToEdit.id, dataToSubmit);
-      snackbarStore.showSnackbar('Entrada de bitácora actualizada con éxito.', 'success');
+      uiFeedbackStore.showSnackbar('Entrada de bitácora actualizada con éxito.', 'success');
     } else {
       // Include programacion_origen_id if present for new entries
       if (formData.programacion_origen_id) {
         dataToSubmit.programacion_origen = formData.programacion_origen_id;
       }
       await bitacoraStore.crearBitacoraEntry(dataToSubmit);
-      snackbarStore.showSnackbar('Nueva entrada de bitácora creada con éxito.', 'success');
+      uiFeedbackStore.showSnackbar('Nueva entrada de bitácora creada con éxito.', 'success');
 
       // After successful bitacora entry creation, finalize programacion execution if applicable
       if (formData.programacion_origen_id) {
@@ -557,11 +557,11 @@ async function submitForm() {
             programacionId: formData.programacion_origen_id,
             fechaEjecucionReal: fechaSinHora 
           });
-          snackbarStore.showSnackbar('Programación actualizada.', 'success');
+          uiFeedbackStore.showSnackbar('Programación actualizada.', 'success');
         } catch (progError) {
           console.error('Error finalizing programacion execution:', progError);
           // handleError(progError, 'Error actualizando la programación asociada'); // Optionally show another snackbar
-          snackbarStore.showSnackbar('Error actualizando la programación asociada. La bitácora se guardó.', 'warning');
+          uiFeedbackStore.showSnackbar('Error actualizando la programación asociada. La bitácora se guardó.', 'warning');
         }
       }
     }

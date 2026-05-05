@@ -1,9 +1,10 @@
 import { defineStore } from 'pinia'
+import { toRaw } from 'vue'
 import { pb } from '@/utils/pocketbase'
 import { useSyncStore } from '@/stores/sync/index'
 import { handleError } from '@/utils/errorHandler'
-import { useHaciendaStore } from '@/stores/haciendaStore'
-import { useSnackbarStore } from './snackbarStore'
+import { useHaciendaStore } from './haciendaStore'
+import { useUiFeedbackStore } from './uiFeedbackStore'
 import { logger } from '@/utils/logger'
 
 export const useRecordatoriosStore = defineStore('recordatorios', {
@@ -81,13 +82,11 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
     },
 
     async cargarRecordatorios() {
-      // Local storage loading is now handled by initFromLocalStorage.
       const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore()
       this.error = null
       this.loading = true
 
-      // If data already populated by initFromLocalStorage, and offline, return.
       if (this.recordatorios.length > 0 && !navigator.onLine) {
         this.loading = false
         return this.recordatorios
@@ -102,8 +101,8 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
         this.recordatorios = records
         this.lastSync = Date.now()
 
-        // Guardar recordatorios en localStorage para uso offline
-        syncStore.saveToLocalStorage('recordatorios', records)
+        // CORRECTO: Sanitizar con JSON.parse(JSON.stringify()) para IndexedDB
+        syncStore.saveToLocalStorage('recordatorios', JSON.parse(JSON.stringify(toRaw(this.recordatorios))));
 
         return records
       } catch (error) {
@@ -114,12 +113,11 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
     },
 
     async crearRecordatorio(recordatorioData) {
-      const snackbarStore = useSnackbarStore()
-      snackbarStore.showLoading()
+      const uiFeedbackStore = useUiFeedbackStore()
+      uiFeedbackStore.showLoading()
       const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore()
 
-      // Manejar la fecha de recordatorio (puede ser null/undefined)
       let fechaAjustada = null
       if (recordatorioData.fecha_recordatorio) {
         fechaAjustada = recordatorioData.fecha_recordatorio.includes('T')
@@ -136,7 +134,7 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
         version: this.version,
         hacienda: haciendaStore.mi_hacienda?.id,
         fecha_recordatorio: fechaAjustada,
-        fecha_creacion: new Date().toISOString() // Asegurar que siempre se establezca la fecha de creación
+        fecha_creacion: new Date().toISOString()
       }
 
       if (!syncStore.isOnline) {
@@ -147,11 +145,12 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
           _isTemp: true,
           created: new Date().toISOString(),
           updated: new Date().toISOString(),
-          fecha_creacion: new Date().toISOString() // Asegurar fecha_creacion en modo offline
+          fecha_creacion: new Date().toISOString()
         }
 
         this.recordatorios.unshift(tempRecordatorio)
-        syncStore.saveToLocalStorage('recordatorios', this.recordatorios)
+        // CORRECTO: Sanitizar para IndexedDB
+        syncStore.saveToLocalStorage('recordatorios', JSON.parse(JSON.stringify(toRaw(this.recordatorios))));
 
         await syncStore.queueOperation({
           type: 'create',
@@ -159,7 +158,7 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
           data: enrichedData,
           tempId
         })
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
 
         return tempRecordatorio
       }
@@ -169,30 +168,30 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
           expand: 'actividades.tipo_actividades,zonas.tipos_zonas'
         })
         this.recordatorios.push(record)
-        syncStore.saveToLocalStorage('recordatorios', this.recordatorios)
+        // CORRECTO: Sanitizar para IndexedDB
+        syncStore.saveToLocalStorage('recordatorios', JSON.parse(JSON.stringify(toRaw(this.recordatorios))));
         return record
       } catch (error) {
         handleError(error, 'Error al crear recordatorio')
         throw error
       } finally {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
       }
     },
 
     async actualizarRecordatorio(id, newData) {
-      const snackbarStore = useSnackbarStore()
-      snackbarStore.showLoading()
+      const uiFeedbackStore = useUiFeedbackStore()
+      uiFeedbackStore.showLoading()
       const syncStore = useSyncStore()
 
-      // Verificar que el ID existe
       if (!id) {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
         throw new Error('ID de recordatorio no proporcionado para actualización')
       }
 
       const recordatorio = this.recordatorios.find((r) => r.id === id)
       if (!recordatorio) {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
         throw new Error(`No se encontró recordatorio con ID: ${id}`)
       }
 
@@ -204,13 +203,10 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
         version: this.version
       }
 
-      // Si se debe actualizar la fecha de creación, establecer la fecha actual
       if (newData.fechaActualizar) {
-        // Usamos el campo personalizado fecha_creacion en lugar de el campo created de sistema
         enrichedData['fecha_creacion'] = new Date().toISOString()
       }
 
-      // Eliminar el campo de control para que no se intente guardar en la base de datos
       delete enrichedData.fechaActualizar
 
       if (!syncStore.isOnline) {
@@ -230,12 +226,12 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
           data: enrichedData
         })
 
-        snackbarStore.hideLoading()
-        syncStore.saveToLocalStorage('recordatorios', this.recordatorios)
+        uiFeedbackStore.hideLoading()
+        // CORRECTO: Sanitizar para IndexedDB
+        syncStore.saveToLocalStorage('recordatorios', JSON.parse(JSON.stringify(toRaw(this.recordatorios))));
         return this.recordatorios[index]
       }
 
-      // Online flow
       try {
         const record = await pb.collection('recordatorios').update(id, enrichedData, {
           expand: 'actividades.tipo_actividades,zonas.tipos_zonas'
@@ -245,32 +241,31 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
         if (index !== -1) {
           this.recordatorios[index] = record
         }
-        syncStore.saveToLocalStorage('recordatorios', this.recordatorios)
+        // CORRECTO: Sanitizar para IndexedDB
+        syncStore.saveToLocalStorage('recordatorios', JSON.parse(JSON.stringify(toRaw(this.recordatorios))));
         return record
       } catch (error) {
         handleError(error, 'Error al actualizar recordatorio')
         throw error
       } finally {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
       }
     },
 
     async eliminarRecordatorio(id) {
-      const snackbarStore = useSnackbarStore()
-      snackbarStore.showLoading()
+      const uiFeedbackStore = useUiFeedbackStore()
+      uiFeedbackStore.showLoading()
       const syncStore = useSyncStore()
 
-      // Verificar que el ID existe
       if (!id) {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
         throw new Error('ID de recordatorio no proporcionado para eliminación')
       }
 
       if (!syncStore.isOnline) {
-        // Verificar si el recordatorio existe antes de eliminarlo
         const recordatorioExiste = this.recordatorios.some((r) => r.id === id)
         if (!recordatorioExiste) {
-          snackbarStore.hideLoading()
+          uiFeedbackStore.hideLoading()
           throw new Error(`No se encontró recordatorio con ID: ${id}`)
         }
 
@@ -281,35 +276,37 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
           collection: 'recordatorios',
           id
         })
-        snackbarStore.hideLoading()
-        syncStore.saveToLocalStorage('recordatorios', this.recordatorios)
+        uiFeedbackStore.hideLoading()
+        // CORRECTO: Sanitizar para IndexedDB
+        syncStore.saveToLocalStorage('recordatorios', JSON.parse(JSON.stringify(toRaw(this.recordatorios))));
         return true
       }
 
       try {
         await pb.collection('recordatorios').delete(id)
         this.recordatorios = this.recordatorios.filter((r) => r.id !== id)
-        syncStore.saveToLocalStorage('recordatorios', this.recordatorios)
+        // CORRECTO: Sanitizar para IndexedDB
+        syncStore.saveToLocalStorage('recordatorios', JSON.parse(JSON.stringify(toRaw(this.recordatorios))));
         return true
       } catch (error) {
         handleError(error, 'Error al eliminar recordatorio')
         throw error
       } finally {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
       }
     },
 
     async actualizarEstado(id, nuevoEstado) {
-      const snackbarStore = useSnackbarStore()
-      snackbarStore.showLoading()
+      const uiFeedbackStore = useUiFeedbackStore()
+      uiFeedbackStore.showLoading()
 
       try {
         await this.actualizarRecordatorio(id, { estado: nuevoEstado })
-        snackbarStore.showSnackbar('Estado actualizado')
+        uiFeedbackStore.showSnackbar('Estado actualizado')
       } catch (error) {
         handleError(error, 'Error al cambiar estado')
       } finally {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
       }
     },
 
@@ -361,10 +358,12 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
       return useSyncStore().removeLocalItem('recordatorios', id, this.recordatorios)
     },
 
-    initFromLocalStorage() {
+    async initFromLocalStorage() {
       const syncStore = useSyncStore();
-      const localRecordatorios = syncStore.loadFromLocalStorage('recordatorios');
-      this.recordatorios = localRecordatorios || [];
+      // CORRECTO: Usar await para loadFromLocalStorage
+      const localRecordatorios = await syncStore.loadFromLocalStorage('recordatorios');
+      // CORRECTO: Validar que sea array
+      this.recordatorios = (localRecordatorios && Array.isArray(localRecordatorios)) ? localRecordatorios : [];
       console.log('[RECORDATORIOS_STORE] Initialized from localStorage. Recordatorios:', this.recordatorios.length);
     }
   }

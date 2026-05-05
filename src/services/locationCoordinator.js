@@ -1,24 +1,23 @@
 /**
  * locationCoordinator.js
  * Servicio coordinador de localización.
- * Gestiona la coexistencia de GeolocationService (posición instantánea) y LocationTracker (seguimiento continuo).
+ * Gestiona la posición del mapa y tracking continuo usando GeolocationService.
  * Evita reinicios innecesarios del hardware GPS y centraliza el permiso del navegador.
  * INTEGRA offlineGeoStorage para persistencia de trazas GPS y polígonos.
  */
 
 import { GeolocationService } from '@/utils/geolocation'
-import { LocationTracker } from '@/utils/locationTracker'
 import { offlineGeoStorage } from '@/utils/offlineGeoStorage'
 import { logger } from '@/utils/logger'
 
 // NUEVO: Importar Leaflet y Draw (asumiendo que están instalados)
-// import L from 'leaflet'
-// import 'leaflet-draw'
+import L from 'leaflet'
+import 'leaflet-draw'
 
 class LocationCoordinator {
   constructor() {
     this.geoService = new GeolocationService()
-    this.tracker = new LocationTracker()
+    this.tracker = new GeolocationService()
     this.permissionGranted = false // Corregido: sin 'd' al final para coincidir con requestPermission
     this.permissionPromise = null
     this.mapInstance = null
@@ -175,9 +174,6 @@ class LocationCoordinator {
     }
 
     try {
-      // Asumiendo que Leaflet está disponible globalmente o importado.
-      const L = window.L // O import L from 'leaflet'.
-      
       this.mapInstance = L.map(mapContainer, {
         center: options.center || [4.5709, -74.2973], // Colombia por defecto.
         zoom: options.zoom || 10

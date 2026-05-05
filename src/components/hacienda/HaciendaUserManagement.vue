@@ -130,7 +130,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import { useUserStore } from '@/stores/userStore'
-import { useSnackbarStore } from '@/stores/snackbarStore'
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import { useSubscriptionLimits } from '@/composables/useSubscriptionLimits'
 import { useEvents } from '@/composables/useEvents'
 import { EVENTS } from '@/utils/eventBus'
@@ -140,7 +140,7 @@ import UserForm from '@/components/forms/auth/UserForm.vue'
 const { t } = useI18n()
 const haciendaStore = useHaciendaStore()
 const userStore = useUserStore()
-const snackbarStore = useSnackbarStore()
+const uiFeedbackStore = useUiFeedbackStore()
 const { canAddUser } = useSubscriptionLimits()
 const { emit } = useEvents()
 
@@ -167,7 +167,7 @@ const fetchHaciendaUsers = async () => {
     auditores.value = users.filter((user) => user.role === 'auditor')
     operadores.value = users.filter((user) => user.role === 'operador')
   } catch (error) {
-    snackbarStore.showSnackbar(t('user_management.error_fetching_users'), 'error')
+    uiFeedbackStore.showSnackbar(t('user_management.error_fetching_users'), 'error')
   }
 }
 
@@ -180,11 +180,11 @@ const openCreateUserModal = async (userType) => {
     limitCheck.value = check
     
     if (!check.canAdd) {
-      snackbarStore.showSnackbar(check.reason, 'error')
+      uiFeedbackStore.showSnackbar(check.reason, 'error')
       return
     }
   } catch (error) {
-    snackbarStore.showSnackbar(t('user_management.error_checking_limits') + ': ' + error.message, 'error')
+    uiFeedbackStore.showSnackbar(t('user_management.error_checking_limits') + ': ' + error.message, 'error')
     return
   }
 
@@ -196,12 +196,12 @@ const createUser = async (formData) => {
   try {
     const user = await userStore.registerUser(formData, userTypeToCreate.value, mi_hacienda.value.id)
     emit(EVENTS.USUARIO_ADDED, { userId: user.id, haciendaId: mi_hacienda.value.id, role: userTypeToCreate.value })
-    snackbarStore.showSnackbar(t('user_management.user_created'), 'success')
+    uiFeedbackStore.showSnackbar(t('user_management.user_created'), 'success')
     createUserModalOpen.value = false
     limitCheck.value = null
     await fetchHaciendaUsers()
   } catch (error) {
-    snackbarStore.showSnackbar(t('user_management.error_creating_user') + ': ' + error.message, 'error')
+    uiFeedbackStore.showSnackbar(t('user_management.error_creating_user') + ': ' + error.message, 'error')
   } finally {
     loading.value = false
   }
@@ -213,9 +213,9 @@ const deleteUser = async (userId) => {
       await userStore.deleteUser(userId, { soft: true })
       emit(EVENTS.USUARIO_REMOVED, { userId, soft: true })
       await fetchHaciendaUsers()
-      snackbarStore.showSnackbar(t('user_management.user_deleted'), 'success')
+      uiFeedbackStore.showSnackbar(t('user_management.user_deleted'), 'success')
     } catch (error) {
-      snackbarStore.showSnackbar(t('user_management.error_deleting_user') + ': ' + error.message, 'error')
+      uiFeedbackStore.showSnackbar(t('user_management.error_deleting_user') + ': ' + error.message, 'error')
     }
   }
 }

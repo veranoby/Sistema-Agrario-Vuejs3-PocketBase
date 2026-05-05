@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { markRaw } from 'vue'
 import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
-import { useSnackbarStore } from './snackbarStore'
+import { useUiFeedbackStore } from './uiFeedbackStore'
 import { useHaciendaStore } from './haciendaStore'
 import { useSyncStore } from '@/stores/sync/index'
 
@@ -72,10 +72,10 @@ export const usePlanStore = defineStore('plan', {
     },
 
     async toggleModule(moduleId, haciendaId, activate) {
-      const snackbarStore = useSnackbarStore()
+      const uiFeedbackStore = useUiFeedbackStore()
 
       if (!haciendaId) {
-        snackbarStore.showSnackbar('No hay hacienda seleccionada', 'error')
+        uiFeedbackStore.showSnackbar('No hay hacienda seleccionada', 'error')
         return false
       }
 
@@ -100,7 +100,7 @@ export const usePlanStore = defineStore('plan', {
         // Refrescar suscripciones
         await this.fetchSubscriptions(haciendaId)
 
-        snackbarStore.showSnackbar(
+        uiFeedbackStore.showSnackbar(
           `Módulo ${activate ? 'activado' : 'desactivado'}`,
           'success'
         )
@@ -178,16 +178,16 @@ export const usePlanStore = defineStore('plan', {
 
     async changePlan(newPlanId) {
       const syncStore = useSyncStore()
-      const snackbarStore = useSnackbarStore()
+      const uiFeedbackStore = useUiFeedbackStore()
       const haciendaStore = useHaciendaStore()
 
       // Verificar si está en modo offline
       if (!syncStore.isOnline) {
-        snackbarStore.showSnackbar('No se pueden realizar cambios de plan en modo offline', 'error')
+        uiFeedbackStore.showSnackbar('No se pueden realizar cambios de plan en modo offline', 'error')
         return
       }
 
-      snackbarStore.showLoading()
+      uiFeedbackStore.showLoading()
 
       try {
         const currentPlan = this.currentPlan
@@ -218,12 +218,12 @@ export const usePlanStore = defineStore('plan', {
         // Forzar actualización de planes
         await this.fetchAvailablePlans()
 
-        snackbarStore.showSnackbar('Plan actualizado correctamente', 'success')
+        uiFeedbackStore.showSnackbar('Plan actualizado correctamente', 'success')
         return updatedHacienda
       } catch (error) {
         handleError(error, 'Error al cambiar el plan')
       } finally {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
       }
     },
 
@@ -244,11 +244,11 @@ export const usePlanStore = defineStore('plan', {
     async resetHaciendaUsers() {
       const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore()
-      const snackbarStore = useSnackbarStore()
+      const uiFeedbackStore = useUiFeedbackStore()
 
       // Verificar si está en modo offline
       if (!syncStore.isOnline) {
-        snackbarStore.showSnackbar('No se pueden resetear usuarios en modo offline', 'error')
+        uiFeedbackStore.showSnackbar('No se pueden resetear usuarios en modo offline', 'error')
         return
       }
 

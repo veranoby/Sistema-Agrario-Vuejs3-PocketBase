@@ -193,10 +193,10 @@ import {
   exportTiposActividadesToMarkdown,
   exportTiposZonasToMarkdown,
   exportKnowledgeHubToMarkdown
-} from '@/utils/markdownExporter'
-import { useSnackbarStore } from '@/stores/snackbarStore'
+} from '@/utils/exporters/markdownExporter'
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 
-const snackbarStore = useSnackbarStore()
+const uiFeedbackStore = useUiFeedbackStore()
 
 // Estado
 const snackbar = ref(false)

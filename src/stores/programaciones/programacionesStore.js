@@ -10,9 +10,9 @@ import { useSyncStore } from '../sync/index'
 import { handleError } from '@/utils/errorHandler'
 import { useActividadesStore } from '@/stores/actividadesStore'
 import { useHaciendaStore } from '../haciendaStore'
-import { useSnackbarStore } from '../snackbarStore'
+import { useUiFeedbackStore } from '../uiFeedbackStore'
 import { useBitacoraStore } from '../bitacoraStore'
-import { storeEvents } from '@/services/storeEvents'
+import eventBus, { EVENTS } from '@/utils/eventBus'
 import { cache } from '@/utils/cacheManager'
 import { logger } from '@/utils/logger'
 
@@ -125,7 +125,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
 
     async init() {
       try {
-        storeEvents.on('bitacora-updated', () => {
+        eventBus.on(EVENTS.BITACORA_UPDATED, () => {
           if (typeof this.clearComplianceStateCache === 'function') {
             this.clearComplianceStateCache()
           }
@@ -266,8 +266,8 @@ export const useProgramacionesStore = defineStore('programaciones', {
     },
 
     async crearProgramacion(nuevaProgramacion) {
-      const snackbarStore = useSnackbarStore()
-      snackbarStore.showLoading()
+      const uiFeedbackStore = useUiFeedbackStore()
+      uiFeedbackStore.showLoading()
       const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore()
 
@@ -279,7 +279,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
         nuevaProgramacion.frecuencia_personalizada
       )
       if (!validation.valid) {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
         throw new Error(validation.error)
       }
 
@@ -329,7 +329,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
           tempId
         })
 
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
         return tempProgramacion
       }
 
@@ -344,23 +344,23 @@ export const useProgramacionesStore = defineStore('programaciones', {
         handleError(error, 'Error al crear programación')
         throw error
       } finally {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
       }
     },
 
     async actualizarProgramacion(id, datosActualizados) {
-      const snackbarStore = useSnackbarStore()
-      snackbarStore.showLoading()
+      const uiFeedbackStore = useUiFeedbackStore()
+      uiFeedbackStore.showLoading()
       const syncStore = useSyncStore()
 
       if (!id) {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
         throw new Error('ID de programación no proporcionado para actualización')
       }
 
       const programacion = this.programaciones.find((p) => p.id === id)
       if (!programacion) {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
         throw new Error(`No se encontró programación con ID: ${id}`)
       }
 
@@ -391,7 +391,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
           data: dataToUpdate
         })
 
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
         syncStore.saveToLocalStorage('programaciones', this.programaciones)
         return this.programaciones[index]
       }
@@ -410,24 +410,24 @@ export const useProgramacionesStore = defineStore('programaciones', {
         handleError(error, 'Error al actualizar programación')
         throw error
       } finally {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
       }
     },
 
     async eliminarProgramacion(id) {
-      const snackbarStore = useSnackbarStore()
-      snackbarStore.showLoading()
+      const uiFeedbackStore = useUiFeedbackStore()
+      uiFeedbackStore.showLoading()
       const syncStore = useSyncStore()
 
       if (!id) {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
         throw new Error('ID de programación no proporcionado para eliminación')
       }
 
       if (!syncStore.isOnline) {
         const programacionExiste = this.programaciones.some((p) => p.id === id)
         if (!programacionExiste) {
-          snackbarStore.hideLoading()
+          uiFeedbackStore.hideLoading()
           throw new Error(`No se encontró programación con ID: ${id}`)
         }
 
@@ -438,7 +438,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
           collection: 'programaciones',
           id
         })
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
         syncStore.saveToLocalStorage('programaciones', this.programaciones)
         return true
       }
@@ -452,7 +452,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
         handleError(error, 'Error al eliminar programación')
         throw error
       } finally {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
       }
     },
 
@@ -625,14 +625,14 @@ export const useProgramacionesStore = defineStore('programaciones', {
     async ejecutarProgramacionesBatch(payload) {
       const { programacionId, fechasEjecucion, siembraId = null } = payload
 
-      const snackbarStore = useSnackbarStore()
+      const uiFeedbackStore = useUiFeedbackStore()
       const actividadesStore = useActividadesStore()
       const bitacoraStore = useBitacoraStore()
 
       const stores = {
         actividadesStore,
         bitacoraStore,
-        snackbarStore,
+        uiFeedbackStore,
         programaciones: this.programaciones
       }
 
@@ -650,18 +650,18 @@ export const useProgramacionesStore = defineStore('programaciones', {
           await this.actualizarProgramacion(programacionId, updateData)
 
           const siembraContext = siembraId ? ` (Siembra: ${siembraId})` : ''
-          snackbarStore.showSnackbar(
+          uiFeedbackStore.showSnackbar(
             `${result.successfulExecutions} de ${result.totalExecutions} programaciones ejecutadas y registradas${siembraContext}. Programación actualizada.`,
             'success'
           )
         } else if (fechasEjecucion.length > 0 && result.successfulExecutions === 0) {
-          snackbarStore.showSnackbar('Ninguna de las programaciones seleccionadas pudo ser registrada.', 'error')
+          uiFeedbackStore.showSnackbar('Ninguna de las programaciones seleccionadas pudo ser registrada.', 'error')
         } else if (fechasEjecucion.length === 0) {
-          snackbarStore.showSnackbar('No se seleccionaron fechas para ejecutar.', 'info')
+          uiFeedbackStore.showSnackbar('No se seleccionaron fechas para ejecutar.', 'info')
         }
       } catch (error) {
         logger.error('[PROGRAMACIONES_STORE] Error in ejecutarProgramacionesBatch:', error)
-        snackbarStore.showSnackbar(error.message || 'Error ejecutando programaciones', 'error')
+        uiFeedbackStore.showSnackbar(error.message || 'Error ejecutando programaciones', 'error')
       }
     },
 

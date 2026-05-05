@@ -136,3 +136,27 @@ export async function suggestActivityCalendar(siembraContext, weatherForecast) {
   
   return generateAIResponse(prompt, siembraContext, true) // Sensible, usa local
 }
+
+/**
+ * Prueba la conexión con OpenRouter
+ */
+export async function testConnection(apiKey) {
+  try {
+    const response = await fetch('https://openrouter.ai/api/v1/models', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`
+      }
+    })
+    return response.ok
+  } catch (error) {
+    return false
+  }
+}
+
+export const aiService = {
+  generateAIResponse,
+  autocompleteBitacora,
+  suggestActivityCalendar,
+  testConnection
+}

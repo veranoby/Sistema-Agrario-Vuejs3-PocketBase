@@ -78,7 +78,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue';
 import { useProgramacionesStore } from '@/stores/programaciones';
-import { useSnackbarStore } from '@/stores/snackbarStore';
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore';
 import { 
   format, parseISO, 
   subDays, subWeeks, subMonths, subYears,
@@ -98,7 +98,7 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue']);
 
 const programacionesStore = useProgramacionesStore();
-const snackbarStore = useSnackbarStore();
+const uiFeedbackStore = useUiFeedbackStore();
 
 const missedDates = ref([]); // Array of { date: Date, formattedDate: string, selected: boolean }
 const isLoading = ref(false);
@@ -265,7 +265,7 @@ const hasSelectedDates = computed(() => {
 
 const handleSubmit = async () => {
   if (!hasSelectedDates.value) {
-    snackbarStore.showSnackbar('Por favor, seleccione al menos una fecha.', 'warning');
+    uiFeedbackStore.showSnackbar('Por favor, seleccione al menos una fecha.', 'warning');
     return;
   }
 
@@ -280,13 +280,13 @@ const handleSubmit = async () => {
       programacionId: props.programacion.id,
       fechasEjecucion: selectedDates,
     });
-    snackbarStore.showSnackbar('Programaciones pendientes seleccionadas procesadas.', 'success');
+    uiFeedbackStore.showSnackbar('Programaciones pendientes seleccionadas procesadas.', 'success');
     emit('update:modelValue', false); // Close dialog
     // Parent component (ProgramacionesList) should refresh its data or programacionesStore should update reactively
   } catch (error) {
     // Error should be handled by the store action and snackbar shown there or by global handleError
     console.error("[Dialog] Error en handleSubmit:", error);
-    // snackbarStore.showSnackbar('Error procesando programaciones pendientes.', 'error'); // Already handled by store/global
+    // uiFeedbackStore.showSnackbar('Error procesando programaciones pendientes.', 'error'); // Already handled by store/global
   } finally {
     isLoading.value = false;
   }

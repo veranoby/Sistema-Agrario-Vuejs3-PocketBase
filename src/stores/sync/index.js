@@ -12,7 +12,7 @@ import { conflictResolver, createIdMapper, createSyncConfig } from './core'
 import { createConflictUI } from './conflictUI'
 import { createQueueProcessor } from './queueProcessor'
 import { createOfflineFeatures } from './offlineFeatures'
-import { useSnackbarStore } from '@/stores/snackbarStore'
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import { useZonasStore } from '@/stores/zonasStore'
 import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useActividadesStore } from '@/stores/actividadesStore'
@@ -20,8 +20,6 @@ import { useRecordatoriosStore } from '@/stores/recordatoriosStore'
 import { useProgramacionesStore } from '@/stores/programaciones'
 import { useBitacoraStore } from '@/stores/bitacoraStore'
 import { IndexedDBStorage } from '@/utils/indexedDBStorage'
-
-// ... [Mantener STORE_MAP, ALL_STORES, etc.] ...
 
 // Nueva instancia de almacenamiento IndexedDB para syncCache (Hito 2)
 const indexedDBStorage = new IndexedDBStorage()
@@ -49,26 +47,26 @@ const ALL_STORES = [
 const syncCache = {
   async save(key, data) {
     try {
-      await indexedDBStorage.setItem(`agri_sync_${key}`, data)
+      // CORRECTO: Sanitizar datos con JSON.parse(JSON.stringify()) para evitar DataCloneError
+      const sanitizedData = JSON.parse(JSON.stringify(data))
+      await indexedDBStorage.setItem(`agri_sync_${key}`, sanitizedData)
     } catch (e) {
-      logger.error('[SYNC] Error guardando en IndexedDB:', e)
-      // Fallback a tieredCache si IndexedDB falla
-      tieredCache.setToLevel(`agri_sync_${key}`, data, 'l2')
+      logger.error('[SYNC] Error guardando en IndexedDB:', { error: e, key: `agri_sync_${key}` })
     }
   },
   async get(key) {
     try {
       return await indexedDBStorage.getItem(`agri_sync_${key}`)
     } catch (e) {
-      logger.error('[SYNC] Error leyendo de IndexedDB:', e)
-      return tieredCache.getFromLevel(`agri_sync_${key}`, 'l2')
+      logger.error('[SYNC] Error leyendo de IndexedDB:', { error: e, key: `agri_sync_${key}` })
+      return null
     }
   },
   async remove(key) {
     try {
       await indexedDBStorage.removeItem(`agri_sync_${key}`)
     } catch (e) {
-      logger.error('[SYNC] Error eliminando de IndexedDB:', e)
+      logger.error('[SYNC] Error eliminando de IndexedDB:', { error: e, key: `agri_sync_${key}` })
     }
   },
   async clear() {
@@ -104,12 +102,6 @@ export const useSyncStore = defineStore('sync', {
   },
 
   actions: {
-    // ... [Mantener resolveStore, init, getStoreByCollectionName, etc.] ...
-    
-    /**
-     * Resuelve un store de forma dinámica para evitar ciclos de dependencia.
-     * @param {string} name - Nombre de la colección/store
-     */
     async resolveStore(name) {
       const map = {
         zonas: () => import('@/stores/zonasStore'),
@@ -131,7 +123,7 @@ export const useSyncStore = defineStore('sync', {
     async init() {
       if (this.initialized) return
 
-      const snackbar = useSnackbarStore()
+      const snackbar = useUiFeedbackStore()
       const notify = (msg, type) => snackbar.showSnackbar(msg, type)
 
       // Network monitor
@@ -155,7 +147,7 @@ export const useSyncStore = defineStore('sync', {
       // Factories
       this.idMapper = createIdMapper({ stores, cacheManager: syncCache })
       this.syncConfig = createSyncConfig({ cacheManager: syncCache })
-      this.conflictUI = createConflictUI({ cacheManager: syncCache })
+      this.conflictUI = await createConflictUI({ cacheManager: syncCache })
       this.processor = createQueueProcessor({
         getStore: async (name) => await this.resolveStore(name),
         updateRefs: this.idMapper.updateRefs,
@@ -186,14 +178,19 @@ export const useSyncStore = defineStore('sync', {
       }
     },
 
-    // ... [Mantener el resto de acciones: persistQueueState, loadFromLocalStorage, etc.] ...
-    
-    // PERSISTENCIA (Cola en localStorage, Cache en IndexedDB según Hito 2)
+    async processPendingQueue() {
+      if (!this.processor) return { processed: 0, failed: 0 }
+      const result = await this.processor.processQueue(this.queue)
+      this.queue = this.queue.filter(op => op.status !== 'completed')
+      this.persistQueueState()
+      return result
+    },
+
     persistQueueState() {
       try {
         localStorage.setItem('agri_syncQueue', JSON.stringify(this.queue))
         const idMap = this.idMapper.getMap()
-        syncCache.set('tempToRealIdMap', idMap)
+        syncCache.save('tempToRealIdMap', idMap)
       } catch (error) {
         logger.error('[SYNC] Error saving queue to storage', error)
       }
@@ -204,13 +201,13 @@ export const useSyncStore = defineStore('sync', {
     },
 
     saveToLocalStorage(key, value) {
-      syncCache.save(key, value)
+      // CORRECTO: Sanitizar valor antes de guardar
+      const sanitizedValue = JSON.parse(JSON.stringify(value))
+      syncCache.save(key, sanitizedValue)
     },
 
     removeFromLocalStorage(key) {
       syncCache.remove(key)
-    },
-
-    // ... [Mantener el resto del store] ...
+    }
   }
 })

@@ -49,7 +49,7 @@
           <v-icon size="large" color="primary" class="me-2" @click="editActividad(item)">
             mdi-arrow-right-bold-circle-outline
           </v-icon>
-          <v-icon @click="deleteActividad(item)"> mdi-delete </v-icon>
+          <v-icon v-role="['admin']" @click="deleteActividad(item)"> mdi-delete </v-icon>
         </template>
 
         <template v-slot:bottom> </template>

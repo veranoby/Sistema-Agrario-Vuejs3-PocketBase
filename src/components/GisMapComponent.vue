@@ -2,6 +2,19 @@
   <div class="gis-map-container">
     <div ref="mapContainer" class="map-container"></div>
     
+    <!-- Controles adicionales expuestos -->
+    <div class="map-controls" style="position: absolute; top: 10px; right: 10px; z-index: 1000;">
+      <v-btn 
+        color="primary" 
+        size="small" 
+        prepend-icon="mdi-cloud-download" 
+        @click="cacheTiles"
+        :loading="cachingTiles"
+      >
+        Guardar Offline
+      </v-btn>
+    </div>
+
     <!-- Nota: Funcionalidad de dibujo requiere leaflet-draw -->
     <v-alert v-if="readonly" type="info" density="compact" class="mt-2">
       Mapa en modo solo lectura
@@ -13,10 +26,12 @@
 import { defineComponent, onMounted, onBeforeUnmount, ref, computed, watch } from 'vue'
 import L from 'leaflet'
 import { offlineGeoStorage } from '@/utils/offlineGeoStorage'
+import { locationCoordinator } from '@/services/locationCoordinator'
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import { logger } from '@/utils/logger'
 
 // Leaflet CSS
-import 'leaflet/dist/leaflet.css'
+
 
 // Fix Leaflet default icon issue
 delete L.Icon.Default.prototype._getIconUrl
@@ -59,6 +74,8 @@ export default defineComponent({
     const saving = ref(false)
     const isOffline = ref(!navigator.onLine)
     const cachedGeoJSON = ref(null)
+    const cachingTiles = ref(false)
+    const uiFeedback = useUiFeedbackStore()
 
     let map = null
     let drawnItems = null
@@ -172,9 +189,29 @@ export default defineComponent({
       }
     })
 
+    const cacheTiles = async () => {
+      cachingTiles.value = true
+      try {
+        if (!map) throw new Error('Mapa no inicializado')
+        const zoom = map.getZoom()
+        const result = await locationCoordinator.cacheMapTiles(zoom, 2)
+        if (result?.status === 'success') {
+          uiFeedback.showToast(`Se han guardado ${result.cached} teselas para uso offline`, 'success')
+        } else {
+          uiFeedback.showToast(`Error o no soportado: ${result?.status}`, 'warning')
+        }
+      } catch (error) {
+        uiFeedback.showToast(`Error: ${error.message}`, 'error')
+      } finally {
+        cachingTiles.value = false
+      }
+    }
+
     return {
       mapContainer,
-      saving
+      saving,
+      cachingTiles,
+      cacheTiles
     }
   }
 })

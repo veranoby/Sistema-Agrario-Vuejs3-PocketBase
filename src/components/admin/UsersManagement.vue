@@ -233,8 +233,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { handleError } from '@/utils/errorHandler'
-import { exportUsersToMarkdown } from '@/utils/markdownExporter'
-import { useSnackbarStore } from '@/stores/snackbarStore'
+import { exportUsersToMarkdown } from '@/utils/exporters/markdownExporter'
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import { useUserStore } from '@/stores/userStore'
 import { useEvents } from '@/composables/useEvents'
 import { EVENTS } from '@/utils/eventBus'
@@ -242,7 +242,7 @@ import UserForm from '@/components/forms/auth/UserForm.vue'
 import { USER_ROLES, USER_STATUS, ROLE_OPTIONS } from '@/constants/roles'
 import { formatRole, getRoleColor, formatDate, downloadMarkdown, getUserStatusColor, formatUserStatus } from '@/utils/formatters'
 
-const snackbarStore = useSnackbarStore()
+const uiFeedbackStore = useUiFeedbackStore()
 const userStore = useUserStore()
 const { emit } = useEvents()
 
@@ -483,7 +483,7 @@ function exportUserToMarkdown(user) {
 
 // Utilidades (ahora importadas de @/utils/formatters)
 function showSnackbar(message, color = 'success') {
-  snackbarStore.showSnackbar(message, color)
+  uiFeedbackStore.showSnackbar(message, color)
 }
 </script>
 

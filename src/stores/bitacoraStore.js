@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import { toRaw } from 'vue';
 import { pb } from '@/utils/pocketbase';
 import { handleError } from '@/utils/errorHandler';
 import { useSyncStore } from '@/stores/sync/index'
@@ -12,9 +13,8 @@ import { useAlertTriggers } from '@/composables/useAlertTriggers'
 import { digitalSignature } from '@/services/digitalSignature'
 import { locationCoordinator } from '@/services/locationCoordinator'
 import { differenceInDays, format } from 'date-fns'
-// NUEVO: Importar servicio de IA
 import { autocompleteBitacora } from '@/services/aiService'
-import { storeEvents } from '@/services/storeEvents'
+import eventBus, { EVENTS } from '@/utils/eventBus'
 
 export const useBitacoraStore = defineStore('bitacora', {
   state: () => ({
@@ -43,13 +43,13 @@ export const useBitacoraStore = defineStore('bitacora', {
     stateProp: 'bitacoraEntries',
     hooks: {
       onCreate: function() {
-        storeEvents.emit('bitacora-updated');
+        eventBus.emit(EVENTS.BITACORA_UPDATED);
       },
       onUpdate: function() {
-        storeEvents.emit('bitacora-updated');
+        eventBus.emit(EVENTS.BITACORA_UPDATED);
       },
       onDelete: function() {
-        storeEvents.emit('bitacora-updated');
+        eventBus.emit(EVENTS.BITACORA_UPDATED);
       }
     }
   },
@@ -102,10 +102,14 @@ export const useBitacoraStore = defineStore('bitacora', {
       const syncStore = useSyncStore();
       const haciendaStore = useHaciendaStore();
 
-      const localData = syncStore.loadFromLocalStorage('bitacoraEntries');
-      if (localData) {
+      // CORRECTO: Usar await para loadFromLocalStorage
+      const localData = await syncStore.loadFromLocalStorage('bitacoraEntries');
+      if (localData && Array.isArray(localData)) {
         this.bitacoraEntries = localData;
         logger.debug('[BITACORA_STORE] Loaded from localStorage:', this.bitacoraEntries.length, 'entries.');
+      } else {
+        this.bitacoraEntries = [];
+        logger.warn('[BITACORA_STORE] Invalid local data for bitacoraEntries, initializing empty array');
       }
 
       if (syncStore.isOnline && haciendaStore.mi_hacienda?.id) {
@@ -144,7 +148,7 @@ export const useBitacoraStore = defineStore('bitacora', {
       return this.fetchPage(1, 100, { hacienda: haciendaId });
     },
 
-    async fetchPage(page = 1, perPage = 50, filters = {}) {
+    async fetchPage(page = 1, perPage = 50, filters = this.filters) {
       const syncStore = useSyncStore();
       const haciendaStore = useHaciendaStore();
       
@@ -171,10 +175,10 @@ export const useBitacoraStore = defineStore('bitacora', {
           filterParts.push(`actividad_realizada="${filters.actividad_realizada}"`);
         }
         if (filters.fecha_desde) {
-          filterParts.push(`fecha_ejecucion>="${filters.fecha_desde}"`);
+          filterParts.push(`fecha_ejecucion>"${filters.fecha_desde}"`);
         }
         if (filters.fecha_hasta) {
-          filterParts.push(`fecha_ejecucion<="${filters.fecha_hasta}"`);
+          filterParts.push(`fecha_ejecucion<"${filters.fecha_hasta}"`);
         }
         
         const filterString = filterParts.join(' && ');
@@ -204,7 +208,8 @@ export const useBitacoraStore = defineStore('bitacora', {
         }
         
         this.lastSync = Date.now();
-        syncStore.saveToLocalStorage('bitacoraEntries', this.bitacoraEntries);
+        // CORRECTO: Sanitizar con JSON.parse(JSON.stringify()) para IndexedDB
+        syncStore.saveToLocalStorage('bitacoraEntries', JSON.parse(JSON.stringify(toRaw(this.bitacoraEntries)));
         logger.debug(`[BITACORA_STORE] Fetched page ${page}: ${entries.length} items (Total: ${result.totalItems})`);
         
         return {
@@ -251,7 +256,6 @@ export const useBitacoraStore = defineStore('bitacora', {
       };
     },
 
-    // NUEVO: Autocompletar bitácora usando IA
     async autocompleteEntry(informalInput, metricasConfig) {
       try {
         logger.info('[BITACORA_STORE] Solicitando autocompletado de IA...')
@@ -270,7 +274,6 @@ export const useBitacoraStore = defineStore('bitacora', {
       const haciendaStore = useHaciendaStore();
       const actividadesStore = useActividadesStore();
 
-      // NUEVO: Obtener handler y validar
       const handler = await getHandlerForTipo(
         entryData.actividad_realizada,
         actividadesStore
@@ -285,7 +288,6 @@ export const useBitacoraStore = defineStore('bitacora', {
         return null
       }
 
-      // NUEVO: Transformar métricas
       const transformedMetricas = handler.transform(entryData.metricas || {})
 
       const fullEntryData = {
@@ -295,7 +297,6 @@ export const useBitacoraStore = defineStore('bitacora', {
         user_responsable: entryData.user_responsable || authStore.user?.id,
       };
 
-      // NUEVO: Auto-geolocalización
       if (!fullEntryData.gps && !fullEntryData.ubicacion) {
         try {
           const position = await locationCoordinator.getPosition()
@@ -306,7 +307,6 @@ export const useBitacoraStore = defineStore('bitacora', {
         }
       }
 
-      // NUEVO: Firmar antes de guardar
       let signatureData = null
       try {
         signatureData = await digitalSignature.sign({
@@ -336,7 +336,8 @@ export const useBitacoraStore = defineStore('bitacora', {
           _isTemp: true,
         };
         this.bitacoraEntries.unshift(tempEntry);
-        syncStore.saveToLocalStorage('bitacoraEntries', this.bitacoraEntries);
+        // CORRECTO: Sanitizar para IndexedDB
+        syncStore.saveToLocalStorage('bitacoraEntries', JSON.parse(JSON.stringify(toRaw(this.bitacoraEntries))));
 
         await syncStore.queueOperation({
           type: 'create',
@@ -346,7 +347,7 @@ export const useBitacoraStore = defineStore('bitacora', {
         });
         logger.debug('[BITACORA_STORE] Temporary entry created and queued:', tempEntry);
         
-        storeEvents.emit('bitacora-updated');
+        eventBus.emit(EVENTS.BITACORA_UPDATED);
         
         return tempEntry;
       }
@@ -359,15 +360,15 @@ export const useBitacoraStore = defineStore('bitacora', {
         });
         const newEntry = {...record, _isTemp: false };
         this.bitacoraEntries.unshift(newEntry);
-        syncStore.saveToLocalStorage('bitacoraEntries', this.bitacoraEntries);
+        // CORRECTO: Sanitizar para IndexedDB
+        syncStore.saveToLocalStorage('bitacoraEntries', JSON.parse(JSON.stringify(toRaw(this.bitacoraEntries))));
         logger.debug('[BITACORA_STORE] Entry created on PocketBase (expanded) and added to store:', newEntry);
 
-        // NUEVO: Post-procesamiento
         if (record) {
           await handler.postProcess(record, { actividadesStore })
         }
 
-        storeEvents.emit('bitacora-updated');
+        eventBus.emit(EVENTS.BITACORA_UPDATED);
 
         return newEntry;
       } catch (error) {
@@ -391,9 +392,10 @@ export const useBitacoraStore = defineStore('bitacora', {
             if (index !== -1) {
               this.bitacoraEntries[index] = { ...this.bitacoraEntries[index], ...dataToUpdate, updated: new Date().toISOString() };
             }
-            syncStore.saveToLocalStorage('bitacoraEntries', this.bitacoraEntries);
+            // CORRECTO: Sanitizar para IndexedDB
+            syncStore.saveToLocalStorage('bitacoraEntries', JSON.parse(JSON.stringify(toRaw(this.bitacoraEntries))));
             
-            storeEvents.emit('bitacora-updated');
+            eventBus.emit(EVENTS.BITACORA_UPDATED);
             
             await syncStore.queueOperation({
                 type: 'update',
@@ -414,9 +416,10 @@ export const useBitacoraStore = defineStore('bitacora', {
             } else {
                 this.bitacoraEntries.unshift(updatedEntry);
             }
-            syncStore.saveToLocalStorage('bitacoraEntries', this.bitacoraEntries);
+            // CORRECTO: Sanitizar para IndexedDB
+            syncStore.saveToLocalStorage('bitacoraEntries', JSON.parse(JSON.stringify(toRaw(this.bitacoraEntries))));
             
-            storeEvents.emit('bitacora-updated');
+            eventBus.emit(EVENTS.BITACORA_UPDATED);
             
             return updatedEntry;
         } catch (error) {
@@ -436,9 +439,10 @@ export const useBitacoraStore = defineStore('bitacora', {
             const initialLength = this.bitacoraEntries.length;
             this.bitacoraEntries = this.bitacoraEntries.filter(entry => entry.id !== id);
             if (this.bitacoraEntries.length < initialLength) {
-                syncStore.saveToLocalStorage('bitacoraEntries', this.bitacoraEntries);
+                // CORRECTO: Sanitizar para IndexedDB
+                syncStore.saveToLocalStorage('bitacoraEntries', JSON.parse(JSON.stringify(toRaw(this.bitacoraEntries))));
                 
-                storeEvents.emit('bitacora-updated');
+                eventBus.emit(EVENTS.BITACORA_UPDATED);
             } else {
                 console.warn(`[BITACORA_STORE] Cannot delete locally: item with id ${id} not found.`);
                 return false;
@@ -457,9 +461,10 @@ export const useBitacoraStore = defineStore('bitacora', {
         try {
             await pb.collection('bitacora').delete(id);
             this.bitacoraEntries = this.bitacoraEntries.filter(entry => entry.id !== id);
-            syncStore.saveToLocalStorage('bitacoraEntries', this.bitacoraEntries);
+            // CORRECTO: Sanitizar para IndexedDB
+            syncStore.saveToLocalStorage('bitacoraEntries', JSON.parse(JSON.stringify(toRaw(this.bitacoraEntries))));
             
-            storeEvents.emit('bitacora-updated');
+            eventBus.emit(EVENTS.BITACORA_UPDATED);
             
             return true;
         } catch (error) {

@@ -24,6 +24,7 @@ export const EVENTS = {
 
   // Bitácora
   BITACORA_REGISTRO: 'bitacora:registro',
+  BITACORA_UPDATED: 'bitacora:updated',
   BPA_VENCIDO: 'bpa:vencido'
 }
 

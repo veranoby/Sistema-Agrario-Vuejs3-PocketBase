@@ -273,7 +273,7 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/authStore'
 import { useZonasStore } from '@/stores/zonasStore'
 import { useActividadesStore } from '@/stores/actividadesStore'
-import { useSnackbarStore } from '@/stores/snackbarStore'
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import { handleError } from '@/utils/errorHandler'
 import { storeToRefs } from 'pinia'
 
@@ -300,7 +300,7 @@ const { t } = useI18n()
 const authStore = useAuthStore()
 const zonasStore = useZonasStore()
 const actividadesStore = useActividadesStore()
-const snackbarStore = useSnackbarStore()
+const uiFeedbackStore = useUiFeedbackStore()
 
 const siembraId = ref(route.params.id)
 
@@ -422,7 +422,7 @@ const handleDeleteZona = async (zona) => {
   if (confirm(t('sowing_workspace.confirm_delete_zone'))) {
     try {
       await zonasStore.eliminarZona(zona.id)
-      snackbarStore.showSnackbar(t('sowing_workspace.zone_deleted_successfully'), 'success')
+      uiFeedbackStore.showSnackbar(t('sowing_workspace.zone_deleted_successfully'), 'success')
     } catch (error) {
       handleError(error, t('sowing_workspace.error_deleting_zone'))
     }
@@ -441,7 +441,7 @@ const handleDeleteActividad = async (actividad) => {
   if (confirm(t('sowing_workspace.confirm_delete_activity'))) {
     try {
       await actividadesStore.deleteActividad(actividad.id)
-      snackbarStore.showSnackbar(t('sowing_workspace.activity_deleted_successfully'), 'success')
+      uiFeedbackStore.showSnackbar(t('sowing_workspace.activity_deleted_successfully'), 'success')
     } catch (error) {
       handleError(error, t('sowing_workspace.error_deleting_activity'))
     }
@@ -454,7 +454,7 @@ const cerrarDialogoZona = () => {
 
 const onZonaSaved = async () => {
   addZonaDialog.value = false
-  snackbarStore.showSnackbar(t('sowing_workspace.zone_saved_successfully'), 'success')
+  uiFeedbackStore.showSnackbar(t('sowing_workspace.zone_saved_successfully'), 'success')
 }
 
 const saveBitacoraEntry = async () => {

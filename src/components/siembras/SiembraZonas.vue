@@ -69,7 +69,7 @@
 
         <template #[`item.actions`]="{ item }">
           <v-icon class="me-2" @click="editZona(item)"> mdi-pencil </v-icon>
-          <v-icon @click="deleteZona(item)"> mdi-delete </v-icon>
+          <v-icon v-role="['admin']" @click="deleteZona(item)"> mdi-delete </v-icon>
         </template>
 
         <template v-slot:bottom> </template>

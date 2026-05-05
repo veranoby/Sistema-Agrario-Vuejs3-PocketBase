@@ -3,17 +3,17 @@
     <v-card-title>Configuración de Alertas por Email</v-card-title>
     <v-card-text>
       <v-alert
-        v-if="!alertStore.isConfigured"
+        v-if="!uiFeedbackStore.isConfigured"
         type="info"
         variant="tonal"
         class="mb-4"
         density="compact"
       >
         <strong>Configuración incompleta:</strong>
-        <span v-if="alertStore.preferences.enabledTypes.length === 0">
+        <span v-if="uiFeedbackStore.preferences.enabledTypes.length === 0">
           Seleccione al menos un tipo de alerta.
         </span>
-        <span v-else-if="alertStore.preferences.recipients.length === 0">
+        <span v-else-if="uiFeedbackStore.preferences.recipients.length === 0">
           Agregue al menos un destinatario.
         </span>
       </v-alert>
@@ -118,12 +118,12 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useAlertStore } from '@/stores/alertStore'
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import { alertTypes, validateEmails } from '@/services/emailAlertService'
 import { logger } from '@/utils/logger'
 
-const alertStore = useAlertStore()
+const uiFeedbackStore = useUiFeedbackStore()
 const haciendaStore = useHaciendaStore()
 
 const formRef = ref(null)
@@ -197,13 +197,13 @@ async function loadPreferences() {
       return
     }
 
-    await alertStore.loadPreferences(haciendaId)
+    await uiFeedbackStore.loadPreferences(haciendaId)
     
     // Cargar preferencias en el formulario
     form.value = {
-      enabledTypes: [...alertStore.preferences.enabledTypes],
-      recipients: [...alertStore.preferences.recipients],
-      frequency: alertStore.preferences.frequency || 'immediate'
+      enabledTypes: [...uiFeedbackStore.preferences.enabledTypes],
+      recipients: [...uiFeedbackStore.preferences.recipients],
+      frequency: uiFeedbackStore.preferences.frequency || 'immediate'
     }
     
     logger.info('[ALERT_CONFIG] Preferencias cargadas')
@@ -235,14 +235,14 @@ function addEmail() {
     return
   }
   
-  alertStore.addRecipient(email)
+  uiFeedbackStore.addRecipient(email)
   form.value.recipients.push(email)
   emailInput.value = ''
   logger.info('[ALERT_CONFIG] Email agregado', { email })
 }
 
 function removeEmail(email) {
-  alertStore.removeRecipient(email)
+  uiFeedbackStore.removeRecipient(email)
   form.value.recipients = form.value.recipients.filter(e => e !== email)
   logger.info('[ALERT_CONFIG] Email removido', { email })
 }
@@ -261,7 +261,7 @@ async function savePreferences() {
       return
     }
     
-    await alertStore.updatePreferences(haciendaId, {
+    await uiFeedbackStore.updatePreferences(haciendaId, {
       enabledTypes: form.value.enabledTypes,
       recipients: form.value.recipients,
       frequency: form.value.frequency
@@ -277,9 +277,9 @@ async function savePreferences() {
 
 function resetForm() {
   form.value = {
-    enabledTypes: [...alertStore.preferences.enabledTypes],
-    recipients: [...alertStore.preferences.recipients],
-    frequency: alertStore.preferences.frequency || 'immediate'
+    enabledTypes: [...uiFeedbackStore.preferences.enabledTypes],
+    recipients: [...uiFeedbackStore.preferences.recipients],
+    frequency: uiFeedbackStore.preferences.frequency || 'immediate'
   }
   emailInput.value = ''
   emailError.value = ''

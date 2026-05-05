@@ -401,7 +401,7 @@
 <script setup>
 import { ref, computed, watch, reactive } from 'vue'
 import { useZonasStore } from '@/stores/zonasStore'
-import { useSnackbarStore } from '@/stores/snackbarStore'
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import { storeToRefs } from 'pinia'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import { useAvatarStore } from '@/stores/avatarStore'
@@ -447,7 +447,7 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'saved'])
 const zonasStore = useZonasStore()
-const snackbarStore = useSnackbarStore()
+const uiFeedbackStore = useUiFeedbackStore()
 const { tiposZonas } = storeToRefs(zonasStore)
 const haciendaStore = useHaciendaStore()
 const avatarStore = useAvatarStore()
@@ -574,7 +574,7 @@ function addMetrica() {
     showOpcionesField.value = false
     addMetricaDialog.value = false
   } else {
-    snackbarStore.showError('Título y tipo son requeridos para agregar una métrica')
+    uiFeedbackStore.showError('Título y tipo son requeridos para agregar una métrica')
   }
 }
 
@@ -604,9 +604,9 @@ async function autoLocate() {
     // Guardar precisión si está disponible
     if (position.accuracy !== null) {
       gpsAccuracy.value = Math.round(position.accuracy)
-      snackbarStore.showSnackbar(`Ubicación obtenida (precisión: ${gpsAccuracy.value}m)`, 'success')
+      uiFeedbackStore.showSnackbar(`Ubicación obtenida (precisión: ${gpsAccuracy.value}m)`, 'success')
     } else {
-      snackbarStore.showSnackbar('Ubicación obtenida exitosamente', 'success')
+      uiFeedbackStore.showSnackbar('Ubicación obtenida exitosamente', 'success')
     }
 
     logger.debug('[ZonaForm] Coordenadas GPS obtenidas:', {
@@ -623,7 +623,7 @@ async function autoLocate() {
     }
 
     gpsError.value = errorMsg
-    snackbarStore.showError(`Error GPS: ${errorMsg}`)
+    uiFeedbackStore.showError(`Error GPS: ${errorMsg}`)
     logger.error('[ZonaForm] Error obteniendo ubicación:', error)
   } finally {
     loadingGPS.value = false
@@ -665,7 +665,7 @@ async function guardar() {
       emit('saved', resultado)
       cerrar()
     } catch (error) {
-      snackbarStore.showError('Error al guardar la zona')
+      uiFeedbackStore.showError('Error al guardar la zona')
       console.error(error) // Agregar un log para ver el error
     }
   }

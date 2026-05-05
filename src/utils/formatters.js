@@ -321,31 +321,3 @@ export function getUserStatusColor(status) {
   return STATUS_COLORS[status] || 'grey'
 }
 
-// ============================================================================
-// FUNCIONES DE EXPORTACIÓN DE ARCHIVOS (Compartidas)
-// ============================================================================
-
-/**
- * Descarga contenido como archivo
- * @param {string} content - Contenido a descargar
- * @param {string} filename - Nombre del archivo
- * @param {string} mimeType - Tipo MIME (default: 'text/markdown')
- */
-export function downloadFile(content, filename, mimeType = 'text/markdown') {
-  const blob = new Blob([content], { type: mimeType })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  a.click()
-  URL.revokeObjectURL(url)
-}
-
-/**
- * Descarga contenido Markdown como archivo .md
- * @param {string} markdown - Contenido Markdown
- * @param {string} filename - Nombre del archivo (sin extensión)
- */
-export function downloadMarkdown(markdown, filename) {
-  downloadFile(markdown, filename.endsWith('.md') ? filename : `${filename}.md`)
-}

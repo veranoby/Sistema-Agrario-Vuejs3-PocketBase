@@ -92,7 +92,7 @@ import { useActividadesStore } from '@/stores/actividadesStore'
 import { useZonasStore } from '@/stores/zonasStore'
 import { handleError } from '@/utils/errorHandler'
 import StatusPanel from './RecordatoriosStatusPanel.vue'
-import { useSnackbarStore } from '@/stores/snackbarStore'
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import RecordatorioForm from '@/components/forms/RecordatorioForm.vue'
 
 const { t } = useI18n()
@@ -102,7 +102,7 @@ const recordatoriosStore = useRecordatoriosStore()
 const siembrasStore = useSiembrasStore()
 const actividadesStore = useActividadesStore()
 const zonasStore = useZonasStore()
-const snackbarStore = useSnackbarStore()
+const uiFeedbackStore = useUiFeedbackStore()
 
 const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
 const userRole = computed(() => authStore.user.role)
@@ -126,7 +126,7 @@ async function handleFormSubmit(data) {
       await recordatoriosStore.crearRecordatorio(data)
     }
     recordatoriosStore.dialog = false
-    snackbarStore.showSnackbar(t('reminders.reminder_saved'))
+    uiFeedbackStore.showSnackbar(t('reminders.reminder_saved'))
   } catch (error) {
     handleError(error, t('reminders.error_saving_reminder'))
   }

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
-import { useSnackbarStore } from './snackbarStore'
+import { useUiFeedbackStore } from './uiFeedbackStore'
 import { useSyncStore } from '@/stores/sync/index'
 import { imageOptimizer } from '@/utils/imageOptimizer'
 
@@ -35,13 +35,13 @@ export const useAvatarStore = defineStore('avatar', {
     },
 
     async saveAvatar(collection, id, avatarFile) {
-      const snackbarStore = useSnackbarStore()
+      const uiFeedbackStore = useUiFeedbackStore()
       const syncStore = useSyncStore()
 
       // Verificar tamaño máximo del archivo (5MB)
       const MAX_FILE_SIZE = 5 * 1024 * 1024
       if (avatarFile && avatarFile.size > MAX_FILE_SIZE) {
-        snackbarStore.showSnackbar('El archivo no debe superar 5MB', 'error')
+        uiFeedbackStore.showSnackbar('El archivo no debe superar 5MB', 'error')
         return
       }
 
@@ -52,11 +52,11 @@ export const useAvatarStore = defineStore('avatar', {
           id: syncStore.generateTempId(), // Usar el nuevo formato de ID
           file: avatarFile
         })
-        snackbarStore.showSnackbar('Cambio de avatar en cola para sincronización', 'info')
+        uiFeedbackStore.showSnackbar('Cambio de avatar en cola para sincronización', 'info')
         return
       }
 
-      snackbarStore.showLoading()
+      uiFeedbackStore.showLoading()
       try {
         // OPTIMIZACIÓN: Comprimir imagen antes de subir
         let fileToUpload = avatarFile
@@ -85,12 +85,12 @@ export const useAvatarStore = defineStore('avatar', {
         )
         throw error
       } finally {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
       }
     },
 
     async deleteAvatar(collection, id) {
-      const snackbarStore = useSnackbarStore()
+      const uiFeedbackStore = useUiFeedbackStore()
       const syncStore = useSyncStore()
 
       if (!syncStore.isOnline) {
@@ -99,11 +99,11 @@ export const useAvatarStore = defineStore('avatar', {
           collection,
           id: syncStore.generateTempId() // Usar el nuevo formato de ID
         })
-        snackbarStore.showSnackbar('Eliminación de avatar en cola para sincronización', 'info')
+        uiFeedbackStore.showSnackbar('Eliminación de avatar en cola para sincronización', 'info')
         return
       }
 
-      snackbarStore.showLoading()
+      uiFeedbackStore.showLoading()
       try {
         const formData = new FormData()
         formData.append('avatar', '')
@@ -118,7 +118,7 @@ export const useAvatarStore = defineStore('avatar', {
         handleError(error, `Error al eliminar avatar de ${collection}`)
         throw error
       } finally {
-        snackbarStore.hideLoading()
+        uiFeedbackStore.hideLoading()
       }
     },
 

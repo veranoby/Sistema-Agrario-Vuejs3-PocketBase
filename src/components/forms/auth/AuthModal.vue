@@ -363,7 +363,7 @@ import { useAuthStore } from '@/stores/authStore'
 
 import { useValidation } from '@/composables/useValidation'
 
-import { useSnackbarStore } from '@/stores/snackbarStore'
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import loginLogo from '@/assets/login-logo.png'
 import registerLogo from '@/assets/register-logo.png'
 import { useVuelidate } from '@vuelidate/core'
@@ -385,7 +385,7 @@ const emit = defineEmits(['update:isOpen', 'loginSuccess', 'HandleDrawer'])
 const { t } = useI18n()
 const authStore = useAuthStore()
 const { checkFieldsTaken, loading: validationLoading } = useValidation()
-const snackbarStore = useSnackbarStore()
+const uiFeedbackStore = useUiFeedbackStore()
 const tab = ref(props.initialTab)
 const visible = ref(false)
 const usernameAvailable = ref(true)
@@ -645,7 +645,7 @@ watch(() => registerForm.value.hacienda, (newHacienda) => {
 const register = async () => {
   const isValid = await v$.value.$validate()
   if (!isValid) {
-    snackbarStore.showSnackbar(t('auth.registration_error', { message: 'Please correct the errors in the form' }), 'error')
+    uiFeedbackStore.showSnackbar(t('auth.registration_error', { message: 'Please correct the errors in the form' }), 'error')
     return
   }
 
@@ -671,15 +671,15 @@ const register = async () => {
 
     // Mostrar errores específicos
     if (!fieldsAvailable.username) {
-      snackbarStore.showSnackbar(t('auth.username_in_use'), 'error')
+      uiFeedbackStore.showSnackbar(t('auth.username_in_use'), 'error')
       return
     }
     if (!fieldsAvailable.email) {
-      snackbarStore.showSnackbar(t('auth.email_in_use'), 'error')
+      uiFeedbackStore.showSnackbar(t('auth.email_in_use'), 'error')
       return
     }
     if (!fieldsAvailable.name) {
-      snackbarStore.showSnackbar(t('auth.hacienda_in_use'), 'error')
+      uiFeedbackStore.showSnackbar(t('auth.hacienda_in_use'), 'error')
       return
     }
 
@@ -695,25 +695,25 @@ const register = async () => {
     await authStore.register(registrationData, 'administrador')
   } catch (error) {
     console.log('Registration error from Authmodal:', error.message)
-    snackbarStore.showSnackbar(t('auth.registration_error', { message: error.message }), 'error')
+    uiFeedbackStore.showSnackbar(t('auth.registration_error', { message: error.message }), 'error')
   }
 }
 
 const login = async () => {
   // Validar que al menos uno de los campos esté presente
   if (!loginForm.value.username && !loginForm.value.email) {
-    snackbarStore.showSnackbar(t('auth.enter_username_or_email'), 'error')
+    uiFeedbackStore.showSnackbar(t('auth.enter_username_or_email'), 'error')
     return
   }
 
   if (!syncStore.isOnline) {
-    useSnackbarStore().showError('Se requiere conexión a internet para iniciar sesión')
+    useUiFeedbackStore().showError('Se requiere conexión a internet para iniciar sesión')
     return
   }
 
   // Validar que el password esté presente
   if (!loginForm.value.password) {
-    snackbarStore.showSnackbar(t('auth.enter_password'), 'error')
+    uiFeedbackStore.showSnackbar(t('auth.enter_password'), 'error')
     return
   }
 
@@ -732,7 +732,7 @@ const login = async () => {
     }
   } catch (error) {
     console.log('Login error from authmodal:', error)
-    snackbarStore.showSnackbar(t('auth.login_error'), 'error')
+    uiFeedbackStore.showSnackbar(t('auth.login_error'), 'error')
   }
 }
 
@@ -780,7 +780,7 @@ const sendPasswordReset = async () => {
   try {
     await authStore.requestPasswordReset(resetEmail.value)
     passwordResetSent.value = true
-    snackbarStore.showSnackbar(t('auth.send_recovery_link'), 'success')
+    uiFeedbackStore.showSnackbar(t('auth.send_recovery_link'), 'success')
   } catch (error) {
     resetError.value = t('auth.recover_password_error')
   } finally {

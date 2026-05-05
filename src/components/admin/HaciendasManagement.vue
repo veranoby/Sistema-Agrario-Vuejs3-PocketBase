@@ -301,7 +301,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { handleError } from '@/utils/errorHandler'
-import { exportHaciendasToMarkdown } from '@/utils/markdownExporter'
+import { exportHaciendasToMarkdown } from '@/utils/exporters/markdownExporter'
 import { formatDate } from '@/utils/formatters'
 import { useHaciendaManagementStore } from '@/stores/haciendaManagementStore'
 import { usePlanStore } from '@/stores/planStore'
@@ -551,7 +551,7 @@ function formatModule(module) {
 
 
 function showSnackbar(message) {
-  // El snackbarStore ya está integrado en el store
+  // El uiFeedbackStore ya está integrado en el store
   console.log(message)
 }
 </script>

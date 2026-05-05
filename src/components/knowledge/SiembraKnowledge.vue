@@ -198,7 +198,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { handleError } from '@/utils/errorHandler'
-import { exportSiembrasToMarkdown } from '@/utils/markdownExporter'
+import { exportSiembrasToMarkdown } from '@/utils/exporters/markdownExporter'
 import { formatDate } from '@/utils/formatters'
 import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useActividadesStore } from '@/stores/actividadesStore'

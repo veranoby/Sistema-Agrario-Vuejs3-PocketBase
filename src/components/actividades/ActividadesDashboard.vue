@@ -133,7 +133,7 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/authStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import { useActividadesStore } from '@/stores/actividadesStore'
-import { useSnackbarStore } from '@/stores/snackbarStore'
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import { storeToRefs } from 'pinia'
 import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useAvatarStore } from '@/stores/avatarStore'
@@ -146,7 +146,7 @@ const authStore = useAuthStore()
 const haciendaStore = useHaciendaStore()
 const ActividadesStore = useActividadesStore()
 const zonasStore = useZonasStore()
-const snackbarStore = useSnackbarStore()
+const uiFeedbackStore = useUiFeedbackStore()
 const siembrasStore = useSiembrasStore()
 const avatarStore = useAvatarStore()
 
@@ -172,7 +172,7 @@ onMounted(async () => {
   try {
     await Promise.all([cargarActividades(), cargarTiposActividades()])
   } catch (error) {
-    snackbarStore.showError(t('activities.error_loading_activities'))
+    uiFeedbackStore.showError(t('activities.error_loading_activities'))
   }
   await siembrasStore.cargarSiembras()
   siembras.value = siembrasStore.siembras

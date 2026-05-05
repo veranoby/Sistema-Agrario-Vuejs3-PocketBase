@@ -136,7 +136,7 @@ export function validateSiembraContext(programacionId, siembraId, programaciones
  */
 export async function ejecutarProgramacionesBatch(payload, stores) {
   const { programacionId, fechasEjecucion, observacionesAdicionales = '', siembraId = null, metricasSeleccionadas = [] } = payload
-  const { actividadesStore, bitacoraStore, snackbarStore, programaciones } = stores
+  const { actividadesStore, bitacoraStore, uiFeedbackStore, programaciones } = stores
 
   try {
     // Validate siembra context to prevent cross-siembra data corruption
