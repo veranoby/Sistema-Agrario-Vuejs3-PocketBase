@@ -344,41 +344,51 @@ export default defineComponent({
     }
 
     const customPointToLayer = (feature, latlng) => {
-      // Usar CircleMarker para el centro de la hacienda para garantizar visibilidad (SVG)
+      // Alternativa Robusta: Usar SVG inline puro. No depende de CSS scoped ni de redes externas.
+      
+      let svgContent = '';
+      let iconSize = [32, 32];
+      let iconAnchor = [16, 32]; // La punta del pin
+      let popupAnchor = [0, -32];
+
       if (feature.properties && feature.properties.source === 'hacienda-gps') {
-        return L.circleMarker(latlng, {
-          radius: 12,
-          fillColor: "#ff0000",
-          color: "#ffffff",
-          weight: 3,
-          opacity: 1,
-          fillOpacity: 0.9
-        });
+        // Pin Especial para Hacienda (Rojo con un punto blanco)
+        svgContent = `
+          <svg viewBox="0 0 24 24" width="36" height="36" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#d32f2f"/>
+          </svg>
+        `;
+        iconSize = [36, 36];
+        iconAnchor = [18, 36];
+        popupAnchor = [0, -36];
+      } else if (feature.properties?.source === 'zone-point') {
+        // Pin Verde para Puntos de Interés
+        svgContent = `
+          <svg viewBox="0 0 24 24" width="32" height="32" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#388e3c"/>
+          </svg>
+        `;
+      } else {
+        // Pin Azul por defecto
+        svgContent = `
+          <svg viewBox="0 0 24 24" width="32" height="32" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#1976d2"/>
+          </svg>
+        `;
       }
 
-      // Configuración de iconos para otros puntos (Zonas)
-      const iconConfigs = {
-        'zone-point': {
-          url: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png'
-        }
-      };
-
-      const config = iconConfigs[feature.properties?.source] || {
-        url: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png'
-      };
-
-      const customIcon = new L.Icon({
-        iconUrl: config.url,
-        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-        iconSize: [25, 41],
-        iconAnchor: [12, 41],
-        popupAnchor: [1, -34],
-        shadowSize: [41, 41]
+      const customIcon = L.divIcon({
+        html: `<div style="display: flex; justify-content: center; align-items: center; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.4));">${svgContent}</div>`,
+        className: 'clear-leaflet-bg', // Clase limpia sin fondo
+        iconSize: iconSize,
+        iconAnchor: iconAnchor,
+        popupAnchor: popupAnchor
       });
 
-      return L.marker(latlng, { 
+      return L.marker(latlng, {
         icon: customIcon,
-        title: feature.properties?.nombre || ''
+        zIndexOffset: feature.properties?.source === 'hacienda-gps' ? 1000 : 0,
+        title: feature.properties?.nombre || 'Marcador'
       });
     }
 
@@ -484,5 +494,10 @@ export default defineComponent({
 
 :deep(.leaflet-draw-toolbar a:hover) {
   background-color: #388E3C;
+}
+
+:deep(.clear-leaflet-bg) {
+  background: transparent !important;
+  border: none !important;
 }
 </style>
