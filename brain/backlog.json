@@ -1,0 +1,86 @@
+{
+  "metadata": {
+    "purpose": "Planificación detallada y atómica - Sistema Agri v6.0",
+    "project": "SaaS Modular de Digitalización Agrícola",
+    "version": "6.0",
+    "last_updated": "2026-04-15",
+    "current_phase": "FASE 7 - TESTING Y CALIDAD",
+    "next_phase": "FASE 9 - OPTIMIZACIÓN",
+    "completion_percentage": 85,
+    "total_tasks": 127,
+    "completed_tasks": 108,
+    "pending_tasks": 19
+  },
+  "project_status": {
+    "v1_completion": 78,
+    "v2_completion": 100,
+    "v1_status": "Core funcional, Fase 8 (Backend Integration) completada",
+    "v2_status": "Integraciones backend 100% completadas y verificadas",
+    "blockers": [],
+    "ready_for": "Fase 7 - Testing y Calidad"
+  },
+  "phase_7_testing": {
+    "id": "PHASE_7",
+    "name": "Testing y Calidad",
+    "priority": "P0 - CRITICAL",
+    "duration": "3 semanas",
+    "status": "READY_TO_START",
+    "objective": "Establecer 60-80% cobertura de tests en código crítico antes de avanzar a V2",
+    "subphases": {
+      "7_1_unit_tests_stores": {
+        "name": "Unit Tests para Stores Críticos",
+        "tasks": [
+          { "id": "T7-TEST-01-01", "title": "Unit Tests para authStore", "status": "pending", "priority": "P0" },
+          { "id": "T7-TEST-01-02", "title": "Unit Tests para syncStore", "status": "pending", "priority": "P0" },
+          { "id": "T7-TEST-01-03", "title": "Unit Tests para programacionesStore", "status": "pending", "priority": "P0" },
+          { "id": "T7-TEST-01-04", "title": "Unit Tests para actividadesStore", "status": "pending", "priority": "P1" },
+          { "id": "T7-TEST-01-05", "title": "Unit Tests para finanzaStore", "status": "pending", "priority": "P1" }
+        ]
+      },
+      "7_2_integration_tests": {
+        "name": "Integration Tests para Sync",
+        "tasks": [
+          { "id": "T7-TEST-02-01", "title": "Sync Flow Completo", "status": "pending" },
+          { "id": "T7-TEST-02-02", "title": "Conflict Resolution", "status": "pending" },
+          { "id": "T7-TEST-02-03", "title": "Offline/Online Transitions", "status": "pending" }
+        ]
+      },
+      "7_3_e2e_tests": {
+        "name": "E2E Tests con Playwright",
+        "tasks": [
+          { "id": "T7-TEST-03-01", "title": "Login Flow", "status": "pending" },
+          { "id": "T7-TEST-03-02", "title": "Creación de Siembra", "status": "pending" },
+          { "id": "T7-TEST-03-03", "title": "Registro en Bitácora", "status": "pending" }
+        ]
+      }
+    }
+  },
+  "phase_9_optimization": {
+    "id": "PHASE_9",
+    "name": "Optimización V1",
+    "status": "PENDING",
+    "tasks": [
+      { "id": "T9-OPT-01", "title": "Refactor ProgramacionPanel", "description": "833 a <350 líneas", "status": "pending" },
+      { "id": "T9-OPT-02", "title": "BaseForm Component", "description": "Componente reutilizable para forms", "status": "pending" },
+      { "id": "T9-OPT-03", "title": "Optimizar Patrones Duplicados", "description": "DRY en componentes de formulario", "status": "pending" }
+    ]
+  },
+  "phase_10_polish": {
+    "id": "PHASE_10",
+    "name": "Pulido y Limpieza",
+    "status": "PENDING",
+    "tasks": [
+      { "id": "T10-CLN-01", "title": "Mejorar Accesibilidad WCAG", "status": "pending" },
+      { "id": "T10-CLN-02", "title": "Preparar Deployment (CI/CD, Staging)", "status": "pending" }
+    ]
+  },
+  "task_statistics": {
+    "total_tasks": 127,
+    "completed_tasks": 108,
+    "pending_tasks": 19,
+    "estimated_weeks_remaining": 4
+  },
+  "definition_of_done": {
+    "task_complete": ["Acceptance criteria met", "Tests passing", "Code review approved", "Docs updated"]
+  }
+}

@@ -254,10 +254,10 @@ const avatarStore = useAvatarStore()
 const uiFeedbackStore = useUiFeedbackStore()
 
 const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
-const { tiposZonas } = storeToRefs(zonasStore)
+// Reactividad directa con los stores
+const { siembras } = storeToRefs(siembrasStore)
+const { zonas, tiposZonas } = storeToRefs(zonasStore)
 
-const siembras = ref([])
-const zonas = ref([])
 const dialogNuevaSiembra = ref(false)
 
 // Estado para eliminación
@@ -290,8 +290,6 @@ onMounted(async () => {
       zonasStore.cargarTiposZonas(),
       zonasStore.cargarZonas()
     ])
-    siembras.value = siembrasStore.siembras || []
-    zonas.value = zonasStore.zonas || []
     logger.debug('[SiembrasDashboard] Datos cargados con éxito')
   } catch (error) {
     console.error('Error cargando datos:', error)
@@ -400,8 +398,7 @@ const abrirDialogCreacion = () => {
 }
 
 const onSiembraCreada = () => {
-  // Recargar siembras
-  siembras.value = siembrasStore.siembras || []
+  // El store ya actualiza la lista automáticamente por reactividad
 }
 
 // Acciones de eliminación
@@ -410,10 +407,31 @@ const confirmarEliminacion = (siembra) => {
   showDeleteModal.value = true
 }
 
-const onSiembraEliminada = (id) => {
-  // Filtrar localmente para respuesta inmediata
-  siembras.value = siembras.value.filter(s => s.id !== id)
-  selectedSiembra.value = null
+const onSiembraEliminada = async (id) => {
+  try {
+    // Analizar dependencias de la siembra
+    const analysis = await siembrasStore.analyzeDependencies(id)
+    
+    if (analysis && (analysis.exclusive.length > 0 || analysis.shared.length > 0)) {
+      // Acciones por defecto: desvincular dependencias en lugar de eliminarlas
+      const userActions = {
+        zonas: 'detach',
+        bitacora: 'detach',
+        programaciones: 'detach',
+        recordatorios: 'detach'
+      }
+      await siembrasStore.executeSmartDeletion(id, analysis, userActions)
+    } else {
+      // Sin dependencias, usar borrado básico
+      await siembrasStore.eliminarSiembra(id)
+    }
+    
+    selectedSiembra.value = null
+    uiFeedbackStore.showSnackbar('Siembra eliminada correctamente', 'success')
+  } catch (error) {
+    logger.error('[SiembrasDashboard] Error al eliminar siembra:', error)
+    uiFeedbackStore.showError('Error al eliminar la siembra')
+  }
 }
 
 const abrirSiembra = (id) => {

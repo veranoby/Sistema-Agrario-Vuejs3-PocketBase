@@ -8,6 +8,10 @@
       <p class="text-medium-emphasis">No hay datos de ciclos de cultivo</p>
     </div>
 
+    <div v-else-if="processedData.length === 0" class="d-flex align-center justify-center" style="height: 300px;">
+      <p class="text-medium-emphasis">Las siembras no tienen fechas válidas para graficar</p>
+    </div>
+
     <div v-else ref="chartContainer" class="chart-container"></div>
   </div>
 </template>
@@ -31,9 +35,9 @@ const processedData = computed(() => {
   if (!props.siembras || props.siembras.length === 0) return []
 
   return props.siembras
-    .filter(s => s.fecha_inicio && s.estado)
+    .filter(s => (s.fecha_inicio || s.created) && s.estado)
     .map(siembra => {
-      const startDate = parseISO(siembra.fecha_inicio)
+      const startDate = parseISO(siembra.fecha_inicio || siembra.created)
       const now = new Date()
       
       // Calcular fechas estimadas
@@ -54,15 +58,15 @@ const processedData = computed(() => {
           'platano': 365,
           'yuca': 270
         }
-        const duracion = duracionesDefault[siembra.tipo_cultivo?.toLowerCase()] || 180
+        const duracion = duracionesDefault[(siembra.tipo || siembra.tipo_cultivo || '').toLowerCase()] || 180
         endDate = new Date(startDate)
         endDate.setDate(endDate.getDate() + duracion)
       }
 
       // Determinar estado actual
       const estado = siembra.estado
-      const isCompleted = estado === 'finalizado' || estado === 'cosechado'
-      const isCurrent = estado === 'activo' || estado === 'en_produccion' || estado === 'en_cosecha'
+      const isCompleted = estado === 'finalizado' || estado === 'cosechado' || estado === 'finalizada' || estado === 'cosechada'
+      const isCurrent = estado === 'activo' || estado === 'en_produccion' || estado === 'en_cosecha' || estado === 'en_crecimiento'
       
       // Calcular progreso si está activo
       let progress = 0
@@ -75,7 +79,7 @@ const processedData = computed(() => {
       return {
         id: siembra.id,
         nombre: siembra.nombre || `Siembra ${siembra.id?.slice(-6)}`,
-        cultivo: siembra.tipo_cultivo || 'Sin especificar',
+        cultivo: siembra.tipo || siembra.tipo_cultivo || 'Sin especificar',
         zona: siembra.zona_nombre || 'Sin zona',
         startDate,
         endDate,
@@ -285,10 +289,14 @@ function getEstadoColor(estado) {
   const colors = {
     activo: '#4CAF50',
     en_produccion: '#4CAF50',
+    en_crecimiento: '#4CAF50',
     planificado: '#2196F3',
+    planificada: '#2196F3',
     en_cosecha: '#FF9800',
     finalizado: '#9E9E9E',
+    finalizada: '#9E9E9E',
     cosechado: '#9E9E9E',
+    cosechada: '#9E9E9E',
     fallido: '#f44336'
   }
   return colors[estado] || '#9E9E9E'

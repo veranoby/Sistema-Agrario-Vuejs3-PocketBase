@@ -174,10 +174,11 @@
             <v-card-text class="pa-0">
               <div style="height: 500px;">
                 <GisMapComponent
-                  v-if="haciendaGeoJSON"
+                  v-if="haciendaGeoJSON || haciendaCenter"
                   :initial-geo-json="haciendaGeoJSON"
                   :center="haciendaCenter || undefined"
                   :readonly="true"
+                  :hacienda-name="mi_hacienda?.name"
                 />
                 <div v-else class="d-flex flex-column align-center justify-center h-100 pa-10 text-grey" style="min-height: 400px;">
                   <v-icon size="64" class="mb-4">mdi-map-marker-off</v-icon>
@@ -213,6 +214,7 @@ import { useSyncStore } from '@/stores/sync'
 import { useProgramacionesStore } from '@/stores/programaciones/programacionesStore'
 import { useNotificationStore } from '@/stores/notificationStore'
 import { reportingModule } from '@/modules/reporting'
+import { SIEMBRA_COLORS, POI_FALLBACK_COLOR } from '@/constants/mapColors'
 
 import StatusPanel from '@/components/recordatorios/RecordatoriosStatusPanel.vue'
 import RecordatorioForm from '@/components/forms/RecordatorioForm.vue'
@@ -274,31 +276,13 @@ const haciendaGeoJSON = computed(() => {
   if (!siembrasStore.siembras || !zonasStore.zonas) return null
 
   const features = []
+  const hexColorRegex = /^#([0-9A-F]{3}){1,2}$/i
 
-  // 1. GPS Principal de la Hacienda (Siempre visible si existe)
-  let gpsData = mi_hacienda.value?.gps
-  if (typeof gpsData === 'string') {
-    try { gpsData = JSON.parse(gpsData) } catch (e) { gpsData = null }
-  }
+  // El GPS Principal de la Hacienda ahora se maneja directamente
+  // vía props.center en GisMapComponent para garantizar visibilidad permanente
+  // y evitar bugs del parseador de GeoJSON.
 
-  if (gpsData && gpsData.lat && gpsData.lng) {
-    features.push({
-      type: 'Feature',
-      properties: {
-        id: mi_hacienda.value.id,
-        nombre: mi_hacienda.value.name || 'Centro de Hacienda',
-        type: 'hacienda-centro',
-        tipoNombre: 'Ubicación Principal',
-        source: 'hacienda-gps'
-      },
-      geometry: {
-        type: 'Point',
-        coordinates: [Number(gpsData.lng), Number(gpsData.lat)]
-      }
-    })
-  }
-
-  // 2. Siembras (Polígonos de lotes)
+  // 1. Siembras (Polígonos de lotes)
   siembrasStore.siembras.forEach(s => {
     if (s.geometria) {
       features.push({
@@ -308,7 +292,8 @@ const haciendaGeoJSON = computed(() => {
           nombre: s.nombre, 
           type: 'siembra', 
           source: 'direct', 
-          estado: s.estado 
+          estado: s.estado,
+          color: SIEMBRA_COLORS[s.estado] || SIEMBRA_COLORS.finalizada
         },
         geometry: s.geometria
       })
@@ -329,7 +314,8 @@ const haciendaGeoJSON = computed(() => {
             nombre: `${s.nombre} (${lote.nombre})`, 
             type: 'siembra-lote', 
             source: 'zone', 
-            estado: s.estado 
+            estado: s.estado,
+            color: SIEMBRA_COLORS[s.estado] || SIEMBRA_COLORS.finalizada
           },
           geometry: lote.geometria
         })
@@ -343,6 +329,8 @@ const haciendaGeoJSON = computed(() => {
     const isLote = tipo?.nombre?.toLowerCase().includes('lote') || z.nombre?.toLowerCase().includes('lote')
     
     if (!isLote && z.geometria) {
+      const isValidHex = hexColorRegex.test(z.color)
+      const poiColor = isValidHex ? z.color : POI_FALLBACK_COLOR
       features.push({
         type: 'Feature',
         properties: { 
@@ -350,7 +338,8 @@ const haciendaGeoJSON = computed(() => {
           nombre: z.nombre, 
           type: 'punto-interes', 
           tipoNombre: tipo?.nombre || 'Zona',
-          source: 'zone-point'
+          source: 'zone-point',
+          color: poiColor
         },
         geometry: z.geometria
       })

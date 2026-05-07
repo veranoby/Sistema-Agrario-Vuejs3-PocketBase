@@ -228,7 +228,7 @@ export class CacheManager {
   }
 
   /**
-   * Invalida entradas que coincidan con un patrón de clave.
+   * Invalidates entradas que coincidan con un patrón de clave.
    * @param {string} pattern - Patrón de clave (substring)
    */
   invalidatePattern(pattern) {
@@ -367,6 +367,11 @@ export class TieredCacheManager extends CacheManager {
     // L2 y L3: Migrados a IndexedDB (Hito 2)
     this.l2Storage = new IndexedDBStorage('agriCacheL2', 'recent')
     this.l3Storage = new IndexedDBStorage('agriCacheL3', 'pagination')
+
+    // Trackers de claves para soporte de invalidación por patrón en IndexedDB
+    this.l1Keys = new Set()   // Claves en L1 (memoria)
+    this.l2Keys = new Set()   // Claves en L2 (IndexedDB)
+    this.l3Keys = new Set()   // Claves en L3 (IndexedDB)
   }
 
   /**
@@ -377,11 +382,17 @@ export class TieredCacheManager extends CacheManager {
   async getFromLevel(key, level = CACHE_LEVELS.RECENT) {
     try {
       if (level === CACHE_LEVELS.LOOKUP) {
-        return this.l1Cache.get(key)
+        const data = this.l1Cache.get(key)
+        if (data !== null) this.l1Keys.add(key)
+        return data
       } else if (level === CACHE_LEVELS.RECENT) {
-        return await this.l2Storage.getItem(key)
+        const data = await this.l2Storage.getItem(key)
+        if (data !== null) this.l2Keys.add(key)
+        return data
       } else if (level === CACHE_LEVELS.PAGINATION) {
-        return await this.l3Storage.getItem(key)
+        const data = await this.l3Storage.getItem(key)
+        if (data !== null) this.l3Keys.add(key)
+        return data
       }
       logger.warn(`[TieredCache] Nivel inválido: ${level}`)
       return null
@@ -402,10 +413,13 @@ export class TieredCacheManager extends CacheManager {
     try {
       if (level === CACHE_LEVELS.LOOKUP) {
         this.l1Cache.set(key, data, customTtl)
+        this.l1Keys.add(key)
       } else if (level === CACHE_LEVELS.RECENT) {
         await this.l2Storage.setItem(key, { data, timestamp: Date.now(), ttl: customTtl || 600000 })
+        this.l2Keys.add(key)
       } else if (level === CACHE_LEVELS.PAGINATION) {
         await this.l3Storage.setItem(key, { data, timestamp: Date.now(), ttl: customTtl || 300000 })
+        this.l3Keys.add(key)
       } else {
         logger.warn(`[TieredCache] Nivel inválido: ${level}`)
       }
@@ -415,21 +429,47 @@ export class TieredCacheManager extends CacheManager {
   }
 
   /**
-   * Invalida across all levels
+   * Invalida claves que coincidan con un patrón en todos los niveles
+   * @param {string} pattern - Patrón de claves a invalidar
+   */
+  async invalidatePattern(pattern) {
+    // Invalidar L1 (memoria)
+    this.l1Cache.invalidatePattern(pattern)
+    const l1KeysToDelete = Array.from(this.l1Keys).filter(key => key.includes(pattern))
+    l1KeysToDelete.forEach(key => this.l1Keys.delete(key))
+
+    // Invalidar L2 (IndexedDB)
+    const l2KeysToDelete = Array.from(this.l2Keys).filter(key => key.includes(pattern))
+    for (const key of l2KeysToDelete) {
+      try {
+        await this.l2Storage.removeItem(key)
+        this.l2Keys.delete(key)
+      } catch (error) {
+        logger.error(`[TieredCache] Error eliminando clave L2 ${key}:`, error)
+      }
+    }
+
+    // Invalidar L3 (IndexedDB)
+    const l3KeysToDelete = Array.from(this.l3Keys).filter(key => key.includes(pattern))
+    for (const key of l3KeysToDelete) {
+      try {
+        await this.l3Storage.removeItem(key)
+        this.l3Keys.delete(key)
+      } catch (error) {
+        logger.error(`[TieredCache] Error eliminando clave L3 ${key}:`, error)
+      }
+    }
+
+    // Limpiar caché en memoria del padre
+    super.invalidatePattern(pattern)
+  }
+
+  /**
+   * Invalida across all levels (método legacy)
    * @param {string} keyPattern - Patrón de claves a invalidar
    */
   async invalidateAcrossLevels(keyPattern) {
-    // L1
-    this.l1Cache.invalidatePattern(keyPattern)
-    // L2 y L3 (IndexedDB)
-    // Nota: IndexedDB no soporta búsqueda por patrón fácilmente, se limpia todo el store o se hace por clave exacta.
-    // Por simplicidad, si el patrón es una clave exacta, la eliminamos.
-    try {
-      await this.l2Storage.removeItem(keyPattern)
-      await this.l3Storage.removeItem(keyPattern)
-    } catch (error) {
-      logger.error('[TieredCache] Error invalidando en IndexedDB:', error)
-    }
+    await this.invalidatePattern(keyPattern)
   }
 
   /**
@@ -439,9 +479,9 @@ export class TieredCacheManager extends CacheManager {
   async getCombinedStats() {
     return {
       l1: this.l1Cache.getStats(),
-      l2: { size: 'N/A (IndexedDB)', note: 'Check IndexedDB directly' },
-      l3: { size: 'N/A (IndexedDB)', note: 'Check IndexedDB directly' },
-      totalSize: this.l1Cache.cache.size // Solo cuenta L1 en memoria
+      l2: { size: this.l2Keys.size, note: 'IndexedDB L2' },
+      l3: { size: this.l3Keys.size, note: 'IndexedDB L3' },
+      totalSize: this.l1Cache.cache.size + this.l2Keys.size + this.l3Keys.size
     }
   }
 
@@ -449,14 +489,14 @@ export class TieredCacheManager extends CacheManager {
    * Override del método get para usar L2 por defecto
    */
   async get(key) {
-    return this.getFromLevel(key, 'l2')
+    return this.getFromLevel(key, CACHE_LEVELS.RECENT)
   }
 
   /**
    * Override del método set para usar L2 por defecto
    */
   async set(key, data, ttl = null) {
-    await this.setToLevel(key, data, 'l2', ttl)
+    await this.setToLevel(key, data, CACHE_LEVELS.RECENT, ttl)
   }
 
   /**
@@ -496,6 +536,26 @@ export class TieredCacheManager extends CacheManager {
     }
 
     return freshData
+  }
+
+  /**
+   * Limpia todos los niveles de caché
+   */
+  async clear() {
+    // Limpiar L1
+    this.l1Cache.clear()
+    this.l1Keys.clear()
+
+    // Limpiar L2
+    await this.l2Storage.clear()
+    this.l2Keys.clear()
+
+    // Limpiar L3
+    await this.l3Storage.clear()
+    this.l3Keys.clear()
+
+    // Limpiar padre
+    super.clear()
   }
 }
 
