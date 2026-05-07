@@ -34,11 +34,13 @@ export class ImageOptimizer {
       maxWidth: options.maxWidth || 1920,
       maxHeight: options.maxHeight || 1080,
       quality: options.quality || 0.8,
-      maxSizeMB: options.maxSizeMB || 2,
+      maxSizeMB: options.maxSizeMB || 0.5,
+      maxInputSizeMB: options.maxInputSizeMB || 10,
       format: options.format || 'image/jpeg',
       ...options
     }
 
+    this.maxInputSizeBytes = this.options.maxInputSizeMB * 1024 * 1024
     this.maxSizeBytes = this.options.maxSizeMB * 1024 * 1024
   }
 
@@ -50,27 +52,26 @@ export class ImageOptimizer {
    * @throws {Error} Si la validación falla
    */
   async validate(file) {
-    // Validar tipo
+    // Validar tipo mínimo
     if (!file.type.startsWith('image/')) {
       throw new Error('El archivo no es una imagen válida')
     }
 
-    // Validar tipos soportados
-    const supportedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+    // Validar tipos soportados por canvas (excluye HEIC/HEIF que los navegadores no pueden dibujar)
+    const supportedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/bmp', 'image/tiff']
     if (!supportedTypes.includes(file.type)) {
-      throw new Error(`Formato no soportado: ${file.type}. Use JPEG, PNG, WebP o GIF`)
+      throw new Error(`Formato no soportado: ${file.type}. Use JPEG, PNG o WebP`)
     }
 
-    // Validar tamaño
-    if (file.size > this.maxSizeBytes) {
-      const maxSizeFormatted = this.formatBytes(this.maxSizeBytes)
+    // Validar tamaño de entrada
+    if (file.size > this.maxInputSizeBytes) {
+      const maxSizeFormatted = this.formatBytes(this.maxInputSizeBytes)
       const fileSizeFormatted = this.formatBytes(file.size)
       throw new Error(`Imagen muy grande. Máximo ${maxSizeFormatted}, recibido ${fileSizeFormatted}`)
     }
 
-    // Validar dimensiones cargando la imagen
-    await this.getImageDimensions(file)
-
+    // Nota: No llamamos getImageDimensions() aqui — compress() ya lo hace.
+    // Evita doble carga del archivo en el ciclo iterativo de compressToSize.
     return true
   }
 
@@ -159,7 +160,7 @@ export class ImageOptimizer {
         height: newDimensions.height
       }
     } catch (error) {
-      logger.error('[ImageOptimizer] Error comprimiendo imagen:', error)
+      logger.error('[ImageOptimizer] Error comprimiendo imagen:', error.message || error, { type: file?.type, size: file?.size })
       throw error
     }
   }
@@ -175,27 +176,38 @@ export class ImageOptimizer {
     const targetSize = (targetSizeMB || this.options.maxSizeMB) * 1024 * 1024
     let quality = this.options.quality
     let result = null
+    let lastError = null
 
     logger.debug('[ImageOptimizer] Compresión iterativa hasta', this.formatBytes(targetSize))
 
     // Intentar comprimir con calidad decreciente
     while (quality >= 0.3) {
-      const tempOptimizer = new ImageOptimizer({
-        ...this.options,
-        quality: quality
-      })
+      try {
+        const tempOptimizer = new ImageOptimizer({
+          ...this.options,
+          quality: quality
+        })
 
-      result = await tempOptimizer.compress(file)
+        result = await tempOptimizer.compress(file)
+        lastError = null
 
-      if (result.newSize <= targetSize) {
-        logger.debug('[ImageOptimizer] Tamaño objetivo alcanzado con calidad', quality)
-        break
+        if (result.newSize <= targetSize) {
+          logger.debug('[ImageOptimizer] Tamaño objetivo alcanzado con calidad', quality.toFixed(2))
+          break
+        }
+      } catch (err) {
+        lastError = err
+        logger.warn('[ImageOptimizer] Fallo en pase de calidad', quality.toFixed(2), ':', err.message)
+        // Si el primer pase falla por validación, no tiene sentido reintentar
+        if (err.message.includes('Formato') || err.message.includes('grande')) throw err
       }
 
       quality -= 0.1
     }
 
-    if (result.newSize > targetSize) {
+    if (lastError && !result) throw lastError
+
+    if (result && result.newSize > targetSize) {
       logger.warn('[ImageOptimizer] No se pudo alcanzar el tamaño objetivo')
     }
 
@@ -448,7 +460,7 @@ export const imageOptimizer = new ImageOptimizer({
   maxWidth: 1920,
   maxHeight: 1080,
   quality: 0.8,
-  maxSizeMB: 2,
+  maxSizeMB: 0.5,
   format: 'image/jpeg'
 })
 

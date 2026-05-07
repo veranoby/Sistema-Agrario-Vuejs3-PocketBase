@@ -86,6 +86,10 @@ export function handleError(error, customMessage = null, options = { silent: fal
     const networkError = new NetworkError('Sin conexión a internet. Los cambios se guardarán localmente.')
     showMsg(networkError.message)
     logError(networkError)
+    
+    // Forzar evento offline para que el syncStore detecte el cambio si navigator.onLine falla
+    window.dispatchEvent(new Event('offline'))
+    
     return networkError
   }
 

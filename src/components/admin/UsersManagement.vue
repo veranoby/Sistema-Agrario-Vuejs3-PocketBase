@@ -2,9 +2,11 @@
   <v-container fluid class="users-management">
     <div class="d-flex justify-space-between align-center mb-4">
       <h2 class="text-h5">Gestión de Usuarios</h2>
-      <v-btn color="primary" prepend-icon="mdi-plus" @click="openCreateDialog">
+      <v-btn v-role="'USERS_MANAGE'" color="primary" prepend-icon="mdi-plus" @click="openCreateDialog">
         Nuevo Usuario
       </v-btn>
+
+
     </div>
 
     <!-- Filtros y Búsqueda -->
@@ -84,13 +86,13 @@
             <v-chip
               v-for="hacienda in item.haciendas.slice(0, 2)"
               :key="hacienda.id"
-              size="x-small"
+              size="small"
               color="primary"
               variant="outlined"
             >
               {{ hacienda.name }}
             </v-chip>
-            <v-chip v-if="item.haciendas.length > 2" size="x-small">
+            <v-chip v-if="item.haciendas.length > 2" size="small">
               +{{ item.haciendas.length - 2 }} más
             </v-chip>
           </v-chip-group>
@@ -100,14 +102,17 @@
         <!-- Actions -->
         <template #item.actions="{ item }">
           <v-btn icon="mdi-eye" size="small" variant="text" @click="viewUser(item)" />
-          <v-btn icon="mdi-pencil" size="small" variant="text" @click="editUser(item)" />
+          <v-btn v-role="'USERS_MANAGE'" icon="mdi-pencil" size="small" variant="text" @click="editUser(item)" />
           <v-btn
+            v-role="'USERS_MANAGE'"
             icon="mdi-delete"
             size="small"
             variant="text"
             color="error"
             @click="confirmDelete(item)"
           />
+
+
         </template>
 
         <!-- No Data -->
@@ -217,7 +222,7 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn color="grey" @click="deleteDialog = false">Cancelar</v-btn>
+          <v-btn color="grey" @click="deleteDialog = false">CANCELAR</v-btn>
           <v-btn color="error" @click="deleteUser">Eliminar</v-btn>
         </v-card-actions>
       </v-card>
@@ -397,7 +402,7 @@ function confirmDelete(user) {
   deleteDialog.value = true
 }
 
-// Guardar usuario (recibe datos de UserForm)
+// GUARDAR usuario (recibe datos de UserForm)
 async function saveUser(userFormData) {
   loading.value = true
   try {

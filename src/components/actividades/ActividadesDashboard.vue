@@ -7,13 +7,13 @@
             <div class="w-full sm:flex-grow">
               <h3 class="profile-title text-sm sm:text-lg mb-2 sm:mb-0">
                 {{ t('activities.activity_management') }}
-                <v-chip variant="flat" size="x-small" color="grey-lighten-2" class="mx-1" pill>
+                <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
                   <v-avatar start>
                     <v-img :src="avatarUrl" alt="Avatar"></v-img>
                   </v-avatar>
                   {{ userRole }}
                 </v-chip>
-                <v-chip variant="flat" size="x-small" color="green-lighten-3" class="mx-1" pill>
+                <v-chip variant="flat" size="small" color="green-lighten-3" class="mx-1" pill>
                   <v-avatar start>
                     <v-img :src="avatarHaciendaUrl" alt="Avatar"></v-img>
                   </v-avatar>
@@ -27,7 +27,7 @@
                 sm:inline-flex
                 size="small"
                 variant="flat"
-                rounded="lg"
+                
                 color="#6380a247"
                 prepend-icon="mdi-plus"
                 @click="NuevaActividad"
@@ -59,60 +59,71 @@
             md="4"
             lg="3"
           >
-            <v-card class="Actividad-card" @click="abrirActividad(actividad.id)">
+            <v-card class="Actividad-card siembra-card" @click="abrirActividad(actividad.id)">
               <v-img
                 :src="getActividadAvatarUrl(actividad)"
-                height="200px"
+                height="220px"
                 cover
-                class="Actividad-image rounded-xl"
+                class="siembra-image"
               >
-                <div class="fill-height card-overlay rounded-lg">
-                  <v-card-title class="px-1">
-                    <p class="">
+                <div class="fill-height card-overlay">
+                  <!-- Barra de estado lateral -->
+                  <div class="estado-bar" :class="`estado-${actividad.activa ? 'activa' : 'pausada'}`"></div>
+
+                  <v-card-title class="px-2 py-0 w-full">
+                    <div class="d-flex align-center gap-2 mb-1 w-full">
+                      <v-icon :color="actividad.activa ? 'success' : 'warning'" size="18">
+                        {{ actividad.activa ? 'mdi-check-circle' : 'mdi-pause-circle' }}
+                      </v-icon>
+                      <span class="siembra-title flex-grow-1 text-white">{{ actividad.nombre }}</span>
+                    </div>
+
+                    <div class="d-flex align-center flex-wrap gap-1 mb-2">
                       <v-chip
                         :color="getStatusColor(actividad.activa)"
                         size="x-small"
                         variant="flat"
+                        class="text-uppercase font-weight-bold"
                       >
                         {{ getActividadEstado(actividad.activa) }}
                       </v-chip>
-                    </p>
-                    <p class="text-white text-sm">{{ actividad.nombre }}</p>
-                    <p class="text-white text-xs font-weight-bold mb-2 mt-0">
-                      {{ ActividadesStore.getActividadTipo(actividad.tipo_actividades) }}
-                    </p>
-                    <p
-                      class="flex flex-wrap"
-                      v-for="siembraTemp in actividad.siembras"
-                      :key="siembraTemp"
-                    >
-                      <v-chip
-                        outlined
-                        size="x-small"
-                        class="compact-chips"
-                        pill
-                        color="green-lighten-3"
-                        variant="flat"
-                      >
-                        {{ siembrasStore.getSiembraNombre(siembraTemp) }}
+
+                      <v-chip size="x-small" variant="tonal" color="green-lighten-4" class="text-white">
+                        <v-icon start size="10">mdi-layers-outline</v-icon>
+                        {{ ActividadesStore.getActividadTipo(actividad.tipo_actividades) }}
                       </v-chip>
-                    </p>
-                    <p class="flex flex-wrap" v-for="zonasId in actividad.zonas" :key="zonasId">
+                    </div>
+
+                    <div class="d-flex align-center flex-wrap gap-1 mt-auto">
+                      <!-- Chips para siembras -->
                       <v-chip
+                        v-for="siembraId in (actividad.siembras || []).slice(0, 2)"
+                        :key="siembraId"
+                        variant="tonal"
                         size="x-small"
-                        :key="zonasId"
-                        class="compact-chips"
-                        :text="
-                          zonasStore.getZonaById(zonasId)?.nombre.toUpperCase() +
-                          ' - ' +
-                          zonasStore.getZonaById(zonasId)?.expand?.tipos_zonas?.nombre.toUpperCase()
-                        "
-                        pill
-                        color="blue-lighten-3"
-                        variant="flat"
+                        color="white"
+                        class="text-white"
                       >
+                        <v-icon start size="10">mdi-sprout</v-icon>
+                        {{ siembrasStore.getSiembraNombre(siembraId) }}
                       </v-chip>
-                    </p>
+                      <v-chip v-if="actividad.siembras?.length > 2" variant="tonal" size="x-small" color="white" class="text-white">
+                        +{{ actividad.siembras.length - 2 }}
+                      </v-chip>
+
+                      <!-- Chips para zonas -->
+                      <v-chip
+                        v-for="zonaId in (actividad.zonas || []).slice(0, 1)"
+                        :key="zonaId"
+                        color="blue-lighten-4"
+                        size="x-small"
+                        variant="flat"
+                        class="font-weight-bold"
+                      >
+                        <v-icon start size="10">mdi-map-marker</v-icon>
+                        {{ zonasStore.getZonaById(zonaId)?.nombre }}
+                      </v-chip>
+                    </div>
                   </v-card-title>
                 </div>
               </v-img>
@@ -138,6 +149,8 @@ import { storeToRefs } from 'pinia'
 import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useAvatarStore } from '@/stores/avatarStore'
 import { useZonasStore } from '@/stores/zonasStore'
+import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
 import ActividadForm from '../forms/ActividadForm.vue'
 
 const { t } = useI18n()
@@ -197,51 +210,76 @@ const abrirActividad = (id) => {
 const getActividadEstado = (isActive) => {
   return isActive ? t('activities.active') : t('activities.stopped')
 }
+
+function formatDate(dateString) {
+  if (!dateString) return 'N/A'
+  try {
+    return format(new Date(dateString), 'dd MMM yyyy', { locale: es })
+  } catch {
+    return dateString
+  }
+}
 </script>
 
 <style scoped>
-.Actividad-card {
+.siembra-card {
   position: relative;
   overflow: hidden;
   transition: all 0.3s ease;
+  border-radius: 12px !important;
 }
-.Actividad-image {
-  transition: transform 0.3s ease;
+
+.siembra-image {
+  transition: transform 0.5s ease;
 }
+
+.siembra-card:hover .siembra-image {
+  transform: scale(1.1);
+}
+
 .card-overlay {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.6);
-  transition: background-color 0.3s ease;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.3) 50%, rgba(0, 0, 0, 0.1) 100%);
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding: 16px;
+  padding: 12px;
+  transition: background 0.3s ease;
 }
-.Actividad-card:hover .Actividad-image {
-  transform: scale(1.05);
+
+.siembra-card:hover .card-overlay {
+  background: linear-gradient(to top, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.4) 50%, rgba(0, 0, 0, 0.2) 100%);
 }
-.Actividad-card:hover .card-overlay {
-  background-color: rgba(0, 0, 0, 0.1);
+
+.estado-bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  z-index: 2;
 }
-.Actividad-card .v-card__title {
-  color: white !important;
+
+.estado-bar.estado-activa { background-color: #4CAF50; }
+.estado-bar.estado-pausada { background-color: #FF9800; }
+
+.siembra-title {
+  font-size: 1rem;
+  font-weight: 800;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  letter-spacing: 0.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.status-chip {
-  z-index: 1;
-}
-.text-caption,
-.text-body-1,
-.text-body-2 {
-  color: white !important;
-}
-.v-card__title .text-h6 {
-  font-size: 1.25rem !important;
-  line-height: 1.5 !important;
-}
+
+.gap-1 { gap: 4px; }
+.gap-2 { gap: 8px; }
+
 .document-editor {
   border: 1px solid #e2e8f0;
   border-radius: 0.375rem;

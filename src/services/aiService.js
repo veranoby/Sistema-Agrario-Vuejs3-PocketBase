@@ -30,7 +30,7 @@ const config = {
  */
 export async function generateAIResponse(prompt, context = {}, sensitive = true) {
   const cacheKey = `ai_${btoa(prompt).substring(0, 50)}`
-  
+
   // 1. Intentar cache offline primero
   try {
     const cached = await AI_CACHE_DB.getItem(cacheKey)
@@ -65,7 +65,7 @@ export async function generateAIResponse(prompt, context = {}, sensitive = true)
     headers['Authorization'] = `Bearer ${openRouterKey}`
     headers['HTTP-Referer'] = window.location.origin
     headers['X-Title'] = 'Sistema Agri'
-    
+
     requestBody = {
       model: 'meta-llama/llama-3-8b-instruct:free',
       messages: [
@@ -74,8 +74,8 @@ export async function generateAIResponse(prompt, context = {}, sensitive = true)
       ]
     }
   } else {
-    endpoint = (sensitive || !config.cloudEndpoint) 
-      ? config.localEndpoint 
+    endpoint = (sensitive || !config.cloudEndpoint)
+      ? config.localEndpoint
       : config.cloudEndpoint
 
     if (!endpoint) {
@@ -91,11 +91,11 @@ export async function generateAIResponse(prompt, context = {}, sensitive = true)
     })
 
     if (!response.ok) throw new Error(`Error IA: ${response.statusText}`)
-    
+
     const data = await response.json()
     const aiText = data.response || data.choices?.[0]?.message?.content || ''
 
-    // 3. Guardar en cache
+    // 3. GUARDAR en cache
     await AI_CACHE_DB.setItem(cacheKey, {
       response: aiText,
       timestamp: Date.now()
@@ -123,7 +123,7 @@ Contexto: ${JSON.stringify(context)}`
 export async function autocompleteBitacora(informalInput, metricasConfig) {
   const prompt = `Convierte esta entrada informal en datos estructurados para bitácora: "${informalInput}". 
   Usa este formato de métricas: ${JSON.stringify(metricasConfig)}`
-  
+
   return generateAIResponse(prompt, {}, false) // No sensible, puede usar nube
 }
 
@@ -133,7 +133,7 @@ export async function autocompleteBitacora(informalInput, metricasConfig) {
 export async function suggestActivityCalendar(siembraContext, weatherForecast) {
   const prompt = `Sugiere un calendario óptimo de actividades para esta siembra: ${JSON.stringify(siembraContext)} 
   considerando el clima: ${weatherForecast}`
-  
+
   return generateAIResponse(prompt, siembraContext, true) // Sensible, usa local
 }
 

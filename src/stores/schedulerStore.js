@@ -130,7 +130,7 @@ export const useSchedulerStore = defineStore('scheduler', {
       this.enabled = true
       this.isRunning = true
 
-      // Guardar preferencia
+      // GUARDAR preferencia
       this.userPreference = 'auto'
       this.saveUserPreference()
 
@@ -152,7 +152,7 @@ export const useSchedulerStore = defineStore('scheduler', {
       this.enabled = false
       this.isRunning = false
 
-      // Guardar preferencia
+      // GUARDAR preferencia
       this.userPreference = 'manual'
       this.saveUserPreference()
 

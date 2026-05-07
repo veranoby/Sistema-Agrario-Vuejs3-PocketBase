@@ -1,67 +1,74 @@
 <template>
-  <div class="status-bar" :class="{ 'offline': !isOnline, 'syncing': isSyncing }">
-    <div class="status-left">
-      <!-- Conexión -->
-      <div class="status-indicator">
-        <span v-if="isOnline && !isSyncing" class="online">
-          <v-icon size="small" start>mdi-check-circle</v-icon>
-          Online
-        </span>
-        <span v-else-if="isOnline && isSyncing" class="syncing">
-          <v-icon size="small" start>mdi-sync</v-icon>
-          Sincronizando...
-        </span>
-        <span v-else class="offline">
-          <v-icon size="small" start>mdi-alert-circle</v-icon>
-          Offline
-        </span>
+  <v-app-bar
+    flat
+    density="compact"
+    :color="statusBgColor"
+    class="border-b transition-colors duration-300"
+    height="48"
+  >
+    <v-container fluid class="flex items-center justify-between px-4">
+      <div class="flex items-center gap-2">
+        <!-- Conexión -->
+        <div class="flex items-center">
+          <v-chip
+            size="small"
+            variant="flat"
+            :color="statusChipColor"
+            class="font-weight-bold"
+          >
+            <v-icon start size="16">{{ statusIcon }}</v-icon>
+            <span class="hidden sm:inline">{{ statusText }}</span>
+          </v-chip>
+        </div>
+
+        <!-- Operaciones pendientes -->
+        <v-chip
+          v-if="pendingOperations > 0"
+          size="small"
+          color="white"
+          variant="tonal"
+          class="font-weight-bold"
+        >
+          <v-icon start size="16">mdi-cloud-upload</v-icon>
+          {{ pendingOperations }}
+        </v-chip>
       </div>
 
-      <!-- Operaciones pendientes -->
-      <v-chip
-        v-if="pendingOperations > 0"
-        size="small"
-        color="warning"
-        variant="tonal"
-        class="ml-2"
-      >
-        <v-icon start size="small">mdi-cloud-upload</v-icon>
-        {{ pendingOperations }} pendientes
-      </v-chip>
-    </div>
+      <div class="flex items-center gap-2">
+        <!-- Scheduler Status -->
+        <v-chip
+          size="small"
+          :color="schedulerColor"
+          variant="flat"
+          class="font-weight-bold hidden xs:flex"
+        >
+          <v-icon start size="16">{{ schedulerIcon }}</v-icon>
+          {{ schedulerText }}
+        </v-chip>
 
-    <div class="status-right">
-      <!-- Scheduler Status -->
-      <v-chip
-        size="small"
-        :color="schedulerColor"
-        variant="tonal"
-        class="scheduler-chip"
-      >
-        <v-icon start size="small">{{ schedulerIcon }}</v-icon>
-        {{ schedulerText }}
-      </v-chip>
+        <!-- Tareas Pendientes -->
+        <v-btn
+          v-if="pendingTasksCount > 0"
+          icon
+          size="small"
+          variant="text"
+          color="white"
+        >
+          <v-badge
+            :content="pendingTasksCount > 99 ? '99+' : pendingTasksCount"
+            color="warning"
+            offset-x="4"
+            offset-y="4"
+          >
+            <v-icon>mdi-calendar-check</v-icon>
+          </v-badge>
+        </v-btn>
 
-      <!-- Tareas Pendientes -->
-      <v-btn
-        v-if="pendingTasksCount > 0"
-        icon
-        size="small"
-        variant="text"
-        class="ml-2 pending-tasks-btn"
-      >
-        <v-icon>mdi-calendar-check</v-icon>
-        <v-badge
-          :content="pendingTasksCount > 99 ? '99+' : pendingTasksCount"
-          color="warning"
-          floating
-        />
-      </v-btn>
-
-      <!-- Notification Bell -->
-      <NotificationBell class="ml-2" />
-    </div>
-  </div>
+        <!-- Notification Bell -->
+        <NotificationBell color="white" />
+      </div>
+    </v-container>
+  </v-app-bar>
 </template>
 
 <script setup>
@@ -77,16 +84,34 @@ const isOnline = computed(() => syncStore.isOnline)
 const isSyncing = computed(() => syncStore.syncStatus === 'syncing')
 const pendingOperations = computed(() => syncStore.queue?.length || 0)
 
+const statusBgColor = computed(() => {
+  if (!isOnline.value) return 'error'
+  if (isSyncing.value) return 'warning'
+  return 'success'
+})
+
+const statusChipColor = computed(() => 'rgba(255, 255, 255, 0.2)')
+
+const statusIcon = computed(() => {
+  if (!isOnline.value) return 'mdi-alert-circle'
+  if (isSyncing.value) return 'mdi-sync'
+  return 'mdi-check-circle'
+})
+
+const statusText = computed(() => {
+  if (!isOnline.value) return 'Offline'
+  if (isSyncing.value) return 'Sincronizando...'
+  return 'En línea'
+})
+
 // Scheduler state
 const schedulerText = computed(() => schedulerStore.statusText)
 const schedulerColor = computed(() => schedulerStore.statusColor)
 const schedulerIcon = computed(() => schedulerStore.statusIcon)
 
-// Tareas pendientes desde schedulerStore
 const pendingTasksCount = computed(() => schedulerStore.pendingTasksCount)
 
 onMounted(() => {
-  // Inicializar schedulerStore si no está inicializado
   if (!schedulerStore.initialized) {
     schedulerStore.init()
   }
@@ -94,81 +119,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.status-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 16px;
-  background-color: #4CAF50;
-  background: linear-gradient(to bottom, white, #4CAF50, #4CAF50, white);
-  color: white;
-  font-size: 14px;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-  min-height: 48px;
-}
-
-.status-bar.offline {
-  background-color: #f44336;
-  background: linear-gradient(to bottom, white, #f44336, #f44336, white);
-
-
-}
-
-.status-bar.syncing {
-  background-color: #ff9800;
-  background: linear-gradient(to bottom, white, #ff9800, #ff9800, white);
-}
-
-.status-left,
-.status-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.status-indicator {
-  display: flex;
-  align-items: center;
-}
-
-.status-indicator .online {
-  display: flex;
-  align-items: center;
-}
-
-.status-indicator .syncing {
-  display: flex;
-  align-items: center;
-}
-
-.status-indicator .offline {
-  display: flex;
-  align-items: center;
-}
-
-.scheduler-chip {
-  font-weight: 600;
-}
-
-.pending-tasks-btn {
-  color: white;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .status-bar {
-    padding: 6px 12px;
-    font-size: 12px;
-    min-height: 44px;
-  }
-
-  .status-left,
-  .status-right {
-    gap: 4px;
-  }
-}
+/* Scoped styles removed in favor of v-app-bar and Tailwind utility classes */
 </style>
+

@@ -157,22 +157,18 @@
           <v-card-actions>
             <v-spacer></v-spacer>
             <v-btn
-              size="small"
-              variant="flat"
-              rounded="lg"
+              variant="flat"              
               prepend-icon="mdi-cancel"
               color="red-lighten-3"
               @click="cerrarDialog"
-              >Cancelar</v-btn
+              >CANCELAR</v-btn
             >
             <v-btn
-              size="small"
-              variant="flat"
-              rounded="lg"
+              variant="flat"              
               prepend-icon="mdi-check"
               color="green-lighten-3"
               type="submit"
-              >Guardar</v-btn
+              >GUARDAR</v-btn
             >
           </v-card-actions>
         </v-form>

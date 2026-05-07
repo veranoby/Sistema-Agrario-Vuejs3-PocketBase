@@ -11,7 +11,6 @@ import router from './router'
 // Estilos
 import 'vuetify/styles'
 import './assets/main.css'
-import './index.css'
 import '@mdi/font/css/materialdesignicons.css'
 import '@fontsource/plus-jakarta-sans/500.css'
 import '@fontsource/plus-jakarta-sans/600.css'
@@ -109,9 +108,9 @@ app.config.errorHandler = (error, instance, info) => {
 
 // Capturar errores de promesas
 window.addEventListener('unhandledrejection', (event) => {
-  const isNetworkError = event.reason?.message?.includes('Failed to fetch') || 
-                         event.reason?.message?.includes('NetworkError') ||
-                         event.reason?.status === 0;
+  const isNetworkError = event.reason?.message?.includes('Failed to fetch') ||
+    event.reason?.message?.includes('NetworkError') ||
+    event.reason?.status === 0;
 
   // Silenciar visualmente errores de red huérfanos (típicos de syncStore o background)
   handleError(event.reason, 'Error no manejado', { silent: isNetworkError })
@@ -164,7 +163,7 @@ const initApp = async () => {
 
     // Inicializar auth store y esperar a que termine
     const isAuthenticated = await authStore.ensureAuthInitialized()
-    
+
     // Solo inicializar sync si hay una sesión válida
     if (isAuthenticated) {
       try {
@@ -191,9 +190,9 @@ const initApp = async () => {
     }
   } catch (error) {
     // Enviar a handleError pero en modo silencioso si es de red
-    const isNetworkError = error?.message?.includes('Failed to fetch') || 
-                           error?.message?.includes('NetworkError') || 
-                           error?.status === 0;
+    const isNetworkError = error?.message?.includes('Failed to fetch') ||
+      error?.message?.includes('NetworkError') ||
+      error?.status === 0;
     handleError(error, 'Error durante inicialización', { silent: isNetworkError })
   } finally {
     // Montar la aplicación en cualquier caso
@@ -206,7 +205,7 @@ initApp()
 // Cleanup al cerrar
 window.addEventListener('beforeunload', () => {
   const syncStore = useSyncStore()
-  // Guardar estado pendiente si es necesario
+  // GUARDAR estado pendiente si es necesario
   if (syncStore.queue.length > 0) {
     syncStore.persistQueueState()
   }

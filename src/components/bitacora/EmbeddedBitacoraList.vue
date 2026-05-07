@@ -22,7 +22,7 @@
           <v-list-item @click="expandedEntryId = expandedEntryId === entry.id ? null : entry.id" class="pa-0">
             <v-row no-gutters align="center">
               <v-col cols="auto" class="pr-2">
-                 <v-chip size="x-small" :color="estadoColor(entry.estado_ejecucion)" label>{{ entry.estado_ejecucion }}</v-chip>
+                 <v-chip size="small" :color="estadoColor(entry.estado_ejecucion)" label>{{ entry.estado_ejecucion }}</v-chip>
               </v-col>
               <v-col>
                 <div class="text-subtitle-2 text-truncate">

@@ -1,80 +1,127 @@
 <template>
-  <div v-if="metricasDisponibles.length > 0" class="agricultural-metrics-form">
+  <div v-if="metricasDisponibles.length > 0" class="fade-in">
     <!-- Header and Batch Controls -->
-    <div class="d-flex align-center justify-space-between mb-3">
-      <h4 class="text-subtitle-1 font-weight-bold agricultural-section-title">
-        <v-icon start color="green-darken-2">mdi-chart-line</v-icon>
+    <div class="flex items-center justify-between mb-4">
+      <h4 class="text-grey-darken-3 flex items-center">
+        <v-icon start color="success" class="mr-2">mdi-chart-line</v-icon>
         Métricas a Registrar
       </h4>
-      <div class="d-flex ga-2">
+      <div class="flex gap-2">
         <v-btn
-          size="small"
-          variant="outlined"
+          size="x-small"
+          variant="tonal"
           color="primary"
           @click="selectAllMetrics"
           :disabled="allMetricsSelected"
         >
-          Seleccionar Todo
+          Todo
         </v-btn>
         <v-btn
-          size="small"
-          variant="outlined"
+          size="x-small"
+          variant="tonal"
           color="error"
           @click="clearAllMetrics"
           :disabled="!anyMetricsSelected"
         >
-          Limpiar Todo
+          Limpiar
         </v-btn>
       </div>
     </div>
 
-    <!-- Metrics Grid -->
-    <v-row dense>
-      <v-col
-        v-for="metrica in metricasDisponibles"
-        :key="metrica.key"
-        cols="12"
-        sm="6"
-        md="4"
-      >
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <!-- MODO SELECCIÓN (Checklist para Batch) -->
+      <template v-if="mode === 'select'">
         <v-card
-          variant="outlined"
-          class="agricultural-metric-card"
-          :class="{ 'metric-selected': localSelection.includes(metrica.key) }"
+          v-for="metrica in metricasDisponibles"
+          :key="metrica.key"
+          variant="flat"
+          class="transition-all rounded-lg bg-grey-lighten-4"
+          :class="{ 'bg-success-lighten-5 elevation-1': localSelection.includes(metrica.key) }"
           @click="toggleMetricSelection(metrica.key)"
         >
-          <v-card-text class="pa-3">
+          <v-card-text class="pa-3 flex items-start">
             <v-checkbox-btn
               :model-value="localSelection.includes(metrica.key)"
               color="success"
-              class="agricultural-checkbox"
-            >
-              <template #label>
-                <div class="metric-label-content">
-                  <div class="metric-name">{{ metrica.descripcion }}</div>
-                  <div class="metric-value">
-                    <strong>{{ metrica.valor }}</strong>
-                    <span v-if="metrica.unidad" class="text-caption"> {{ metrica.unidad }}</span>
-                  </div>
-                </div>
-              </template>
-            </v-checkbox-btn>
+              density="compact"
+              class="mt-n1"
+            />
+            <div class="flex flex-col ml-1">
+              <span class="text-body-2" :class="localSelection.includes(metrica.key) ? 'text-success font-weight-bold' : 'text-grey-darken-3'">
+                {{ metrica.descripcion }}
+              </span>
+              <span class="text-caption text-grey-darken-1">
+                {{ metrica.valor }} <span class="text-grey">{{ metrica.unidad }}</span>
+              </span>
+            </div>
           </v-card-text>
         </v-card>
-      </v-col>
-    </v-row>
+      </template>
 
-    <!-- Selection Summary Alert -->
-    <v-alert
+      <!-- MODO EDICIÓN (Inputs para Bitácora Individual) -->
+      <template v-else-if="mode === 'edit'">
+        <div
+          v-for="metrica in metricasDisponibles"
+          :key="metrica.key"
+          class="flex flex-col"
+        >
+          <template v-if="metrica.tipo === 'select'">
+            <v-select
+              v-model="metricasValues[metrica.key]"
+              :items="metrica.opciones"
+              :label="metrica.descripcion"
+              variant="outlined"
+              density="compact"
+              class="rounded-lg"
+              :rules="metrica.requerido ? [v => !!v || 'Requerido'] : []"
+              hide-details="auto"
+            ></v-select>
+          </template>
+          <template v-else-if="metrica.tipo === 'boolean' || metrica.tipo === 'checkbox'">
+            <v-checkbox
+              v-model="metricasValues[metrica.key]"
+              :label="metrica.descripcion"
+              density="compact"
+              color="success"
+              hide-details="auto"
+            ></v-checkbox>
+          </template>
+          <template v-else-if="metrica.tipo === 'number'">
+            <v-text-field
+              v-model.number="metricasValues[metrica.key]"
+              :label="metrica.descripcion"
+              type="number"
+              variant="outlined"
+              density="compact"
+              :suffix="metrica.unidad"
+              :rules="metrica.requerido ? [v => !!v || 'Requerido'] : []"
+              hide-details="auto"
+            ></v-text-field>
+          </template>
+          <template v-else>
+            <v-text-field
+              v-model="metricasValues[metrica.key]"
+              :label="metrica.descripcion"
+              variant="outlined"
+              density="compact"
+              :rules="metrica.requerido ? [v => !!v || 'Requerido'] : []"
+              hide-details="auto"
+            ></v-text-field>
+          </template>
+        </div>
+      </template>
+    </div>
+
+    <!-- Selection Summary -->
+    <div
       v-if="localSelection.length > 0"
-      type="info"
-      variant="tonal"
-      class="mt-3 agricultural-alert"
-      density="compact"
+      class="mt-4 px-4 py-2 bg-blue-grey-lighten-5 rounded-lg d-inline-flex align-center border-l-4 border-blue-grey-lighten-2"
     >
-      <v-icon start>mdi-information</v-icon>
-      {{ localSelection.length }} de {{ metricasDisponibles.length }} métricas se registrarán.
-    </v-alert>
+      <v-icon size="16" color="blue-grey-darken-2" class="mr-2">mdi-information-outline</v-icon>
+      <span class="text-caption text-blue-grey-darken-3">
+        {{ localSelection.length }} de {{ metricasDisponibles.length }} métricas seleccionadas para registro.
+      </span>
+    </div>
   </div>
 </template>
 
@@ -86,33 +133,42 @@ const props = defineProps({
     type: Array,
     default: () => []
   },
-  modelValue: { // Used for v-model
+  modelValue: {
     type: Array,
     default: () => []
+  },
+  mode: {
+    type: String,
+    default: 'select', // 'select' or 'edit'
+    validator: (v) => ['select', 'edit'].includes(v)
+  },
+  metricasValues: {
+    type: Object,
+    default: () => ({})
   }
 });
 
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits(['update:modelValue', 'update:metricasValues']);
 
 const localSelection = ref([...props.modelValue]);
-
-// Sync local state with parent via v-model
-watch(localSelection, (newSelection) => {
-  emit('update:modelValue', newSelection);
+const metricasValues = computed({
+  get: () => props.metricasValues,
+  set: (val) => emit('update:metricasValues', val)
 });
 
-// Sync with parent if prop changes from outside
+watch(localSelection, (newSelection) => {
+  emit('update:modelValue', newSelection);
+}, { deep: true });
+
 watch(() => props.modelValue, (newParentValue) => {
   if (JSON.stringify(newParentValue) !== JSON.stringify(localSelection.value)) {
     localSelection.value = [...newParentValue];
   }
 });
 
-// Auto-select all when the list of available metrics changes
 watch(() => props.metricasDisponibles, () => {
   selectAllMetrics();
 }, { deep: true });
-
 
 const allMetricsSelected = computed(() => {
   return props.metricasDisponibles.length > 0 &&
@@ -142,115 +198,13 @@ const clearAllMetrics = () => {
 </script>
 
 <style scoped>
-/* Using shared agricultural styles from other components */
-.agricultural-metrics-form {
-  animation: fadeIn 0.5s ease-in-out;
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.agricultural-section-title {
-  color: var(--agri-soil-dark, #3e2723);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.agricultural-metric-card {
-  border: 2px solid rgba(76, 175, 80, 0.2);
-  border-radius: 10px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background: var(--agri-surface-card, #ffffff);
-  min-height: 80px;
-  position: relative;
-  overflow: hidden;
-  cursor: pointer;
-}
-
-.agricultural-metric-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--agri-green-primary, #2e7d32), var(--agri-green-light, #4caf50));
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.agricultural-metric-card:hover {
-  border-color: var(--agri-green-light, #4caf50);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(46, 125, 50, 0.2);
-}
-
-.agricultural-metric-card:hover::before {
-  opacity: 1;
-}
-
-.agricultural-metric-card.metric-selected {
-  border-color: var(--agri-green-primary, #2e7d32);
-  background: rgba(46, 125, 50, 0.05);
-  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.15);
-}
-
-.agricultural-metric-card.metric-selected::before {
-  opacity: 1;
-}
-
-.agricultural-checkbox {
-  width: 100%;
-}
-
-.agricultural-checkbox .v-label {
-  width: 100%;
-  color: var(--agri-soil-dark, #3e2723);
-}
-
-.metric-label-content {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.metric-name {
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: var(--agri-soil-dark, #3e2723);
-  line-height: 1.2;
-}
-
-.metric-value {
-  font-size: 0.85rem;
-  color: var(--agri-earth-brown, #5d4037);
-  opacity: 0.8;
-}
-
-.metric-selected .metric-name {
-  color: var(--agri-green-primary, #2e7d32);
-  font-weight: 700;
-}
-
-.metric-selected .metric-value {
-  color: var(--agri-earth-brown, #5d4037);
-  font-weight: 600;
-}
-
-.agricultural-alert {
-  border-radius: 8px;
-  border-left: 4px solid var(--agri-sky-blue, #1976d2);
-}
-
-.v-btn.v-btn--variant-outlined {
-  border-radius: 8px;
-  font-weight: 500;
-  letter-spacing: 0.025em;
-  min-height: 36px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 </style>
+

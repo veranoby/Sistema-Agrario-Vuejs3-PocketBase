@@ -30,7 +30,7 @@ export const useBitacoraStore = defineStore('bitacora', {
     },
     filters: {
       hacienda: null,
-      siembra_asociada: null,
+      siembras: null,
       programacion_origen: null,
       actividad_realizada: null,
       fecha_desde: null,
@@ -59,7 +59,10 @@ export const useBitacoraStore = defineStore('bitacora', {
       return state.bitacoraEntries.filter(entry => entry.programacion_origen === programacionId);
     },
     getBitacoraBySiembra: (state) => (siembraId) => {
-      return state.bitacoraEntries.filter(entry => entry.siembra_asociada === siembraId);
+      return state.bitacoraEntries.filter(entry => 
+        (entry.siembras && Array.isArray(entry.siembras) && entry.siembras.includes(siembraId)) ||
+        entry.siembras === siembraId
+      );
     },
     getEnrichedBitacoraEntries: (state) => {
       return [...state.bitacoraEntries].sort((a, b) => {
@@ -72,8 +75,14 @@ export const useBitacoraStore = defineStore('bitacora', {
       if (!siembraId) return [];
       return state.bitacoraEntries
         .filter(entry => {
-          if (entry.siembra_asociada === siembraId) return true;
-          return entry.expand?.siembra_asociada?.id === siembraId;
+          const hasDirectRef = (entry.siembras && Array.isArray(entry.siembras) && entry.siembras.includes(siembraId)) || entry.siembras === siembraId;
+          if (hasDirectRef) return true;
+          
+          const expandedSiembras = entry.expand?.siembras;
+          if (Array.isArray(expandedSiembras)) {
+            return expandedSiembras.some(s => s.id === siembraId);
+          }
+          return expandedSiembras?.id === siembraId;
         })
         .sort((a, b) => {
           const dateA = a.fecha_ejecucion ? new Date(a.fecha_ejecucion) : new Date(a.created);
@@ -125,10 +134,13 @@ export const useBitacoraStore = defineStore('bitacora', {
     async fetchBitacorasBySiembra(siembraId) {
       const syncStore = useSyncStore()
       if (!syncStore.isOnline) {
-        return this.bitacoraEntries.filter(e => e.siembra_asociada === siembraId)
+        return this.bitacoraEntries.filter(e => {
+          if (Array.isArray(e.siembras)) return e.siembras.includes(siembraId);
+          return e.siembras === siembraId;
+        })
       }
       return pb.collection('bitacora').getFullList({
-        filter: `siembra_asociada = "${siembraId}"`,
+        filter: `siembras ~ "${siembraId}"`,
         sort: '-created'
       })
     },
@@ -165,8 +177,8 @@ export const useBitacoraStore = defineStore('bitacora', {
       try {
         const filterParts = [`hacienda="${targetHacienda}"`];
         
-        if (filters.siembra_asociada) {
-          filterParts.push(`siembra_asociada="${filters.siembra_asociada}"`);
+        if (filters.siembras) {
+          filterParts.push(`siembras ~ "${filters.siembras}"`);
         }
         if (filters.programacion_origen) {
           filterParts.push(`programacion_origen="${filters.programacion_origen}"`);
@@ -186,7 +198,7 @@ export const useBitacoraStore = defineStore('bitacora', {
         const result = await pb.collection('bitacora').getList(page, perPage, {
           filter: filterString,
           sort: '-created',
-          expand: "actividad_realizada,actividad_realizada.tipo_actividades,siembra_asociada,user_responsable"
+          expand: "actividad_realizada,actividad_realizada.tipo_actividades,siembras"
         });
         
         this.pagination = {
@@ -248,7 +260,7 @@ export const useBitacoraStore = defineStore('bitacora', {
       };
       this.filters = {
         hacienda: null,
-        siembra_asociada: null,
+        siembras: null,
         programacion_origen: null,
         actividad_realizada: null,
         fecha_desde: null,
@@ -335,11 +347,10 @@ export const useBitacoraStore = defineStore('bitacora', {
           updated: new Date().toISOString(),
           _isTemp: true,
         };
-        this.bitacoraEntries.unshift(tempEntry);
-        // CORRECTO: Sanitizar para IndexedDB
-        syncStore.saveToLocalStorage('bitacoraEntries', JSON.parse(JSON.stringify(toRaw(this.bitacoraEntries))));
+        this.applySyncedCreate(tempId, tempEntry);
 
         await syncStore.queueOperation({
+
           type: 'create',
           collection: 'bitacora',
           data: fullEntryData,
@@ -356,13 +367,12 @@ export const useBitacoraStore = defineStore('bitacora', {
       this.isLoading = true;
       try {
         const record = await pb.collection('bitacora').create(fullEntryData, {
-          expand: "actividad_realizada,actividad_realizada.tipo_actividades,siembra_asociada,user_responsable"
+          expand: "actividad_realizada,actividad_realizada.tipo_actividades,siembras"
         });
-        const newEntry = {...record, _isTemp: false };
-        this.bitacoraEntries.unshift(newEntry);
-        // CORRECTO: Sanitizar para IndexedDB
-        syncStore.saveToLocalStorage('bitacoraEntries', JSON.parse(JSON.stringify(toRaw(this.bitacoraEntries))));
-        logger.debug('[BITACORA_STORE] Entry created on PocketBase (expanded) and added to store:', newEntry);
+        
+        this.applySyncedCreate(record.id, record);
+        
+        logger.debug('[BITACORA_STORE] Entry created on PocketBase (expanded) and added to store:', record);
 
         if (record) {
           await handler.postProcess(record, { actividadesStore })
@@ -370,7 +380,7 @@ export const useBitacoraStore = defineStore('bitacora', {
 
         eventBus.emit(EVENTS.BITACORA_UPDATED);
 
-        return newEntry;
+        return record;
       } catch (error) {
         handleError(error, 'Error creando entrada de bitácora en PocketBase');
         return null;
@@ -389,14 +399,8 @@ export const useBitacoraStore = defineStore('bitacora', {
 
         if (!syncStore.isOnline) {
             logger.debug('[BITACORA_STORE] Offline mode: Queuing update.');
-            if (index !== -1) {
-              this.bitacoraEntries[index] = { ...this.bitacoraEntries[index], ...dataToUpdate, updated: new Date().toISOString() };
-            }
-            // CORRECTO: Sanitizar para IndexedDB
-            syncStore.saveToLocalStorage('bitacoraEntries', JSON.parse(JSON.stringify(toRaw(this.bitacoraEntries))));
-            
+            this.applySyncedUpdate(id, dataToUpdate);
             eventBus.emit(EVENTS.BITACORA_UPDATED);
-            
             await syncStore.queueOperation({
                 type: 'update',
                 collection: 'bitacora',
@@ -410,18 +414,9 @@ export const useBitacoraStore = defineStore('bitacora', {
         this.isLoading = true;
         try {
             const record = await pb.collection('bitacora').update(id, dataToUpdate);
-            const updatedEntry = { ...record, _isTemp: false };
-            if (index !== -1) {
-                this.bitacoraEntries[index] = updatedEntry;
-            } else {
-                this.bitacoraEntries.unshift(updatedEntry);
-            }
-            // CORRECTO: Sanitizar para IndexedDB
-            syncStore.saveToLocalStorage('bitacoraEntries', JSON.parse(JSON.stringify(toRaw(this.bitacoraEntries))));
-            
+            this.applySyncedUpdate(id, record);
             eventBus.emit(EVENTS.BITACORA_UPDATED);
-            
-            return updatedEntry;
+            return record;
         } catch (error) {
             handleError(error, `Error actualizando entrada de bitácora ${id} en PocketBase`);
             return null;
@@ -436,18 +431,8 @@ export const useBitacoraStore = defineStore('bitacora', {
 
         if (!syncStore.isOnline) {
             logger.debug('[BITACORA_STORE] Offline mode: Queuing delete.');
-            const initialLength = this.bitacoraEntries.length;
-            this.bitacoraEntries = this.bitacoraEntries.filter(entry => entry.id !== id);
-            if (this.bitacoraEntries.length < initialLength) {
-                // CORRECTO: Sanitizar para IndexedDB
-                syncStore.saveToLocalStorage('bitacoraEntries', JSON.parse(JSON.stringify(toRaw(this.bitacoraEntries))));
-                
-                eventBus.emit(EVENTS.BITACORA_UPDATED);
-            } else {
-                console.warn(`[BITACORA_STORE] Cannot delete locally: item with id ${id} not found.`);
-                return false;
-            }
-
+            this.applySyncedDelete(id);
+            eventBus.emit(EVENTS.BITACORA_UPDATED);
             await syncStore.queueOperation({
                 type: 'delete',
                 collection: 'bitacora',
@@ -460,12 +445,8 @@ export const useBitacoraStore = defineStore('bitacora', {
         this.isLoading = true;
         try {
             await pb.collection('bitacora').delete(id);
-            this.bitacoraEntries = this.bitacoraEntries.filter(entry => entry.id !== id);
-            // CORRECTO: Sanitizar para IndexedDB
-            syncStore.saveToLocalStorage('bitacoraEntries', JSON.parse(JSON.stringify(toRaw(this.bitacoraEntries))));
-            
+            this.applySyncedDelete(id);
             eventBus.emit(EVENTS.BITACORA_UPDATED);
-            
             return true;
         } catch (error) {
             handleError(error, `Error eliminando entrada de bitácora ${id} en PocketBase`);

@@ -13,7 +13,7 @@
           v-bind="props"
           icon
           variant="text"
-          :color="unreadCount > 0 ? 'primary' : 'default'"
+          :color="unreadCount > 0 ? 'primary' : iconColor"
           class="notification-button"
         >
           <v-icon>mdi-bell</v-icon>
@@ -148,6 +148,15 @@ import { ref, computed, onMounted } from 'vue'
 import { useNotificationStore } from '@/stores/notificationStore'
 import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
+
+const props = defineProps({
+  color: {
+    type: String,
+    default: 'default'
+  }
+})
+
+const iconColor = computed(() => props.color)
 
 const notificationStore = useNotificationStore()
 const menuOpen = ref(false)

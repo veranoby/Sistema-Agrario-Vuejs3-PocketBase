@@ -1,4 +1,4 @@
-@import './base.css';
+/* Main Project Styles */
 
 /*
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -19,26 +19,9 @@
   --v-font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
-body {
-  font-family: 'Plus Jakarta Sans', sans-serif !important;
-}
 
-.v-application {
-  font-family: 'Plus Jakarta Sans', sans-serif !important;
-}
+/* Typography is handled globally in main.js via Vuetify defaults */
 
-/* Sobrescribe la fuente para todos los componentes de Vuetify */
-.v-application .v-card,
-.v-application .v-btn,
-.v-application .v-toolbar,
-.v-application .v-list,
-.v-application .v-table,
-.v-application .v-input,
-.v-application .v-select,
-.v-application .v-chip,
-.v-application .v-dialog {
-  font-family: 'Plus Jakarta Sans', sans-serif;
-}
 
 .ql-editor {
   font-family:
@@ -54,8 +37,8 @@ body {
   --color-background: #ffffff;
   --color-text: #2c3e50;
   --color-border: #eaeaea;
-  --fondo_claro: #89878747 !important;
-  --fondo_claro_tabla: #6380a217 !important;
+  --fondo_claro: #89878747;
+  --fondo_claro_tabla: #6380a217;
   --color_titulo: #000000;
 }
 
@@ -64,8 +47,8 @@ body {
   --color-background: #121212;
   --color-text: #ffffff;
   --color-border: #2c2c2c;
-  --fondo_claro: #89878747 !important;
-  --fondo_claro_tabla: #6e97b21c !important;
+  --fondo_claro: #89878747;
+  --fondo_claro_tabla: #6e97b21c;
 
   --color_titulo: #ffffff;
 }

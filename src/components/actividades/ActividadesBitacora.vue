@@ -3,7 +3,7 @@
     <v-card-title class="d-flex justify-space-between align-center text-body-1">
       <span>{{ t('activity_workspace.recent_log') }}</span>
       <v-btn
-        size="x-small"
+        size="small"
         color="green-lighten-2"
         icon
         rounded="circle"

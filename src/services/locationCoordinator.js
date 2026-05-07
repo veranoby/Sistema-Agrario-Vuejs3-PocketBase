@@ -72,7 +72,7 @@ class LocationCoordinator {
 
     // Wrapper para guardar en IndexedDB y luego llamar al callback del usuario.
     const wrappedOnUpdate = async (location) => {
-      // Guardar traza en offlineGeoStorage.
+      // GUARDAR traza en offlineGeoStorage.
       try {
         const traza = {
           id: `traza_${Date.now()}`,
@@ -226,13 +226,13 @@ class LocationCoordinator {
       const geoJson = layer.toGeoJSON()
       const { useZonasStore } = await import('@/stores/zonasStore')
       const zonasStore = useZonasStore()
-      
+
       const zonaData = {
         nombre: `Zona Dibujada ${new Date().toLocaleDateString()}`,
         geometria: geoJson,
         activa: true
       }
-      
+
       await zonasStore.crearZona(zonaData)
       logger.info('[LocationCoordinator] Polígono guardado y sincronizado vía zonasStore')
     } catch (error) {
@@ -248,7 +248,7 @@ class LocationCoordinator {
     try {
       const zonas = await offlineGeoStorage.getAllZonas(haciendaId)
       const L = window.L
-      
+
       zonas.forEach(zona => {
         if (zona.geometria) {
           const layer = L.geoJSON(zona.geometria)
@@ -263,11 +263,11 @@ class LocationCoordinator {
 
   async cacheMapTiles(zoomLevel = 10, radius = 2) {
     if (!this.mapInstance) return
-    
+
     try {
       const center = this.mapInstance.getCenter()
       const tiles = []
-      
+
       // Generar coordenadas de tiles cercanas.
       for (let x = -radius; x <= radius; x++) {
         for (let y = -radius; y <= radius; y++) {
@@ -280,16 +280,16 @@ class LocationCoordinator {
         }
       }
 
-      // Guardar tiles en CacheStorage nativo
+      // GUARDAR tiles en CacheStorage nativo
       logger.info(`[LocationCoordinator] Cacheando ${tiles.length} tiles en CacheStorage...`)
-      
+
       if (!('caches' in window)) {
         logger.warn('[LocationCoordinator] Cache API no está soportada en este navegador')
         return { cached: 0, status: 'unsupported' }
       }
 
       const cache = await window.caches.open('map-tiles-v1')
-      
+
       // Descargar y guardar cada tile
       for (const tile of tiles) {
         try {

@@ -135,8 +135,10 @@ export const useHaciendaManagementStore = defineStore('haciendaManagement', {
           plan: haciendaData.plan?.id || haciendaData.plan,
           status: haciendaData.status || 'active',
           contacto_email: haciendaData.contacto_email,
-          contacto_telefono: haciendaData.contacto_telefono
+          contacto_telefono: haciendaData.contacto_telefono,
+          openrouter_key: haciendaData.openrouter_key
         }
+
 
         if (!syncStore.isOnline) {
           // Modo offline: encolar operación
@@ -195,8 +197,10 @@ export const useHaciendaManagementStore = defineStore('haciendaManagement', {
           owner: haciendaData.owner?.id || haciendaData.owner,
           active_modules: haciendaData.active_modules,
           contacto_email: haciendaData.contacto_email,
-          contacto_telefono: haciendaData.contacto_telefono
+          contacto_telefono: haciendaData.contacto_telefono,
+          openrouter_key: haciendaData.openrouter_key
         }
+
 
         if (!syncStore.isOnline) {
           // Modo offline: encolar operación

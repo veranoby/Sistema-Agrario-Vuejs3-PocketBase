@@ -7,13 +7,13 @@
             <div class="w-full sm:flex-grow">
               <h3 class="profile-title text-sm sm:text-lg mb-2 sm:mb-0">
                 Dashboard de Siembras
-                <v-chip variant="flat" size="x-small" color="grey-lighten-2" class="mx-1" pill>
+                <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
                   <v-avatar start>
                     <v-img :src="avatarUrl" alt="Avatar"></v-img>
                   </v-avatar>
                   {{ userRole }}
                 </v-chip>
-                <v-chip variant="flat" size="x-small" color="green-lighten-3" class="mx-1" pill>
+                <v-chip variant="flat" size="small" color="green-lighten-3" class="mx-1" pill>
                   <v-avatar start>
                     <v-img :src="avatarHaciendaUrl" alt="Avatar"></v-img>
                   </v-avatar>
@@ -21,27 +21,27 @@
                 </v-chip>
 
                 <!-- Estadísticas como v-chips -->
-                <v-chip variant="flat" size="x-small" color="success" class="mx-1" pill>
-                  <v-icon start size="x-small">mdi-sprout</v-icon>
+                <v-chip variant="flat" size="small" color="success" class="mx-1" pill>
+                  <v-icon start size="small">mdi-sprout</v-icon>
                   Activas: {{ metrics.activeSiembras }}
                 </v-chip>
-                <v-chip variant="flat" size="x-small" color="blue" class="mx-1" pill>
-                  <v-icon start size="x-small">mdi-ruler</v-icon>
+                <v-chip variant="flat" size="small" color="blue" class="mx-1" pill>
+                  <v-icon start size="small">mdi-ruler</v-icon>
                   Área: {{ formatArea(metrics.totalArea) }}
                 </v-chip>
-                <v-chip variant="flat" size="x-small" color="orange" class="mx-1" pill>
-                  <v-icon start size="x-small">mdi-calendar-clock</v-icon>
+                <v-chip variant="flat" size="small" color="orange" class="mx-1" pill>
+                  <v-icon start size="small">mdi-calendar-clock</v-icon>
                   Cosechas: {{ metrics.upcomingHarvests }}
                 </v-chip>
                 <v-chip
                   v-if="metrics.alerts > 0"
                   variant="flat"
-                  size="x-small"
+                  size="small"
                   color="error"
                   class="mx-1"
                   pill
                 >
-                  <v-icon start size="x-small">mdi-alert-circle</v-icon>
+                  <v-icon start size="small">mdi-alert-circle</v-icon>
                   Alertas: {{ metrics.alerts }}
                 </v-chip>
               </h3>
@@ -52,7 +52,7 @@
                 sm:inline-flex
                 size="small"
                 variant="flat"
-                rounded="lg"
+                
                 color="#6380a247"
                 prepend-icon="mdi-plus"
                 @click="abrirDialogCreacion"
@@ -81,77 +81,90 @@
             <v-card
               elevation="2"
               class="siembra-card Actividad-card"
-              :class="getSiembraCardClass(siembra)"
               @click="abrirSiembra(siembra.id)"
               hover
             >
-              <!-- Header con color según estado -->
-              <div class="card-header" :style="getCardHeaderStyle(siembra)">
-                <div class="d-flex align-center justify-space-between">
-                  <div class="d-flex align-center">
-                    <v-icon
-                      :color="getSiembraStateColor(siembra.estado)"
-                      size="large"
-                      class="mr-2"
-                    >
-                      {{ getSiembraStateIcon(siembra.estado) }}
-                    </v-icon>
-                    <div>
-                      <div class="font-weight-bold text-body-1">{{ siembra.nombre }}</div>
-                      <div class="text-caption text-medium-emphasis">{{ siembra.tipo }}</div>
-                    </div>
+              <v-img
+                :src="getSiembraAvatarUrl(siembra)"
+                height="220px"
+                cover
+                class="siembra-image"
+              >
+                <div class="fill-height card-overlay">
+                  <!-- Barra de estado lateral -->
+                  <div class="estado-bar" :class="`estado-${siembra.estado?.replace('_', '-')}`"></div>
+                  
+                  <!-- Menú de acciones (Kebab) -->
+                  <div class="absolute top-2 right-2 z-20">
+                    <v-menu location="bottom end">
+                      <template v-slot:activator="{ props }">
+                        <v-btn
+                          icon="mdi-dots-vertical"
+                          variant="text"
+                          color="white"
+                          size="small"
+                          v-bind="props"
+                          @click.stop
+                        ></v-btn>
+                      </template>
+                      <v-list density="compact">
+                        <v-list-item
+                          prepend-icon="mdi-delete"
+                          title="Eliminar Siembra"
+                          base-color="error"
+                          @click.stop="confirmarEliminacion(siembra)"
+                        ></v-list-item>
+                      </v-list>
+                    </v-menu>
                   </div>
+
+                  <v-card-title class="px-2 py-0 w-full">
+                    <div class="d-flex align-center gap-2 mb-1 w-full">
+                      <v-icon :color="getSiembraStateColor(siembra.estado)" size="18">{{ getSiembraStateIcon(siembra.estado) }}</v-icon>
+                      <span class="siembra-title flex-grow-1 text-white">{{ siembra.nombre }}</span>
+                    </div>
+                    
+                    <div class="d-flex align-center flex-wrap gap-1 mb-2">
+                      <v-chip
+                        :color="getStatusColor(siembra.estado)"
+                        size="x-small"
+                        variant="flat"
+                        class="text-uppercase font-weight-bold"
+                      >
+                        {{ siembra.estado }}
+                      </v-chip>
+                      
+                      <v-chip size="x-small" variant="tonal" color="green-lighten-4" class="text-white">
+                        <v-icon start size="10">mdi-sprout</v-icon>
+                        {{ siembra.tipo }}
+                      </v-chip>
+                    </div>
+
+                    <div class="d-flex align-center flex-wrap gap-1 mt-auto">
+                      <v-chip variant="tonal" size="x-small" color="white" class="text-white">
+                        <v-icon start size="10">mdi-calendar</v-icon>
+                        {{ formatDate(siembra.fecha_inicio || siembra.created) }}
+                      </v-chip>
+
+                      <v-chip
+                        v-if="getZoneCount(siembra) > 0"
+                        color="blue-lighten-4"
+                        size="x-small"
+                        variant="flat"
+                        class="font-weight-bold"
+                      >
+                        <v-icon start size="10">mdi-map-marker</v-icon>
+                        {{ getZoneCount(siembra) }} zonas
+                      </v-chip>
+
+                      <v-chip v-if="siembra.area_total > 0" variant="tonal" size="x-small" color="white" class="text-white">
+                        <v-icon start size="10">mdi-ruler</v-icon>
+                        {{ formatArea(siembra.area_total) }}
+                      </v-chip>
+                    </div>
+                  </v-card-title>
                 </div>
-              </div>
-
-              <v-divider></v-divider>
-
-              <v-card-text>
-                <div class="d-flex justify-space-between align-center mb-2">
-                  <span class="text-caption text-medium-emphasis">Estado:</span>
-                  <v-chip
-                    :color="getStatusColor(siembra.estado)"
-                    size="small"
-                    variant="elevated"
-                  >
-                    <v-icon start size="small">mdi-leaf</v-icon>
-                    {{ siembra.estado }}
-                  </v-chip>
-                </div>
-
-                <div class="d-flex justify-space-between align-center mb-2">
-                  <span class="text-caption text-medium-emphasis">Inicio:</span>
-                  <span class="text-body-2">{{ formatDate(siembra.fecha_inicio || siembra.created) }}</span>
-                </div>
-
-                <div class="d-flex justify-space-between align-center">
-                  <span class="text-caption text-medium-emphasis">Zonas:</span>
-                  <v-chip
-                    v-if="getZoneCount(siembra) > 0"
-                    color="info"
-                    size="small"
-                    variant="outlined"
-                  >
-                    <v-icon start size="small">mdi-map-marker</v-icon>
-                    {{ getZoneCount(siembra) }}
-                  </v-chip>
-                  <span v-else class="text-caption text-disabled">Sin zonas</span>
-                </div>
-              </v-card-text>
-
-              <v-divider></v-divider>
-
-              <v-card-actions>
-                <v-btn
-                  variant="text"
-                  color="success"
-                  block
-                  @click.stop="abrirSiembra(siembra.id)"
-                >
-                  <v-icon start>mdi-open-in-app</v-icon>
-                  Abrir Siembra
-                </v-btn>
-              </v-card-actions>
+              </v-img>
             </v-card>
           </v-col>
         </v-row>
@@ -169,12 +182,15 @@
               <v-card-text class="pa-0">
                 <div class="map-container" style="height: 400px;">
                   <GisMapComponent
-                    v-if="siembrasGeoJSON"
                     :initial-geo-json="siembrasGeoJSON"
+                    :center="mapCenter"
                     :readonly="true"
+                    :loading="mapLoading"
                   />
-                  <div v-else class="d-flex align-center justify-center h-100">
-                    <v-progress-circular indeterminate color="success" />
+                  <div v-if="!siembrasGeoJSON && !mapLoading" class="map-overlay-empty d-flex flex-column align-center justify-center">
+                    <v-icon size="48" color="grey-lighten-2" class="mb-2">mdi-map-off</v-icon>
+                    <div class="text-caption text-medium-emphasis">Sin geometrías de siembras detectadas</div>
+                    <div class="text-xxs text-grey mt-1">(Se requieren zonas tipo 'Lote' asignadas)</div>
                   </div>
                 </div>
               </v-card-text>
@@ -200,6 +216,14 @@
 
     <!-- Dialog de creación -->
     <SiembraCreateDialog v-model="dialogNuevaSiembra" @created="onSiembraCreada" />
+
+    <!-- Modal de eliminación inteligente -->
+    <SiembraDeleteModal
+      v-model="showDeleteModal"
+      :siembra-id="selectedSiembra?.id"
+      :siembra-nombre="selectedSiembra?.nombre"
+      @deleted="onSiembraEliminada"
+    />
   </v-container>
 </template>
 
@@ -216,32 +240,64 @@ import { es } from 'date-fns/locale'
 import GisMapComponent from '@/components/GisMapComponent.vue'
 import CycleChart from './CycleChart.vue'
 import SiembraCreateDialog from './SiembraCreateDialog.vue'
+import SiembraDeleteModal from './SiembraDeleteModal.vue'
+import { useAvatarStore } from '@/stores/avatarStore'
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
+import { logger } from '@/utils/logger'
 
 const router = useRouter()
 const siembrasStore = useSiembrasStore()
 const zonasStore = useZonasStore()
 const authStore = useAuthStore()
 const haciendaStore = useHaciendaStore()
+const avatarStore = useAvatarStore()
+const uiFeedbackStore = useUiFeedbackStore()
 
 const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
+const { tiposZonas } = storeToRefs(zonasStore)
+
 const siembras = ref([])
 const zonas = ref([])
 const dialogNuevaSiembra = ref(false)
 
+// Estado para eliminación
+const showDeleteModal = ref(false)
+const selectedSiembra = ref(null)
+
 const userRole = computed(() => authStore.user?.role || '')
 const avatarUrl = computed(() => authStore.avatarUrl)
+const mapLoading = ref(true)
+
+// Centrado del mapa: Hacienda como fallback
+const mapCenter = computed(() => {
+  if (mi_hacienda.value?.gps) {
+    const gps = mi_hacienda.value.gps
+    return [gps.lat, gps.lng]
+  }
+  return [4.5709, -74.2973] // Default Colombia
+})
+
+const getSiembraAvatarUrl = (siembra) => {
+  return avatarStore.getAvatarUrl({ ...siembra, type: 'siembra' }, 'Siembras')
+}
 
 // Cargar datos
 onMounted(async () => {
   try {
+    mapLoading.value = true
     await Promise.all([
       siembrasStore.init(),
+      zonasStore.cargarTiposZonas(),
       zonasStore.cargarZonas()
     ])
     siembras.value = siembrasStore.siembras || []
     zonas.value = zonasStore.zonas || []
+    logger.debug('[SiembrasDashboard] Datos cargados con éxito')
   } catch (error) {
     console.error('Error cargando datos:', error)
+    uiFeedbackStore.showError('Error cargando datos del dashboard')
+  } finally {
+    mapLoading.value = false
   }
 })
 
@@ -297,22 +353,47 @@ const metrics = computed(() => {
 const siembrasGeoJSON = computed(() => {
   if (!siembras.value || siembras.value.length === 0) return null
 
-  return {
-    type: 'FeatureCollection',
-    features: siembras.value
-      .filter(s => s.geometria)
-      .map(s => ({
+  const features = []
+
+  siembras.value.forEach(s => {
+    // Prioridad 1: Geometría directa de la siembra
+    if (s.geometria) {
+      features.push({
         type: 'Feature',
-        properties: {
-          id: s.id,
-          nombre: s.nombre,
-          estado: s.estado,
-          area: s.area_total
-        },
+        properties: { id: s.id, nombre: s.nombre, estado: s.estado, area: s.area_total, source: 'direct' },
         geometry: s.geometria
-      }))
-  }
+      })
+    } 
+    // Prioridad 2: Agregación de zonas tipo 'Lotes'
+    else {
+      const lotesSiembra = zonas.value.filter(z => {
+        const matchesSiembra = Array.isArray(z.siembra) ? z.siembra.includes(s.id) : z.siembra === s.id
+        const tipo = tiposZonas.value.find(t => t.id === z.tipos_zonas)
+        const esLote = tipo?.nombre?.toLowerCase().includes('lote') || 
+                       z.nombre?.toLowerCase().includes('lote') ||
+                       z.nombre?.toLowerCase().startsWith('l-')
+        return matchesSiembra && esLote && z.geometria
+      })
+
+      lotesSiembra.forEach(lote => {
+        features.push({
+          type: 'Feature',
+          properties: { 
+            id: s.id, 
+            nombre: `${s.nombre} (${lote.nombre})`, 
+            estado: s.estado,
+            area: lote.area?.area,
+            source: 'zone'
+          },
+          geometry: lote.geometria
+        })
+      })
+    }
+  })
+
+  return features.length > 0 ? { type: 'FeatureCollection', features } : null
 })
+
 
 const abrirDialogCreacion = () => {
   dialogNuevaSiembra.value = true
@@ -321,6 +402,18 @@ const abrirDialogCreacion = () => {
 const onSiembraCreada = () => {
   // Recargar siembras
   siembras.value = siembrasStore.siembras || []
+}
+
+// Acciones de eliminación
+const confirmarEliminacion = (siembra) => {
+  selectedSiembra.value = siembra
+  showDeleteModal.value = true
+}
+
+const onSiembraEliminada = (id) => {
+  // Filtrar localmente para respuesta inmediata
+  siembras.value = siembras.value.filter(s => s.id !== id)
+  selectedSiembra.value = null
 }
 
 const abrirSiembra = (id) => {
@@ -334,10 +427,6 @@ const getZoneCount = (siembra) => {
     }
     return z.siembra === siembra.id
   }).length
-}
-
-const getSiembraCardClass = (siembra) => {
-  return `estado-${siembra.estado.replace('_', '-')}`
 }
 
 const getSiembraStateColor = (estado) => {
@@ -370,20 +459,6 @@ const getStatusColor = (status) => {
   return colors[status] || 'grey'
 }
 
-const getCardHeaderStyle = (siembra) => {
-  const backgrounds = {
-    'planificada': 'linear-gradient(135deg, rgba(25, 118, 210, 0.1) 0%, rgba(25, 118, 210, 0.05) 100%)',
-    'en_crecimiento': 'linear-gradient(135deg, rgba(46, 125, 50, 0.1) 0%, rgba(46, 125, 50, 0.05) 100%)',
-    'cosechada': 'linear-gradient(135deg, rgba(245, 124, 0, 0.1) 0%, rgba(245, 124, 0, 0.05) 100%)',
-    'finalizada': 'linear-gradient(135deg, rgba(158, 158, 158, 0.1) 0%, rgba(158, 158, 158, 0.05) 100%)'
-  }
-  return {
-    background: backgrounds[siembra.estado] || backgrounds['en_crecimiento'],
-    padding: '16px',
-    borderBottom: '1px solid rgba(0,0,0,0.1)'
-  }
-}
-
 function formatArea(area) {
   if (!area) return '0 ha'
   if (area >= 100) {
@@ -410,6 +485,18 @@ function formatDate(dateString) {
 .map-container {
   border-radius: 8px;
   overflow: hidden;
+  position: relative;
+}
+
+.map-overlay-empty {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.7);
+  z-index: 10;
+  pointer-events: none;
 }
 
 .siembra-card {
@@ -444,9 +531,67 @@ function formatDate(dateString) {
   position: relative;
   overflow: hidden;
   transition: all 0.3s ease;
+  border-radius: 12px !important;
 }
+
+.siembra-image {
+  transition: transform 0.5s ease;
+}
+
+.siembra-card:hover .siembra-image {
+  transform: scale(1.1);
+}
+
+.card-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.3) 50%, rgba(0, 0, 0, 0.1) 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 12px;
+  transition: background 0.3s ease;
+}
+
+.siembra-card:hover .card-overlay {
+  background: linear-gradient(to top, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.4) 50%, rgba(0, 0, 0, 0.2) 100%);
+}
+
+.estado-bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  z-index: 2;
+}
+
+.estado-bar.estado-planificada { background-color: #2196F3; }
+.estado-bar.estado-en-crecimiento { background-color: #4CAF50; }
+.estado-bar.estado-cosechada { background-color: #FF9800; }
+.estado-bar.estado-finalizada { background-color: #9E9E9E; }
+
+.siembra-title {
+  font-size: 1rem;
+  font-weight: 800;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  letter-spacing: 0.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gap-1 { gap: 4px; }
+.gap-2 { gap: 8px; }
 
 .h-100 {
   height: 100%;
+}
+
+.text-xxs {
+  font-size: 0.65rem;
 }
 </style>

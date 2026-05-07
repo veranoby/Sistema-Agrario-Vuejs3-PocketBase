@@ -418,9 +418,9 @@ routerAdd("POST", "/api/modulos/:id/activate", (e) => {
     const subscriptionsCollection = $app.dao().findCollectionByNameOrId("subscriptions")
     const existingSubscription = $app.dao().findFirstRecordByFilter(
       subscriptionsCollection,
-      $app.dao().filter("hacienda = {:haciendaId} && modulo = {:moduloId} && is_active = true", { 
-        haciendaId, 
-        moduloId 
+      $app.dao().filter("hacienda = {:haciendaId} && modulo = {:moduloId} && is_active = true", {
+        haciendaId,
+        moduloId
       })
     )
 
@@ -477,13 +477,13 @@ routerAdd("POST", "/api/modulos/:id/deactivate", (e) => {
 
   try {
     const subscriptionsCollection = $app.dao().findCollectionByNameOrId("subscriptions")
-    
+
     // Buscar suscripción activa
     const subscription = $app.dao().findFirstRecordByFilter(
       subscriptionsCollection,
-      $app.dao().filter("hacienda = {:haciendaId} && modulo = {:moduloId} && is_active = true", { 
-        haciendaId, 
-        moduloId 
+      $app.dao().filter("hacienda = {:haciendaId} && modulo = {:moduloId} && is_active = true", {
+        haciendaId,
+        moduloId
       })
     )
 
@@ -566,7 +566,7 @@ routerAdd("POST", "/api/admin/users", (e) => {
 
   try {
     const usersCollection = $app.dao().findCollectionByNameOrId("users")
-    
+
     const newUser = $app.dao().createRecord(usersCollection, {
       email: body.email,
       username: body.username,
@@ -1269,7 +1269,7 @@ routerAdd("GET", "/api/analytics/global", async (e) => {
       cachedAt: new Date().toISOString()
     }
 
-    // Guardar en caché
+    // GUARDAR en caché
     setCache(result)
 
     return e.json(HTTP_STATUS.OK, result)
@@ -1289,7 +1289,7 @@ routerAdd("GET", "/api/analytics/usage", async (e) => {
   try {
     // Verificar autenticación
     const authRecord = $apis.requireAuth()(e)
-    
+
     // Validar que sea superadmin
     if (authRecord.get("role") !== "superadmin") {
       return e.json(403, { error: "Forbidden: Superadmin role required" })
@@ -1320,7 +1320,7 @@ routerAdd("GET", "/api/analytics/usage", async (e) => {
     // Construir filtro
     const filterParts = []
     filterParts.push(`created >= "${startDate}" && created <= "${endDate}"`)
-    
+
     if (userId) filterParts.push(`user_responsable = "${userId}"`)
     if (haciendaId) filterParts.push(`hacienda = "${haciendaId}"`)
 
@@ -1399,7 +1399,7 @@ routerAdd("GET", "/api/analytics/usage", async (e) => {
           log.get("accion") || log.get("tipo") || "unknown"
         ])
       })
-      
+
       const csvContent = csvRows.map(row => row.join(",")).join("\n")
       e.response.header("Content-Type", "text/csv")
       e.response.header("Content-Disposition", "attachment; filename=usage_metrics.csv")
@@ -1423,7 +1423,7 @@ routerAdd("GET", "/api/analytics/patterns", async (e) => {
   try {
     // Verificar autenticación
     const authRecord = $apis.requireAuth()(e)
-    
+
     // Validar que sea superadmin
     if (authRecord.get("role") !== "superadmin") {
       return e.json(403, { error: "Forbidden: Superadmin role required" })
@@ -1437,7 +1437,7 @@ routerAdd("GET", "/api/analytics/patterns", async (e) => {
     // Construir filtros según tipo
     let collection
     let filterParts = []
-    
+
     if (type === "siembra" || type === "fertilizacion" || type === "rendimiento") {
       try {
         collection = $app.dao().findCollectionByNameOrId("siembras")
@@ -1470,7 +1470,7 @@ routerAdd("GET", "/api/analytics/patterns", async (e) => {
         const mes = fecha.getMonth() + 1
         const cultivoName = rec.get("cultivo") || "unknown"
         const key = `${mes}-${cultivoName}`
-        
+
         monthCultivo[key] = monthCultivo[key] || { mes, cultivo: cultivoName, count: 0 }
         monthCultivo[key].count++
       })
@@ -1493,7 +1493,7 @@ routerAdd("GET", "/api/analytics/patterns", async (e) => {
       records.items.forEach(rec => {
         const cultivoName = rec.get("cultivo") || "unknown"
         const fertilizacion = rec.get("fertilizacion") || rec.get("cantidad_fertilizante") || 0
-        
+
         cultivoFertilizacion[cultivoName] = cultivoFertilizacion[cultivoName] || { sum: 0, count: 0 }
         cultivoFertilizacion[cultivoName].sum += parseFloat(fertilizacion) || 0
         cultivoFertilizacion[cultivoName].count++
@@ -1513,7 +1513,7 @@ routerAdd("GET", "/api/analytics/patterns", async (e) => {
       records.items.forEach(rec => {
         const cultivoName = rec.get("cultivo") || "unknown"
         const rendimiento = rec.get("rendimiento") || rec.get("cosecha_kg") || 0
-        
+
         cultivoRendimiento[cultivoName] = cultivoRendimiento[cultivoName] || { sum: 0, count: 0 }
         cultivoRendimiento[cultivoName].sum += parseFloat(rendimiento) || 0
         cultivoRendimiento[cultivoName].count++

@@ -3,7 +3,7 @@
     <v-card-title class="headline d-flex justify-between">
       <h2 class="text-md font-bold mt-2">{{ t('activity_workspace.reminders') }}</h2>
       <v-btn
-        size="x-small"
+        size="small"
         color="green-lighten-2"
         @click="abrirNuevoRecordatorio"
         icon

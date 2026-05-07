@@ -159,7 +159,7 @@ export const useNotificationStore = defineStore('notifications', {
       // Mostrar notificación del navegador si está permitido
       this.showBrowserNotification(newNotification)
 
-      // Guardar en localStorage
+      // GUARDAR en localStorage
       this.saveToStorage()
 
       console.log(`[NotificationStore] Notificación agregada: ${newNotification.title}`)

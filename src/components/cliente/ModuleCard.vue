@@ -14,7 +14,7 @@
           </v-avatar>
           <div>
             <h3 class="text-h6 mb-1">{{ modulo.name }}</h3>
-            <v-chip size="x-small" color="primary" variant="outlined">
+            <v-chip size="small" color="primary" variant="outlined">
               {{ getCategoryTitle(modulo.category) }}
             </v-chip>
           </div>

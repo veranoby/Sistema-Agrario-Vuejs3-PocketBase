@@ -42,7 +42,7 @@
             </v-form>
           </v-card-text>
           <v-card-actions>
-            <v-btn color="primary" @click="saveGeneralSettings">Guardar Cambios</v-btn>
+            <v-btn color="primary" @click="saveGeneralSettings">GUARDAR Cambios</v-btn>
           </v-card-actions>
         </v-card>
       </v-col>
@@ -87,7 +87,7 @@
             </v-form>
           </v-card-text>
           <v-card-actions>
-            <v-btn color="secondary" @click="saveLimitsSettings">Guardar Límites</v-btn>
+            <v-btn color="secondary" @click="saveLimitsSettings">GUARDAR Límites</v-btn>
           </v-card-actions>
         </v-card>
       </v-col>
@@ -134,7 +134,7 @@
             </v-form>
           </v-card-text>
           <v-card-actions>
-            <v-btn color="warning" @click="saveAlertSettings">Guardar Umbrales</v-btn>
+            <v-btn color="warning" @click="saveAlertSettings">GUARDAR Umbrales</v-btn>
           </v-card-actions>
         </v-card>
       </v-col>
@@ -175,7 +175,7 @@
           <v-card-text>
             <v-row>
               <v-col cols="12" md="6">
-                <h4 class="text-subtitle-1 mb-2">Crear Backup</h4>
+                <h4 class=" mb-2">Crear Backup</h4>
                 <p class="text-body-2 text-grey mb-3">
                   Genera un backup completo de todos los datos del sistema.
                 </p>
@@ -184,7 +184,7 @@
                 </v-btn>
               </v-col>
               <v-col cols="12" md="6">
-                <h4 class="text-subtitle-1 mb-2">Restaurar Backup</h4>
+                <h4 class=" mb-2">Restaurar Backup</h4>
                 <p class="text-body-2 text-grey mb-3">
                   Restaura los datos desde un archivo de backup.
                 </p>
@@ -250,7 +250,7 @@
               :disabled="!envChanged"
               @click="saveEnvVariables"
             >
-              Guardar Variables
+              GUARDAR Variables
             </v-btn>
           </v-card-text>
         </v-card>
@@ -383,7 +383,7 @@ async function loadEnvVariables() {
   }
 }
 
-// Guardar configuración general
+// GUARDAR configuración general
 async function saveGeneralSettings() {
   try {
     await pb.collection('settings').upsert({
@@ -396,7 +396,7 @@ async function saveGeneralSettings() {
   }
 }
 
-// Guardar límites
+// GUARDAR límites
 async function saveLimitsSettings() {
   try {
     await pb.collection('settings').upsert({
@@ -412,7 +412,7 @@ async function saveLimitsSettings() {
   }
 }
 
-// Guardar umbrales de alertas
+// GUARDAR umbrales de alertas
 async function saveAlertSettings() {
   try {
     await pb.collection('settings').upsert({
@@ -449,7 +449,7 @@ function markEnvChanged(item) {
   envChanged.value = envVariables.value.some(e => e.changed)
 }
 
-// Guardar variables de entorno
+// GUARDAR variables de entorno
 async function saveEnvVariables() {
   try {
     const changed = envVariables.value.filter(e => e.changed)

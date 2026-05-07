@@ -7,6 +7,10 @@ import { handleError } from '@/utils/errorHandler'
 import { useHaciendaStore } from './haciendaStore'
 import { calculateBpaStatus } from '@/utils/agriMetrics'
 import { logger } from '@/utils/logger'
+import { offlineGeoStorage } from '@/utils/offlineGeoStorage'
+import { tieredCache, CacheKeys } from '@/utils/cacheManager'
+
+
 
 
 export const useZonasStore = defineStore('zonas', {
@@ -25,7 +29,7 @@ export const useZonasStore = defineStore('zonas', {
     // NUEVO: Filtros (faltaba)
     filters: {
       hacienda: null,
-      siembra_asociada: null,
+      siembra: null,
       programacion_origen: null,
       actividad_realizada: null,
       fecha_desde: null,
@@ -86,46 +90,50 @@ export const useZonasStore = defineStore('zonas', {
     async fetchPage(page = 1, perPage = 20, filters = this.filters) {
       const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore();
-      
+
       // CORRECTO: Usar safeFilters para evitar undefined
       const safeFilters = (filters && typeof filters === 'object') ? filters : (this.filters || {});
       const targetHacienda = safeFilters.hacienda || haciendaStore.mi_hacienda?.id;
-      
+
       if (!targetHacienda) {
         console.warn('[ZONAS_STORE] No haciendaId provided to fetchPage.');
         return { items: [], pagination: this.pagination };
       }
-      
+
       logger.debug(`[ZONAS_STORE] Fetching page ${page} with ${perPage} items per page for hacienda: ${targetHacienda}`);
       this.loading = true;
-      
+
       try {
-        const filterParts = [`hacienda="${targetHacienda}"`];
-        
-        if (safeFilters.siembra_asociada) {
-          filterParts.push(`siembra_asociada="${safeFilters.siembra_asociada}"`);
-        }
-        if (safeFilters.programacion_origen) {
-          filterParts.push(`programacion_origen="${safeFilters.programacion_origen}"`);
-        }
-        if (safeFilters.actividad_realizada) {
-          filterParts.push(`actividad_realizada="${safeFilters.actividad_realizada}"`);
-        }
-        if (safeFilters.fecha_desde) {
-          filterParts.push(`fecha_ejecucion>"${safeFilters.fecha_desde}"`);
-        }
-        if (safeFilters.fecha_hasta) {
-          filterParts.push(`fecha_ejecucion<"${safeFilters.fecha_hasta}"`);
-        }
-        
-        const filterString = filterParts.join(' && ');
-        
-        const result = await pb.collection('zonas').getList(page, perPage, {
-          filter: filterString,
-          sort: '-created',
-          expand: "actividad_realizada,actividad_realizada.tipo_actividades,siembra_asociada,user_responsable"
-        });
-        
+        const cacheConfig = CacheKeys.paginatedResult('zonas', page, safeFilters)
+
+        const result = await tieredCache.fetchWithCache(cacheConfig, async () => {
+          const filterParts = [`hacienda="${targetHacienda}"`];
+
+          if (safeFilters.siembra) {
+            filterParts.push(`siembra="${safeFilters.siembra}"`);
+          }
+          if (safeFilters.programacion_origen) {
+            filterParts.push(`programacion_origen="${safeFilters.programacion_origen}"`);
+          }
+          if (safeFilters.actividad_realizada) {
+            filterParts.push(`actividad_realizada="${safeFilters.actividad_realizada}"`);
+          }
+          if (safeFilters.fecha_desde) {
+            filterParts.push(`fecha_ejecucion>"${safeFilters.fecha_desde}"`);
+          }
+          if (safeFilters.fecha_hasta) {
+            filterParts.push(`fecha_ejecucion<"${safeFilters.fecha_hasta}"`);
+          }
+
+          const filterString = filterParts.join(' && ');
+
+          return await pb.collection('zonas').getList(page, perPage, {
+            filter: filterString,
+            sort: '-created',
+            expand: "actividad_realizada,actividad_realizada.tipo_actividades,siembra"
+          });
+        })
+
         this.pagination = {
           page: result.page,
           perPage: result.perPage,
@@ -133,22 +141,34 @@ export const useZonasStore = defineStore('zonas', {
           totalPages: result.totalPages,
           hasMore: result.page < result.totalPages
         };
-        
+
         this.filters = { ...this.filters, ...safeFilters };
-        
-        const entries = result.items.map(entry => ({...entry, _isTemp: false }));
-        
+
+        const entries = result.items.map(entry => ({ ...entry, _isTemp: false }));
+
         if (page === 1) {
           this.zonas = entries;
         } else {
           this.zonas = [...this.zonas, ...entries];
         }
-        
+
+
         this.lastSync = Date.now();
         // CORRECTO: Sanitizar con JSON.parse(JSON.stringify()) para IndexedDB
         syncStore.saveToLocalStorage('zonas', JSON.parse(JSON.stringify(toRaw(this.zonas))));
+
+        // Persistir geometrías en IndexedDB
+        for (const zona of result.items) {
+          if (zona.geometria || zona.gps) {
+            await offlineGeoStorage.saveZona(zona).catch(e =>
+              logger.warn('[ZONAS_STORE] Error guardando en offlineGeoStorage:', e)
+            )
+          }
+        }
+
         logger.debug(`[ZONAS_STORE] Fetched page ${page}: ${entries.length} items (Total: ${result.totalItems})`);
-        
+
+
         return {
           items: entries,
           pagination: this.pagination
@@ -196,7 +216,7 @@ export const useZonasStore = defineStore('zonas', {
             data: enrichedData
           },
           () => {
-            // Función de actualización local
+            // Función de actualización local optimística usando el plugin
             const tempId = syncStore.generateTempId()
             const tempZona = {
               ...enrichedData,
@@ -205,11 +225,18 @@ export const useZonasStore = defineStore('zonas', {
               updated: new Date().toISOString(),
               _isTemp: true
             }
-            this.zonas.unshift(tempZona)
-            // CORRECTO: Sanitizar para IndexedDB
-            syncStore.saveToLocalStorage('zonas', JSON.parse(JSON.stringify(toRaw(this.zonas))))
+
+            this.applySyncedCreate(tempId, tempZona)
+
+            if (tempZona.geometria || tempZona.gps) {
+              offlineGeoStorage.saveZona(tempZona).catch(e =>
+                logger.warn('[ZONAS_STORE] Error guardando en offlineGeoStorage (offline):', e)
+              )
+            }
+
             return tempZona
           }
+
         )
       }
 
@@ -218,11 +245,22 @@ export const useZonasStore = defineStore('zonas', {
         const record = await pb.collection('zonas').create(enrichedData, {
           expand: 'tipos_zonas'
         })
-        this.zonas.push(record)
-        // CORRECTO: Sanitizar para IndexedDB
-        syncStore.saveToLocalStorage('zonas', JSON.parse(JSON.stringify(toRaw(this.zonas))));
+
+        // Usar acción inyectada por el plugin para actualizar estado y persistir
+        this.applySyncedCreate(record.id, record)
+
+        // Invalidar cache de paginación para forzar recarga
+        tieredCache.invalidatePattern('zonas:page:')
+
+        if (record.geometria || record.gps) {
+          await offlineGeoStorage.saveZona(record).catch(e =>
+            logger.warn('[ZONAS_STORE] Error guardando en offlineGeoStorage:', e)
+          )
+        }
+
         return record
       } catch (error) {
+
         handleError(error, 'Error al crear zona')
         throw error
       } finally {
@@ -254,20 +292,19 @@ export const useZonasStore = defineStore('zonas', {
             data: enrichedData
           },
           () => {
-            // Función de actualización local
-            const index = this.zonas.findIndex((z) => z.id === id)
-            if (index !== -1) {
-              this.zonas[index] = {
-                ...this.zonas[index],
-                ...enrichedData,
-                updated: new Date().toISOString()
-              }
-              // CORRECTO: Sanitizar para IndexedDB
-              syncStore.saveToLocalStorage('zonas', JSON.parse(JSON.stringify(toRaw(this.zonas))));
-              return this.zonas[index]
+            // Función de actualización local optimística usando el plugin
+            this.applySyncedUpdate(id, enrichedData)
+
+            const updated = this.getZonaById(id)
+            if (updated && (updated.geometria || updated.gps)) {
+              offlineGeoStorage.saveZona(updated).catch(e =>
+                logger.warn('[ZONAS_STORE] Error actualizando en offlineGeoStorage (offline):', e)
+              )
             }
-            return null
+
+            return updated
           }
+
         )
       }
 
@@ -276,14 +313,22 @@ export const useZonasStore = defineStore('zonas', {
         const record = await pb.collection('zonas').update(id, enrichedData, {
           expand: 'tipos_zonas'
         })
-        const index = this.zonas.findIndex((z) => z.id === id)
-        if (index !== -1) {
-          this.zonas[index] = record
+
+        // Usar acción inyectada por el plugin
+        this.applySyncedUpdate(id, record)
+
+        // Invalidar cache de paginación para forzar recarga
+        tieredCache.invalidatePattern('zonas:page:')
+
+        if (record.geometria || record.gps) {
+          await offlineGeoStorage.saveZona(record).catch(e =>
+            logger.warn('[ZONAS_STORE] Error actualizando en offlineGeoStorage:', e)
+          )
         }
-        // CORRECTO: Sanitizar para IndexedDB
-        syncStore.saveToLocalStorage('zonas', JSON.parse(JSON.stringify(toRaw(this.zonas))));
+
         return record
       } catch (error) {
+
         handleError(error, 'Error al actualizar zona')
         throw error
       } finally {
@@ -318,22 +363,32 @@ export const useZonasStore = defineStore('zonas', {
             id
           },
           () => {
-            // Función de actualización local
-            this.zonas = this.zonas.filter((z) => z.id !== id)
-            // CORRECTO: Sanitizar para IndexedDB
-            syncStore.saveToLocalStorage('zonas', JSON.parse(JSON.stringify(toRaw(this.zonas))));
+            // Función de actualización local optimística usando el plugin
+            this.applySyncedDelete(id)
+
+            offlineGeoStorage.deleteZona(id).catch(e =>
+              logger.warn('[ZONAS_STORE] Error eliminando de offlineGeoStorage (offline):', e)
+            )
+
             return true
           }
+
         )
       }
 
       try {
         await pb.collection('zonas').delete(id)
-        this.zonas = this.zonas.filter((z) => z.id !== id)
-        // CORRECTO: Sanitizar para IndexedDB
-        syncStore.saveToLocalStorage('zonas', JSON.parse(JSON.stringify(toRaw(this.zonas))));
+
+        // Usar acción inyectada por el plugin
+        this.applySyncedDelete(id)
+
+        await offlineGeoStorage.deleteZona(id).catch(e =>
+          logger.warn('[ZONAS_STORE] Error eliminando de offlineGeoStorage:', e)
+        )
+
         return true
       } catch (error) {
+
         handleError(error, 'Error al eliminar zona')
         throw error
       } finally {
@@ -359,7 +414,7 @@ export const useZonasStore = defineStore('zonas', {
         })
         // markRaw: lookup data doesn't need deep reactivity
         this.tiposZonas = markRaw(records)
-        // Guardar zonas en localStorage para uso offline
+        // GUARDAR zonas en localStorage para uso offline
         useSyncStore().saveToLocalStorage('tiposZonas', JSON.parse(JSON.stringify(toRaw(this.tiposZonas))))
       } catch (error) {
         handleError(error, 'Error al cargar tipos de zonas')

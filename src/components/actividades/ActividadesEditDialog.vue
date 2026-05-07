@@ -35,7 +35,7 @@
                 <v-card-title class="headline d-flex justify-between">
                   <h2 class="text-xl font-bold mt-2">{{ t('activity_workspace.metrics') }}</h2>
                   <v-btn
-                    size="x-small"
+                    size="small"
                     color="green-lighten-2"
                     @click="openAddMetricaDialog"
                     icon
@@ -59,7 +59,8 @@
                               class="compact-form"
                             >
                               <template v-slot:append>
-                                <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
+                                <v-icon size="small" color="primary" class="mr-1" @click="editMetrica(key, metrica)">mdi-pencil</v-icon>
+                                <v-icon size="small" color="error" @click="removeMetrica(key)">mdi-delete</v-icon>
                               </template>
                             </v-select>
                             <v-text-field
@@ -73,7 +74,8 @@
                               :rules="[validateDate]"
                             >
                               <template v-slot:append>
-                                <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
+                                <v-icon size="small" color="primary" class="mr-1" @click="editMetrica(key, metrica)">mdi-pencil</v-icon>
+                                <v-icon size="small" color="error" @click="removeMetrica(key)">mdi-delete</v-icon>
                               </template>
                             </v-text-field>
                             <v-text-field
@@ -85,7 +87,8 @@
                               class="compact-form"
                             >
                               <template v-slot:append>
-                                <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
+                                <v-icon size="small" color="primary" class="mr-1" @click="editMetrica(key, metrica)">mdi-pencil</v-icon>
+                                <v-icon size="small" color="error" @click="removeMetrica(key)">mdi-delete</v-icon>
                               </template>
                             </v-text-field>
                             <v-text-field
@@ -98,7 +101,8 @@
                               class="compact-form"
                             >
                               <template v-slot:append>
-                                <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
+                                <v-icon size="small" color="primary" class="mr-1" @click="editMetrica(key, metrica)">mdi-pencil</v-icon>
+                                <v-icon size="small" color="error" @click="removeMetrica(key)">mdi-delete</v-icon>
                               </template>
                             </v-text-field>
                             <v-checkbox
@@ -109,7 +113,8 @@
                               class="compact-form"
                             >
                               <template v-slot:append>
-                                <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
+                                <v-icon size="small" color="primary" class="mr-1" @click="editMetrica(key, metrica)">mdi-pencil</v-icon>
+                                <v-icon size="small" color="error" @click="removeMetrica(key)">mdi-delete</v-icon>
                               </template>
                             </v-checkbox>
                             <v-select
@@ -124,7 +129,8 @@
                               class="compact-form"
                             >
                               <template v-slot:append>
-                                <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
+                                <v-icon size="small" color="primary" class="mr-1" @click="editMetrica(key, metrica)">mdi-pencil</v-icon>
+                                <v-icon size="small" color="error" @click="removeMetrica(key)">mdi-delete</v-icon>
                               </template>
                             </v-select>
                             <v-checkbox
@@ -135,7 +141,8 @@
                               class="compact-form"
                             >
                               <template v-slot:append>
-                                <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
+                                <v-icon size="small" color="primary" class="mr-1" @click="editMetrica(key, metrica)">mdi-pencil</v-icon>
+                                <v-icon size="small" color="error" @click="removeMetrica(key)">mdi-delete</v-icon>
                               </template>
                             </v-checkbox>
                           </div>
@@ -176,7 +183,7 @@
           <v-dialog v-model="addMetricaDialog" persistent max-width="400px">
             <v-card>
               <v-toolbar color="success" dark>
-                <v-toolbar-title>{{ t('activity_workspace.add_metric') }}</v-toolbar-title>
+                <v-toolbar-title>{{ isEditingMetrica ? t('activity_workspace.edit_metric') : t('activity_workspace.add_metric') }}</v-toolbar-title>
                 <v-spacer></v-spacer>
               </v-toolbar>
               <v-card-text>
@@ -215,7 +222,7 @@
                 <v-btn
                   size="small"
                   variant="flat"
-                  rounded="lg"
+                  
                   prepend-icon="mdi-cancel"
                   color="red-lighten-3"
                   @click="addMetricaDialog = false"
@@ -224,11 +231,11 @@
                 <v-btn
                   size="small"
                   variant="flat"
-                  rounded="lg"
+                  
                   prepend-icon="mdi-check"
                   color="green-lighten-3"
-                  @click="addMetrica"
-                  >{{ t('activity_workspace.add') }}</v-btn
+                  @click="saveMetrica"
+                  >{{ isEditingMetrica ? t('activity_workspace.save') : t('activity_workspace.add') }}</v-btn
                 >
               </v-card-actions>
             </v-card>
@@ -295,18 +302,14 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-            size="small"
             variant="flat"
-            rounded="lg"
             prepend-icon="mdi-cancel"
             color="red-lighten-3"
             @click="dialogVisible = false"
             >{{ t('activity_workspace.cancel') }}</v-btn
           >
           <v-btn
-            size="small"
-            variant="flat"
-            rounded="lg"
+            variant="flat"            
             prepend-icon="mdi-check"
             color="green-lighten-3"
             @click="$emit('save')"
@@ -359,6 +362,8 @@ const { t } = useI18n()
 const dialogVisible = ref(props.modelValue)
 const showAvatarDialog = ref(false)
 const addMetricaDialog = ref(false)
+const isEditingMetrica = ref(false)
+const editingMetricaKey = ref('')
 const showOpcionesField = ref(false)
 const newMetrica = ref({
   titulo: '',
@@ -380,8 +385,23 @@ watch(dialogVisible, (newVal) => {
 
 const openAddMetricaDialog = () => {
   addMetricaDialog.value = true
+  isEditingMetrica.value = false
+  editingMetricaKey.value = ''
   showOpcionesField.value = false
   newMetrica.value = { titulo: '', descripcion: '', tipo: '', opcionesText: '' }
+}
+
+const editMetrica = (key, metrica) => {
+  isEditingMetrica.value = true
+  editingMetricaKey.value = key
+  newMetrica.value = {
+    titulo: key.replace(/_/g, ' '),
+    descripcion: metrica.descripcion || '',
+    tipo: metrica.tipo || '',
+    opcionesText: Array.isArray(metrica.opciones) ? metrica.opciones.join(', ') : ''
+  }
+  showOpcionesField.value = ['checkbox', 'select', 'multi-select'].includes(metrica.tipo)
+  addMetricaDialog.value = true
 }
 
 const handleTipoChange = (value) => {
@@ -391,7 +411,7 @@ const handleTipoChange = (value) => {
   }
 }
 
-const addMetrica = () => {
+const saveMetrica = () => {
   if (newMetrica.value.titulo && newMetrica.value.tipo) {
     const sanitizedTitulo = newMetrica.value.titulo.toUpperCase().replace(/\s+/g, '_')
     let opciones = []
@@ -404,15 +424,25 @@ const addMetrica = () => {
         .map((opt) => opt.trim())
         .filter((opt) => opt)
     }
-    props.editedActividad.metricas[sanitizedTitulo] = {
+
+    const metricaData = {
       descripcion: newMetrica.value.descripcion,
       tipo: newMetrica.value.tipo,
-      valor: newMetrica.value.tipo === 'multi-select' ? [] : null,
+      valor: newMetrica.value.tipo === 'multi-select' ? [] : (isEditingMetrica.value ? props.editedActividad.metricas[editingMetricaKey.value].valor : null),
       opciones: opciones.length > 0 ? opciones : undefined
     }
+
+    if (isEditingMetrica.value && editingMetricaKey.value !== sanitizedTitulo) {
+      delete props.editedActividad.metricas[editingMetricaKey.value]
+    }
+
+    props.editedActividad.metricas[sanitizedTitulo] = metricaData
+    
     newMetrica.value = { titulo: '', descripcion: '', tipo: '', opcionesText: '' }
     showOpcionesField.value = false
     addMetricaDialog.value = false
+    isEditingMetrica.value = false
+    editingMetricaKey.value = ''
   }
 }
 

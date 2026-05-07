@@ -100,7 +100,7 @@
                     </h3>
                   </div>
                   <div class="grid md:grid-cols-2 gap-6">
-                    <div class="bg-blue-50 p-4 rounded-lg">
+                    <div class="bg-blue-50 p-4 ">
                       <h4 class="text-lg font-semibold mb-3 text-blue-800">
                         📝 Registro de Usuario
                       </h4>
@@ -120,7 +120,7 @@
                         Crear Cuenta
                       </v-btn>
                     </div>
-                    <div class="bg-green-50 p-4 rounded-lg">
+                    <div class="bg-green-50 p-4 ">
                       <h4 class="text-lg font-semibold mb-3 text-green-800">
                         🔑 Acceso a la Plataforma
                       </h4>
@@ -160,7 +160,7 @@
                     </v-btn>
                   </div>
                   <div class="grid md:grid-cols-2 gap-6">
-                    <div class="bg-green-50 p-4 rounded-lg">
+                    <div class="bg-green-50 p-4 ">
                       <h4 class="text-lg font-semibold mb-3 text-green-800">Cómo empezar</h4>
                       <ol class="list-decimal pl-5 space-y-2 text-green-700">
                         <li>Crear nueva siembra desde el botón "+"</li>
@@ -169,7 +169,7 @@
                         <li>Configurar métricas específicas</li>
                       </ol>
                     </div>
-                    <div class="bg-blue-50 p-4 rounded-lg">
+                    <div class="bg-blue-50 p-4 ">
                       <h4 class="text-lg font-semibold mb-3 text-blue-800">
                         ⚙️ Funcionalidades Clave
                       </h4>
@@ -200,7 +200,7 @@
                     </v-btn>
                   </div>
                   <div class="grid md:grid-cols-2 gap-6">
-                    <div class="bg-green-50 p-4 rounded-lg">
+                    <div class="bg-green-50 p-4 ">
                       <h4 class="text-lg font-semibold mb-3 text-green-800">
                         📍 Configuración Inicial
                       </h4>
@@ -211,7 +211,7 @@
                         <li>Asignar responsable</li>
                       </ol>
                     </div>
-                    <div class="bg-blue-50 p-4 rounded-lg">
+                    <div class="bg-blue-50 p-4 ">
                       <h4 class="text-lg font-semibold mb-3 text-blue-800">📊 Gestión Avanzada</h4>
                       <ul class="list-disc pl-5 space-y-2 text-blue-700">
                         <li>Mapa interactivo de zonas</li>
@@ -240,7 +240,7 @@
                     </v-btn>
                   </div>
                   <div class="grid md:grid-cols-2 gap-6">
-                    <div class="bg-green-50 p-4 rounded-lg">
+                    <div class="bg-green-50 p-4 ">
                       <h4 class="text-lg font-semibold mb-3 text-green-800">📅 Planificación</h4>
                       <ol class="list-decimal pl-5 space-y-2 text-green-700">
                         <li>Crear nueva actividad</li>
@@ -249,7 +249,7 @@
                         <li>Priorizar tareas</li>
                       </ol>
                     </div>
-                    <div class="bg-blue-50 p-4 rounded-lg">
+                    <div class="bg-blue-50 p-4 ">
                       <h4 class="text-lg font-semibold mb-3 text-blue-800">✅ Ejecución</h4>
                       <ul class="list-disc pl-5 space-y-2 text-blue-700">
                         <li>Seguimiento en tiempo real</li>
@@ -278,7 +278,7 @@
                     </v-btn>
                   </div>
                   <div class="grid md:grid-cols-2 gap-6">
-                    <div class="bg-green-50 p-4 rounded-lg">
+                    <div class="bg-green-50 p-4 ">
                       <h4 class="text-lg font-semibold mb-3 text-green-800">🔔 Configuración</h4>
                       <ol class="list-decimal pl-5 space-y-2 text-green-700">
                         <li>Crear nuevo recordatorio</li>
@@ -287,7 +287,7 @@
                         <li>Programar notificaciones</li>
                       </ol>
                     </div>
-                    <div class="bg-blue-50 p-4 rounded-lg">
+                    <div class="bg-blue-50 p-4 ">
                       <h4 class="text-lg font-semibold mb-3 text-blue-800">📈 Seguimiento</h4>
                       <ul class="list-disc pl-5 space-y-2 text-blue-700">
                         <li>Historial completo</li>

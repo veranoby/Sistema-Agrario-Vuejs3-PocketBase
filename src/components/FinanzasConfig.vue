@@ -7,13 +7,13 @@
             <div class="w-full sm:flex-grow">
               <h3 class="profile-title text-sm sm:text-lg mb-2 sm:mb-0">
                 {{ t('finance.financial_management') }}
-                <v-chip variant="flat" size="x-small" color="grey-lighten-2" class="mx-1" pill>
+                <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
                   <v-avatar start>
                     <v-img :src="avatarUrl" alt="Avatar"></v-img>
                   </v-avatar>
                   {{ userRole }}
                 </v-chip>
-                <v-chip variant="flat" size="x-small" color="green-lighten-3" class="mx-1" pill>
+                <v-chip variant="flat" size="small" color="green-lighten-3" class="mx-1" pill>
                   <v-avatar start>
                     <v-img :src="avatarHaciendaUrl" alt="Avatar"></v-img>
                   </v-avatar>
@@ -28,7 +28,7 @@
                 sm:inline-flex
                 size="small"
                 variant="flat"
-                rounded="lg"
+                
                 color="#6380a247"
                 prepend-icon="mdi-plus"
                 @click="openNuevoItem"
@@ -94,12 +94,12 @@
                     <v-chip
                       v-for="usuario in finanzaStore.totalesPorUsuario"
                       :key="usuario.userId"
-                      size="x-small"
+                      size="small"
                       variant="tonal"
                       color="primary"
                       class="ma-1"
                     >
-                      <v-icon start size="x-small">mdi-account</v-icon>
+                      <v-icon start size="small">mdi-account</v-icon>
                       {{ usuario.nombre }}: {{ formatCurrency(usuario.total) }}
                     </v-chip>
                   </div>
@@ -265,7 +265,7 @@
                   <template v-slot:activator="{ props }">
                     <v-btn
                       icon
-                      size="x-small"
+                      size="small"
                       variant="text"
                       :color="
                         item.registro_por === authStore.user.id || userRole === 'administrador'
@@ -290,7 +290,7 @@
                   <template v-slot:activator="{ props }">
                     <v-btn
                       icon
-                      size="x-small"
+                      size="small"
                       variant="text"
                       color="info"
                       v-bind="props"
@@ -310,7 +310,7 @@
                   <template v-slot:activator="{ props }">
                     <v-btn
                       icon
-                      size="x-small"
+                      size="small"
                       variant="text"
                       :color="
                         item.registro_por === authStore.user.id || userRole === 'administrador'

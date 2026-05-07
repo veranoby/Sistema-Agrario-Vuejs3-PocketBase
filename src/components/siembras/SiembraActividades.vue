@@ -3,7 +3,7 @@
     <v-card-title class="d-flex justify-space-between align-center">
       {{ t('sowing_workspace.related_activities') }}
       <v-btn
-        size="x-small"
+        size="small"
         color="green-lighten-2"
         icon
         rounded="circle"
@@ -64,7 +64,7 @@
                       v-for="(metrica, key) in item.metricas"
                       :key="key"
                       color="blue-grey-lighten-1"
-                      size="x-small"
+                      size="small"
                       variant="flat"
                       class="m-1"
                     >

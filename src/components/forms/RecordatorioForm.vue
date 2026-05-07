@@ -163,25 +163,21 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-            size="small"
             variant="flat"
-            rounded="lg"
             prepend-icon="mdi-cancel"
             color="red-lighten-3"
             @click="$emit('update:modelValue', false)"
           >
-            Cancelar
+            CANCELAR
           </v-btn>
           <v-btn
-            size="small"
-            variant="flat"
-            rounded="lg"
+            variant="flat"            
             prepend-icon="mdi-check"
             color="green-lighten-3"
             type="submit"
             :loading="loading"
           >
-            Guardar
+            GUARDAR
           </v-btn>
         </v-card-actions>
       </v-form>

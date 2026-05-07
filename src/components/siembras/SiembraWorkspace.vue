@@ -17,11 +17,32 @@
       <v-col cols="12" md="8" class="pa-4">
         <SiembraInfo :siembraInfo="siembraInfo" @open-edit-dialog="openEditDialog" />
 
+        <!-- Mapa de la Siembra (Agregación de Lotes) -->
+        <v-card class="mb-4 overflow-hidden border">
+          <v-toolbar density="compact" flat color="grey-lighten-4">
+            <v-icon start size="small" class="ml-2">mdi-map-marker-radius</v-icon>
+            <span class="text-caption font-weight-bold">Mapa de Áreas de Siembra (Lotes)</span>
+            <v-spacer></v-spacer>
+          </v-toolbar>
+          <v-card-text class="pa-0">
+            <GisMapComponent
+              v-if="siembraFeatureCollection"
+              :readonly="true"
+              :initial-geo-json="siembraFeatureCollection"
+              style="height: 350px;"
+            />
+            <div v-else class="pa-4 text-center text-caption text-grey">
+              No hay áreas dibujadas para esta siembra
+            </div>
+          </v-card-text>
+        </v-card>
+
         <SiembraBitacora
           :siembraId="siembraId"
           @open-new-bitacora-entry-dialog="openNewBitacoraEntryDialog"
         />
       </v-col>
+
 
       <!-- Sidebar -->
       <v-col cols="12" md="4" class="px-0 py-4">
@@ -31,7 +52,7 @@
           :areaUnit="areaUnit"
           :zonasfiltradas="zonasfiltradas"
           :headers="headers"
-          :expanded="expanded"
+          v-model:expanded="expandedZonas"
           :zonas="zonas"
           @open-add-zona="handleOpenAddZona"
           @edit-zona="handleEditZona"
@@ -41,7 +62,7 @@
         <SiembraActividades
           :actividadesfiltradas="actividadesfiltradas"
           :headers="headers_actividades"
-          :expanded="expanded"
+          v-model:expanded="expandedActividades"
           :actividades="actividades"
           @open-add-actividad="handleOpenAddActividad"
           @edit-actividad="handleEditActividad"
@@ -121,7 +142,7 @@
                     <v-img :src="siembraAvatarUrl" alt="Avatar de Siembra"></v-img>
                   </v-avatar>
                   <v-btn
-                  size="x-small"
+                  size="small"
                   color="green-lighten-2"
                   icon
                   rounded="circle"
@@ -150,9 +171,7 @@
           <v-card-actions>
             <v-spacer></v-spacer>
             <v-btn
-              size="small"
-              variant="flat"
-              rounded="lg"
+              variant="flat"              
               prepend-icon="mdi-cancel"
               color="red-lighten-3"
               @click="editSiembraDialog = false"
@@ -160,9 +179,7 @@
               {{ t('sowing_workspace.cancel') }}
             </v-btn>
             <v-btn
-              size="small"
-              variant="flat"
-              rounded="lg"
+              variant="flat"              
               prepend-icon="mdi-check"
               color="green-lighten-3"
               @click="saveSiembraEdit"
@@ -226,7 +243,7 @@
     </v-dialog>
 
     <!-- Add Zona Dialog -->
-    <v-dialog v-model="addZonaDialog" persistent max-width="1000px">
+    <v-dialog v-model="addZonaDialog" persistent max-width="1400px">
       <ZonaForm
         :modo-edicion="modoEdicionZona"
         :zona-inicial="zonaEditando"
@@ -290,7 +307,9 @@ import ZonaForm from '@/components/forms/ZonaForm.vue'
 import AvatarForm from '@/components/forms/AvatarForm.vue'
 import ActividadForm from '@/components/forms/ActividadForm.vue'
 import BitacoraEntryForm from '@/components/forms/BitacoraEntryForm.vue'
+import GisMapComponent from '@/components/GisMapComponent.vue'
 import AiAssistant from '@/components/AiAssistant.vue'
+
 import { QuillEditor } from '@vueup/vue-quill'
 import '@vueup/vue-quill/dist/vue-quill.snow.css'
 
@@ -338,7 +357,32 @@ const {
   handleBitacoraSave
 } = useSiembraData(siembraId)
 
-const { expanded, areaUnit, estadosSiembra, headers, headers_actividades } = useSiembraMetrics()
+const { expandedZonas, expandedActividades, areaUnit, estadosSiembra, headers, headers_actividades } = useSiembraMetrics()
+
+const siembraFeatureCollection = computed(() => {
+  if (!zonasfiltradas.value) return null
+  
+  const lotes = zonasfiltradas.value.filter(z => {
+    const tipo = tiposZonas.value.find(t => t.id === z.tipos_zonas)
+    return (tipo?.nombre?.toLowerCase().includes('lote') || z.nombre?.toLowerCase().includes('lote')) && z.geometria
+  })
+  
+  if (lotes.length === 0) return null
+  
+  return {
+    type: 'FeatureCollection',
+    features: lotes.map(lote => ({
+      type: 'Feature',
+      geometry: lote.geometria,
+      properties: {
+        nombre: lote.nombre,
+        area: lote.area?.area,
+        unidad: lote.area?.unidad
+      }
+    }))
+  }
+})
+
 
 // Additional state
 const usuarios = ref([])

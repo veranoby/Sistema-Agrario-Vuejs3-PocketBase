@@ -1,340 +1,405 @@
 <template>
   <v-card>
     <v-form ref="form" v-model="formularioValido" lazy-validation>
-      <v-card-title class="headline">
-        <h2 class="text-xl font-bold mt-2">
-          {{ modoEdicion ? 'Editar' : 'Crear' }} {{ tipoZonaActual?.nombre }}
+      <v-toolbar color="success" dark flat>
+        <v-toolbar-title class="font-weight-bold">
+          {{ modoEdicion ? 'EDITAR' : 'CREAR' }} {{ tipoZonaActual?.nombre }}
           <template v-if="siembraContext">
-            <v-icon>mdi-chevron-right</v-icon>
-            <span class="ml-1 text-sm font-bold text-gray-700">
-              {{ siembraContext.nombre }} {{ siembraContext.tipo }}
-            </span>
+            <v-icon size="small" class="mx-2">mdi-chevron-right</v-icon>
+            <span class="text-subtitle-2 opacity-80">{{ siembraContext.nombre }}</span>
           </template>
-        </h2>
-      </v-card-title>
+        </v-toolbar-title>
+        <v-spacer></v-spacer>
+        <v-btn icon @click="cerrar">
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+      </v-toolbar>
 
       <v-card-text>
-        <div class="grid grid-cols-2 gap-0">
-          <div>
-            <!-- Selector de Siembra -->
-            <v-select
-              v-if="!fromSiembraWorkspace"
-              v-model="zonaLocal.siembra"
-              :items="props.siembrasActivas"
-              prepend-icon="mdi-sprout"
-              item-title="nombreCompleto"
-              item-value="id"
-              label="Siembra"
-              density="compact"
-              variant="outlined"
-              class="compact-form"
-            ></v-select>
+        <!-- Main Layout Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          <!-- LEFT COLUMN: Management & Information (5/12) -->
+          <div class="lg:col-span-5">
+            
+            <!-- Section: Header & Basic Data -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mb-4">
+              <!-- Avatar Column (only in Edit mode) -->
+              <div v-if="modoEdicion" class="md:col-span-4 flex justify-center items-start">
+                <div class="relative group mt-2">
+                  <v-avatar size="100" class="elevation-2 border-2 border-white">
+                    <v-img :src="CargaImagenZona(zonaLocal.id)" alt="Avatar de Zona"></v-img>
+                  </v-avatar>
+                  <v-btn
+                    icon
+                    size="x-small"
+                    color="success"
+                    class="absolute bottom-0 right-0"
+                    @click="showAvatarDialog = true"
+                  >
+                    <v-icon size="16">mdi-camera</v-icon>
+                  </v-btn>
+                  
+                  <AvatarForm
+                    v-model="showAvatarDialog"
+                    collection="zonas"
+                    :entityId="zonaLocal?.id"
+                    :currentAvatarUrl="CargaImagenZona(zonaLocal.id)"
+                    :hasCurrentAvatar="!!zonaLocal?.avatar"
+                    @avatar-updated="handleAvatarUpdated"
+                  />
+                </div>
+              </div>
 
-            <!-- Nombre de la Zona -->
-            <v-text-field
-              v-model="zonaLocal.nombre"
-              label="Nombre"
-              variant="outlined"
-              class="compact-form"
-              required
-              :rules="[(v) => !!v || 'El nombre es requerido']"
-              prepend-icon="mdi-map"
-            ></v-text-field>
+              <!-- Name & Sowing Column -->
+              <div :class="modoEdicion ? 'md:col-span-8' : 'md:col-span-12'">
+                <v-text-field
+                  v-model="zonaLocal.nombre"
+                  label="Nombre de la Zona"
+                  variant="outlined"
+                  density="compact"
+                  class="mb-2"
+                  required
+                  :rules="[(v) => !!v || 'El nombre es requerido']"
+                  prepend-inner-icon="mdi-map"
+                ></v-text-field>
 
-            <!-- Área y Unidad de la Zona -->
-            <div class="flex">
-              <v-text-field
-                v-model="zonaLocal.area.area"
-                label="Área"
-                type="number"
-                :rules="[(v) => !!v || 'El area es requerida']"
-                prepend-icon="mdi-diameter"
-                variant="outlined"
-                density="compact"
-                class="compact-form"
-              ></v-text-field>
-              <v-select
-                v-model="zonaLocal.area.unidad"
-                variant="outlined"
-                class="compact-form"
-                density="compact"
-                :items="['m²', 'ha', 'km²']"
-                label="Unidad de área"
-                required
-                prepend-icon="mdi-diameter-outline"
-                :rules="[(v) => !!v || 'La unidad es requerida']"
-              ></v-select>
-            </div>
-            <!-- GPS -->
-            <div class="d-flex align-center">
-              <v-text-field
-                v-model="zonaLocal.gps"
-                variant="outlined"
-                class="compact-form flex-grow-1"
-                label="GPS (Lat, Lng)"
-                density="compact"
-                placeholder="Ej: {lat: 0, lng: 0}"
-                prepend-icon="mdi-crosshairs-gps"
-                readonly
-              ></v-text-field>
-              <v-btn
-                color="primary"
-                size="small"
-                class="ml-2"
-                :loading="loadingGPS"
-                :disabled="!gpsAvailable"
-                @click="autoLocate"
-                variant="tonal"
-              >
-                <v-icon start>mdi-crosshairs-gps</v-icon>
-                Auto
-              </v-btn>
-            </div>
-            <div v-if="gpsError" class="text-caption text-error mb-2">
-              <v-icon start size="x-small">mdi-alert</v-icon>
-              {{ gpsError }}
-            </div>
-            <div v-if="gpsAccuracy" class="text-caption text-success mb-2">
-              <v-icon start size="x-small">mdi-check-circle</v-icon>
-              Precisión: {{ gpsAccuracy }}m
-            </div>
-
-            <div class="flex">
-              <v-select
-                v-model="zonaLocal.tipos_zonas"
-                class="compact-form"
-                :disabled="true"
-                :items="tiposZonas"
-                item-title="nombre"
-                item-value="id"
-                label="Tipo de Zona"
-                variant="outlined"
-                density="compact"
-                required
-                :rules="[(v) => !!v || 'Seleccione un tipo de zona']"
-                prepend-icon="mdi-format-list-bulleted"
-              ></v-select>
-
-              <!-- Checkbox Contabilizable -->
-              <v-checkbox
-                v-model="zonaLocal.contabilizable"
-                label="Contabilizable"
-                class="compact-form"
-                :true-value="true"
-                :false-value="false"
-              ></v-checkbox>
-            </div>
-          </div>
-          <div>
-            <!-- Avatar -->
-            <div v-if="modoEdicion">
-              <AvatarForm
-                v-if="modoEdicion"
-                v-model="showAvatarDialog"
-                collection="zonas"
-                :entityId="zonaLocal?.id"
-                :currentAvatarUrl="CargaImagenZona(zonaLocal.id)"
-                :hasCurrentAvatar="!!zonaLocal?.avatar"
-                @avatar-updated="handleAvatarUpdated"
-              />
-
-              <div class="flex items-center justify-center mt-0 relative">
-                <v-avatar size="128">
-                  <v-img :src="CargaImagenZona(zonaLocal.id)" alt="Avatar de Zona"></v-img>
-                </v-avatar>
-                <!-- Botón para abrir el diálogo de avatar -->
-                <v-btn
-                  icon
-                  size="small"
-                  color="green-lighten-2"
-                  class="absolute bottom-0 right-0"
-                  @click="showAvatarDialog = true"
+                <v-select
+                  v-if="!fromSiembraWorkspace"
+                  v-model="zonaLocal.siembra"
+                  :items="props.siembrasActivas"
+                  prepend-inner-icon="mdi-sprout"
+                  label="Siembra Asociada"
+                  item-title="nombre"
+                  item-value="id"
+                  density="compact"
+                  variant="outlined"
+                  hide-details
                 >
-                  <v-icon>mdi-pencil</v-icon>
-                </v-btn>
+                  <template v-slot:item="{ props: itemProps, item }">
+                    <v-list-item 
+                      v-bind="itemProps" 
+                      :title="item.raw.nombre" 
+                      :subtitle="item.raw.tipo"
+                    ></v-list-item>
+                  </template>
+                  <template v-slot:selection="{ item }">
+                    <span class="text-truncate">{{ item.raw.nombre }} - {{ item.raw.tipo }}</span>
+                  </template>
+                </v-select>
               </div>
             </div>
 
-            <!-- Formulario de Métricas -->
-            <div class="siembra-info mt-4">
-              <v-card-title class="headline d-flex justify-between">
-                <h2 class="text-xl font-bold mt-2">Métricas</h2>
-                <v-btn size="x-small" color="green-lighten-2" @click="openAddMetricaDialog" icon>
+            <!-- Section: Technical Row (Area, Unidad, Contabilizable) -->
+            <div class="grid grid-cols-12 gap-2 mb-4 p-3 bg-grey-lighten-4 rounded-lg border border-dashed">
+              <div class="col-span-5">
+                <v-text-field
+                  v-model="zonaLocal.area.area"
+                  label="Área"
+                  type="number"
+                  variant="outlined"
+                  density="compact"
+                  hide-details
+                ></v-text-field>
+              </div>
+              <div class="col-span-3">
+                <v-select
+                  v-model="zonaLocal.area.unidad"
+                  variant="outlined"
+                  density="compact"
+                  :items="['m²', 'ha', 'km²']"
+                  label="Und"
+                  hide-details
+                ></v-select>
+              </div>
+              <div class="col-span-4 d-flex align-center justify-center">
+                <v-tooltip text="¿Se usará para sumar áreas totales de la siembra?" location="top">
+                  <template v-slot:activator="{ props }">
+                    <v-checkbox
+                      v-bind="props"
+                      v-model="zonaLocal.contabilizable"
+                      label="Contabilizable"
+                      density="compact"
+                      hide-details
+                      class="mt-0"
+                    ></v-checkbox>
+                  </template>
+                </v-tooltip>
+              </div>
+            </div>
+
+            <!-- Section: Metrics -->
+            <div class="mb-6 p-4 bg-grey-lighten-5 rounded-lg border">
+              <div class="d-flex justify-space-between align-center mb-3">
+                <div class="text-subtitle-2 font-weight-bold d-flex align-center">
+                  <v-icon start color="success" size="small">mdi-chart-line</v-icon>
+                  Métricas y Atributos
+                </div>
+                <v-btn size="x-small" color="success" @click="openAddMetricaDialog" icon elevation="1">
                   <v-icon>mdi-plus</v-icon>
                 </v-btn>
-              </v-card-title>
-              <v-card-text>
-                <div class="grid grid-cols-2 gap-0">
-                  <div v-for="(metrica, key) in zonaLocal.metricas" :key="key" cols="6">
-                    <!-- Select para tipo "select" -->
-                    <v-select
-                      v-if="metrica.tipo === 'select'"
-                      v-model="metrica.valor"
-                      :label="key"
-                      :items="metrica.opciones || []"
-                      variant="outlined"
-                      density="compact"
-                      class="compact-form"
-                    >
-                      <template v-slot:append>
-                        <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
-                      </template>
-                    </v-select>
+              </div>
 
-                    <!-- Input string para tipo "string" -->
-                    <v-text-field
-                      v-else-if="metrica.tipo === 'string'"
-                      v-model="metrica.valor"
-                      :label="key"
-                      density="compact"
-                      variant="outlined"
-                      class="compact-form"
-                    >
-                      <template v-slot:append>
-                        <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
-                      </template>
-                    </v-text-field>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div v-for="(metrica, key) in zonaLocal.metricas" :key="key">
+                  <!-- Select -->
+                  <v-select
+                    v-if="metrica.tipo === 'select'"
+                    v-model="metrica.valor"
+                    :label="key"
+                    :items="metrica.opciones || []"
+                    variant="outlined"
+                    density="compact"
+                    hide-details
+                    class="bg-white"
+                  >
+                    <template v-slot:append-inner>
+                      <v-icon size="small" color="grey" @click="removeMetrica(key)">mdi-close-circle</v-icon>
+                    </template>
+                  </v-select>
 
-                    <!-- Input number para tipo "number" -->
-                    <v-text-field
-                      v-else-if="metrica.tipo === 'number'"
-                      v-model.number="metrica.valor"
-                      :label="key"
-                      type="number"
-                      density="compact"
-                      variant="outlined"
-                      class="compact-form"
-                    >
-                      <template v-slot:append>
-                        <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
-                      </template>
-                    </v-text-field>
+                  <!-- String -->
+                  <v-text-field
+                    v-else-if="metrica.tipo === 'string'"
+                    v-model="metrica.valor"
+                    :label="key"
+                    density="compact"
+                    variant="outlined"
+                    hide-details
+                    class="bg-white"
+                  >
+                    <template v-slot:append-inner>
+                      <v-icon size="small" color="grey" @click="removeMetrica(key)">mdi-close-circle</v-icon>
+                    </template>
+                  </v-text-field>
 
-                    <!-- Checkbox para tipo "checkbox" -->
-                    <v-checkbox
-                      v-else-if="metrica.tipo === 'checkbox'"
-                      v-model="metrica.valor"
-                      :label="key"
-                      density="compact"
-                      class="compact-form"
-                    >
-                      <template v-slot:append>
-                        <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
-                      </template>
-                    </v-checkbox>
+                  <!-- Number -->
+                  <v-text-field
+                    v-else-if="metrica.tipo === 'number'"
+                    v-model.number="metrica.valor"
+                    :label="key"
+                    type="number"
+                    density="compact"
+                    variant="outlined"
+                    hide-details
+                    class="bg-white"
+                  >
+                    <template v-slot:append-inner>
+                      <v-icon size="small" color="grey" @click="removeMetrica(key)">mdi-close-circle</v-icon>
+                    </template>
+                  </v-text-field>
 
-                    <!-- Multi-select para tipo "multi-select" -->
-                    <v-select
-                      v-else-if="metrica.tipo === 'multi-select'"
-                      v-model="metrica.valor"
-                      :label="key"
-                      :items="metrica.opciones || []"
-                      multiple
-                      chips
-                      variant="outlined"
-                      density="compact"
-                      class="compact-form"
-                    >
-                      <template v-slot:append>
-                        <v-icon @click="removeMetrica(key)">mdi-delete</v-icon>
-                      </template>
-                    </v-select>
-                  </div>
+                  <!-- Checkbox -->
+                  <v-checkbox
+                    v-else-if="metrica.tipo === 'checkbox'"
+                    v-model="metrica.valor"
+                    :label="key"
+                    density="compact"
+                    hide-details
+                    class="mt-n2"
+                  >
+                    <template v-slot:append>
+                      <v-icon size="small" color="grey" @click="removeMetrica(key)">mdi-delete</v-icon>
+                    </template>
+                  </v-checkbox>
+
+                  <!-- Multi-select -->
+                  <v-select
+                    v-else-if="metrica.tipo === 'multi-select'"
+                    v-model="metrica.valor"
+                    :label="key"
+                    :items="metrica.opciones || []"
+                    multiple
+                    chips
+                    variant="outlined"
+                    density="compact"
+                    hide-details
+                    class="bg-white"
+                  >
+                    <template v-slot:append-inner>
+                      <v-icon size="small" color="grey" @click="removeMetrica(key)">mdi-close-circle</v-icon>
+                    </template>
+                  </v-select>
                 </div>
-              </v-card-text>
+              </div>
+            </div>
+
+            <!-- Section: Mi Info (Editor) -->
+            <div class="mt-4 p-4 bg-grey-lighten-5 rounded-lg border">
+              <div class="text-subtitle-2 font-weight-bold mb-2 d-flex align-center">
+                <v-icon start color="amber-darken-2" size="small">mdi-note-text-outline</v-icon>
+                Notas y Detalles Adicionales
+              </div>
+              <QuillEditor
+                v-model:content="zonaLocal.info"
+                contentType="html"
+                toolbar="essential"
+                theme="snow"
+                class="quill-editor"
+              />
+            </div>
+          </div>
+
+          <!-- RIGHT COLUMN: GIS Visualization (7/12) -->
+          <div class="lg:col-span-7 flex flex-col">
+            <!-- GPS & Map Header -->
+            <div class="mb-4">
+              <div class="text-subtitle-2 font-weight-bold mb-2 d-flex align-center">
+                <v-icon start color="blue" size="small">mdi-map-marker-path</v-icon>
+                Geometría y Ubicación (GIS)
+              </div>
+              
+              <!-- GPS Editable Row -->
+              <div class="flex gap-2 mb-4">
+                <v-text-field
+                  v-model="zonaLocal.gps"
+                  label="Coordenadas GPS"
+                  density="compact"
+                  variant="outlined"
+                  hide-details
+                  prepend-inner-icon="mdi-earth"
+                  class="flex-grow-1"
+                  @click:prepend-inner="centerOnGPS"
+                  placeholder='{"lat": 0, "lng": 0}'
+                >
+                  <template v-slot:append-inner>
+                    <v-btn
+                      icon="mdi-target-variant"
+                      size="x-small"
+                      variant="text"
+                      color="blue"
+                      @click="centerOnGPS"
+                      title="Centrar mapa en estas coordenadas"
+                    ></v-btn>
+                  </template>
+                </v-text-field>
+                <v-btn
+                  color="primary"
+                  :loading="loadingGPS"
+                  :disabled="!gpsAvailable"
+                  @click="autoLocate"
+                  variant="flat"
+                  height="40"
+                  prepend-icon="mdi-crosshairs-gps"
+                >
+                  AUTO
+                </v-btn>
+              </div>
+
+              <!-- Map Container -->
+              <div class="border rounded-lg overflow-hidden elevation-1 bg-white">
+                <v-toolbar density="compact" flat color="grey-lighten-4">
+                  <v-icon start size="x-small" class="ml-2">mdi-draw-polygon</v-icon>
+                  <span class="text-caption font-weight-bold">
+                    Modo: {{ drawMode === 'polygon' ? 'Dibujo de Polígono' : 'Marcador de Punto' }}
+                  </span>
+                  <v-spacer></v-spacer>
+                  <v-chip v-if="gpsAccuracy" size="x-small" color="success" variant="flat" class="mr-2">
+                    Precisión: {{ gpsAccuracy }}m
+                  </v-chip>
+                </v-toolbar>
+                
+                <GisMapComponent
+                  :enable-drawing="true"
+                  :draw-mode="drawMode"
+                  :center="mapCenter"
+                  :zoom="mapZoom"
+                  :initial-geo-json="zonaLocal.geometria"
+                  @geometry-updated="handleGeometryUpdated"
+                  style="height: 550px; width: 100%;"
+                />
+              </div>
+
+              <div v-if="gpsError" class="mt-2 text-caption text-error d-flex align-center">
+                <v-icon start size="small">mdi-alert</v-icon>
+                {{ gpsError }}
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Información Adicional -->
-
-        <div class="mt-2">
-          <div class="mb-2">
-            <v-icon class="mr-2">mdi-information</v-icon>
-            Mi Info
+        <!-- BOTTOM SECTION: BPA Compliance (Full Width) -->
+        <div class="mt-8 pt-6 border-t" v-if="zonaLocal.tipos_zonas">
+          <div class="text-h6 font-weight-bold mb-4 d-flex align-center">
+            <v-icon start color="green-darken-2">mdi-shield-check-outline</v-icon>
+            Seguimiento de Buenas Prácticas Agrícolas (BPA)
           </div>
-          <QuillEditor
-            v-model:content="zonaLocal.info"
-            contentType="html"
-            toolbar="essential"
-            theme="snow"
-            class="quill-editor"
-          />
-        </div>
-
-        <!-- Formulario de Seguimiento BPA -->
-
-        <div class="siembra-info mt-4" v-if="zonaLocal.tipos_zonas">
-          <v-card-title class="headline">
-            <h2 class="text-xl font-bold mt-2">Seguimiento BPA</h2>
-          </v-card-title>
-          <v-card-text>
-            <div class="grid grid-cols-3 gap-2">
-              <div v-for="(pregunta, index) in getBpaPreguntas" :key="index">
-                <span class="text-xs font-black text-justify">
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <v-card 
+              v-for="(pregunta, index) in getBpaPreguntas" 
+              :key="index"
+              variant="flat"
+              class="pa-4 bg-grey-lighten-5 border rounded-xl"
+            >
+              <div class="d-flex align-start gap-3 mb-2">
+                <v-avatar size="24" color="success" variant="tonal">
+                  <span class="text-caption font-weight-bold">{{ index + 1 }}</span>
+                </v-avatar>
+                <div class="text-caption font-weight-bold text-grey-darken-3 leading-tight">
                   {{ pregunta.pregunta }}
                   <v-tooltip
-                    width="300"
                     v-if="pregunta.descripcion"
                     activator="parent"
                     location="top"
-                    density="compact"
-                    variant="outlined"
-                    class="text-xs text-justify"
                   >
-                    {{ pregunta.descripcion }}</v-tooltip
-                  >
-                </span>
+                    <div class="text-caption pa-2">{{ pregunta.descripcion }}</div>
+                  </v-tooltip>
+                </div>
+              </div>
 
-                <v-radio-group
-                  v-if="zonaLocal.datos_bpa && zonaLocal.datos_bpa[index]"
-                  v-model="zonaLocal.datos_bpa[index].respuesta"
-                  class="mt-2"
-                >
+              <v-radio-group
+                v-if="zonaLocal.datos_bpa && zonaLocal.datos_bpa[index]"
+                v-model="zonaLocal.datos_bpa[index].respuesta"
+                hide-details
+                density="compact"
+                class="mt-1"
+              >
+                <div class="flex flex-wrap gap-x-4 gap-y-1">
                   <v-radio
                     v-for="(opcion, opcionIndex) in pregunta.opciones"
                     :key="`${index}-${opcionIndex}`"
                     :label="opcion"
                     :value="opcion"
-                    class="compact-form"
                     density="compact"
-                  ></v-radio>
-                </v-radio-group>
-              </div>
-            </div>
-          </v-card-text>
+                    color="success"
+                  >
+                    <template v-slot:label>
+                      <span class="text-caption font-weight-medium">{{ opcion }}</span>
+                    </template>
+                  </v-radio>
+                </div>
+              </v-radio-group>
+            </v-card>
+          </div>
         </div>
       </v-card-text>
 
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn
-          size="small"
-          variant="flat"
-          rounded="lg"
+          variant="flat"          
           prepend-icon="mdi-cancel"
           color="red-lighten-3"
           @click="cerrar"
         >
-          Cancelar
+          CANCELAR
         </v-btn>
         <v-btn
-          size="small"
-          variant="flat"
-          rounded="lg"
+          variant="flat"          
           prepend-icon="mdi-check"
           color="green-lighten-3"
           @click="guardar"
           :disabled="!formularioValido"
         >
-          Guardar
+          GUARDAR
         </v-btn>
       </v-card-actions>
     </v-form>
   </v-card>
 
   <!-- Diálogo para agregar métrica personalizada -->
-  <v-dialog v-model="addMetricaDialog" persistent max-width="400px">
+  <v-dialog v-model="addMetricaDialog" persistent max-width="1400px">
     <v-card>
       <v-toolbar color="success" dark>
         <v-toolbar-title>Agregar Métrica</v-toolbar-title>
@@ -376,18 +441,14 @@
       </v-card-text>
       <v-card-actions>
         <v-btn
-          size="small"
-          variant="flat"
-          rounded="lg"
+          variant="flat"          
           prepend-icon="mdi-cancel"
           color="red-lighten-3"
           @click="addMetricaDialog = false"
-          >Cancelar</v-btn
+          >CANCELAR</v-btn
         >
         <v-btn
-          size="small"
-          variant="flat"
-          rounded="lg"
+          variant="flat"          
           prepend-icon="mdi-check"
           color="green-lighten-3"
           @click="addMetrica"
@@ -406,6 +467,8 @@ import { storeToRefs } from 'pinia'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import { useAvatarStore } from '@/stores/avatarStore'
 import AvatarForm from '@/components/forms/AvatarForm.vue'
+import GisMapComponent from '@/components/GisMapComponent.vue'
+
 
 const showAvatarDialog = ref(false)
 
@@ -471,6 +534,8 @@ const loadingGPS = ref(false)
 const gpsAvailable = ref(true)
 const gpsError = ref('')
 const gpsAccuracy = ref(null)
+const mapCenter = ref([4.5709, -74.2973])
+const mapZoom = ref(13)
 
 // Estado inicial
 const initialState = {
@@ -483,8 +548,10 @@ const initialState = {
   datos_bpa: [],
   metricas: {},
   contabilizable: true,
-  gps: ''
+  gps: '',
+  geometria: null
 }
+
 const newMetrica = ref({
   titulo: '',
   descripcion: '',
@@ -505,6 +572,28 @@ const getBpaPreguntas = computed(() => {
   const tipoZona = tiposZonas.value.find((t) => t.id === zonaLocal.tipos_zonas)
   return tipoZona?.datos_bpa?.preguntas_bpa || []
 })
+
+const drawMode = computed(() => {
+  const tipo = tiposZonas.value.find(t => t.id === zonaLocal.tipos_zonas)
+  return tipo?.nombre?.toLowerCase().includes('lote') ? 'polygon' : 'marker'
+})
+
+const handleGeometryUpdated = ({ geojson, areaHa }) => {
+  zonaLocal.geometria = geojson
+  if (areaHa > 0 && drawMode.value === 'polygon') {
+    zonaLocal.area.area = areaHa
+    zonaLocal.area.unidad = 'ha'
+  }
+  
+  // Si es un punto (marker), también actualizamos el campo GPS para consistencia
+  if (geojson && geojson.type === 'Point') {
+    zonaLocal.gps = JSON.stringify({
+      lat: geojson.coordinates[1],
+      lng: geojson.coordinates[0]
+    })
+  }
+}
+
 
 const CargaImagenZona = (zonaId) => {
   console.log('checando cargaimagenzona', zonaId)
@@ -600,8 +689,12 @@ async function autoLocate() {
       lng: position.longitude
     })
     zonaLocal.gps = gpsString
+    
+    // Centrar mapa instantáneamente con zoom cercano
+    mapCenter.value = [position.latitude, position.longitude]
+    mapZoom.value = 18
 
-    // Guardar precisión si está disponible
+    // GUARDAR precisión si está disponible
     if (position.accuracy !== null) {
       gpsAccuracy.value = Math.round(position.accuracy)
       uiFeedbackStore.showSnackbar(`Ubicación obtenida (precisión: ${gpsAccuracy.value}m)`, 'success')
@@ -629,45 +722,71 @@ async function autoLocate() {
     loadingGPS.value = false
   }
 }
-async function guardar() {
-  if (form.value.validate()) {
-    try {
-      // Normalizar GPS a objeto antes de guardar si es una cadena JSON
-      let gpsData = zonaLocal.gps
-      if (typeof gpsData === 'string' && gpsData.trim().startsWith('{')) {
-        try {
-          gpsData = JSON.parse(gpsData)
-        } catch (e) {
-          console.error('Error al parsear GPS antes de guardar:', e)
-        }
-      }
 
-      const zonaToSave = {
-        ...zonaLocal,
-        nombre: zonaLocal.nombre.toUpperCase(),
-        gps: gpsData,
-        avatar: zonaLocal.avatar || null // Asegúrate de que el avatar se incluya correctamente
-      }
-
-      console.log('guardar zonaLocal:', zonaLocal)
-      let resultado
-
-      if (props.modoEdicion) {
-        resultado = await zonasStore.updateZona(zonaToSave.id, zonaToSave)
-      } else {
-        resultado = await zonasStore.crearZona(zonaToSave)
-      }
-
-      if (avatarFile.value) {
-        await zonasStore.updateZonaAvatar(resultado.id, avatarFile.value[0])
-      }
-
-      emit('saved', resultado)
-      cerrar()
-    } catch (error) {
-      uiFeedbackStore.showError('Error al guardar la zona')
-      console.error(error) // Agregar un log para ver el error
+/**
+ * Centra el mapa en las coordenadas actuales del campo GPS
+ */
+function centerOnGPS() {
+  if (!zonaLocal.gps) return
+  
+  try {
+    const coords = typeof zonaLocal.gps === 'object' ? zonaLocal.gps : JSON.parse(zonaLocal.gps)
+    if (coords.lat && coords.lng) {
+      mapCenter.value = [coords.lat, coords.lng]
+      mapZoom.value = 18
+      uiFeedbackStore.showSnackbar('Mapa centrado en coordenadas', 'info')
     }
+  } catch (e) {
+    uiFeedbackStore.showError('Formato de coordenadas inválido para centrar')
+    logger.warn('[ZonaForm] Error parseando GPS para centrado manual:', e)
+  }
+}
+async function guardar() {
+  const { valid } = await form.value.validate()
+  if (!valid) {
+    logger.warn('[ZonaForm] Formulario con errores de validación')
+    return
+  }
+
+  try {
+    // Sanitizar objeto para evitar proxies y campos de sistema de PocketBase
+    const rawData = JSON.parse(JSON.stringify(zonaLocal))
+    
+    // Normalizar GPS a objeto antes de guardar si es una cadena JSON
+    let gpsData = rawData.gps
+    if (typeof gpsData === 'string' && gpsData.trim().startsWith('{')) {
+      try {
+        gpsData = JSON.parse(gpsData)
+      } catch (e) {
+        console.error('Error al parsear GPS antes de guardar:', e)
+      }
+    }
+
+    const zonaToSave = {
+      ...rawData,
+      nombre: (rawData.nombre || '').toUpperCase(),
+      gps: gpsData
+      // Nota: No incluimos 'avatar' aquí, se maneja por separado si hay un archivo nuevo
+    }
+
+    logger.info('[ZonaForm] Payload final a guardar:', zonaToSave)
+    let resultado
+
+    if (props.modoEdicion) {
+      resultado = await zonasStore.updateZona(zonaToSave.id, zonaToSave)
+    } else {
+      resultado = await zonasStore.crearZona(zonaToSave)
+    }
+
+    if (avatarFile.value) {
+      await zonasStore.updateZonaAvatar(resultado.id, avatarFile.value[0])
+    }
+
+    emit('saved', resultado)
+    cerrar()
+  } catch (error) {
+    logger.error('[ZonaForm] Error al guardar la zona:', error.message || error, error)
+    uiFeedbackStore.showError('Error al guardar la zona')
   }
 }
 
@@ -704,13 +823,27 @@ watch(
   () => props.zonaInicial,
   (newZona) => {
     if (newZona && Object.keys(newZona).length > 0) {
-      // Modo edición - Preservar los valores existentes
+      // Modo edición - Preservar los valores existentes con un clon profundo para evitar mutar props
+      const cleanZona = JSON.parse(JSON.stringify(newZona))
       Object.assign(zonaLocal, {
-        ...newZona,
-        gps: typeof newZona.gps === 'object' ? JSON.stringify(newZona.gps) : newZona.gps || '',
-        datos_bpa: Array.isArray(newZona.datos_bpa) ? newZona.datos_bpa : [],
-        metricas: typeof newZona.metricas === 'object' ? newZona.metricas : {}
+        ...cleanZona,
+        gps: typeof cleanZona.gps === 'object' ? JSON.stringify(cleanZona.gps) : cleanZona.gps || '',
+        datos_bpa: Array.isArray(cleanZona.datos_bpa) ? cleanZona.datos_bpa : [],
+        metricas: typeof cleanZona.metricas === 'object' ? cleanZona.metricas : {}
       })
+
+      // Actualizar centro del mapa si hay coordenadas válidas
+      if (cleanZona.gps) {
+        try {
+          const coords = typeof cleanZona.gps === 'object' ? cleanZona.gps : JSON.parse(cleanZona.gps)
+          if (coords.lat && coords.lng) {
+            mapCenter.value = [coords.lat, coords.lng]
+            mapZoom.value = 18
+          }
+        } catch (e) {
+          logger.warn('[ZonaForm] Error parseando GPS para centrar mapa:', e)
+        }
+      }
     } else {
       // Modo creación - Inicializar con valores por defecto
       Object.assign(zonaLocal, {
@@ -721,7 +854,7 @@ watch(
       })
     }
   },
-  { immediate: true }
+  { immediate: true, deep: true }
 )
 
 // Watch para tipoZonaActual solo en modo creación
@@ -754,15 +887,7 @@ function getDefaultMetricaValue(tipo) {
 }
 </script>
 <style scoped>
-.avatar-section {
-  @apply flex flex-col items-center;
-}
-
-.avatar-preview {
-  @apply flex flex-col items-center justify-center;
-}
-
-.compact-form {
-  @apply text-sm;
+.quill-editor {
+  height: 150px;
 }
 </style>

@@ -23,7 +23,7 @@
     >
       <v-toolbar color="green-darken-3" dark>
         <v-icon start class="ml-4">mdi-robot-outline</v-icon>
-        <v-toolbar-title class="text-subtitle-1 font-weight-bold">
+        <v-toolbar-title class=" font-weight-bold">
           {{ t('ai_assistant.title') }}
         </v-toolbar-title>
         <v-spacer></v-spacer>

@@ -1,6 +1,6 @@
 <template>
   <div class="w-full max-w-4xl mx-auto py-12">
-    <v-container class="rounded-lg border-4" v-if="isOpen">
+    <v-container class=" border-4" v-if="isOpen">
       <v-col cols="12">
         <v-card>
           <v-card-title> <h2 class="text-2xl font-bold">CONFIRME SU EMAIL..</h2></v-card-title>
@@ -17,7 +17,7 @@
                 type="submit"
                 size="small"
                 variant="flat"
-                rounded="lg"
+                
                 prepend-icon="mdi-check"
                 color="blue-lighten-3"
                 block
@@ -29,7 +29,7 @@
         </v-card>
       </v-col>
     </v-container>
-    <v-container class="rounded-lg border-4" v-else>
+    <v-container class=" border-4" v-else>
       <v-col cols="12">
         <v-card>
           <v-card-title class="text-h5"> GRACIAS POR CONFIRMAR SU REGISTRO </v-card-title>

@@ -2,9 +2,10 @@
   <v-container fluid class="haciendas-management">
     <div class="d-flex justify-space-between align-center mb-4">
       <h2 class="text-h5">Gestión de Haciendas</h2>
-      <v-btn color="primary" prepend-icon="mdi-plus" @click="openCreateDialog">
+      <v-btn v-role="'HACIENDAS_MANAGE'" color="primary" prepend-icon="mdi-plus" @click="openCreateDialog">
         Nueva Hacienda
       </v-btn>
+
     </div>
 
     <!-- Filtros y Búsqueda -->
@@ -80,13 +81,13 @@
               <v-chip
                 v-for="module in hacienda.active_modules.slice(0, 3)"
                 :key="module"
-                size="x-small"
+                size="small"
                 color="primary"
                 variant="outlined"
               >
                 {{ formatModule(module) }}
               </v-chip>
-              <v-chip v-if="hacienda.active_modules.length > 3" size="x-small">
+              <v-chip v-if="hacienda.active_modules.length > 3" size="small">
                 +{{ hacienda.active_modules.length - 3 }}
               </v-chip>
             </v-chip-group>
@@ -94,14 +95,16 @@
 
           <v-card-actions>
             <v-btn icon="mdi-eye" size="small" variant="text" @click="viewHacienda(hacienda)" />
-            <v-btn icon="mdi-pencil" size="small" variant="text" @click="editHacienda(hacienda)" />
+            <v-btn v-role="'HACIENDAS_MANAGE'" icon="mdi-pencil" size="small" variant="text" @click="editHacienda(hacienda)" />
             <v-btn
+              v-role="'HACIENDAS_MANAGE'"
               icon="mdi-delete"
               size="small"
               variant="text"
               color="error"
               @click="confirmDelete(hacienda)"
             />
+
           </v-card-actions>
         </v-card>
       </v-col>
@@ -173,12 +176,21 @@
               closable-chips
               hint="Presiona Enter para agregar módulos"
             />
+            <v-text-field
+              v-model="formData.openrouter_key"
+              label="OpenRouter API Key (BYOK)"
+              type="password"
+              hint="Opcional. Si se deja vacío, se usará la del sistema."
+              persistent-hint
+              clearable
+            />
+
           </v-form>
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn color="grey" variant="text" @click="closeDialog">Cancelar</v-btn>
-          <v-btn color="primary" :disabled="!formValid" @click="saveHacienda">Guardar</v-btn>
+          <v-btn color="grey" variant="text" @click="closeDialog">CANCELAR</v-btn>
+          <v-btn color="primary" :disabled="!formValid" @click="saveHacienda">GUARDAR</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -285,7 +297,7 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn color="grey" @click="deleteDialog = false">Cancelar</v-btn>
+          <v-btn color="grey" @click="deleteDialog = false">CANCELAR</v-btn>
           <v-btn color="error" @click="deleteHacienda">Eliminar</v-btn>
         </v-card-actions>
       </v-card>
@@ -329,9 +341,12 @@ const formData = ref({
   descripcion: '',
   ubicacion: '',
   plan: null,
+  plan: null,
   status: 'active',
-  active_modules: []
+  active_modules: [],
+  openrouter_key: ''
 })
+
 
 // Opciones de módulos
 const moduleOptions = [
@@ -411,8 +426,10 @@ function openCreateDialog() {
     ubicacion: '',
     plan: null,
     status: 'active',
-    active_modules: []
+    active_modules: [],
+    openrouter_key: ''
   }
+
   haciendaForm.value?.reset()
   haciendaDialog.value = true
 }
@@ -426,8 +443,10 @@ function editHacienda(hacienda) {
     ubicacion: hacienda.ubicacion || '',
     plan: hacienda.plan?.id || null,
     status: hacienda.status || 'active',
-    active_modules: hacienda.active_modules || []
+    active_modules: hacienda.active_modules || [],
+    openrouter_key: hacienda.openrouter_key || ''
   }
+
   haciendaDialog.value = true
 }
 
@@ -443,7 +462,7 @@ function confirmDelete(hacienda) {
   deleteDialog.value = true
 }
 
-// Guardar hacienda
+// GUARDAR hacienda
 async function saveHacienda() {
   const valid = await haciendaForm.value?.validate()
   if (!valid?.valid) return

@@ -16,7 +16,7 @@
       <template #activator="{ props }">
         <v-icon
           v-bind="props"
-          size="x-small"
+          size="small"
           color="grey"
           class="ml-1"
         >
@@ -34,7 +34,7 @@
     <v-chip
       v-if="isDue"
       color="warning"
-      size="x-small"
+      size="small"
       class="ml-2"
     >
       Pendiente

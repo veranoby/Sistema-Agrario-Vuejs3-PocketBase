@@ -173,7 +173,7 @@
           <template #item.metadata="{ item }">
             <v-btn
               icon="mdi-information"
-              size="x-small"
+              size="small"
               variant="text"
               @click="showMetadata(item)"
             />

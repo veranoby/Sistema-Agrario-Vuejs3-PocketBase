@@ -72,15 +72,15 @@
       <v-btn
         size="small"
         variant="flat"
-        rounded="lg"
+        
         prepend-icon="mdi-cancel"
         color="red-lighten-3"
         @click="$emit('cancel')"
       >
-        Cancelar
+        CANCELAR
       </v-btn>
       <v-btn color="success" variant="flat" type="submit" :loading="loading" :disabled="!formValid">
-        {{ isEditing ? 'Guardar Cambios' : 'Crear Usuario' }}
+        {{ isEditing ? 'GUARDAR Cambios' : 'Crear Usuario' }}
       </v-btn>
     </v-card-actions>
   </v-form>

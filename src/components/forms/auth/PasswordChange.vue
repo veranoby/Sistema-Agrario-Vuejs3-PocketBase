@@ -4,7 +4,7 @@
       min-width="210"
       size="small"
       variant="flat"
-      rounded="lg"
+      
       color="grey-lighten-1"
       prepend-icon="mdi-lock"
       @click="openDialog"
@@ -63,9 +63,7 @@
         </v-card-text>
         <v-card-actions>
           <v-btn
-            size="small"
             variant="flat"
-            rounded="lg"
             prepend-icon="mdi-cancel"
             color="red-lighten-3"
             @click="dialogOpen = false"
@@ -73,9 +71,7 @@
             {{ t('password_change.cancel') }}
           </v-btn>
           <v-btn
-            size="small"
-            variant="flat"
-            rounded="lg"
+            variant="flat"            
             prepend-icon="mdi-check"
             color="green-lighten-3"
             @click="changePassword"

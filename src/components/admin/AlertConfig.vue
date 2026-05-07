@@ -21,7 +21,7 @@
       <v-form ref="formRef" @submit.prevent="savePreferences">
         <!-- Tipos de Alerta -->
         <div class="mb-6">
-          <h3 class="text-subtitle-1 mb-3">Tipos de Alerta</h3>
+          <h3 class=" mb-3">Tipos de Alerta</h3>
           <v-checkbox-group v-model="form.enabledTypes">
             <v-checkbox
               v-for="type in availableAlertTypes"
@@ -36,7 +36,7 @@
 
         <!-- Destinatarios -->
         <div class="mb-6">
-          <h3 class="text-subtitle-1 mb-3">Destinatarios</h3>
+          <h3 class=" mb-3">Destinatarios</h3>
           <v-text-field
             v-model="emailInput"
             label="Agregar email"
@@ -80,7 +80,7 @@
 
         <!-- Frecuencia -->
         <div class="mb-4">
-          <h3 class="text-subtitle-1 mb-3">Frecuencia de Envío</h3>
+          <h3 class=" mb-3">Frecuencia de Envío</h3>
           <v-select
             v-model="form.frequency"
             :items="frequencies"
@@ -101,7 +101,7 @@
         @click="resetForm"
         :disabled="loading"
       >
-        Cancelar
+        CANCELAR
       </v-btn>
       <v-btn
         color="primary"
@@ -110,7 +110,7 @@
         @click="savePreferences"
       >
         <v-icon start>mdi-content-save</v-icon>
-        Guardar Configuración
+        GUARDAR Configuración
       </v-btn>
     </v-card-actions>
   </v-card>

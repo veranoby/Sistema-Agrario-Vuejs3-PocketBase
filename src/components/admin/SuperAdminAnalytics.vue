@@ -240,7 +240,7 @@ async function loadData() {
     users.value = usersList.items
     haciendas.value = haciendasList.items
 
-    // Guardar en cache
+    // GUARDAR en cache
     cache.set(USERS_CACHE_KEY, usersList, CACHE_TTL)
     cache.set(HACIENDAS_CACHE_KEY, haciendasList, CACHE_TTL)
 

@@ -1,6 +1,5 @@
 <template>
   <v-app :theme="themeStore.currentTheme">
-    <StatusBar />
     <Header
       v-if="showHeader"
       :PaginaActual="currentPage"
@@ -9,7 +8,6 @@
     />
 
     <v-navigation-drawer v-if="isLoggedIn" expand-on-hover rail v-model="drawer" theme="dark">
-      <!--  <v-navigation-drawer v-model="drawer" temporary>-->
       <Sidebar :navigationLinks="navigationLinks" />
     </v-navigation-drawer>
 
@@ -29,7 +27,8 @@
 
     <SnackbarComponent />
 
-    <!-- Conflict Resolution Dialog -->
+    <GlobalConfirmDialog />
+
     <ConflictResolutionDialog
       v-model="syncStore.conflictDialog"
       :conflicts="syncStore.conflicts"
@@ -48,13 +47,12 @@ import { checkBPACertificados } from '@/stores/bitacoraStore'
 import Header from './components/Header.vue'
 import Sidebar from './components/Sidebar.vue'
 
-// Componentes asíncronos para optimización de bundle inicial
 const AuthModal = defineAsyncComponent(() => import('./components/forms/auth/AuthModal.vue'))
 const ConflictResolutionDialog = defineAsyncComponent(() => import('./components/dialogs/ConflictResolutionDialog.vue'))
+const GlobalConfirmDialog = defineAsyncComponent(() => import('./components/dialogs/GlobalConfirmDialog.vue'))
 
 import SnackbarComponent from '@/components/SnackbarComponent.vue'
 import { useSyncStore } from '@/stores/sync'
-import StatusBar from '@/components/StatusBar.vue'
 import { useSchedulerStore } from '@/stores/schedulerStore'
 
 const route = useRoute()
@@ -68,7 +66,6 @@ const drawer = ref(true)
 const showAuthModal = ref(false)
 
 const isLoggedIn = computed(() => authStore.isLoggedIn)
-
 const showHeader = computed(() => route.name !== 'login')
 const currentPage = computed(() => route.name?.toUpperCase() || '')
 
@@ -83,7 +80,6 @@ const navigationLinks = [
   { id: 8, to: '/recordatorios', icon: 'mdi-alarm-light-outline', label: 'Recordatorios' }
 ]
 
-// Interval IDs para limpieza
 let checkInterval = null
 
 const handleLoginSuccess = () => {
@@ -91,7 +87,6 @@ const handleLoginSuccess = () => {
   drawer.value = true
 }
 
-// Aplicar tema cuando cambie
 watch(
   () => themeStore.currentTheme,
   (newTheme) => {
@@ -105,13 +100,11 @@ watch(
   async (newValue) => {
     if (newValue) {
       handleLoginSuccess()
-      // Iniciar scheduler cuando usuario se loguea
       if (!schedulerStore.initialized) {
         await schedulerStore.init()
       }
     } else {
       navigationLinks.value = []
-      // Detener scheduler cuando usuario hace logout
       schedulerStore.reset()
       if (router.currentRoute.value.meta.requiresAuth) {
         router.push('/')
@@ -122,29 +115,22 @@ watch(
 )
 
 onMounted(async () => {
-  // Si auth no está inicializado, iniciarlo
   if (!authStore.initialized) {
     await authStore.init()
   }
 
-  // Si sync no está inicializado y tenemos sesión, iniciarlo
   if (authStore.isLoggedIn && !syncStore.initialized) {
     await syncStore.init()
   }
 
-  // Detectar cuando el usuario retoma la actividad
   window.addEventListener('focus', handleWindowFocus)
   document.addEventListener('visibilitychange', handleVisibilityChange)
 
-  // Configurar verificación de alertas (cada hora)
-  const CHECK_INTERVAL = 3600000 // 1 hora en ms
-
+  const CHECK_INTERVAL = 3600000
   checkInterval = setInterval(async () => {
     const haciendaActual = authStore.haciendaActual
-
     if (haciendaActual) {
       console.log('[App] Verificando alertas para', haciendaActual.nombre)
-
       await Promise.all([
         checkProximoActivities(haciendaActual.id),
         checkBPACertificados(haciendaActual.id)
@@ -152,7 +138,6 @@ onMounted(async () => {
     }
   }, CHECK_INTERVAL)
 
-  // Ejecutar verificación inicial al cargar
   setTimeout(async () => {
     const haciendaActual = authStore.haciendaActual
     if (haciendaActual) {
@@ -161,30 +146,22 @@ onMounted(async () => {
         checkBPACertificados(haciendaActual.id)
       ])
     }
-  }, 5000) // 5 segundos después de cargar
+  }, 5000)
 })
 
 onBeforeUnmount(() => {
-  // Limpiar event listeners para evitar memory leaks
   window.removeEventListener('focus', handleWindowFocus)
   document.removeEventListener('visibilitychange', handleVisibilityChange)
-
-  // Importante: detener el timer de refresco al desmontar el componente
   if (authStore.isLoggedIn) {
     authStore.stopRefreshTimer()
   }
-
-  // Detener scheduler al desmontar
   schedulerStore.reset()
-
-  // Limpiar intervalo de verificación de alertas
   if (checkInterval) {
     clearInterval(checkInterval)
   }
 })
 
 const handleWindowFocus = () => {
-  // Solo log en desarrollo
   if (import.meta.env.DEV) {
     console.log('[APP] Ventana recuperó el foco')
   }
@@ -192,7 +169,6 @@ const handleWindowFocus = () => {
 }
 
 const handleVisibilityChange = () => {
-  // Solo log en desarrollo
   if (import.meta.env.DEV) {
     console.log('[APP] Cambio de visibilidad:', document.visibilityState)
   }
@@ -209,21 +185,17 @@ const refreshTokenIfNeeded = async () => {
         await authStore.refreshToken()
         console.log('[APP] Refresh token completado')
       }
-      // Remover logs innecesarios para token que no necesita refresh
     } catch (error) {
       console.error('[APP] Error en refreshTokenIfNeeded:', error)
       const syncStore = useSyncStore()
       const rememberMe = syncStore.loadFromLocalStorage('rememberMe')
-
       if (rememberMe) {
         authStore.showLoginDialog = true
       }
     }
   }
-  // Remover log cuando no está logueado (muy frecuente)
 }
 
-// Manejar resolución de conflictos desde el dialog
 function handleConflictResolution(resolvedConflicts) {
   console.log('[APP] Resolviendo conflictos:', resolvedConflicts)
   syncStore.resolveMultipleConflicts(resolvedConflicts)
@@ -231,7 +203,6 @@ function handleConflictResolution(resolvedConflicts) {
 </script>
 
 <style>
-/* Clases de utilidad para temas */
 .theme-light {
   --fondo_claro: #f5f5f5;
   --fondo_claro_tabla: #ffffff;
@@ -242,7 +213,6 @@ function handleConflictResolution(resolvedConflicts) {
   --fondo_claro_tabla: #2d2d2d;
 }
 
-/* Estilos globales */
 :root {
   --fondo_claro: #f5f5f5;
   --fondo_claro_tabla: #ffffff;

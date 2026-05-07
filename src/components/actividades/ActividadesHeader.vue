@@ -28,25 +28,26 @@
               </ol>
             </nav>
 
-            <v-chip variant="flat" size="x-small" color="green-lighten-3" class="mx-1" pill>
+            <v-chip variant="flat" size="small" color="green-lighten-3" class="mx-1" pill>
               <v-avatar start>
                 <v-img :src="avatarHaciendaUrl" alt="Avatar"></v-img>
               </v-avatar>
               {{ t('activity_workspace.hacienda') }}: {{ mi_hacienda.name }}
             </v-chip>
 
-            <v-chip variant="flat" size="x-small" color="grey-lighten-2" class="mx-1" pill>
+            <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
               <v-avatar start>
                 <v-img :src="avatarUrl" alt="Avatar"></v-img>
               </v-avatar>
-              {{ userRole }}
+              {{ t('roles.' + userRole) }}
             </v-chip>
 
-            <v-chip :color="getStatusColor(actividadInfo.activa)" size="x-small" variant="flat">
+
+            <v-chip :color="getStatusColor(actividadInfo.activa)" size="small" variant="flat">
               {{ getStatusMsg(actividadInfo.activa) }}
             </v-chip>
 
-            <v-chip variant="flat" size="x-small" color="grey-lighten-2" class="mx-1" pill>
+            <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
               {{ t('activity_workspace.type') }}:
               {{ actividadesStore.getActividadTipo(actividadInfo.tipo_actividades).toUpperCase() }}
             </v-chip>
@@ -132,12 +133,9 @@ const getStatusColor = (status) => {
 }
 
 const getStatusMsg = (status) => {
-  const colors = {
-    true: 'ACTIVA',
-    false: 'DETENIDA'
-  }
-  return colors[status] || 'gray'
+  return status ? t('activities.active') : t('activities.stopped')
 }
+
 </script>
 
 <style scoped>

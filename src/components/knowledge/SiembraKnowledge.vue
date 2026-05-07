@@ -148,7 +148,7 @@
                 >
                   <v-list-item-title>{{ metrica.pregunta }}</v-list-item-title>
                   <v-list-item-subtitle>
-                    <v-chip size="x-small" :color="metrica.respuesta ? 'success' : 'warning'">
+                    <v-chip size="small" :color="metrica.respuesta ? 'success' : 'warning'">
                       {{ metrica.respuesta ? 'Cumple' : 'Pendiente' }}
                     </v-chip>
                   </v-list-item-subtitle>

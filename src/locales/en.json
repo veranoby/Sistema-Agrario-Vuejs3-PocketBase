@@ -101,6 +101,7 @@
     "gps": "GPS",
     "information_of": "INFORMATION OF {hacienda_name}",
     "edit_hacienda": "EDIT HACIENDA",
+    "basic_data": "BASIC DATA",
     "name": "NAME",
     "location": "LOCATION",
     "latitude": "LATITUDE",
@@ -170,8 +171,20 @@
     "scheduled_meeting": "SCHEDULED A TEAM MEETING FOR NEXT WEEK.",
     "error_loading_dashboard": "ERROR LOADING DASHBOARD",
     "reminder_saved": "REMINDER SAVED",
-    "error_saving_reminder": "ERROR SAVING REMINDER"
+    "error_saving_reminder": "ERROR SAVING REMINDER",
+    "hacienda_map": "GENERAL HACIENDA MAP",
+    "no_hacienda_info": "No hacienda information found. Contact the administrator.",
+    "export": "Export",
+    "system_alerts": "System Alerts",
+    "signature_audit": "Signature Audit",
+    "no_activity": "No activity",
+    "signed": "Signed",
+    "unsigned": "Unsigned",
+    "no_geo_data": "No geographic data registered in this hacienda",
+    "go_to_sowings": "Go to Sowings to register areas"
   },
+
+
   "sowings": {
     "sowing_management": "SOWING MANAGEMENT",
     "new_sowing": "NEW SOWING",
@@ -251,8 +264,10 @@
     "activity_deleted_successfully": "ACTIVITY DELETED SUCCESSFULLY",
     "error_deleting_activity": "ERROR DELETING ACTIVITY",
     "error_loading_initial_data": "ERROR LOADING INITIAL DATA",
-    "zone_saved_successfully": "ZONE SAVED SUCCESSFULLY"
+    "zone_saved_successfully": "ZONE SAVED SUCCESSFULLY",
+    "loading": "LOADING..."
   },
+
   "zones": {
     "zones_and_logistics": "ZONES AND WORK LOGISTICS",
     "bpa_progress": "BPA PROGRESS",
@@ -409,5 +424,12 @@
     "regenerate": "Update Recommendation",
     "welcome_msg": "Click the button to get personalized recommendations based on your current data.",
     "disclaimer": "Suggestion based on averages; validate with a qualified agricultural technician before making critical decisions."
+  },
+  "roles": {
+    "admin": "Administrator",
+    "administrador": "Administrator",
+    "tecnico": "Technician",
+    "técnico": "Technician",
+    "operador": "Operator"
   }
 }

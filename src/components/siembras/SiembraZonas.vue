@@ -3,7 +3,7 @@
     <v-card-title class="d-flex justify-space-between align-center">
       {{ t('sowing_workspace.registered_zones') }}
       <v-btn
-        size="x-small"
+        size="small"
         color="green-lighten-2"
         icon
         rounded="circle"
@@ -29,14 +29,14 @@
                 ? 'green'
                 : 'green-lighten-2'
         "
-        size="x-small"
+        size="small"
         class="mx-1"
         pill
       >
         {{ t('sowing_workspace.current_area') }}: {{ totalArea }} {{ areaUnit }}
       </v-chip>
 
-      <v-chip variant="flat" size="x-small" color="green" class="mx-1" pill>
+      <v-chip variant="flat" size="small" color="green" class="mx-1" pill>
         {{ t('sowing_workspace.target_area') }}: {{ siembraInfo?.area_total || 0 }} ha
       </v-chip>
 
@@ -97,7 +97,7 @@
                       v-for="(metrica, key) in item.metricas"
                       :key="key"
                       color="blue-grey-lighten-1"
-                      size="x-small"
+                      size="small"
                       variant="flat"
                       class="m-1"
                     >

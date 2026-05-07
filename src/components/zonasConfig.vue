@@ -8,13 +8,13 @@
             <div class="w-full sm:flex-grow">
               <h3 class="profile-title text-sm sm:text-lg mb-2 sm:mb-0">
                 {{ t('zones.zones_and_logistics') }}
-                <v-chip variant="flat" size="x-small" color="grey-lighten-2" class="mx-1" pill>
+                <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
                   <v-avatar start>
                     <v-img :src="avatarUrl" alt="Avatar"></v-img>
                   </v-avatar>
                   {{ userRole }}
                 </v-chip>
-                <v-chip variant="flat" size="x-small" color="green-lighten-3" class="mx-1" pill>
+                <v-chip variant="flat" size="small" color="green-lighten-3" class="mx-1" pill>
                   <v-avatar start>
                     <v-img :src="avatarHaciendaUrl" alt="Avatar"></v-img>
                   </v-avatar>
@@ -55,7 +55,7 @@
     </div>
 
     <main class="flex-1 py-2">
-      <v-container class="rounded-lg border-2 py-0 px-0">
+      <v-container class=" border-2 py-0 px-0">
         <v-tabs
           v-model="tab"
           bg-color="#6380a247"
@@ -190,7 +190,7 @@
                                 v-for="(metrica, key) in item.metricas"
                                 :key="key"
                                 color="blue-grey-lighten-1"
-                                size="x-small"
+                                size="small"
                                 variant="flat"
                                 class="m-1"
                               >
@@ -223,7 +223,7 @@
         </v-tabs-window>
       </v-container>
     </main>
-    <v-dialog v-model="dialogoCrear" persistent max-width="1000px ">
+    <v-dialog v-model="dialogoCrear" persistent max-width="1600px">
       <ZonaForm
         :modo-edicion="modoEdicion"
         :zona-inicial="zonaEditando"

@@ -62,7 +62,7 @@ export class PdfExporter {
       // Generar nombre de archivo
       const fileName = this.generateFileName(entry, actividad)
 
-      // Guardar PDF
+      // GUARDAR PDF
       this.doc.save(fileName)
 
       console.log(`[PdfExporter] PDF exportado: ${fileName}`)

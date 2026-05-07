@@ -73,12 +73,12 @@
                 <v-chip
                   v-for="(metrica, idx) in actividad.metricas_bpa.slice(0, 3)"
                   :key="idx"
-                  size="x-small"
+                  size="small"
                   variant="outlined"
                 >
                   {{ idx + 1 }}
                 </v-chip>
-                <v-chip v-if="actividad.metricas_bpa.length > 3" size="x-small">
+                <v-chip v-if="actividad.metricas_bpa.length > 3" size="small">
                   +{{ actividad.metricas_bpa.length - 3 }}
                 </v-chip>
               </v-chip-group>
@@ -112,7 +112,7 @@
         <v-card-text>
           <v-row>
             <v-col cols="12" md="6">
-              <h4 class="text-subtitle-1 mb-2">Información General</h4>
+              <h4 class=" mb-2">Información General</h4>
               <v-list density="compact">
                 <v-list-item>
                   <v-list-item-title>ID</v-list-item-title>
@@ -133,7 +133,7 @@
               </v-list>
             </v-col>
             <v-col cols="12" md="6">
-              <h4 class="text-subtitle-1 mb-2">Métricas BPA</h4>
+              <h4 class=" mb-2">Métricas BPA</h4>
               <v-list v-if="selectedActivity?.metricas_bpa?.length" density="compact">
                 <v-list-item
                   v-for="(metrica, idx) in selectedActivity.metricas_bpa"

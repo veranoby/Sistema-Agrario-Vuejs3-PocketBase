@@ -66,7 +66,6 @@
                       ></v-text-field>
                     </v-col>
                     <v-col cols="12">
-                      <label :for="passwordInputId" class="text-caption">{{ t('auth.password') }}</label>
                       <v-text-field
                         v-model="loginForm.password"
                         :id="passwordInputId"

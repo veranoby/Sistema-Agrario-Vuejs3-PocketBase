@@ -3,7 +3,7 @@
     <v-card-title class="d-flex justify-space-between align-center">
       <span>{{ t('sowing_workspace.recent_log') }}</span>
       <v-btn
-        size="x-small"
+        size="small"
         color="green-lighten-2"
         icon
         rounded="circle"

@@ -9,7 +9,7 @@
         </v-tooltip>
       </v-chip>
 
-      <v-btn color="green-lighten-2" @click="openChangePlanModal" icon size="x-small">
+      <v-btn color="green-lighten-2" @click="openChangePlanModal" icon size="small">
         <v-icon>mdi-pencil</v-icon>
       </v-btn>
     </div>
@@ -33,7 +33,7 @@
           <div v-for="plan in availablePlans" :key="plan.id" @click="selectedPlan = plan.id">
             <v-hover v-slot="{ isHovering, props }">
               <v-card
-                class="plan-card p-6 rounded-lg shadow-md transition-all duration-300 cursor-pointer"
+                class="plan-card p-6  shadow-md transition-all duration-300 cursor-pointer"
                 :class="{
                   'plan-card-hover': isHovering,
                   'plan-card-selected': selectedPlan === plan.id
@@ -73,9 +73,7 @@
 
       <v-card-actions class="plan-actions">
         <v-btn
-          size="small"
-          variant="flat"
-          rounded="lg"
+          variant="flat"          
           prepend-icon="mdi-cancel"
           color="red-lighten-3"
           @click="changePlanModalOpen = false"
@@ -83,9 +81,7 @@
           {{ t('plan_management.cancel') }}
         </v-btn>
         <v-btn
-          size="small"
-          variant="flat"
-          rounded="lg"
+          variant="flat"          
           prepend-icon="mdi-check"
           color="green-lighten-3"
           @click="changePlan"

@@ -4,7 +4,7 @@
       <div>
         <h3 class="profile-title">
           {{ t('profile.social_profile') }}
-          <v-chip variant="flat" size="x-small" color="grey-lighten-2" class="mx-1" pill>
+          <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
             <v-avatar start> <v-img :src="avatarUrl" alt="Avatar"></v-img> </v-avatar>
             {{ userRole }}
           </v-chip>
@@ -71,7 +71,7 @@
       <v-icon class="mr-2">mdi-information</v-icon>
       <strong>{{ t('profile.my_information') }}</strong>
     </div>
-    <v-btn color="green-lighten-2" @click="openDialog" icon size="x-small">
+    <v-btn color="green-lighten-2" @click="openDialog" icon size="small">
       <v-icon>mdi-pencil</v-icon>
     </v-btn>
   </div>
@@ -192,9 +192,7 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-            size="small"
             variant="flat"
-            rounded="lg"
             prepend-icon="mdi-cancel"
             color="red-lighten-3"
             @click="dialogOpen = false"
@@ -202,9 +200,7 @@
             {{ t('profile.cancel') }}
           </v-btn>
           <v-btn
-            size="small"
-            variant="flat"
-            rounded="lg"
+            variant="flat"            
             prepend-icon="mdi-check"
             color="green-lighten-3"
             type="submit"

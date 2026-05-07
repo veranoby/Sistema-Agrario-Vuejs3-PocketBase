@@ -5,7 +5,7 @@
         <span>{{ t('activity_workspace.schedules') }}</span>
       </h2>
       <v-btn
-        size="x-small"
+        size="small"
         color="green-lighten-2"
         @click="abrirNuevaProgramacion"
         icon

@@ -4,7 +4,8 @@ import { useI18n } from 'vue-i18n'
 export function useSiembraMetrics() {
   const { t } = useI18n()
 
-  const expanded = ref([])
+  const expandedZonas = ref([])
+  const expandedActividades = ref([])
   const areaUnit = ref('ha')
   const itemsPerPage = ref(10)
 
@@ -25,7 +26,8 @@ export function useSiembraMetrics() {
   ]
 
   return {
-    expanded,
+    expandedZonas,
+    expandedActividades,
     areaUnit,
     itemsPerPage,
     estadosSiembra,

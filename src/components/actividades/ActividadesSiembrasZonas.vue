@@ -5,7 +5,7 @@
         <span v-if="actividadInfo.siembras.length > 0">{{ t('activity_workspace.associated_sowings') }}</span>
       </h2>
       <v-btn
-        size="x-small"
+        size="small"
         color="green-lighten-2"
         icon
         rounded="circle"
@@ -19,7 +19,7 @@
       <div class="flex flex-wrap">
         <v-chip
           v-for="siembraId in actividadInfo.siembras"
-          size="x-small"
+          size="small"
           :key="siembraId"
           class="m-1 p-1"
           :text="
@@ -43,7 +43,7 @@
       <div class="flex flex-wrap">
         <v-chip
           v-for="zonasId in actividadInfo.zonas"
-          size="x-small"
+          size="small"
           :key="zonasId"
           class="m-1 p-1"
           :text="

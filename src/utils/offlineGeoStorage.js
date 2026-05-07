@@ -267,6 +267,20 @@ export class OfflineGeoStorage {
     })
   }
 
+  /**
+   * Elimina una siembra.
+   * 
+   * @param {string} id - ID de la siembra
+   * @returns {Promise<void>}
+   */
+  async deleteSiembra(id) {
+    await this.ensureInit()
+    return this.transaction(STORES.SIEMBRAS, 'readwrite', (store) => {
+      store.delete(id)
+      logger.debug('[OfflineGeoStorage] Siembra eliminada:', id)
+    })
+  }
+
   // ============================================================================
   // OPERACIONES PARA PUNTOS DE INTERÉS
   // ============================================================================
@@ -596,6 +610,11 @@ export function useOfflineGeoStorage() {
     return storage.getSiembrasByZona(zonaId)
   }
 
+  const deleteSiembra = async (id) => {
+    await storage.init()
+    return storage.deleteSiembra(id)
+  }
+
   // NUEVO: Métodos para tiles
   const saveTile = async (tile) => {
     await storage.init()
@@ -614,6 +633,7 @@ export function useOfflineGeoStorage() {
     getAllZonas,
     saveSiembra,
     getSiembrasByZona,
+    deleteSiembra,
     saveTile,
     getTile,
     close: () => storage.close()

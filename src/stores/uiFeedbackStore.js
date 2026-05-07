@@ -21,7 +21,16 @@ export const useUiFeedbackStore = defineStore('uiFeedback', {
     },
     loading: false,
     error: null,
-    globalLoading: false // Nuevo: estado para indicador de carga global
+    globalLoading: false,
+    // Confirmation Dialog state
+    confirm: {
+      show: false,
+      title: '',
+      message: '',
+      resolve: null,
+      color: 'primary',
+      icon: 'mdi-help-circle'
+    }
   }),
 
   getters: {
@@ -70,6 +79,22 @@ export const useUiFeedbackStore = defineStore('uiFeedback', {
     },
 
     /**
+     * Muestra un mensaje de error persistente (Snackbar)
+     * @param {string} text - Mensaje de error
+     */
+    showError(text) {
+      this.showSnackbar(text, 'error', 5000)
+    },
+
+    /**
+     * Muestra un mensaje de éxito (Snackbar)
+     * @param {string} text - Mensaje de éxito
+     */
+    showSuccess(text) {
+      this.showSnackbar(text, 'success', 3000)
+    },
+
+    /**
      * Oculta el Snackbar actual
      */
     hideSnackbar() {
@@ -88,6 +113,41 @@ export const useUiFeedbackStore = defineStore('uiFeedback', {
      */
     hideLoading() {
       this.globalLoading = false
+    },
+
+    /**
+     * Muestra un diálogo de confirmación
+     * @param {string} title - Título del diálogo
+     * @param {string} message - Mensaje del diálogo
+     * @param {string} color - Color del botón de acción
+     * @param {string} icon - Icono opcional
+     * @returns {Promise<boolean>} Resuelve a true si se confirma, false si se cancela
+     */
+    showConfirm(title, message, color = 'primary', icon = 'mdi-help-circle') {
+      this.confirm = {
+        show: true,
+        title,
+        message,
+        color,
+        icon,
+        resolve: null // Se llenará a continuación
+      }
+
+      return new Promise((resolve) => {
+        this.confirm.resolve = resolve
+      })
+    },
+
+    /**
+     * Resuelve el diálogo de confirmación actual
+     * @param {boolean} result - Resultado de la acción del usuario
+     */
+    resolveConfirm(result) {
+      if (this.confirm.resolve) {
+        this.confirm.resolve(result)
+      }
+      this.confirm.show = false
+      this.confirm.resolve = null
     },
 
     /**

@@ -67,7 +67,7 @@
         <v-btn
           size="small"
           variant="flat"
-          rounded="lg"
+          
           prepend-icon="mdi-alert"
           color="red-lighten-1"
           @click="handleDelete"
@@ -78,26 +78,22 @@
         <v-spacer></v-spacer>
 
         <v-btn
-          size="small"
-          variant="flat"
-          rounded="lg"
+          variant="flat"          
           prepend-icon="mdi-check"
           color="green-lighten-3"
           @click="handleSubmit"
           :disabled="!avatarFile"
         >
-          Guardar
+          GUARDAR
         </v-btn>
 
         <v-btn
-          size="small"
-          variant="flat"
-          rounded="lg"
+          variant="flat"          
           prepend-icon="mdi-cancel"
           color="red-lighten-3"
           @click="closeDialog"
         >
-          Cancelar
+          CANCELAR
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -138,12 +134,13 @@ const compressionStats = ref(null)
 const exifData = ref(null)
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
-const TARGET_SIZE_MB = 2 // Tamaño objetivo después de compresión
+const TARGET_SIZE_MB = 0.5 // 500KB - objetivo de compresión de salida
 
 const imageOptimizer = new ImageOptimizer({
-  maxWidth: 1920,
-  maxHeight: 1080,
-  quality: 0.8,
+  maxWidth: 1200,
+  maxHeight: 1200,
+  quality: 0.75,
+  maxInputSizeMB: 5,
   maxSizeMB: TARGET_SIZE_MB,
   format: 'image/jpeg'
 })
@@ -185,9 +182,9 @@ const handleFileChange = async (file) => {
           exifData.value = await exifExtractor.extract(file)
           logger.debug('[AvatarForm] EXIF extraído:', exifData.value)
 
-          // Comprimir imagen
+          // Comprimir imagen iterativamente hasta alcanzar el tamaño objetivo
           isCompressing.value = true
-          const result = await imageOptimizer.compress(file)
+          const result = await imageOptimizer.compressToSize(file, TARGET_SIZE_MB)
           
           compressionStats.value = {
             originalSize: result.originalSize,
@@ -206,7 +203,7 @@ const handleFileChange = async (file) => {
           })
 
           uiFeedbackStore.showSuccess(
-            `Imagen optimizada: ${result.compressionRatio}% de reducción`
+            `Imagen optimizada: ${(result.newSize / 1024).toFixed(0)}KB (${result.compressionRatio}% de reducción)`
           )
         } catch (error) {
           logger.error('[AvatarForm] Error optimizando imagen:', error)

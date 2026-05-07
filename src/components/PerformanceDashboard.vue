@@ -1,97 +1,131 @@
 <template>
-  <div class="performance-dashboard">
-    <h2>Métricas de Rendimiento de Sincronización</h2>
+  <v-container fluid class="pa-4 pa-sm-6">
+    <div class="flex items-center mb-6">
+      <v-icon color="primary" class="mr-3">mdi-chart-line</v-icon>
+      <h2 class="text-h4 font-weight-bold">Rendimiento de Sincronización</h2>
+    </div>
     
     <!-- Resumen general -->
-    <div class="metrics-summary">
-      <div class="metric-card">
-        <h3>Operaciones Totales</h3>
-        <p class="metric-value">{{ metrics.operationCounts.total }}</p>
-        <p class="metric-change" :class="{ positive: operationTrend > 0, negative: operationTrend < 0 }">
-          {{ operationTrend > 0 ? '+' : '' }}{{ operationTrend.toFixed(1) }}% (última hora)
-        </p>
-      </div>
+    <v-row class="mb-6">
+      <v-col cols="12" sm="6" lg="3">
+        <v-card class="pa-4 text-center rounded-lg" elevation="2">
+          <div class="text-overline text-grey-darken-1 mb-1">Operaciones Totales</div>
+          <div class="text-h3 font-weight-bold mb-2">{{ metrics.operationCounts.total }}</div>
+          <div class="text-caption font-weight-bold" :class="operationTrend > 0 ? 'text-success' : 'text-error'">
+            <v-icon start size="14">{{ operationTrend > 0 ? 'mdi-trending-up' : 'mdi-trending-down' }}</v-icon>
+            {{ operationTrend > 0 ? '+' : '' }}{{ operationTrend.toFixed(1) }}% <span class="text-grey">(1h)</span>
+          </div>
+        </v-card>
+      </v-col>
       
-      <div class="metric-card">
-        <h3>Tasa de Éxito</h3>
-        <p class="metric-value">{{ metrics.syncRate.successRate.toFixed(1) }}%</p>
-        <p class="metric-status" :class="successRateClass">
-          {{ successRateStatus }}
-        </p>
-      </div>
+      <v-col cols="12" sm="6" lg="3">
+        <v-card class="pa-4 text-center rounded-lg" elevation="2">
+          <div class="text-overline text-grey-darken-1 mb-1">Tasa de Éxito</div>
+          <div class="text-h3 font-weight-bold mb-2" :class="`text-${successRateColor}`">
+            {{ metrics.syncRate.successRate.toFixed(1) }}%
+          </div>
+          <v-chip :color="successRateColor" size="x-small" variant="flat" class="font-weight-bold">
+            {{ successRateStatus }}
+          </v-chip>
+        </v-card>
+      </v-col>
       
-      <div class="metric-card">
-        <h3>Cola Actual</h3>
-        <p class="metric-value">{{ metrics.queueStats.currentQueueSize }}</p>
-        <p class="metric-label">
-          Máximo: {{ metrics.queueStats.maxQueueSize }}
-        </p>
-      </div>
+      <v-col cols="12" sm="6" lg="3">
+        <v-card class="pa-4 text-center rounded-lg" elevation="2">
+          <div class="text-overline text-grey-darken-1 mb-1">Cola Actual</div>
+          <div class="text-h3 font-weight-bold mb-2">{{ metrics.queueStats.currentQueueSize }}</div>
+          <div class="text-caption text-grey">
+            Máximo histórico: {{ metrics.queueStats.maxQueueSize }}
+          </div>
+        </v-card>
+      </v-col>
       
-      <div class="metric-card">
-        <h3>Errores</h3>
-        <p class="metric-value">{{ metrics.errors.totalErrors }}</p>
-        <p class="metric-label">
-          Último: {{ lastErrorTime }}
-        </p>
-      </div>
-    </div>
+      <v-col cols="12" sm="6" lg="3">
+        <v-card class="pa-4 text-center rounded-lg" elevation="2">
+          <div class="text-overline text-grey-darken-1 mb-1">Errores</div>
+          <div class="text-h3 font-weight-bold mb-2 text-error">{{ metrics.errors.totalErrors }}</div>
+          <div class="text-caption text-grey truncate">
+            Último: {{ lastErrorTime }}
+          </div>
+        </v-card>
+      </v-col>
+    </v-row>
     
     <!-- Gráficos detallados -->
-    <div class="metrics-detail">
-      <div class="chart-container">
-        <h3>Operaciones por Minuto</h3>
-        <div class="chart-placeholder">
-          <!-- Aquí iría un gráfico de líneas con Chart.js o similar -->
-          <p>Gráfico de operaciones por minuto (última hora)</p>
-        </div>
-      </div>
+    <v-row class="mb-6">
+      <v-col cols="12" md="6">
+        <v-card class="pa-4 h-full rounded-lg" elevation="2">
+          <div class="text-h6 font-weight-bold mb-4">Operaciones por Minuto</div>
+          <div class="flex items-center justify-center bg-grey-lighten-4 rounded-lg h-48 border-dashed border-2 border-grey">
+            <p class="text-grey">Visualización temporal activa</p>
+          </div>
+        </v-card>
+      </v-col>
       
-      <div class="chart-container">
-        <h3>Tiempos de Procesamiento</h3>
-        <div class="chart-placeholder">
-          <!-- Aquí iría un gráfico de barras con tiempos promedio -->
-          <p>Gráfico de tiempos de procesamiento por tipo de operación</p>
-        </div>
-      </div>
-    </div>
+      <v-col cols="12" md="6">
+        <v-card class="pa-4 h-full rounded-lg" elevation="2">
+          <div class="text-h6 font-weight-bold mb-4">Procesamiento por Tipo</div>
+          <div class="flex items-center justify-center bg-grey-lighten-4 rounded-lg h-48 border-dashed border-2 border-grey">
+            <p class="text-grey">Distribución de carga</p>
+          </div>
+        </v-card>
+      </v-col>
+    </v-row>
     
     <!-- Alertas y recomendaciones -->
-    <div class="alerts-section" v-if="hasAlerts">
-      <h3>Alertas de Rendimiento</h3>
-      <div class="alert" v-for="alert in activeAlerts" :key="alert.id" :class="alert.severity">
-        <i :class="alert.icon"></i>
-        <div class="alert-content">
-          <h4>{{ alert.title }}</h4>
-          <p>{{ alert.description }}</p>
-          <button v-if="alert.action" @click="handleAlertAction(alert.action)">
-            {{ alert.actionLabel }}
-          </button>
-        </div>
+    <div v-if="hasAlerts" class="mb-6">
+      <h3 class="text-h6 font-weight-bold mb-3">Alertas de Rendimiento</h3>
+      <div class="grid grid-cols-1 gap-3">
+        <v-alert
+          v-for="alert in activeAlerts"
+          :key="alert.id"
+          :type="alert.severity === 'critical' ? 'error' : 'warning'"
+          variant="tonal"
+          class="rounded-lg"
+          border="start"
+        >
+          <template v-slot:title>
+            <span class="font-weight-bold">{{ alert.title }}</span>
+          </template>
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <span>{{ alert.description }}</span>
+            <v-btn
+              v-if="alert.action"
+              size="small"
+              variant="flat"
+              :color="alert.severity === 'critical' ? 'error' : 'warning'"
+              @click="handleAlertAction(alert.action)"
+            >
+              {{ alert.actionLabel }}
+            </v-btn>
+          </div>
+        </v-alert>
       </div>
     </div>
     
     <!-- Detalles técnicos -->
-    <div class="technical-details">
-      <h3>Detalles Técnicos</h3>
-      <div class="detail-row">
-        <span class="detail-label">Última sincronización:</span>
-        <span class="detail-value">{{ lastSyncTime }}</span>
+    <v-card class="pa-4 rounded-lg" elevation="2">
+      <h3 class="text-h6 font-weight-bold mb-4">Métricas Técnicas</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2">
+        <div class="flex justify-between py-2 border-b border-grey-lighten-3">
+          <span class="text-grey-darken-1 text-body-2">Última sincronización</span>
+          <span class="font-weight-medium">{{ lastSyncTime }}</span>
+        </div>
+        <div class="flex justify-between py-2 border-b border-grey-lighten-3">
+          <span class="text-grey-darken-1 text-body-2">Tiempo promedio / op</span>
+          <span class="font-weight-medium">{{ averageOperationTime }}ms</span>
+        </div>
+        <div class="flex justify-between py-2 border-b border-grey-lighten-3">
+          <span class="text-grey-darken-1 text-body-2">Reintentos totales</span>
+          <span class="font-weight-medium">{{ metrics.operationCounts.retried }}</span>
+        </div>
+        <div class="flex justify-between py-2 border-b border-grey-lighten-3">
+          <span class="text-grey-darken-1 text-body-2">Tipos de error comunes</span>
+          <span class="font-weight-medium truncate ml-4" :title="commonErrorTypes">{{ commonErrorTypes }}</span>
+        </div>
       </div>
-      <div class="detail-row">
-        <span class="detail-label">Tiempo promedio por operación:</span>
-        <span class="detail-value">{{ averageOperationTime }}ms</span>
-      </div>
-      <div class="detail-row">
-        <span class="detail-label">Reintentos totales:</span>
-        <span class="detail-value">{{ metrics.operationCounts.retried }}</span>
-      </div>
-      <div class="detail-row">
-        <span class="detail-label">Tipos de error más comunes:</span>
-        <span class="detail-value">{{ commonErrorTypes }}</span>
-      </div>
-    </div>
-  </div>
+    </v-card>
+  </v-container>
 </template>
 
 <script setup>
@@ -100,51 +134,25 @@ import { useSyncStore } from '@/stores/sync'
 
 const syncStore = useSyncStore()
 const metrics = ref({
-  operationCounts: {
-    total: 0,
-    successful: 0,
-    failed: 0,
-    retried: 0
-  },
-  timing: {
-    totalProcessingTime: 0,
-    averageOperationTime: 0,
-    lastProcessedAt: null
-  },
-  queueStats: {
-    currentQueueSize: 0,
-    maxQueueSize: 0,
-    averageQueueSize: 0
-  },
-  syncRate: {
-    operationsPerMinute: 0,
-    successRate: 0
-  },
-  errors: {
-    totalErrors: 0,
-    errorTypes: {},
-    lastError: null
-  }
+  operationCounts: { total: 0, successful: 0, failed: 0, retried: 0 },
+  timing: { totalProcessingTime: 0, averageOperationTime: 0, lastProcessedAt: null },
+  queueStats: { currentQueueSize: 0, maxQueueSize: 0, averageQueueSize: 0 },
+  syncRate: { operationsPerMinute: 0, successRate: 0 },
+  errors: { totalErrors: 0, errorTypes: {}, lastError: null }
 })
 
 const refreshInterval = ref(null)
 
-// Calcular tendencia de operaciones
-const operationTrend = computed(() => {
-  // Simplificación: calcular tendencia basada en datos históricos
-  return 0 // En una implementación real, esto calcularía la tendencia real
-})
+const operationTrend = computed(() => 0)
 
-// Determinar clase de tasa de éxito
-const successRateClass = computed(() => {
+const successRateColor = computed(() => {
   const rate = metrics.value.syncRate.successRate
-  if (rate >= 95) return 'excellent'
-  if (rate >= 90) return 'good'
+  if (rate >= 95) return 'success'
+  if (rate >= 90) return 'info'
   if (rate >= 80) return 'warning'
-  return 'critical'
+  return 'error'
 })
 
-// Determinar estado de tasa de éxito
 const successRateStatus = computed(() => {
   const rate = metrics.value.syncRate.successRate
   if (rate >= 95) return 'Excelente'
@@ -153,315 +161,80 @@ const successRateStatus = computed(() => {
   return 'Crítico'
 })
 
-// Formatear hora del último error
 const lastErrorTime = computed(() => {
   if (!metrics.value.errors.lastError) return 'Ninguno'
   const date = new Date(metrics.value.errors.lastError.timestamp)
   return date.toLocaleTimeString()
 })
 
-// Verificar si hay alertas
-const hasAlerts = computed(() => {
-  return activeAlerts.value.length > 0
-})
+const hasAlerts = computed(() => activeAlerts.value.length > 0)
 
-// Alertas activas
 const activeAlerts = computed(() => {
   const alerts = []
-  
-  // Alerta de tasa de éxito baja
   if (metrics.value.syncRate.successRate < 90) {
     alerts.push({
-      id: 'low-success-rate',
-      severity: 'warning',
-      icon: 'mdi-alert',
-      title: 'Tasa de éxito baja',
-      description: 'La tasa de éxito de sincronización está por debajo del 90%',
-      action: 'view-logs',
-      actionLabel: 'Ver registros'
+      id: 'low-success-rate', severity: 'warning', icon: 'mdi-alert',
+      title: 'Tasa de éxito baja', description: 'La tasa de éxito está por debajo del 90%',
+      action: 'view-logs', actionLabel: 'Ver registros'
     })
   }
-  
-  // Alerta de cola grande
   if (metrics.value.queueStats.currentQueueSize > 50) {
     alerts.push({
-      id: 'large-queue',
-      severity: 'warning',
-      icon: 'mdi-queue',
-      title: 'Cola de sincronización grande',
-      description: `Hay ${metrics.value.queueStats.currentQueueSize} operaciones pendientes`,
-      action: 'process-queue',
-      actionLabel: 'Procesar ahora'
+      id: 'large-queue', severity: 'warning', icon: 'mdi-queue',
+      title: 'Cola saturada', description: `Hay ${metrics.value.queueStats.currentQueueSize} operaciones pendientes`,
+      action: 'process-queue', actionLabel: 'Procesar'
     })
   }
-  
-  // Alerta de muchos errores
   if (metrics.value.errors.totalErrors > 10) {
     alerts.push({
-      id: 'high-error-count',
-      severity: 'critical',
-      icon: 'mdi-alert-circle',
-      title: 'Alto número de errores',
-      description: `Se han registrado ${metrics.value.errors.totalErrors} errores`,
-      action: 'clear-errors',
-      actionLabel: 'Limpiar errores'
+      id: 'high-error-count', severity: 'critical', icon: 'mdi-alert-circle',
+      title: 'Muchos errores', description: `Se han registrado ${metrics.value.errors.totalErrors} errores`,
+      action: 'clear-errors', actionLabel: 'Limpiar'
     })
   }
-  
   return alerts
 })
 
-// Formatear hora de última sincronización
 const lastSyncTime = computed(() => {
   if (!metrics.value.timing.lastProcessedAt) return 'Nunca'
-  const date = new Date(metrics.value.timing.lastProcessedAt)
-  return date.toLocaleTimeString()
+  return new Date(metrics.value.timing.lastProcessedAt).toLocaleTimeString()
 })
 
-// Tiempo promedio por operación
-const averageOperationTime = computed(() => {
-  return metrics.value.timing.averageOperationTime.toFixed(0)
-})
+const averageOperationTime = computed(() => metrics.value.timing.averageOperationTime.toFixed(0))
 
-// Tipos de error más comunes
 const commonErrorTypes = computed(() => {
-  const errorTypes = metrics.value.errors.errorTypes
-  const entries = Object.entries(errorTypes)
+  const entries = Object.entries(metrics.value.errors.errorTypes)
   if (entries.length === 0) return 'Ninguno'
-  
-  // Ordenar por frecuencia y tomar los 3 más comunes
   entries.sort((a, b) => b[1] - a[1])
   return entries.slice(0, 3).map(([type, count]) => `${type} (${count})`).join(', ')
 })
 
-// Actualizar métricas
 const updateMetrics = async () => {
   try {
-    const newMetrics = syncStore.getPerformanceMetrics()
-    metrics.value = newMetrics
+    metrics.value = syncStore.getPerformanceMetrics()
   } catch (error) {
     console.error('Error actualizando métricas:', error)
   }
 }
 
-// Manejar acción de alerta
 const handleAlertAction = (action) => {
   switch (action) {
-    case 'view-logs':
-      // Navegar a página de registros
-      console.log('Ver registros')
-      break
-    case 'process-queue':
-      // Procesar cola de sincronización
-      syncStore.processPendingQueue()
-      break
-    case 'clear-errors':
-      // Limpiar errores
-      console.log('Limpiar errores')
-      break
-    default:
-      console.warn('Acción de alerta desconocida:', action)
+    case 'view-logs': console.log('Ver registros'); break
+    case 'process-queue': syncStore.processPendingQueue(); break
+    case 'clear-errors': console.log('Limpiar errores'); break
   }
 }
 
-// Iniciar actualización automática
 onMounted(() => {
   updateMetrics()
-  refreshInterval.value = setInterval(updateMetrics, 30000) // Actualizar cada 30 segundos
+  refreshInterval.value = setInterval(updateMetrics, 30000)
 })
 
-// Limpiar intervalo
 onUnmounted(() => {
-  if (refreshInterval.value) {
-    clearInterval(refreshInterval.value)
-  }
+  if (refreshInterval.value) clearInterval(refreshInterval.value)
 })
 </script>
 
 <style scoped>
-.performance-dashboard {
-  padding: 20px;
-  font-family: 'Roboto', sans-serif;
-}
-
-.metrics-summary {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
-  margin-bottom: 30px;
-}
-
-.metric-card {
-  background: #f5f5f5;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  text-align: center;
-}
-
-.metric-card h3 {
-  margin: 0 0 10px 0;
-  font-size: 16px;
-  color: #666;
-}
-
-.metric-value {
-  font-size: 24px;
-  font-weight: bold;
-  margin: 0 0 5px 0;
-  color: #333;
-}
-
-.metric-change.positive {
-  color: #4caf50;
-}
-
-.metric-change.negative {
-  color: #f44336;
-}
-
-.metric-status.excellent {
-  color: #4caf50;
-}
-
-.metric-status.good {
-  color: #8bc34a;
-}
-
-.metric-status.warning {
-  color: #ff9800;
-}
-
-.metric-status.critical {
-  color: #f44336;
-}
-
-.metric-label {
-  font-size: 12px;
-  color: #999;
-  margin: 0;
-}
-
-.metrics-detail {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 20px;
-  margin-bottom: 30px;
-}
-
-.chart-container {
-  background: white;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.chart-container h3 {
-  margin-top: 0;
-  color: #333;
-}
-
-.chart-placeholder {
-  height: 200px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f9f9f9;
-  border-radius: 4px;
-  color: #999;
-}
-
-.alerts-section {
-  margin-bottom: 30px;
-}
-
-.alerts-section h3 {
-  color: #333;
-  margin-bottom: 15px;
-}
-
-.alert {
-  display: flex;
-  align-items: center;
-  padding: 15px;
-  border-radius: 4px;
-  margin-bottom: 10px;
-}
-
-.alert.warning {
-  background: #fff3e0;
-  border-left: 4px solid #ff9800;
-}
-
-.alert.critical {
-  background: #ffebee;
-  border-left: 4px solid #f44336;
-}
-
-.alert i {
-  font-size: 24px;
-  margin-right: 15px;
-}
-
-.alert-content h4 {
-  margin: 0 0 5px 0;
-  color: #333;
-}
-
-.alert-content p {
-  margin: 0 0 10px 0;
-  color: #666;
-}
-
-.alert-content button {
-  background: #2196f3;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.technical-details {
-  background: white;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.technical-details h3 {
-  margin-top: 0;
-  color: #333;
-}
-
-.detail-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid #eee;
-}
-
-.detail-label {
-  color: #666;
-}
-
-.detail-value {
-  color: #333;
-  font-weight: 500;
-}
-
-@media (max-width: 768px) {
-  .metrics-summary {
-    grid-template-columns: 1fr 1fr;
-  }
-  
-  .metrics-detail {
-    grid-template-columns: 1fr;
-  }
-  
-  .detail-row {
-    flex-direction: column;
-    gap: 5px;
-  }
-}
+/* Scoped styles removed in favor of Vuetify/Tailwind utility classes */
 </style>

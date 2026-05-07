@@ -166,7 +166,7 @@
                 height="70"
                 alt="Logo"
                 style=""
-                class="aspect-[2/1] overflow-hidden rounded-lg object-contain object-center"
+                class="aspect-[2/1] overflow-hidden  object-contain object-center"
               />
               <img
                 src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQmVq-OmHL5H_5P8b1k306pFddOe3049-il2A&s"
@@ -174,21 +174,21 @@
                 height="70"
                 alt="Logo"
                 style=""
-                class="aspect-[2/1] overflow-hidden rounded-lg object-contain object-center"
+                class="aspect-[2/1] overflow-hidden  object-contain object-center"
               />
               <img
                 src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQmVq-OmHL5H_5P8b1k306pFddOe3049-il2A&s"
                 width="140"
                 height="70"
                 alt="Logo"
-                class="aspect-[2/1] overflow-hidden rounded-lg object-contain object-center"
+                class="aspect-[2/1] overflow-hidden  object-contain object-center"
               />
               <img
                 src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQmVq-OmHL5H_5P8b1k306pFddOe3049-il2A&s"
                 width="140"
                 height="70"
                 alt="Logo"
-                class="aspect-[2/1] overflow-hidden rounded-lg object-contain object-center"
+                class="aspect-[2/1] overflow-hidden  object-contain object-center"
               />
               <img
                 src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQmVq-OmHL5H_5P8b1k306pFddOe3049-il2A&s"
@@ -196,7 +196,7 @@
                 height="70"
                 style=""
                 alt="Logo"
-                class="aspect-[2/1] overflow-hidden rounded-lg object-contain object-center"
+                class="aspect-[2/1] overflow-hidden  object-contain object-center"
               />
             </div>
           </div>
@@ -390,7 +390,7 @@
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-12">
               <div
-                class="border text-card-foreground bg-white shadow-lg rounded-lg"
+                class="border text-card-foreground bg-white shadow-lg "
                 data-v0-t="card"
               >
                 <div class="flex flex-col space-y-1.5 p-6">
@@ -422,7 +422,7 @@
                 </div>
               </div>
               <div
-                class="border text-card-foreground bg-white shadow-lg rounded-lg"
+                class="border text-card-foreground bg-white shadow-lg "
                 data-v0-t="card"
               >
                 <div class="flex flex-col space-y-1.5 p-6">
@@ -454,7 +454,7 @@
                 </div>
               </div>
               <div
-                class="border text-card-foreground bg-white shadow-lg rounded-lg"
+                class="border text-card-foreground bg-white shadow-lg "
                 data-v0-t="card"
               >
                 <div class="flex flex-col space-y-1.5 p-6">

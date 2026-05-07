@@ -1,146 +1,114 @@
 <template>
-  <v-card>
-    <v-toolbar :color="isEditMode ? 'warning' : 'primary'" dark>
-      <v-toolbar-title>{{ formTitle }}</v-toolbar-title>
+  <v-card class="rounded-xl overflow-hidden borderless-dialog">
+    <v-toolbar :color="isEditMode ? 'warning' : 'success'" dark flat height="70">
+      <v-icon size="28" class="ml-4 mr-3">{{ isEditMode ? 'mdi-pencil' : 'mdi-plus-circle' }}</v-icon>
+      <div class="flex flex-col">
+        <v-toolbar-title class="font-weight-bold text-h6 leading-none">{{ formTitle }}</v-toolbar-title>
+        <div v-if="contextSubtitle" class="text-caption opacity-80 leading-none mt-1">
+          {{ contextSubtitle }}
+        </div>
+      </div>
       <v-spacer></v-spacer>
       <v-btn icon @click="closeDialog"><v-icon>mdi-close</v-icon></v-btn>
     </v-toolbar>
 
-    <v-card-text>
+    <v-card-text class="pa-0 overflow-y-auto" style="max-height: 80vh;">
       <v-form ref="bitacoraFormRef">
-        <v-row dense>
-          <!-- Fecha de Ejecución -->
-          <v-col cols="12" md="6">
-            <v-text-field
-              v-model="formData.fecha_ejecucion"
-              label="Fecha de Ejecución"
-              type="datetime-local"
-              :rules="[rules.required]"
-              variant="outlined"
-              density="compact"
-            ></v-text-field>
-          </v-col>
-
-          <!-- Estado de Ejecución -->
-          <v-col cols="12" md="6">
-            <v-select
-              v-model="formData.estado_ejecucion"
-              :items="['planificada', 'en_progreso', 'completado', 'cancelada']"
-              label="Estado de Ejecución"
-              :rules="[rules.required]"
-              variant="outlined"
-              density="compact"
-            ></v-select>
-          </v-col>
-
-          <!-- Actividad Realizada -->
-          <v-col cols="12">
-            <v-autocomplete
-              v-model="formData.actividad_realizada_id"
-              :items="actividadesDisponibles"
-              item-title="nombre"
-              item-value="id"
-              label="Actividad Realizada"
-              :rules="[rules.required]"
-              variant="outlined"
-              density="compact"
-              @update:modelValue="onActividadChange"
-              :disabled="isEditMode && !!props.actividadIdContext"
-              clearable
-              :append-icon="formData.actividad_realizada_id ? 'mdi-close' : undefined"
-              @click:append="clearActivitySelection"
-            ></v-autocomplete>
-          </v-col>
+        <div class="flex flex-col gap-6 pa-6">
           
-          <!-- Siembra Asociada (Optional, might be context-driven) -->
-          <v-col cols="12" v-if="!props.siembraIdContext && selectedActividadRequiresSiembra">
-             <v-autocomplete
-              v-model="formData.siembra_asociada_id"
-              :items="siembrasDisponibles"
-              item-title="nombre"
-              item-value="id"
-              label="Siembra Asociada (si aplica)"
-              variant="outlined"
-              density="compact"
-              clearable
-            ></v-autocomplete>
-          </v-col>
+          <!-- SECCIÓN 1: Datos Básicos -->
+          <div class="bg-dinamico p-4 rounded-xl">
+            <div class="flex items-center mb-4">
+              <v-icon color="success" class="mr-2">mdi-information-outline</v-icon>
+              <h4>Datos de la Entrada</h4>
+            </div>
+            
+            <div class="ml-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <v-text-field
+                v-model="formData.fecha_ejecucion"
+                label="Fecha y Hora de Ejecución"
+                type="datetime-local"
+                :rules="[rules.required]"
+                variant="outlined"
+                density="compact"
+                prepend-inner-icon="mdi-calendar-clock"
+                class="rounded-lg"
+              ></v-text-field>
 
+              <v-select
+                v-model="formData.estado_ejecucion"
+                :items="['planificada', 'en_progreso', 'completado', 'cancelada']"
+                label="Estado"
+                :rules="[rules.required]"
+                variant="outlined"
+                density="compact"
+                prepend-inner-icon="mdi-progress-check"
+                class="rounded-lg"
+              ></v-select>
 
-          <!-- Notas -->
-          <v-col cols="12">
-            <v-textarea
-              v-model="formData.notas"
-              label="Notas Adicionales"
-              variant="outlined"
-              density="compact"
-              rows="3"
-            ></v-textarea>
-          </v-col>
+              <v-autocomplete
+                v-model="formData.actividad_realizada_id"
+                :items="actividadesDisponibles"
+                item-title="nombre"
+                item-value="id"
+                label="Actividad Realizada"
+                :rules="[rules.required]"
+                variant="outlined"
+                density="compact"
+                prepend-inner-icon="mdi-hammer-wrench"
+                class="rounded-lg md:col-span-2"
+                @update:modelValue="onActividadChange"
+                :disabled="isEditMode && !!props.actividadIdContext"
+                clearable
+              ></v-autocomplete>
+            </div>
+          </div>
 
-          <!-- Dynamic Metricas Section -->
-          <v-col cols="12" v-if="selectedActividadDetalles && metricasParaFormulario.length > 0">
-            <v-divider class="my-3"></v-divider>
-            <h3 class="text-subtitle-1 mb-2">Métricas de la Actividad</h3>
-            <v-row dense v-for="metrica in metricasParaFormulario" :key="metrica.key">
-              <v-col cols="12">
-                <template v-if="metrica.tipo === 'select'">
-                  <v-select
-                    v-model="formData.metricas_values[metrica.key]"
-                    :items="metrica.opciones"
-                    :label="metrica.descripcion || metrica.key.replace(/_/g, ' ')"
-                    variant="outlined"
-                    density="compact"
-                    :rules="metrica.requerido ? [rules.required] : []"
-                  ></v-select>
-                </template>
-                <template v-else-if="metrica.tipo === 'boolean'">
-                   <v-checkbox
-                    v-model="formData.metricas_values[metrica.key]"
-                    :label="metrica.descripcion || metrica.key.replace(/_/g, ' ')"
-                    density="compact"
-                  ></v-checkbox>
-                </template>
-                <template v-else-if="metrica.tipo === 'number'">
-                  <v-text-field
-                    v-model.number="formData.metricas_values[metrica.key]"
-                    :label="metrica.descripcion || metrica.key.replace(/_/g, ' ')"
-                    type="number"
-                    variant="outlined"
-                    density="compact"
-                    :rules="metrica.requerido ? [rules.required] : []"
-                  ></v-text-field>
-                </template>
-                <template v-else> <!-- Default to string/text -->
-                  <v-text-field
-                    v-model="formData.metricas_values[metrica.key]"
-                    :label="metrica.descripcion || metrica.key.replace(/_/g, ' ')"
-                    variant="outlined"
-                    density="compact"
-                    :rules="metrica.requerido ? [rules.required] : []"
-                  ></v-text-field>
-                </template>
-              </v-col>
-            </v-row>
-          </v-col>
-        </v-row>
+          <!-- SECCIÓN 2: Siembras Involucradas (Checklist Inteligente) -->
+          <div class="bg-dinamico p-4 rounded-xl">
+            <SiembraSelectorList
+              v-model="formData.siembras_ids"
+              :available-ids="relevantSiembraIds"
+              class="ml-8"
+            />
+          </div>
+
+          <!-- SECCIÓN 3: Información de Bitácora (Componente Universal) -->
+          <div v-if="selectedActividadDetalles" class="mt-2">
+            <BatchGeneralDataForm
+              is-single-entry
+              :actividad-preview="selectedActividadDetalles"
+              v-model:observaciones="formData.notas"
+              v-model:metricasSeleccionadas="metricasSeleccionadas"
+              class="ml-2"
+            />
+          </div>
+        </div>
       </v-form>
     </v-card-text>
 
-    <v-card-actions class="pa-4">
+    <v-divider />
+
+    <v-card-actions class="pa-4 bg-grey-lighten-5">
       <v-spacer></v-spacer>
       <v-btn
-        size="small"
         variant="flat"
-        rounded="lg"
         prepend-icon="mdi-cancel"
         color="red-lighten-3"
         @click="closeDialog"
+        class="px-6"
       >
-        Cancelar
+        CANCELAR
       </v-btn>
-      <v-btn color="primary" variant="flat" @click="submitForm" :loading="isSubmitting">
-        {{ isEditMode ? 'Guardar Cambios' : 'Crear Entrada' }}
+      <v-btn 
+        color="green-lighten-2" 
+        variant="flat" 
+        @click="submitForm" 
+        :loading="isSubmitting"
+        class="px-8 font-weight-bold"
+        prepend-icon="mdi-check"
+      >
+        {{ isEditMode ? 'GUARDAR CAMBIOS' : 'GUARDAR ENTRADA' }}
       </v-btn>
     </v-card-actions>
   </v-card>
@@ -151,9 +119,11 @@ import { ref, reactive, onMounted, watch, computed } from 'vue';
 import { useActividadesStore } from '@/stores/actividadesStore';
 import { useSiembrasStore } from '@/stores/siembrasStore';
 import { useBitacoraStore } from '@/stores/bitacoraStore';
-import { useProgramacionesStore } from '@/stores/programaciones'; // Added
+import { useProgramacionesStore } from '@/stores/programaciones';
 import { useUiFeedbackStore } from '@/stores/uiFeedbackStore';
 import { handleError } from '@/utils/errorHandler';
+import SiembraSelectorList from './SiembraSelectorList.vue';
+import BatchGeneralDataForm from './BatchGeneralDataForm.vue';
 
 const props = defineProps({
   entryToEdit: {
@@ -191,7 +161,7 @@ const defaultFormData = () => ({
   actividad_realizada_id: props.actividadIdContext || null,
   estado_ejecucion: 'completado',
   notas: '',
-  siembra_asociada_id: props.siembraIdContext || null, // Auto-assign if context provided
+  siembras_ids: props.siembraIdContext ? [props.siembraIdContext] : [], // Multiple siembras support
   metricas_values: {}, // Holds values for dynamic metric fields
   programacion_origen_id: null, // Added for prefill
 });
@@ -199,31 +169,44 @@ const defaultFormData = () => ({
 const formData = reactive(defaultFormData());
 
 const rules = {
-  required: value => !!value || 'Este campo es requerido.',
+  required: value => (Array.isArray(value) ? value.length > 0 : !!value) || 'Este campo es requerido.',
 };
 
 const isEditMode = computed(() => !!props.entryToEdit);
-const formTitle = computed(() => isEditMode.value ? 'Editar Entrada de Bitácora' : 'Nueva Entrada de Bitácora');
+const formTitle = computed(() => isEditMode.value ? 'Editar Entrada' : 'Nueva Entrada');
 
-const selectedActividadRequiresSiembra = computed(() => {
-    // Logic to determine if the selected actividad type typically requires a siembra.
-    // This might involve checking a property on selectedActividadDetalles.expand.tipo_actividades
-    // For now, let's assume some activities might not be directly tied to a siembra (e.g., general maintenance)
-    // and allow manual selection if no siembraIdContext is provided.
-    if (!selectedActividadDetalles.value) return false;
-    // Example: if tipo_actividad has a flag like 'requires_siembra'
-    // return selectedActividadDetalles.value.expand?.tipo_actividades?.requires_siembra === true;
-    return true; // Default to true for now, show siembra selector if no context
+const contextSubtitle = computed(() => {
+  if (isEditMode.value && props.entryToEdit?.expand?.siembras) {
+    const s = props.entryToEdit.expand.siembras;
+    return Array.isArray(s) ? s.map(si => si.nombre).join(', ') : s.nombre;
+  }
+  if (props.siembraIdContext) {
+    const s = siembrasStore.siembras.find(si => si.id === props.siembraIdContext);
+    return s ? `${s.nombre} | ${s.tipo}` : '';
+  }
+  return '';
+});
+
+const relevantSiembraIds = computed(() => {
+  if (props.siembraIdContext) return [props.siembraIdContext];
+  if (selectedActividadDetalles.value?.siembras) return selectedActividadDetalles.value.siembras;
+  return null;
+});
+
+const metricasSeleccionadas = ref([]);
+
+const observacionesAutomaticas = computed(() => {
+  // Logic removed as per instruction - redundancy removal
+  return '';
 });
 
 
 onMounted(async () => {
   try {
-    // Fetch actividades
     if (actividadesStore.actividades.length === 0) {
-      await actividadesStore.cargarActividades(); // Ensure this method loads all necessary activities
+      await actividadesStore.cargarActividades();
     }
-    // Filter activities if siembraIdContext is provided (optional)
+    
     if (props.siembraIdContext) {
         actividadesDisponibles.value = actividadesStore.actividades.filter(
             act => Array.isArray(act.siembras) && act.siembras.includes(props.siembraIdContext)
@@ -232,7 +215,6 @@ onMounted(async () => {
         actividadesDisponibles.value = actividadesStore.actividades;
     }
     
-    // Fetch siembras for optional manual selection
     if (siembrasStore.siembras.length === 0) {
         await siembrasStore.cargarSiembras();
     }
@@ -245,29 +227,17 @@ onMounted(async () => {
     if (isEditMode.value && props.entryToEdit) {
       populateFormForEdit();
     } else if (programacionesStore.pendingBitacoraFromProgramacionData) {
-      // Pre-fill from programacionesStore
       const pendingData = programacionesStore.pendingBitacoraFromProgramacionData;
       formData.actividad_realizada_id = pendingData.actividadRealizadaId;
-      // Ensure date is in 'YYYY-MM-DDTHH:mm' format for datetime-local input
       const dt = new Date(pendingData.fechaEjecucion);
       formData.fecha_ejecucion = `${pendingData.fechaEjecucion}T${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
       formData.notas = pendingData.observacionesPreload;
       formData.programacion_origen_id = pendingData.programacionOrigenId;
-      formData.siembra_asociada_id = pendingData.siembraAsociadaId;
-
-      isPrefillingMetrics.value = true; // Set flag to prefill metrics once actividad details are loaded
-
-      // loadActividadDetails will be called by the watcher on actividad_realizada_id
-      // or we can call it explicitly if needed, but watcher should handle it.
-      // The actual metric prefilling will happen in a watchEffect or watcher for selectedActividadDetalles
-
-      // Clear the data from the store AFTER it has been used
-      // programacionesStore.clearPendingBitacoraData(); // Moved to after metrics are set
+      formData.siembras_ids = pendingData.siembraAsociadaId ? [pendingData.siembraAsociadaId] : [];
+      isPrefillingMetrics.value = true;
     }
-
   } catch (error) {
-    handleError(error, 'Error inicializando formulario de bitácora');
-    uiFeedbackStore.showSnackbar('Error cargando datos para el formulario.', 'error');
+    handleError(error, 'Error inicializando formulario');
   }
 });
 
@@ -288,7 +258,7 @@ watch(() => props.actividadIdContext, async (newVal) => {
 });
 watch(() => props.siembraIdContext, (newVal) => {
     if (newVal && !isEditMode.value) {
-        formData.siembra_asociada_id = newVal;
+        formData.siembras_ids = [newVal];
          // Optionally re-filter actividadesDisponibles if not already done by onMounted logic
     }
 });
@@ -298,76 +268,19 @@ async function loadActividadDetails(actividadId) {
   if (!actividadId) {
     selectedActividadDetalles.value = null;
     formData.metricas_values = {};
-    formData.notas = '';
     return;
   }
 
   try {
     const actividad = await actividadesStore.fetchActividadById(actividadId, { expand: 'tipo_actividades' });
-    
-    if (!actividad) {
-      throw new Error(`No se encontró la actividad con ID: ${actividadId}`);
-    }
-    if (!actividad.expand?.tipo_actividades) {
-      console.warn(`[BitacoraEntryForm] La actividad ${actividadId} no tiene 'tipo_actividades' expandido. La generación de métricas y observaciones puede fallar.`);
-    }
+    if (!actividad) throw new Error(`No se encontró la actividad`);
 
     selectedActividadDetalles.value = actividad;
-
     initializeMetricasValues();
-
-    if (!isPrefillingMetrics.value) {
-      await populateObservationsFromActivityDetails(selectedActividadDetalles.value);
-    }
-
   } catch (error) {
-    handleError(error, `Error cargando detalles de actividad ${actividadId}`);
+    handleError(error, 'Error cargando detalles de actividad');
     selectedActividadDetalles.value = null;
     formData.metricas_values = {};
-    formData.notas = '';
-    uiFeedbackStore.showSnackbar(`No se pudieron cargar los detalles de la actividad.`, 'error');
-  }
-}
-
-// Populates formData.notas with unmapped metrics
-async function populateObservationsFromActivityDetails(activityDetails) {
-  if (!activityDetails) {
-    return;
-  }
-  let observacionesContent = '';
-  try {
-    const tipoActividad = activityDetails.expand?.tipo_actividades;
-    if (tipoActividad && tipoActividad.formato_reporte && tipoActividad.formato_reporte.columnas) {
-      const mappedMetricaKeys = new Set();
-      tipoActividad.formato_reporte.columnas.forEach(col => {
-        if (col.metrica && col.nombre !== 'Observaciones') {
-          mappedMetricaKeys.add(col.metrica);
-        }
-      });
-
-      const unmappedMetricasContent = [];
-      if (activityDetails.metricas && typeof activityDetails.metricas === 'object') {
-        for (const metricaKey in activityDetails.metricas) {
-          if (Object.prototype.hasOwnProperty.call(activityDetails.metricas, metricaKey) && !mappedMetricaKeys.has(metricaKey)) {
-            const metrica = activityDetails.metricas[metricaKey];
-            const desc = metrica.descripcion || metricaKey.replace(/_/g, ' ');
-            const val = metrica.valor !== undefined && metrica.valor !== null ? metrica.valor : null;
-            if (val !== null && val !== '') {
-              const unit = metrica.unidad || '';
-              unmappedMetricasContent.push(`${desc}: ${val} ${unit}`.trim());
-            }
-          }
-        }
-      }
-      observacionesContent = unmappedMetricasContent.join('\n');
-    }
-  } catch (error) {
-    console.error('[BitacoraEntryForm] Error generating automatic observations from activity details:', error);
-  }
-
-  if (observacionesContent) {
-    const existingNotes = formData.notas ? formData.notas.trim() : '';
-    formData.notas = [existingNotes, observacionesContent].filter(Boolean).join('\n\n');
   }
 }
 
@@ -471,7 +384,16 @@ function populateFormForEdit() {
   formData.actividad_realizada_id = typeof entry.actividad_realizada === 'string' ? entry.actividad_realizada : entry.expand?.actividad_realizada?.id;
   formData.estado_ejecucion = entry.estado_ejecucion || 'completado';
   formData.notas = entry.notas || '';
-  formData.siembra_asociada_id = typeof entry.siembra_asociada === 'string' ? entry.siembra_asociada : entry.expand?.siembra_asociada?.id;
+  
+  // Handle multiple siembras in edit mode
+  if (entry.siembras) {
+    formData.siembras_ids = Array.isArray(entry.siembras) ? entry.siembras : [entry.siembras];
+  } else if (entry.expand?.siembras) {
+    const expanded = entry.expand.siembras;
+    formData.siembras_ids = Array.isArray(expanded) ? expanded.map(s => s.id) : [expanded.id];
+  } else {
+    formData.siembras_ids = [];
+  }
   
   // Load actividad details for edit mode to ensure metric definitions are available
   if (formData.actividad_realizada_id) {
@@ -526,14 +448,21 @@ async function submitForm() {
 
   isSubmitting.value = true;
   try {
+    // Only record metrics that were selected in the checklist
+    const filteredMetricas = {};
+    metricasSeleccionadas.value.forEach(key => {
+        if (formData.metricas_values[key] !== undefined) {
+            filteredMetricas[key] = formData.metricas_values[key];
+        }
+    });
+
     const dataToSubmit = {
       fecha_ejecucion: new Date(formData.fecha_ejecucion).toISOString(),
       actividad_realizada: formData.actividad_realizada_id,
       estado_ejecucion: formData.estado_ejecucion,
-      notas: formData.notas,
-      siembra_asociada: formData.siembra_asociada_id || null, // Ensure null if empty
-      metricas: { ...formData.metricas_values }, // Actual recorded values
-      // user_responsable will be set by bitacoraStore.crearBitacoraEntry if not provided
+      notas: formData.notas.trim(),
+      siembras: formData.siembras_ids,
+      metricas: filteredMetricas,
     };
 
     if (isEditMode.value) {

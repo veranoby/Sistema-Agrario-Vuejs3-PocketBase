@@ -39,6 +39,44 @@ export class GeolocationService {
   }
 
   /**
+   * Solicita explícitamente permiso para acceder a la ubicación
+   * 
+   * @returns {Promise<boolean>} true si el permiso fue concedido o ya existe
+   */
+  async requestPermission() {
+    if (!navigator.geolocation) return false
+
+    // Si la API de permisos está disponible, la usamos para verificar
+    if (navigator.permissions && navigator.permissions.query) {
+      try {
+        const result = await navigator.permissions.query({ name: 'geolocation' })
+        if (result.state === 'granted') return true
+        if (result.state === 'denied') return false
+        
+        // Si es 'prompt', intentamos un getCurrentPosition silencioso para forzar el prompt
+        return new Promise((resolve) => {
+          navigator.geolocation.getCurrentPosition(
+            () => resolve(true),
+            () => resolve(false),
+            { enableHighAccuracy: false, timeout: 5000, maximumAge: Infinity }
+          )
+        })
+      } catch (error) {
+        logger.warn('[GeolocationService] Error consultando API de permisos:', error)
+      }
+    }
+
+    // Fallback: intentar obtener posición para disparar el prompt del navegador
+    return new Promise((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        () => resolve(true),
+        () => resolve(false),
+        { enableHighAccuracy: false, timeout: 5000, maximumAge: Infinity }
+      )
+    })
+  }
+
+  /**
    * Obtiene la posición GPS actual del dispositivo
    * 
    * @param {GeolocationOptions} options - Opciones de geolocalización

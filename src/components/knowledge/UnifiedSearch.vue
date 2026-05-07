@@ -63,7 +63,7 @@
           >
             <v-icon start>{{ type.icon }}</v-icon>
             {{ type.title }}
-            <v-chip size="x-small" color="primary" class="ml-2">
+            <v-chip size="small" color="primary" class="ml-2">
               {{ results[type.value]?.length || 0 }}
             </v-chip>
           </v-tab>

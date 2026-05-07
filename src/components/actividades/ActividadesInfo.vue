@@ -4,7 +4,7 @@
       <div class="d-flex justify-space-between align-center w-100">
         <span>{{ t('activity_workspace.activity_information') }}</span>
         <v-btn
-          size="x-small"
+          size="small"
           color="green-lighten-2"
           icon
           rounded="circle"
@@ -23,7 +23,7 @@
           <template v-slot:activator="{ props }">
             <v-chip
               variant="flat"
-              size="x-small"
+              size="small"
               color="green-lighten-3"
               class="m-0 p-1"
               pill

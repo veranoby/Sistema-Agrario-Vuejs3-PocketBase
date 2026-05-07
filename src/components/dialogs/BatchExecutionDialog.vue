@@ -1,112 +1,171 @@
 <template>
-  <v-dialog v-model="dialog" persistent max-width="1200px" width="95%">
-    <v-card>
-      <v-card-title class="d-flex align-center">
-        <v-icon start>mdi-playlist-check</v-icon>
-        <span class="text-h5">Registrar Cumplimientos Acumulados</span>
-      </v-card-title>
-      <v-card-subtitle>
-        <div>{{ programacion?.descripcion }}</div>
-        <div v-if="siembraContext" class="siembra-context mt-1">
-          <v-chip color="primary" variant="outlined" size="small">
-            <v-icon start size="small">mdi-sprout</v-icon>
-            Siembra: {{ siembraContext }}
-          </v-chip>
+  <v-dialog v-model="dialog" persistent max-width="900px" width="95%" scrollable>
+    <v-card class="rounded-xl overflow-hidden">
+      <v-toolbar color="success" dark flat height="70">
+        <v-icon size="28" class="ml-4 mr-3">mdi-playlist-check</v-icon>
+        <div class="flex flex-col">
+          <v-toolbar-title class="font-weight-bold text-h6 leading-none">Registrar Cumplimientos</v-toolbar-title>
+          <div class="text-caption opacity-80 leading-none mt-1">
+            {{ programacion?.descripcion }} 
+            <span v-if="siembraContext" class="ml-2 font-weight-bold">| {{ siembraContext }}</span>
+          </div>
         </div>
-      </v-card-subtitle>
+        <v-spacer></v-spacer>
+        <v-btn icon @click="closeDialog" :disabled="executing" class="mr-2">
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+      </v-toolbar>
 
-      <v-card-text>
-        <v-container v-if="!loading">
-          <p class="mb-4">Seleccione las fechas de cumplimiento que desea registrar en la bitácora.</p>
+      <v-card-text class="pa-4 pt-6">
+        <div v-if="!loading">
+          <div class="flex items-center mb-4">
+            <v-icon color="success" class="mr-2">mdi-calendar-multiselect</v-icon>
+            <h4 class="">Selección de Fechas</h4>
+          </div>
+          <p class="text-body-2 text-grey-darken-1 mb-6 ml-8">Seleccione las fechas de cumplimiento que desea registrar en la bitácora.</p>
 
           <!-- Selection Summary and Batch Controls -->
-          <div class="d-flex align-center justify-space-between mb-4">
-            <v-chip color="primary" variant="tonal" size="large">
-              {{ selectedFechas.length }} de {{ pendingFechas.length }} fechas seleccionadas
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <v-chip color="success" variant="flat" class="font-weight-bold">
+              {{ selectedFechas.length }} / {{ pendingFechas.length }} seleccionadas
             </v-chip>
 
-            <div class="d-flex ga-2">
+            <div class="flex gap-2">
               <v-btn
                 size="small"
-                variant="outlined"
+                variant="tonal"
                 color="success"
                 @click="selectAllFechas"
                 :disabled="allFechasSelected"
+                class="flex-1 sm:flex-none"
               >
-                <v-icon start size="small">mdi-check-all</v-icon>
-                Seleccionar todas
+                <v-icon start size="18">mdi-check-all</v-icon>
+                Todas
               </v-btn>
               <v-btn
                 size="small"
-                variant="outlined"
+                variant="tonal"
                 color="warning"
                 @click="clearAllFechas"
                 :disabled="!anyFechasSelected"
+                class="flex-1 sm:flex-none"
               >
-                <v-icon start size="small">mdi-close-box-multiple</v-icon>
-                Limpiar selección
+                <v-icon start size="18">mdi-close-box-multiple</v-icon>
+                Ninguna
               </v-btn>
             </div>
           </div>
 
-          <v-row dense class="mt-4">
-            <v-col v-for="fecha in pendingFechas" :key="fecha" cols="12" sm="6" md="4">
-              <v-card variant="outlined" class="pa-3 agricultural-date-card">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <v-card
+              v-for="fecha in pendingFechas"
+              :key="fecha"
+              variant="flat"
+              class="date-card transition-all bg-grey-lighten-4"
+              :class="{ 'date-card--selected bg-success-lighten-5': selectedFechas.includes(fecha) }"
+              @click="toggleFechaSelection(fecha)"
+            >
+              <div class="pa-3 flex items-center">
                 <v-checkbox-btn
                   :model-value="selectedFechas.includes(fecha)"
-                  @update:model-value="toggleFechaSelection(fecha)"
-                  :label="formatFecha(fecha)"
                   color="success"
-                  class="date-checkbox"
+                  density="compact"
+                  class="mr-2"
                 />
-              </v-card>
-            </v-col>
-          </v-row>
+                <span class="text-body-2 font-weight-medium">{{ formatFecha(fecha) }}</span>
+              </div>
+            </v-card>
+          </div>
 
           <!-- Preview de datos generales -->
-          <BatchGeneralDataForm
-            v-if="selectedFechas.length > 0 && actividadDetalle"
-            :actividad-preview="actividadDetalle"
-            :fechas-seleccionadas="selectedFechas"
-            v-model:observaciones="observacionesAdicionales"
-            v-model:metricasSeleccionadas="metricasSeleccionadas"
-            class="mt-4"
-          />
-
-        </v-container>
-        <div v-else class="text-center pa-8">
-          <v-progress-circular indeterminate color="primary"></v-progress-circular>
-          <p class="mt-4">Calculando fechas pendientes...</p>
+          <div v-if="selectedFechas.length > 0 && actividadDetalle" class="mt-8">
+            <div class="flex items-center mb-4">
+              <v-icon color="success" class="mr-2">mdi-text-box-search-outline</v-icon>
+              <h4 class="">Información de Bitácora</h4>
+            </div>
+            
+            <BatchGeneralDataForm
+              :actividad-preview="actividadDetalle"
+              :fechas-seleccionadas="selectedFechas"
+              v-model:observaciones="observacionesAdicionales"
+              v-model:metricasSeleccionadas="metricasSeleccionadas"
+              class="ml-2"
+            />
+          </div>
+        </div>
+        
+        <div v-else class="flex flex-col items-center justify-center py-12">
+          <v-progress-circular indeterminate color="success" size="64" width="6"></v-progress-circular>
+          <p class="mt-4 text-grey-darken-1">Calculando fechas pendientes...</p>
         </div>
       </v-card-text>
 
-      <v-card-actions>
-        <v-spacer></v-spacer>
+      <v-divider />
+      
+      <v-card-actions class="pa-4 bg-grey-lighten-5">
+        <v-spacer class="hidden sm:block"></v-spacer>
         <v-btn
-          size="small"
           variant="flat"
-          rounded="lg"
-          prepend-icon="mdi-cancel"
           color="red-lighten-3"
           @click="closeDialog"
           :disabled="executing"
+          prepend-icon="mdi-cancel"
+          class="px-6 mr-2"
         >
-          Cancelar
+          CANCELAR
         </v-btn>
         <v-btn
-          size="small"
           variant="flat"
-          rounded="lg"
-          prepend-icon="mdi-check"
           color="green-lighten-3"
-          @click="executeBatch"
+          @click="handleExecuteClick"
           :loading="executing"
           :disabled="selectedFechas.length === 0"
+          prepend-icon="mdi-check"
+          class="px-8 font-weight-bold"
         >
-          Registrar {{ selectedFechas.length }} cumplimientos
+          REGISTRAR {{ selectedFechas.length }} CUMPLIMIENTOS
         </v-btn>
       </v-card-actions>
     </v-card>
+
+    <!-- Diálogo de Advertencia por Selección Incompleta -->
+    <v-dialog v-model="showWarningDialog" max-width="500px" persistent>
+      <v-card class="rounded-xl">
+        <v-toolbar color="warning" dark flat density="compact">
+          <v-icon class="ml-4 mr-2">mdi-alert</v-icon>
+          <v-toolbar-title class="text-subtitle-1 font-weight-bold">Atención: Selección Incompleta</v-toolbar-title>
+        </v-toolbar>
+        <v-card-text class="pa-6 text-center">
+          <v-avatar color="warning-lighten-4" size="64" class="mb-4">
+            <v-icon color="warning" size="32">mdi-history-remove</v-icon>
+          </v-avatar>
+          <p class="text-body-1 font-weight-bold mb-2">¿Deseas descartar las fechas no seleccionadas?</p>
+          <p class="text-body-2 text-grey-darken-1">
+            Has seleccionado <strong>{{ selectedFechas.length }}</strong> de <strong>{{ pendingFechas.length }}</strong> fechas pendientes. 
+            Las fechas no seleccionadas serán <strong>borradas del historial</strong> sin ser ingresadas a la bitácora.
+          </p>
+        </v-card-text>
+        <v-card-actions class="pa-4 bg-grey-lighten-5 border-t">
+          <v-spacer></v-spacer>
+          <v-btn
+            variant="text"
+            color="grey-darken-1"
+            @click="showWarningDialog = false"
+            class="px-4"
+          >
+            VOLVER A SELECCIONAR
+          </v-btn>
+          <v-btn
+            variant="flat"
+            color="warning"
+            @click="executeBatch(true)"
+            class="px-6 font-weight-bold"
+          >
+            SÍ, DESCARTAR Y REGISTRAR
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-dialog>
 </template>
 
@@ -136,23 +195,23 @@ const selectedFechas = ref([]);
 const actividadDetalle = ref(null);
 const observacionesAdicionales = ref('');
 const metricasSeleccionadas = ref([]);
+const showWarningDialog = ref(false);
 
 const programacion = computed(() =>
   programacionesStore.programaciones.find(p => p.id === props.programacionId)
 );
 
-// Siembra context for multi-siembra scenarios
 const siembraContext = computed(() => {
-  if (!programacion.value?.siembras) return null;
-  if (programacion.value.siembras.length === 1) {
-    return `ID: ${programacion.value.siembras[0]}`;
-  } else if (programacion.value.siembras.length > 1) {
-    return `${programacion.value.siembras.length} siembras (primera: ${programacion.value.siembras[0]})`;
+  if (!programacion.value?.expand?.siembras) return null;
+  const siembras = programacion.value.expand.siembras;
+  if (siembras.length === 1) {
+    return `${siembras[0].nombre} ${siembras[0].tipo}`;
+  } else if (siembras.length > 1) {
+    return `${siembras.length} siembras`;
   }
   return null;
 });
 
-// Batch selection states
 const allFechasSelected = computed(() => {
   return pendingFechas.value.length > 0 && selectedFechas.value.length === pendingFechas.value.length;
 });
@@ -170,16 +229,14 @@ const loadPendingDates = async () => {
   if (!programacion.value) return;
   loading.value = true;
   try {
-    // Get the first siembra from the programacion for context isolation
     const siembraId = programacion.value.siembras && programacion.value.siembras.length > 0
       ? programacion.value.siembras[0]
       : null;
 
     const fechas = programacionesStore.getFechasPendientes(programacion.value, siembraId);
     pendingFechas.value = fechas;
-    selectedFechas.value = [...fechas]; // Pre-seleccionar todas
+    selectedFechas.value = [...fechas];
 
-    // Cargar detalles de la actividad para el preview
     if (programacion.value.actividades && programacion.value.actividades.length > 0) {
       const primaryActivityId = programacion.value.actividades[0];
       actividadDetalle.value = await actividadesStore.fetchActividadById(primaryActivityId, { expand: 'tipo_actividades' });
@@ -208,12 +265,20 @@ const closeDialog = () => {
   dialog.value = false;
 };
 
-const executeBatch = async () => {
+const handleExecuteClick = () => {
+  if (selectedFechas.value.length < pendingFechas.value.length) {
+    showWarningDialog.value = true;
+  } else {
+    executeBatch(false);
+  }
+};
+
+const executeBatch = async (cleanup = false) => {
   if (selectedFechas.value.length === 0) return;
 
   executing.value = true;
+  showWarningDialog.value = false;
   try {
-    // Get the first siembra from the programacion for context isolation
     const siembraId = programacion.value.siembras && programacion.value.siembras.length > 0
       ? programacion.value.siembras[0]
       : null;
@@ -223,12 +288,11 @@ const executeBatch = async () => {
       fechasEjecucion: selectedFechas.value,
       observacionesAdicionales: observacionesAdicionales.value,
       siembraId: siembraId,
-      metricasSeleccionadas: metricasSeleccionadas.value
+      metricasSeleccionadas: metricasSeleccionadas.value,
+      cleanup: cleanup
     });
-    // La acción del store ya muestra un snackbar
   } catch (error) {
     console.error("Error executing batch:", error);
-    // La acción del store debería manejar el snackbar de error también
   } finally {
     executing.value = false;
     closeDialog();
@@ -244,7 +308,6 @@ const toggleFechaSelection = (fecha) => {
   }
 };
 
-// Batch selection methods
 const selectAllFechas = () => {
   selectedFechas.value = [...pendingFechas.value];
 };
@@ -260,195 +323,22 @@ const formatFecha = (fecha) => {
                  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
   return `${date.getDate()} ${meses[date.getMonth()]} ${date.getFullYear()}`;
 };
-
 </script>
 
 <style scoped>
-/* Agricultural Color Palette */
-:root {
-  --agri-green-primary: #2e7d32;
-  --agri-green-light: #4caf50;
-  --agri-earth-brown: #5d4037;
-  --agri-soil-dark: #3e2723;
-  --agri-sky-blue: #1976d2;
-  --agri-surface-light: #f8f9fa;
-  --agri-surface-card: #ffffff;
-}
-
-/* Siembra Context Chip */
-.siembra-context {
-  margin-top: 4px;
-}
-
-/* Enhanced Date Card Styling */
-.agricultural-date-card {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  min-height: 72px;
-  display: flex;
-  align-items: center;
-  border: 2px solid rgba(76, 175, 80, 0.2);
-  border-radius: 12px;
-  background: var(--agri-surface-card);
-  position: relative;
-  overflow: hidden;
+.date-card {
   cursor: pointer;
+  border-radius: 12px;
+  border: 1px solid transparent;
 }
 
-/* Date card hover effects */
-.agricultural-date-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, var(--agri-green-primary), var(--agri-green-light));
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.agricultural-date-card:hover {
-  background-color: rgba(46, 125, 50, 0.08);
-  border-color: var(--agri-green-light);
+.date-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(46, 125, 50, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-.agricultural-date-card:hover::before {
-  opacity: 1;
-}
-
-/* Selected state styling */
-.agricultural-date-card:has(.v-checkbox-btn input:checked) {
-  border-color: var(--agri-green-primary);
-  background: rgba(46, 125, 50, 0.05);
-  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.15);
-}
-
-.agricultural-date-card:has(.v-checkbox-btn input:checked)::before {
-  opacity: 1;
-}
-
-/* Enhanced checkbox styling */
-.date-checkbox {
-  width: 100%;
-  min-height: 44px; /* Touch target size */
-}
-
-.date-checkbox .v-label {
-  font-size: 1rem;
-  line-height: 1.3;
-  font-weight: 500;
-  color: var(--agri-soil-dark);
-  letter-spacing: 0.025em;
-}
-
-/* Selected checkbox label styling */
-.agricultural-date-card:has(.v-checkbox-btn input:checked) .date-checkbox .v-label {
-  color: var(--agri-green-primary);
-  font-weight: 600;
-}
-
-/* Focus states for accessibility */
-.agricultural-date-card:focus-within {
-  outline: 3px solid var(--agri-sky-blue);
-  outline-offset: 2px;
-}
-
-.date-checkbox:focus-visible {
-  outline: 2px solid var(--agri-sky-blue);
-  outline-offset: 1px;
-  border-radius: 4px;
-}
-
-/* Button styling enhancements */
-.v-btn.v-btn--variant-outlined {
-  border-radius: 8px;
-  font-weight: 500;
-  letter-spacing: 0.025em;
-  min-height: 36px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.v-btn.v-btn--variant-outlined:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.v-btn.v-btn--variant-outlined:disabled {
-  opacity: 0.6;
-  transform: none;
-  box-shadow: none;
-}
-
-/* Responsive design for tablet optimization */
-@media (max-width: 1024px) {
-  .agricultural-date-card {
-    min-height: 80px;
-    border-radius: 10px;
-  }
-
-  .date-checkbox .v-label {
-    font-size: 1.05rem;
-  }
-
-  .date-checkbox {
-    min-height: 48px;
-  }
-}
-
-@media (max-width: 768px) {
-  .agricultural-date-card {
-    min-height: 88px;
-    border-radius: 8px;
-  }
-
-  .date-checkbox .v-label {
-    font-size: 1.1rem;
-  }
-
-  .date-checkbox {
-    min-height: 52px;
-  }
-
-  /* Stack batch controls vertically on mobile */
-  .d-flex.ga-2 {
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .v-btn {
-    width: 100%;
-    min-height: 44px;
-  }
-}
-
-/* High contrast colors for outdoor visibility */
-.v-theme--light .agricultural-date-card {
-  border-color: rgba(46, 125, 50, 0.3);
-}
-
-.v-theme--light .date-checkbox .v-label {
-  color: #1a1a1a;
-}
-
-.v-theme--light .agricultural-date-card:has(.v-checkbox-btn input:checked) .date-checkbox .v-label {
-  color: var(--agri-green-primary);
-}
-
-/* Animation for date cards */
-.agricultural-date-card {
-  animation: fadeInScale 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes fadeInScale {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+.date-card--selected {
+  border: 1px solid rgba(112, 210, 115, 0.487);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.1);
 }
 </style>

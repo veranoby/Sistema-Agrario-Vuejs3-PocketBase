@@ -85,10 +85,10 @@
     </v-card-text>
 
     <v-card-actions>
-      <v-btn variant="text" @click="$emit('close')">Cancelar</v-btn>
+      <v-btn variant="text" @click="$emit('close')">CANCELAR</v-btn>
       <v-spacer />
       <v-btn color="primary" @click="$emit('save')">
-        Guardar Cambios
+        GUARDAR Cambios
       </v-btn>
     </v-card-actions>
   </v-card>

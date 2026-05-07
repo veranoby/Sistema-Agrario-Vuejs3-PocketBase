@@ -164,7 +164,7 @@ async function toggleModule(moduleId, activate) {
   }
 }
 
-// Guardar cambios
+// GUARDAR cambios
 async function saveChanges() {
   showSnackbar('Cambios guardados exitosamente', 'success')
   showCostSummary.value = false

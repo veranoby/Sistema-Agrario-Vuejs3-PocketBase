@@ -9,7 +9,7 @@
       <v-row v-else>
         <!-- Top 10 Haciendas por Actividad -->
         <v-col cols="12" md="6">
-          <h3 class="text-subtitle-1 mb-3">Top 10 Haciendas por Actividad</h3>
+          <h3 class=" mb-3">Top 10 Haciendas por Actividad</h3>
           <v-table density="compact" hover>
             <thead>
               <tr>
@@ -54,7 +54,7 @@
 
         <!-- Uso por Tipo de Actividad -->
         <v-col cols="12" md="6">
-          <h3 class="text-subtitle-1 mb-3">Uso por Tipo de Actividad</h3>
+          <h3 class=" mb-3">Uso por Tipo de Actividad</h3>
           <v-table density="compact" hover>
             <thead>
               <tr>

@@ -6,7 +6,7 @@
         <span>{{ t('sowing_workspace.sowing_information') }}</span>
       </div>
       <v-btn
-        size="x-small"
+        size="small"
         color="green-lighten-2"
         icon
         rounded="circle"
@@ -24,7 +24,7 @@
       <v-row>
         <v-col cols="12">
           <div
-            class="flex-1 rounded-lg border-2 p-4 mt-2 mb-4 rich-text-content"
+            class="flex-1  border-2 p-4 mt-2 mb-4 rich-text-content"
             v-html="siembraInfo.info || t('sowing_workspace.not_available')"
           ></div>
         </v-col>

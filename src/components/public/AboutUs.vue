@@ -54,7 +54,7 @@
           <div class="container px-4 md:px-6">
             <div class="flex flex-col items-center justify-center space-y-4 text-center">
               <div class="space-y-2">
-                <div class="inline-block rounded-lg bg-muted px-3 py-1 text-sm">
+                <div class="inline-block  bg-muted px-3 py-1 text-sm">
                   Características Clave
                 </div>
                 <h2 class="text-3xl font-bold tracking-tighter sm:text-5xl">
@@ -117,7 +117,7 @@
           <div class="container px-4 md:px-6">
             <div class="flex flex-col items-center justify-center space-y-4 text-center">
               <div class="space-y-2">
-                <div class="inline-block rounded-lg bg-muted px-3 py-1 text-sm">Nuestro Equipo</div>
+                <div class="inline-block  bg-muted px-3 py-1 text-sm">Nuestro Equipo</div>
                 <h2 class="text-3xl font-bold tracking-tighter sm:text-5xl">
                   Conoce a los Expertos detrás de ConAgri
                 </h2>

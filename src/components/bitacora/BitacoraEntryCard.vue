@@ -39,7 +39,7 @@
       </v-list>
 
       <div v-if="formatoReporteColumnas && formatoReporteColumnas.length > 0 && entry.metricas" class="mt-3">
-        <h4 class="text-subtitle-1 mb-1">Detalles de Actividad:</h4>
+        <h4 class=" mb-1">Detalles de Actividad:</h4>
         <v-table dense class="text-caption">
           <thead>
             <tr>
@@ -64,7 +64,7 @@
         </v-table>
       </div>
       <div v-else-if="entry.metricas && Object.keys(entry.metricas).length > 0 && (!formatoReporteColumnas || formatoReporteColumnas.length === 0)" class="mt-3">
-         <h4 class="text-subtitle-1 mb-1">Metricas Registradas (sin formato):</h4>
+         <h4 class=" mb-1">Metricas Registradas (sin formato):</h4>
          <v-list dense>
             <v-list-item v-for="(value, key) in entry.metricas" :key="key">
                  <v-list-item-title>{{ key }}: {{ value }}</v-list-item-title>
@@ -74,10 +74,12 @@
 
     </v-card-text>
     <v-divider v-if="entry.id"></v-divider>
-     <v-card-actions v-if="entry.id">
+      <v-card-actions v-if="entry.id">
         <BitacoraSignature :bitacoraId="entry.id" :existingSignature="entry.signature" />
         <v-spacer></v-spacer>
-        <v-chip variant="outlined" size="x-small" pill>ID: {{ entry.id }}</v-chip>
+        <v-btn v-role="'BITACORA_EDIT'" icon="mdi-pencil" size="small" variant="text" @click="$emit('edit', entry)" />
+        <v-btn v-role="'BITACORA_EDIT'" icon="mdi-delete" size="small" variant="text" color="error" @click="$emit('delete', entry)" />
+        <v-chip variant="outlined" size="small" pill>ID: {{ entry.id }}</v-chip>
     </v-card-actions>
   </v-card>
 </template>

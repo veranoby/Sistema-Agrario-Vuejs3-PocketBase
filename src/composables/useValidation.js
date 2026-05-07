@@ -82,7 +82,7 @@ export function useValidation() {
 
           results[field.field] = available
 
-          // Guardar en caché
+          // GUARDAR en caché
           const cacheKey = generateCacheKey(field)
           checkedFields.set(cacheKey, {
             available,

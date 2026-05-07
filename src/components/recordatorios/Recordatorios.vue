@@ -14,13 +14,13 @@
             <div class="w-full sm:flex-grow">
               <h3 class="profile-title text-sm sm:text-lg mb-2 sm:mb-0">
                 {{ t('reminders.reminder_management') }}
-                <v-chip variant="flat" size="x-small" color="grey-lighten-2" class="mx-1" pill>
+                <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
                   <v-avatar start>
                     <v-img :src="avatarUrl" alt="Avatar"></v-img>
                   </v-avatar>
                   {{ userRole }}
                 </v-chip>
-                <v-chip variant="flat" size="x-small" color="green-lighten-3" class="mx-1" pill>
+                <v-chip variant="flat" size="small" color="green-lighten-3" class="mx-1" pill>
                   <v-avatar start>
                     <v-img :src="avatarHaciendaUrl" alt="Avatar"></v-img>
                   </v-avatar>
@@ -34,7 +34,7 @@
                 sm:inline-flex
                 size="small"
                 variant="flat"
-                rounded="lg"
+                
                 color="#6380a247"
                 prepend-icon="mdi-plus"
                 @click="recordatoriosStore.abrirNuevoRecordatorio"

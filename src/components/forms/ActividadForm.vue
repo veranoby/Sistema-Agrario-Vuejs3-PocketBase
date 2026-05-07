@@ -109,20 +109,16 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-            size="small"
             variant="flat"
-            rounded="lg"
             prepend-icon="mdi-cancel"
             color="red-lighten-3"
             @click="cerrarDialog"
           >
-            Cancelar
+            CANCELAR
           </v-btn>
           <v-btn
             type="submit"
-            size="small"
-            variant="flat"
-            rounded="lg"
+            variant="flat"            
             prepend-icon="mdi-check"
             color="green-lighten-3"
           >

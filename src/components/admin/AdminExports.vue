@@ -363,7 +363,7 @@ function loadExportHistory() {
   }
 }
 
-// Guardar historial
+// GUARDAR historial
 function saveExportHistory() {
   localStorage.setItem('exportHistory', JSON.stringify(exportHistory.value.slice(0, 20)))
 }

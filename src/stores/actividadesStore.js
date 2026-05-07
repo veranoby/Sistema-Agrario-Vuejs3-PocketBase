@@ -6,6 +6,8 @@ import { useUiFeedbackStore } from './uiFeedbackStore'
 import { handleError } from '@/utils/errorHandler'
 import { useHaciendaStore } from './haciendaStore'
 import { calculateBpaStatus } from '@/utils/agriMetrics'
+import { tieredCache, CacheKeys } from '@/utils/cacheManager'
+
 
 export const useActividadesStore = defineStore('actividades', {
   state: () => ({
@@ -106,11 +108,16 @@ export const useActividadesStore = defineStore('actividades', {
       }
 
       try {
-        const resultList = await pb.collection('actividades').getList(page, perPage, {
-          sort: 'nombre',
-          filter: `hacienda="${haciendaStore.mi_hacienda?.id}"`,
-          expand: 'tipo_actividades,siembras'
+        const cacheConfig = CacheKeys.paginatedResult('actividades', page, { hacienda: haciendaStore.mi_hacienda?.id })
+        
+        const resultList = await tieredCache.fetchWithCache(cacheConfig, async () => {
+          return await pb.collection('actividades').getList(page, perPage, {
+            sort: 'nombre',
+            filter: `hacienda="${haciendaStore.mi_hacienda?.id}"`,
+            expand: 'tipo_actividades,siembras'
+          })
         })
+
 
         const previousLength = this.actividades.length
         this.actividades = resultList.items
@@ -449,10 +456,15 @@ export const useActividadesStore = defineStore('actividades', {
       this.loadingTipos = true
 
       try {
-        const records = await pb.collection('tipo_actividades').getFullList({
-          sort: 'nombre',
-          expand: 'metricas,datos_bpa'
+        const cacheConfig = CacheKeys.tiposActividades()
+        
+        const records = await tieredCache.fetchWithCache(cacheConfig, async () => {
+          return await pb.collection('tipo_actividades').getFullList({
+            sort: 'nombre',
+            expand: 'metricas,datos_bpa'
+          })
         })
+
         this.tiposActividades = markRaw(records.map((record) => ({
           id: record.id,
           nombre: record.nombre,

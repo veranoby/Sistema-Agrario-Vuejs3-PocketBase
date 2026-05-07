@@ -161,7 +161,7 @@ export const usePlanStore = defineStore('plan', {
         this.plans = markRaw(plans)
         syncStore.saveToLocalStorage('plans', plans)
 
-        // Guardar el plan gratis en localStorage
+        // GUARDAR el plan gratis en localStorage
         const gratisPlan = plans.find((plan) => plan.nombre === 'gratis')
         if (gratisPlan) {
           syncStore.saveToLocalStorage('gratisPlan', gratisPlan)

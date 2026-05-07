@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { markRaw, toRaw } from 'vue'
+import { toRaw } from 'vue'
 import { pb } from '@/utils/pocketbase'
 import { useUiFeedbackStore } from './uiFeedbackStore'
 import { handleError } from '@/utils/errorHandler'
@@ -8,6 +8,8 @@ import { useHaciendaStore } from './haciendaStore'
 import { computed } from 'vue'
 import { offlineGeoStorage } from '@/utils/offlineGeoStorage'
 import { logger } from '@/utils/logger'
+import { tieredCache, CacheKeys } from '@/utils/cacheManager'
+
 
 export const useSiembrasStore = defineStore('siembras', {
   state: () => ({
@@ -29,7 +31,7 @@ export const useSiembrasStore = defineStore('siembras', {
   },
 
   sync: {
-    collectionName: 'siembras',
+    collectionName: 'Siembras',
     stateProp: 'siembras'
   },
 
@@ -85,10 +87,15 @@ export const useSiembrasStore = defineStore('siembras', {
           return []
         }
 
-        const resultList = await pb.collection('siembras').getList(page, perPage, {
-          filter: `hacienda="${haciendaStore.mi_hacienda?.id}"`,
-          sort: '-created'
+        const cacheConfig = CacheKeys.paginatedResult('siembras', page, { hacienda: haciendaStore.mi_hacienda?.id })
+        
+        const resultList = await tieredCache.fetchWithCache(cacheConfig, async () => {
+          return await pb.collection('Siembras').getList(page, perPage, {
+            filter: `hacienda="${haciendaStore.mi_hacienda?.id}"`,
+            sort: '-created'
+          })
         })
+
 
         this.siembras = resultList.items
         this.totalItems = resultList.totalItems
@@ -150,13 +157,11 @@ export const useSiembrasStore = defineStore('siembras', {
           _isTemp: true
         }
 
-        this.siembras.unshift(tempSiembra)
-        // CORRECTO: Sanitizar para IndexedDB
-        syncStore.saveToLocalStorage('siembras', JSON.parse(JSON.stringify(toRaw(this.siembras))));
+        this.applySyncedCreate(tempId, tempSiembra)
 
         await syncStore.queueOperation({
           type: 'create',
-          collection: 'siembras',
+          collection: 'Siembras',
           data: enrichedData,
           tempId
         })
@@ -165,11 +170,11 @@ export const useSiembrasStore = defineStore('siembras', {
         return tempSiembra
       }
 
+
       try {
-        const record = await pb.collection('siembras').create(enrichedData)
-        this.siembras.unshift(record)
-        // CORRECTO: Sanitizar para IndexedDB
-        syncStore.saveToLocalStorage('siembras', JSON.parse(JSON.stringify(toRaw(this.siembras))));
+        const record = await pb.collection('Siembras').create(enrichedData)
+        
+        this.applySyncedCreate(record.id, record)
         
         if (record.gps || record.geometria) {
           await offlineGeoStorage.saveSiembra(record).catch(e => 
@@ -180,6 +185,7 @@ export const useSiembrasStore = defineStore('siembras', {
         useUiFeedbackStore().showSnackbar('Siembra creada exitosamente')
         return record
       } catch (error) {
+
         handleError(error, 'Error al crear siembra')
         throw error
       } finally {
@@ -209,38 +215,27 @@ export const useSiembrasStore = defineStore('siembras', {
       }
 
       if (!syncStore.isOnline) {
-        const index = this.siembras.findIndex((s) => s.id === id)
-        if (index !== -1) {
-          this.siembras[index] = {
-            ...this.siembras[index],
-            ...enrichedData,
-            updated: new Date().toISOString()
-          }
-        }
+        this.applySyncedUpdate(id, enrichedData)
 
         await syncStore.queueOperation({
           type: 'update',
-          collection: 'siembras',
+          collection: 'Siembras',
           id,
           data: enrichedData
         })
 
         uiFeedbackStore.hideLoading()
-        // CORRECTO: Sanitizar para IndexedDB
-        syncStore.saveToLocalStorage('siembras', JSON.parse(JSON.stringify(toRaw(this.siembras))));
-        return this.siembras[index]
+        return this.getSiembraById(id)
       }
 
+
       try {
-        const record = await pb.collection('siembras').update(id, enrichedData, {
+        const record = await pb.collection('Siembras').update(id, enrichedData, {
           expand: 'tipos_zonas'
         })
-        const index = this.siembras.findIndex((s) => s.id === id)
-        if (index !== -1) {
-          this.siembras[index] = record
-        }
-        // CORRECTO: Sanitizar para IndexedDB
-        syncStore.saveToLocalStorage('siembras', JSON.parse(JSON.stringify(toRaw(this.siembras))));
+
+        
+        this.applySyncedUpdate(id, record)
         
         if (record.gps || record.geometria) {
           await offlineGeoStorage.saveSiembra(record).catch(e => 
@@ -251,6 +246,7 @@ export const useSiembrasStore = defineStore('siembras', {
         useUiFeedbackStore().showSnackbar('Siembra actualizada exitosamente')
         return record
       } catch (error) {
+
         handleError(error, 'Error al actualizar siembra')
         throw error
       } finally {
@@ -275,25 +271,23 @@ export const useSiembrasStore = defineStore('siembras', {
           throw new Error(`No se encontró siembra con ID: ${id}`)
         }
 
-        this.siembras = this.siembras.filter((s) => s.id !== id)
+        this.applySyncedDelete(id)
 
         await syncStore.queueOperation({
           type: 'delete',
-          collection: 'siembras',
+          collection: 'Siembras',
           id
         })
 
         uiFeedbackStore.hideLoading()
-        // CORRECTO: Sanitizar para IndexedDB
-        syncStore.saveToLocalStorage('siembras', JSON.parse(JSON.stringify(toRaw(this.siembras))));
         return true
       }
 
+
       try {
-        await pb.collection('siembras').delete(id)
-        this.siembras = this.siembras.filter((s) => s.id !== id)
-        // CORRECTO: Sanitizar para IndexedDB
-        syncStore.saveToLocalStorage('siembras', JSON.parse(JSON.stringify(toRaw(this.siembras))));
+        await pb.collection('Siembras').delete(id)
+        
+        this.applySyncedDelete(id)
         
         await offlineGeoStorage.deleteSiembra(id).catch(e => 
           logger.warn('[SIEMBRAS_STORE] Error eliminando de offlineGeoStorage:', e)
@@ -302,6 +296,7 @@ export const useSiembrasStore = defineStore('siembras', {
         useUiFeedbackStore().showSnackbar('Siembra eliminada exitosamente')
         return true
       } catch (error) {
+
         handleError(error, 'Error al eliminar siembra')
         throw error
       } finally {
@@ -317,7 +312,7 @@ export const useSiembrasStore = defineStore('siembras', {
 
       const syncStore = useSyncStore()
       if (syncStore.isOnline) {
-        const record = await pb.collection('siembras').getOne(id, {
+        const record = await pb.collection('Siembras').getOne(id, {
           expand: 'hacienda,zona'
         })
         const siembraIndex = this.siembras.findIndex((s) => s.id === id)
@@ -339,19 +334,19 @@ export const useSiembrasStore = defineStore('siembras', {
       if (!syncStore.isOnline) {
         return this.siembras.filter(s => s.programaciones?.includes(programacionId))
       }
-      return pb.collection('siembras').getFullList({
+      return pb.collection('Siembras').getFullList({
         filter: `programaciones ~ "${programacionId}"`,
         sort: '-fecha_ejecucion'
       }).catch(() => [])
     },
 
     updateLocalItem(tempId, newItem) {
-      return useSyncStore().updateLocalItem('siembras', tempId, newItem, this.siembras)
+      return useSyncStore().updateLocalItem('Siembras', tempId, newItem, this.siembras)
     },
 
     updateReferencesToItem(tempId, realId) {
       return useSyncStore().updateReferencesToItem(
-        'siembras',
+        'Siembras',
         tempId,
         realId,
         this.siembras
@@ -359,7 +354,142 @@ export const useSiembrasStore = defineStore('siembras', {
     },
 
     removeLocalItem(id) {
-      return useSyncStore().removeLocalItem('siembras', id, this.siembras)
+      return useSyncStore().removeLocalItem('Siembras', id, this.siembras)
+    },
+
+    /**
+     * Analiza las dependencias de una siembra antes de eliminarla.
+     * @param {string} siembraId ID de la siembra a analizar.
+     * @returns {Object|null} Resultado del análisis clasificado por tipo y exclusividad.
+     */
+    async analyzeDependencies(siembraId) {
+      if (!siembraId) return null;
+      
+      const uiFeedbackStore = useUiFeedbackStore();
+      uiFeedbackStore.showLoading();
+      
+      try {
+        // Consultas concurrentes para optimizar tiempo
+        const [zonas, bitacora, programaciones, recordatorios] = await Promise.all([
+          pb.collection('zonas').getFullList({ 
+            filter: `siembra="${siembraId}"`, 
+            fields: 'id,nombre' 
+          }),
+          pb.collection('bitacora').getFullList({ 
+            filter: `siembras ~ "${siembraId}"`, 
+            fields: 'id,actividad_realizada,siembras' 
+          }),
+          pb.collection('programaciones').getFullList({ 
+            filter: `siembras ~ "${siembraId}"`, 
+            fields: 'id,estado,siembras' 
+          }),
+          pb.collection('recordatorios').getFullList({ 
+            filter: `siembras ~ "${siembraId}"`, 
+            fields: 'id,siembras' 
+          })
+        ]);
+
+        const analysis = {
+          exclusive: [],
+          shared: []
+        };
+
+        // Zonas son siempre exclusivas (relación 1:1 según esquema actual)
+        zonas.forEach(z => analysis.exclusive.push({ id: z.id, name: z.nombre, type: 'zonas', currentSiembra: z.siembra }));
+
+        // Clasificar Bitácora, Programaciones y Recordatorios
+        const processItems = (items, type) => {
+          items.forEach(item => {
+            const isExclusive = item.siembras.length === 1 && item.siembras[0] === siembraId;
+            if (isExclusive) {
+              analysis.exclusive.push({ id: item.id, type, currentSiembras: item.siembras });
+            } else {
+              analysis.shared.push({ id: item.id, type, currentSiembras: item.siembras });
+            }
+          });
+        };
+
+        processItems(bitacora, 'bitacora');
+        processItems(programaciones, 'programaciones');
+        processItems(recordatorios, 'recordatorios');
+
+        return analysis;
+      } catch (error) {
+        handleError(error, 'Error analizando dependencias de siembra');
+        return null;
+      } finally {
+        uiFeedbackStore.hideLoading();
+      }
+    },
+
+    /**
+     * Ejecuta la eliminación inteligente de una siembra y sus dependencias.
+     * @param {string} siembraId ID de la siembra.
+     * @param {Object} analysisData Resultado de analyzeDependencies.
+     * @param {Object} userActions Mapa de acciones ('delete' o 'detach') por tipo de elemento exclusivo.
+     */
+    async executeSmartDeletion(siembraId, analysisData, userActions = {}) {
+      const syncStore = useSyncStore();
+      const uiFeedbackStore = useUiFeedbackStore();
+
+      if (!syncStore.isOnline) {
+        uiFeedbackStore.showSnackbar('La eliminación compleja requiere conexión a internet', 'warning');
+        return false;
+      }
+
+      uiFeedbackStore.showLoading();
+      
+      try {
+        const exclusivePromises = analysisData.exclusive.map(item => {
+          const action = userActions[item.type] || 'delete';
+          
+          if (action === 'delete') {
+            return pb.collection(item.type).delete(item.id);
+          } else {
+            // Acción 'detach' para elementos exclusivos
+            if (item.type === 'zonas') {
+              return pb.collection('zonas').update(item.id, { siembra: null });
+            } else {
+              return pb.collection(item.type).update(item.id, {
+                siembras: item.currentSiembras.filter(id => id !== siembraId)
+              });
+            }
+          }
+        });
+
+        const sharedPromises = analysisData.shared.map(item => 
+          pb.collection(item.type).update(item.id, {
+            siembras: item.currentSiembras.filter(id => id !== siembraId)
+          })
+        );
+
+        // Ejecutar limpieza de dependencias
+        const results = await Promise.allSettled([...exclusivePromises, ...sharedPromises]);
+        
+        const failures = results.filter(r => r.status === 'rejected');
+        if (failures.length > 0) {
+          logger.error('[SIEMBRAS_STORE] Fallos parciales en eliminación de dependencias:', failures);
+          uiFeedbackStore.showSnackbar(`Error parcial: ${failures.length} elementos no pudieron procesarse. Abortando eliminación principal.`, 'error');
+          return false;
+        }
+
+        // Eliminar registro maestro
+        await pb.collection('Siembras').delete(siembraId);
+        
+        // Limpiar estado local y caché
+        this.applySyncedDelete(siembraId);
+        await offlineGeoStorage.deleteSiembra(siembraId).catch(e => 
+          logger.warn('[SIEMBRAS_STORE] Error eliminando de offlineGeoStorage:', e)
+        );
+
+        uiFeedbackStore.showSnackbar('Siembra y dependencias eliminadas con éxito', 'success');
+        return true;
+      } catch (error) {
+        handleError(error, 'Error durante el proceso de eliminación inteligente');
+        return false;
+      } finally {
+        uiFeedbackStore.hideLoading();
+      }
     },
 
     async initFromLocalStorage() {

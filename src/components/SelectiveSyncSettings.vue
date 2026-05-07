@@ -160,7 +160,7 @@
                 @click="saveConfiguration"
                 :loading="saving"
               >
-                Guardar Configuración
+                GUARDAR Configuración
               </v-btn>
             </div>
           </v-col>

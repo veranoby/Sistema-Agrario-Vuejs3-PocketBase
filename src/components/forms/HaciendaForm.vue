@@ -1,0 +1,391 @@
+<template>
+  <v-form ref="form">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pa-2">
+      <!-- Datos Básicos -->
+      <div class="flex flex-col gap-4">
+        <div class="flex items-center mb-2">
+          <v-icon color="success" class="mr-2">mdi-home-outline</v-icon>
+          <h4 class="font-bold ">{{ t('hacienda_info.basic_data') || 'Datos Básicos' }}</h4>
+        </div>
+        
+        <v-text-field
+          v-model="formData.name"
+          :label="t('hacienda_info.name')"
+          variant="outlined"
+          density="compact"
+          prepend-icon="mdi-home"
+        ></v-text-field>
+        
+        <v-text-field
+          v-model="formData.location"
+          :label="t('hacienda_info.location')"
+          variant="outlined"
+          density="compact"
+          prepend-icon="mdi-map-marker"
+        ></v-text-field>
+
+        <div class="d-flex align-center">
+          <v-text-field
+            class="flex-grow-1"
+            density="compact"
+            variant="outlined"
+            :model-value="formatGPS(formData.gps)"
+            :label="t('hacienda_info.gps')"
+            prepend-icon="mdi-crosshairs-gps"
+            readonly
+            hide-details
+          ></v-text-field>
+          <v-btn
+            color="primary"
+            size="small"
+            class="ml-2"
+            :loading="loadingGPS"
+            :disabled="!gpsAvailable"
+            @click="autoLocate"
+            variant="tonal"
+          >
+            Auto
+          </v-btn>
+        </div>
+        <div v-if="gpsError" class="text-caption text-error">
+          <v-icon start size="small">mdi-alert</v-icon>
+          {{ gpsError }}
+        </div>
+      </div>
+
+      <!-- Contacto e Inteligencia Artificial -->
+      <div class="flex flex-col gap-4">
+        <div class="flex items-center mb-2">
+          <v-icon color="success" class="mr-2">mdi-card-account-phone</v-icon>
+          <h4 class="font-bold ">{{ t('hacienda_info.contact') }}</h4>
+        </div>
+        
+        <v-text-field
+          v-model="formData.contacto_email"
+          :label="t('hacienda_info.contact_email')"
+          density="compact"
+          variant="outlined"
+          prepend-icon="mdi-email"
+          type="email"
+        ></v-text-field>
+        
+        <v-text-field
+          v-model="formData.contacto_telefono"
+          :label="t('hacienda_info.contact_phone')"
+          density="compact"
+          variant="outlined"
+          prepend-icon="mdi-phone"
+          type="tel"
+        ></v-text-field>
+
+        <div class="mt-2">
+          <div class="flex items-center mb-4">
+            <v-icon color="info" class="mr-2">mdi-robot</v-icon>
+            <h4 class="font-bold ">Inteligencia Artificial (BYOK)</h4>
+          </div>
+          <div class="flex items-center gap-2">
+            <v-text-field
+              v-model="formData.openrouter_key"
+              label="API Key (OpenRouter)"
+              density="compact"
+              variant="outlined"
+              prepend-icon="mdi-key"
+              type="password"
+              hide-details
+            ></v-text-field>
+            <v-btn
+              color="info"
+              variant="outlined"
+              size="small"
+              :loading="testingAI"
+              @click="testAIConnection"
+            >
+              Test
+            </v-btn>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Métricas -->
+    <div class="mt-6 pa-2">
+      <div class="flex justify-between items-center mb-4">
+        <div class="flex items-center">
+          <v-icon color="success" class="mr-2">mdi-chart-box</v-icon>
+          <h4 class="font-bold ">{{ t('hacienda_info.metrics') }}</h4>
+        </div>
+        <v-btn
+          size="small"
+          variant="flat"
+          prepend-icon="mdi-plus"
+          color="green-lighten-3"
+          @click="addMetricaDialog = true"
+        >
+          {{ t('hacienda_info.add_metric') }}
+        </v-btn>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
+        <div v-for="(metrica, key) in formData.metricas" :key="key">
+          <v-tooltip location="bottom">
+            <template v-slot:activator="{ props }">
+              <div v-bind="props">
+                <v-select
+                  v-if="metrica.tipo === 'select'"
+                  v-model="metrica.valor"
+                  :label="key.replace(/_/g, ' ').toUpperCase()"
+                  :items="metrica.opciones"
+                  variant="outlined"
+                  density="compact"
+                >
+                  <template v-slot:append>
+                    <v-icon size="small" @click.stop="removeMetrica(key)" color="red-lighten-2">mdi-delete</v-icon>
+                  </template>
+                </v-select>
+                <v-text-field
+                  v-else-if="metrica.tipo === 'date'"
+                  v-model="metrica.valor"
+                  :label="key.replace(/_/g, ' ').toUpperCase()"
+                  type="date"
+                  density="compact"
+                  variant="outlined"
+                >
+                  <template v-slot:append>
+                    <v-icon size="small" @click.stop="removeMetrica(key)" color="red-lighten-2">mdi-delete</v-icon>
+                  </template>
+                </v-text-field>
+                <v-text-field
+                  v-else-if="metrica.tipo === 'text'"
+                  v-model="metrica.valor"
+                  :label="key.replace(/_/g, ' ').toUpperCase()"
+                  density="compact"
+                  variant="outlined"
+                >
+                  <template v-slot:append>
+                    <v-icon size="small" @click.stop="removeMetrica(key)" color="red-lighten-2">mdi-delete</v-icon>
+                  </template>
+                </v-text-field>
+                <v-text-field
+                  v-else-if="metrica.tipo === 'number'"
+                  v-model.number="metrica.valor"
+                  :label="key.replace(/_/g, ' ').toUpperCase()"
+                  type="number"
+                  density="compact"
+                  variant="outlined"
+                >
+                  <template v-slot:append>
+                    <v-icon size="small" @click.stop="removeMetrica(key)" color="red-lighten-2">mdi-delete</v-icon>
+                  </template>
+                </v-text-field>
+                <v-checkbox
+                  v-else-if="metrica.tipo === 'boolean' || metrica.tipo === 'checkbox'"
+                  v-model="metrica.valor"
+                  :label="key.replace(/_/g, ' ').toUpperCase()"
+                  density="compact"
+                  hide-details
+                >
+                  <template v-slot:append>
+                    <v-icon size="small" @click.stop="removeMetrica(key)" color="red-lighten-2">mdi-delete</v-icon>
+                  </template>
+                </v-checkbox>
+              </div>
+            </template>
+            <span>{{ metrica.descripcion }}</span>
+          </v-tooltip>
+        </div>
+      </div>
+    </div>
+
+    <!-- Información Extendida -->
+    <div class="mt-6 pa-2">
+      <div class="mb-2 flex items-center">
+        <v-icon color="success" class="mr-2">mdi-information</v-icon>
+        <h4 class="font-bold ">{{ t('hacienda_info.my_info') }}</h4>
+      </div>
+      <QuillEditor
+        contentType="html"
+        v-model:content="formData.info"
+        toolbar="essential"
+        theme="snow"
+        class="quill-editor"
+      />
+    </div>
+
+    <!-- Diálogo para añadir métrica -->
+    <v-dialog v-model="addMetricaDialog" persistent max-width="400px">
+      <v-card rounded="xl">
+        <v-toolbar color="success" density="compact">
+          <v-toolbar-title class="">{{ t('hacienda_info.add_metric') }}</v-toolbar-title>
+          <v-spacer></v-spacer>
+        </v-toolbar>
+        <v-card-text class="pa-4">
+          <v-text-field
+            v-model="newMetrica.titulo"
+            :label="t('hacienda_info.title')"
+            variant="outlined"
+            density="compact"
+            class="mb-2"
+          />
+          <v-textarea
+            v-model="newMetrica.descripcion"
+            :label="t('hacienda_info.description')"
+            variant="outlined"
+            density="compact"
+            rows="2"
+            class="mb-2"
+          />
+          <v-select
+            v-model="newMetrica.tipo"
+            :items="['text', 'number', 'date', 'boolean', 'checkbox', 'select']"
+            :label="t('hacienda_info.type')"
+            variant="outlined"
+            density="compact"
+          />
+        </v-card-text>
+        <v-card-actions class="pa-4 pt-0">
+          <v-spacer></v-spacer>
+          <v-btn variant="flat" color="red-lighten-3" @click="addMetricaDialog = false">{{ t('hacienda_info.cancel') }}</v-btn>
+          <v-btn variant="flat" color="green-lighten-3" @click="handleAddMetrica">{{ t('hacienda_info.add') }}</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  </v-form>
+</template>
+
+<script setup>
+import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useHaciendaStore } from '@/stores/haciendaStore'
+import { locationCoordinator } from '@/services/locationCoordinator'
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
+import { aiService } from '@/services/aiService'
+
+const props = defineProps({
+  modelValue: {
+    type: Object,
+    required: true
+  },
+  initialData: {
+    type: Object,
+    required: true
+  }
+})
+
+const emit = defineEmits(['update:modelValue'])
+
+const { t } = useI18n()
+const haciendaStore = useHaciendaStore()
+const uiFeedback = useUiFeedbackStore()
+
+const formData = ref(JSON.parse(JSON.stringify(props.initialData)))
+
+// GPS State
+const loadingGPS = ref(false)
+const gpsAvailable = ref(true)
+const gpsError = ref('')
+const gpsAccuracy = ref(null)
+
+// AI State
+const testingAI = ref(false)
+
+// Metrics State
+const addMetricaDialog = ref(false)
+const newMetrica = ref({
+  titulo: '',
+  descripcion: '',
+  tipo: 'text'
+})
+
+// Sync data back to parent
+watch(formData, (newValue) => {
+  emit('update:modelValue', newValue)
+}, { deep: true })
+
+const formatGPS = (gps) => {
+  if (!gps || !gps.lat || !gps.lng) return t('hacienda_info.not_available')
+  return `Lat: ${gps.lat}, Lng: ${gps.lng}`
+}
+
+async function autoLocate() {
+  loadingGPS.value = true
+  gpsError.value = ''
+  gpsAccuracy.value = null
+
+  try {
+    const position = await locationCoordinator.getPosition()
+    formData.value.gps = {
+      lat: position.latitude,
+      lng: position.longitude
+    }
+  } catch (error) {
+    let errorMsg = error.message
+    if (error.message.includes('denegado')) {
+      errorMsg = 'Permiso denegado. Activa la ubicación en tu navegador.'
+    }
+    gpsError.value = errorMsg
+  } finally {
+    loadingGPS.value = false
+  }
+}
+
+const testAIConnection = async () => {
+  if (!formData.value.openrouter_key) {
+    uiFeedback.showToast('Debes ingresar una clave primero', 'warning')
+    return
+  }
+  
+  testingAI.value = true
+  try {
+    const isOk = await aiService.testConnection(formData.value.openrouter_key)
+    if (isOk) {
+      uiFeedback.showToast('Conexión con OpenRouter exitosa', 'success')
+    } else {
+      uiFeedback.showToast('No se pudo validar la clave de OpenRouter', 'error')
+    }
+  } catch (error) {
+    uiFeedback.showToast('Error probando conexión: ' + error.message, 'error')
+  } finally {
+    testingAI.value = false
+  }
+}
+
+const handleAddMetrica = () => {
+  if (!newMetrica.value.titulo) return
+
+  const key = newMetrica.value.titulo.toLowerCase().replace(/\s+/g, '_')
+
+  if (!formData.value.metricas) {
+    formData.value.metricas = {}
+  }
+
+  formData.value.metricas[key] = {
+    tipo: newMetrica.value.tipo,
+    valor: haciendaStore.getDefaultMetricaValue(newMetrica.value.tipo),
+    descripcion: newMetrica.value.descripcion
+  }
+
+  newMetrica.value = {
+    titulo: '',
+    descripcion: '',
+    tipo: 'text'
+  }
+
+  addMetricaDialog.value = false
+}
+
+const removeMetrica = (key) => {
+  const metricas = { ...formData.value.metricas }
+  delete metricas[key]
+  formData.value.metricas = metricas
+}
+
+defineExpose({
+  formData
+})
+</script>
+
+<style scoped>
+.quill-editor {
+  min-height: 150px;
+}
+</style>

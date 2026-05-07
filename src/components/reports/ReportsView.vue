@@ -33,7 +33,7 @@
                   {{ formatDate(item.generatedAt) }}
                 </div>
                 <div class="text-caption">
-                  <v-icon size="x-small">mdi-email</v-icon>
+                  <v-icon size="small">mdi-email</v-icon>
                   {{ item.recipients }} destinatarios
                 </div>
               </v-timeline-item>
@@ -68,7 +68,7 @@
                       size="large"
                       class="mb-2"
                     />
-                    <div class="text-subtitle-1 font-weight-bold mb-1">
+                    <div class=" font-weight-bold mb-1">
                       {{ template.name }}
                     </div>
                     <div class="text-caption text-medium-emphasis">

@@ -105,7 +105,7 @@
           @click="closeDialog"
           :disabled="loading"
         >
-          Cancelar
+          CANCELAR
         </v-btn>
         <v-btn
           color="primary"

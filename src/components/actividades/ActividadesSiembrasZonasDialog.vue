@@ -54,18 +54,14 @@
           <v-spacer></v-spacer>
           <v-btn
             @click="dialogVisible = false"
-            size="small"
             variant="flat"
-            rounded="lg"
             prepend-icon="mdi-cancel"
             color="red-lighten-3"
             >{{ t('activity_workspace.cancel') }}</v-btn
           >
           <v-btn
             @click="$emit('save')"
-            size="small"
-            variant="flat"
-            rounded="lg"
+            variant="flat"            
             prepend-icon="mdi-check"
             color="green-lighten-3"
             >{{ t('activity_workspace.save') }}</v-btn

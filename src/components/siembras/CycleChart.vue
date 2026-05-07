@@ -31,9 +31,9 @@ const processedData = computed(() => {
   if (!props.siembras || props.siembras.length === 0) return []
 
   return props.siembras
-    .filter(s => s.fecha_siembra && s.estado)
+    .filter(s => s.fecha_inicio && s.estado)
     .map(siembra => {
-      const startDate = parseISO(siembra.fecha_siembra)
+      const startDate = parseISO(siembra.fecha_inicio)
       const now = new Date()
       
       // Calcular fechas estimadas
@@ -92,7 +92,10 @@ const processedData = computed(() => {
 
 // Renderizar gráfico de Gantt simplificado
 function renderChart() {
-  if (!chartContainer.value || processedData.value.length === 0) return
+  if (!chartContainer.value || processedData.value.length === 0) {
+    loading.value = false
+    return
+  }
 
   const container = chartContainer.value
   container.innerHTML = ''

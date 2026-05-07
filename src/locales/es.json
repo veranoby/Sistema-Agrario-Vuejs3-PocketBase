@@ -101,6 +101,7 @@
     "gps": "GPS",
     "information_of": "INFORMACIÓN DE {hacienda_name}",
     "edit_hacienda": "EDITAR HACIENDA",
+    "basic_data": "DATOS BÁSICOS",
     "name": "NOMBRE",
     "location": "LOCALIZACIÓN",
     "latitude": "LATITUD",
@@ -170,8 +171,20 @@
     "scheduled_meeting": "PROGRAMÓ UNA REUNIÓN DE EQUIPO PARA LA PRÓXIMA SEMANA.",
     "error_loading_dashboard": "ERROR CARGANDO EL DASHBOARD",
     "reminder_saved": "RECORDATORIO GUARDADO",
-    "error_saving_reminder": "ERROR AL GUARDAR EL RECORDATORIO"
+    "error_saving_reminder": "ERROR AL GUARDAR EL RECORDATORIO",
+    "hacienda_map": "MAPA GENERAL DE LA HACIENDA",
+    "no_hacienda_info": "No se encontró información de tu hacienda. Contacta al administrador.",
+    "export": "Exportar",
+    "system_alerts": "Alertas del Sistema",
+    "signature_audit": "Auditoría de Firmas",
+    "no_activity": "Sin actividad",
+    "signed": "Firmado",
+    "unsigned": "Sin firma",
+    "no_geo_data": "No hay datos geográficos registrados en esta hacienda",
+    "go_to_sowings": "Ir a Siembras para registrar áreas"
   },
+
+
   "sowings": {
     "sowing_management": "GESTIÓN DE SIEMBRA",
     "new_sowing": "NUEVA SIEMBRA",
@@ -251,8 +264,10 @@
     "activity_deleted_successfully": "ACTIVIDAD ELIMINADA CON ÉXITO",
     "error_deleting_activity": "ERROR AL ELIMINAR ACTIVIDAD",
     "error_loading_initial_data": "ERROR AL CARGAR LOS DATOS INICIALES",
-    "zone_saved_successfully": "ZONA GUARDADA EXITOSAMENTE"
+    "zone_saved_successfully": "ZONA GUARDADA EXITOSAMENTE",
+    "loading": "CARGANDO..."
   },
+
   "zones": {
     "zones_and_logistics": "ZONAS Y LOGÍSTICA DE TRABAJO",
     "bpa_progress": "AVANCE BPA",
@@ -409,5 +424,12 @@
     "regenerate": "Actualizar Recomendación",
     "welcome_msg": "Pulsa el botón para obtener recomendaciones personalizadas basadas en tus datos actuales.",
     "disclaimer": "Sugerencia basada en promedios; valide con un técnico agrícola calificado antes de tomar decisiones críticas."
+  },
+  "roles": {
+    "admin": "Administrador",
+    "administrador": "Administrador",
+    "tecnico": "Técnico",
+    "técnico": "Técnico",
+    "operador": "Operador"
   }
 }

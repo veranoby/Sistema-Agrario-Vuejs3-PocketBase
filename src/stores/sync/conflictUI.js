@@ -52,11 +52,11 @@ export async function createConflictUI({ cacheManager: cm = cache }) {
     const exists = conflicts.find(
       c => c.id === conflict.id || c.tempId === conflict.tempId
     )
-    
+
     if (!exists) {
       conflicts.push({ ...conflict, resolved: false, resolution: null })
       showDialog = true
-      // Guardar en caché, soporta set (CacheManager) o save (syncCache)
+      // GUARDAR en caché, soporta set (CacheManager) o save (syncCache)
       try {
         if (typeof cm.set === 'function') {
           cm.set('sync_conflicts', conflicts)
@@ -77,12 +77,12 @@ export async function createConflictUI({ cacheManager: cm = cache }) {
    */
   async function resolveChoice(id, resolution) {
     const conflict = conflicts.find(c => c.id === id || c.tempId === id)
-    
+
     if (conflict) {
       conflict.resolved = true
       conflict.resolution = resolution
       showDialog = conflicts.some(c => !c.resolved)
-      // Guardar en caché
+      // GUARDAR en caché
       try {
         if (typeof cm.set === 'function') {
           cm.set('sync_conflicts', conflicts)
@@ -93,7 +93,7 @@ export async function createConflictUI({ cacheManager: cm = cache }) {
         logger.error('[CONFLICT_UI] Error guardando conflictos en caché:', e)
       }
     }
-    
+
     return conflict
   }
 
@@ -102,7 +102,7 @@ export async function createConflictUI({ cacheManager: cm = cache }) {
    */
   async function clearResolved() {
     conflicts = conflicts.filter(c => !c.resolved)
-    // Guardar en caché
+    // GUARDAR en caché
     try {
       if (typeof cm.set === 'function') {
         cm.set('sync_conflicts', conflicts)

@@ -19,7 +19,7 @@
             }})</span
           >
           <v-btn
-            size="x-small"
+            size="small"
             color="red-lighten-2"
             icon="mdi-minus"
             @click="deleteUser(auditor.id)"
@@ -28,7 +28,7 @@
       </ul>
       <v-btn
         v-if="canAddAuditor"
-        size="x-small"
+        size="small"
         class="mt-2"
         variant="flat"
         rounded="smlg"
@@ -68,7 +68,7 @@
             }})</span
           >
           <v-btn
-            size="x-small"
+            size="small"
             color="red-lighten-2"
             icon="mdi-minus"
             @click="deleteUser(operador.id)"
@@ -77,7 +77,7 @@
       </ul>
       <v-btn
         v-if="canAddOperador"
-        size="x-small"
+        size="small"
         class="mt-2"
         variant="flat"
         rounded="sm"

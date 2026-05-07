@@ -32,7 +32,7 @@ export class DigitalSignature {
         ['sign', 'verify']
       )
 
-      // Guardar en IndexedDB
+      // GUARDAR en IndexedDB
       await this.saveKeyPair()
 
       logger.info('[DigitalSignature] Par de claves generado exitosamente')

@@ -622,8 +622,29 @@ export const useProgramacionesStore = defineStore('programaciones', {
       }
     },
 
+    async limpiarHistorialPendiente(id) {
+      const uiFeedbackStore = useUiFeedbackStore()
+      try {
+        const confirm = await uiFeedbackStore.showConfirm(
+          'Limpiar Historial Pendiente',
+          '¿Estás seguro de que deseas limpiar todas las fechas pendientes? El contador se reiniciará a partir de hoy.'
+        )
+        if (!confirm) return
+
+        const hoy = new Date().toISOString()
+        const updateData = {
+          ultima_ejecucion: hoy
+        }
+        
+        await this.actualizarProgramacion(id, updateData)
+        uiFeedbackStore.showSnackbar('Historial pendiente limpiado con éxito.', 'success')
+      } catch (error) {
+        handleError(error, 'Error limpiando historial pendiente')
+      }
+    },
+
     async ejecutarProgramacionesBatch(payload) {
-      const { programacionId, fechasEjecucion, siembraId = null } = payload
+      const { programacionId, fechasEjecucion, siembraId = null, cleanup = false } = payload
 
       const uiFeedbackStore = useUiFeedbackStore()
       const actividadesStore = useActividadesStore()
@@ -639,19 +660,28 @@ export const useProgramacionesStore = defineStore('programaciones', {
       try {
         const result = await ejecutarProgramacionesBatch(payload, stores)
 
-        if (result.successfulExecutions > 0 && result.latestSuccessfullyExecutedDate) {
+        if (result.successfulExecutions > 0 || cleanup) {
           const programacion = this.programaciones.find(p => p.id === programacionId)
+          
+          // Determine the base date for the next cycle
+          // If cleanup is true, we "forget" the past and start from today
+          const baseDate = cleanup 
+            ? new Date().toISOString() 
+            : result.latestSuccessfullyExecutedDate
+
           const updateData = await updateProgramacionAfterBatch(
             programacionId,
-            result.latestSuccessfullyExecutedDate,
+            baseDate,
             programacion
           )
 
           await this.actualizarProgramacion(programacionId, updateData)
 
           const siembraContext = siembraId ? ` (Siembra: ${siembraId})` : ''
+          const cleanupMsg = cleanup ? ' Historial pendiente limpiado.' : ''
+          
           uiFeedbackStore.showSnackbar(
-            `${result.successfulExecutions} de ${result.totalExecutions} programaciones ejecutadas y registradas${siembraContext}. Programación actualizada.`,
+            `${result.successfulExecutions} de ${result.totalExecutions} programaciones registradas${siembraContext}.${cleanupMsg}`,
             'success'
           )
         } else if (fechasEjecucion.length > 0 && result.successfulExecutions === 0) {

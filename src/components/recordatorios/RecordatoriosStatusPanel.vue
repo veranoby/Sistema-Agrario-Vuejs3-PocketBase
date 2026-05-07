@@ -86,7 +86,7 @@
               <v-col cols="12" sm="2" class="mt-2 mt-sm-0">
                 <div class="metadata-container">
                   <!-- Prioridad -->
-                  <v-chip :color="`${priorityColor(item.prioridad)}`" size="x-small" class="mb-1">
+                  <v-chip :color="`${priorityColor(item.prioridad)}`" size="small" class="mb-1">
                     <v-icon size="14" class="mr-1" :icon="priorityIcon(item.prioridad)"></v-icon>
                     {{ item.prioridad.toUpperCase() }}
                   </v-chip>
@@ -112,7 +112,7 @@
                 v-for="siembraId in item.siembras"
                 :key="`s-${siembraId}`"
                 color="grey-lighten-2"
-                size="x-small"
+                size="small"
                 class="mr-1 mb-1"
                 variant="flat"
               >
@@ -125,7 +125,7 @@
                 v-for="zonaId in item.zonas"
                 :key="`z-${zonaId}`"
                 color="grey-lighten-2"
-                size="x-small"
+                size="small"
                 class="mr-1 mb-1"
                 variant="flat"
               >
@@ -137,7 +137,7 @@
                 v-for="actividad in item.expand?.actividades || []"
                 :key="`a-${actividad.id}`"
                 color="grey-lighten-2"
-                size="x-small"
+                size="small"
                 class="mr-1 mb-1"
                 variant="flat"
               >

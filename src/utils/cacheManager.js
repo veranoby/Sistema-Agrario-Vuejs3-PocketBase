@@ -134,7 +134,7 @@ export class CacheManager {
     this.hits = 0
     this.misses = 0
   }
-  
+
   /**
    * Obtiene el número actual de items en el cache.
    * @returns {number} Cantidad de items.
@@ -334,7 +334,7 @@ export function cached(keyFn, ttl = null) {
       // Ejecutar función original
       const result = await originalMethod.apply(this, args)
 
-      // Guardar en cache
+      // GUARDAR en cache
       getGlobalCache().set(key, result, ttl)
 
       return result
@@ -363,7 +363,7 @@ export class TieredCacheManager extends CacheManager {
     // Cachés separados por nivel
     // L1: Mantiene en memoria/localStorage (Lookup)
     this.l1Cache = new CacheManager({ ttl: 3600000, maxSize: 50 })   // 1 hora
-    
+
     // L2 y L3: Migrados a IndexedDB (Hito 2)
     this.l2Storage = new IndexedDBStorage('agriCacheL2', 'recent')
     this.l3Storage = new IndexedDBStorage('agriCacheL3', 'pagination')
@@ -458,7 +458,47 @@ export class TieredCacheManager extends CacheManager {
   async set(key, data, ttl = null) {
     await this.setToLevel(key, data, 'l2', ttl)
   }
+
+  /**
+   * Fetch with cache - Intenta obtener de cache, si no existe o expiró, ejecuta fetchFn y cachea.
+   * @param {Object} cacheKeyConfig - { key, level }
+   * @param {Function} fetchFn - Función asíncrona que retorna los datos
+   * @param {number} [ttl] - TTL opcional
+   */
+  async fetchWithCache(cacheKeyConfig, fetchFn, ttl = null) {
+    const { key, level } = cacheKeyConfig
+
+    // 1. Intentar obtener de cache
+    const cachedData = await this.getFromLevel(key, level)
+
+    // Si los datos en IndexedDB vienen con metadata (L2/L3), verificar expiración
+    if (cachedData && typeof cachedData === 'object' && cachedData.timestamp) {
+      const isExpired = (Date.now() - cachedData.timestamp) > (ttl || cachedData.ttl)
+      if (!isExpired) {
+        logger.debug(`[TieredCache] HIT [${level}]: ${key}`)
+        return cachedData.data
+      }
+      logger.debug(`[TieredCache] EXPIRED [${level}]: ${key}`)
+    } else if (cachedData !== null) {
+      // L1 no tiene metadata en el objeto retornado (lo maneja internamente CacheManager)
+      logger.debug(`[TieredCache] HIT [${level}]: ${key}`)
+      return cachedData
+    }
+
+    logger.debug(`[TieredCache] MISS [${level}]: ${key}`)
+
+    // 2. Fetch de la fuente
+    const freshData = await fetchFn()
+
+    // 3. GUARDAR en cache
+    if (freshData !== null && freshData !== undefined) {
+      await this.setToLevel(key, freshData, level, ttl)
+    }
+
+    return freshData
+  }
 }
+
 
 /**
  * Instancia global del cache tiered para uso en toda la aplicación
@@ -481,8 +521,10 @@ function getGlobalTieredCache() {
 export const tieredCache = {
   get: (key) => getGlobalTieredCache().get(key),
   set: (key, data, ttl) => getGlobalTieredCache().set(key, data, ttl),
+  fetchWithCache: (config, fn, ttl) => getGlobalTieredCache().fetchWithCache(config, fn, ttl),
   getFromLevel: (key, level) => getGlobalTieredCache().getFromLevel(key, level),
   setToLevel: (key, data, level, ttl) => getGlobalTieredCache().setToLevel(key, data, level, ttl),
+
   invalidateAcrossLevels: (pattern) => getGlobalTieredCache().invalidateAcrossLevels(pattern),
   invalidatePattern: (pattern) => getGlobalTieredCache().invalidatePattern(pattern),
   getStats: () => getGlobalTieredCache().getCombinedStats(),
