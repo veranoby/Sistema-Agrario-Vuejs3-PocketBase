@@ -111,13 +111,13 @@
         show-select
         hover
       >
-        <template v-slot:item.tipo_actividades="{ item }">
+        <template v-slot:item_tipo_actividades="{ item }">
           <v-chip size="small" color="primary">
             {{ item.tipo_actividades || 'Sin tipo' }}
           </v-chip>
         </template>
 
-        <template v-slot:item.estado="{ item }">
+        <template v-slot:item_estado="{ item }">
           <v-chip
             :color="getEstadoColor(item.estado)"
             size="small"
@@ -126,17 +126,17 @@
           </v-chip>
         </template>
 
-        <template v-slot:item.created="{ item }">
+        <template v-slot:item_created="{ item }">
           {{ formatDate(item.created) }}
         </template>
 
-        <template v-slot:item.hacienda="{ item }">
+        <template v-slot:item_hacienda="{ item }">
           <v-chip size="small" variant="outlined">
             {{ getHaciendaName(item.hacienda) }}
           </v-chip>
         </template>
 
-        <template v-slot:item.actions="{ item }">
+        <template v-slot:item_actions="{ item }">
           <v-btn
             icon="mdi-eye"
             size="small"
@@ -158,7 +158,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { pb } from '@/utils/pocketbase'
 import { logger } from '@/utils/logger'
 import { useAnalyticsStore } from '@/stores/analyticsStore'

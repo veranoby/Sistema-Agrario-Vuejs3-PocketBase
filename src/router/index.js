@@ -201,17 +201,6 @@ const adminAnalyticsRoute = {
   }
 }
 
-// Add admin usage metrics route
-const adminUsageMetricsRoute = {
-  path: '/admin/metrics',
-  component: () => import('@/components/admin/UsageMetrics.vue'),
-  name: 'Usage Metrics',
-  meta: {
-    requiresAuth: true,
-    requiresSuperAdmin: true,
-    roles: [ROLES.SUPERADMIN]
-  }
-}
 
 // Add admin data mining route
 const adminDataMiningRoute = {
@@ -284,7 +273,6 @@ const adminExportsRoute = {
 // Add admin routes to routes array
 routes.push(adminRoute)
 routes.push(adminAnalyticsRoute)
-routes.push(adminUsageMetricsRoute)
 routes.push(adminDataMiningRoute)
 routes.push(adminUsersRoute)
 routes.push(adminHaciendasRoute)

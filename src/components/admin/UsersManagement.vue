@@ -67,21 +67,21 @@
         @update:model-value="onSelectionChange"
       >
         <!-- Role Badge -->
-        <template #item.role="{ item }">
+        <template v-slot:item_role="{ item }">
           <v-chip :color="getRoleColor(item.role)" size="small" label>
             {{ formatRole(item.role) }}
           </v-chip>
         </template>
 
         <!-- Status Badge -->
-        <template #item.status="{ item }">
+        <template v-slot:item_status="{ item }">
           <v-chip :color="getUserStatusColor(item.status)" size="small">
             {{ formatUserStatus(item.status) }}
           </v-chip>
         </template>
 
         <!-- Haciendas -->
-        <template #item.haciendas="{ item }">
+        <template v-slot:item_haciendas="{ item }">
           <v-chip-group v-if="item.haciendas?.length" column>
             <v-chip
               v-for="hacienda in item.haciendas.slice(0, 2)"
@@ -100,7 +100,7 @@
         </template>
 
         <!-- Actions -->
-        <template #item.actions="{ item }">
+        <template v-slot:item_actions="{ item }">
           <v-btn icon="mdi-eye" size="small" variant="text" @click="viewUser(item)" />
           <v-btn v-role="'USERS_MANAGE'" icon="mdi-pencil" size="small" variant="text" @click="editUser(item)" />
           <v-btn
