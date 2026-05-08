@@ -4,6 +4,7 @@
       <div class="d-flex justify-space-between align-center w-100">
         <span>{{ t('activity_workspace.activity_information') }}</span>
         <v-btn
+          v-if="canEdit"
           size="small"
           color="green-lighten-2"
           icon
@@ -46,7 +47,12 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useAuthStore } from '@/stores/authStore'
+
+const authStore = useAuthStore()
+const canEdit = computed(() => authStore.canEdit)
 
 const props = defineProps({
   actividadInfo: {

@@ -37,7 +37,23 @@ export const useAuthStore = defineStore('auth', {
       return avatarStore.getAvatarUrl({ ...state.user, type: 'user' }, 'users')
     },
     userRole: (state) => (state.user ? state.user.role : ''),
-    fullName: (state) => (state.user ? `${state.user.name} ${state.user.lastname}` : '')
+    fullName: (state) => (state.user ? `${state.user.name} ${state.user.lastname}` : ''),
+
+    // RBAC Helpers
+    isSuperAdmin: (state) => state.user?.role === 'superadmin',
+    isAdministrador: (state) => state.user?.role === 'administrador',
+    isAuditor: (state) => state.user?.role === 'auditor',
+    isOperador: (state) => state.user?.role === 'operador',
+
+    canEdit: (state) => {
+      return ['superadmin', 'administrador', 'auditor'].includes(state.user?.role)
+    },
+    canCreate: (state) => {
+      return ['superadmin', 'administrador', 'auditor'].includes(state.user?.role)
+    },
+    canDelete: (state) => {
+      return ['superadmin', 'administrador', 'auditor'].includes(state.user?.role)
+    }
   },
 
   actions: {

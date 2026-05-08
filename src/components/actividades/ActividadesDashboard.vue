@@ -21,7 +21,7 @@
                 </v-chip>
               </h3>
             </div>
-            <div class="w-full sm:w-auto z-10" v-if="siembrasStore.siembras.length > 0">
+            <div class="w-full sm:w-auto z-10" v-if="siembrasStore.siembras.length > 0 && canCreate">
               <v-btn
                 block
                 sm:inline-flex
@@ -169,6 +169,7 @@ const { cargarActividades, cargarTiposActividades } = ActividadesStore
 const { siembras } = storeToRefs(siembrasStore)
 
 const userRole = computed(() => authStore.user.role)
+const canCreate = computed(() => authStore.canCreate)
 const avatarUrl = computed(() => authStore.avatarUrl)
 
 const getActividadAvatarUrl = (actividad) => {

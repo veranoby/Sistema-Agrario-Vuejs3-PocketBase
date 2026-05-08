@@ -40,6 +40,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount, defineAsyncComponent } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useThemeStore } from './stores/themeStore'
 import { useAuthStore } from '@/stores/authStore'
 import { checkProximoActivities } from '@/stores/programaciones'
@@ -61,24 +62,52 @@ const authStore = useAuthStore()
 const themeStore = useThemeStore()
 const syncStore = useSyncStore()
 const schedulerStore = useSchedulerStore()
+const { t } = useI18n()
 
 const drawer = ref(true)
 const showAuthModal = ref(false)
+
+import { USER_ROLES } from '@/constants/roles'
 
 const isLoggedIn = computed(() => authStore.isLoggedIn)
 const showHeader = computed(() => route.name !== 'login')
 const currentPage = computed(() => route.name?.toUpperCase() || '')
 
-const navigationLinks = [
-  { id: 1, to: '/dashboard', icon: 'mdi-view-dashboard', label: 'D A S H B O A R D' },
-  { id: 2, to: '/siembras', icon: 'mdi-sprout', label: 'Siembras/Proyectos' },
-  { id: 3, to: '/actividades', icon: 'mdi-gesture-tap-button', label: 'Actividades' },
-  { id: 4, to: '/programaciones', icon: 'mdi-alarm-check', label: 'Programaciones' },
-  { id: 5, to: '/bitacora', icon: 'mdi-book-open-variant', label: 'Bitácora' },
-  { id: 6, to: '/zonas', icon: 'mdi-map', label: 'Zonas' },
-  { id: 7, to: '/finanzas', icon: 'mdi-cash-multiple', label: 'Finanzas' },
-  { id: 8, to: '/recordatorios', icon: 'mdi-alarm-light-outline', label: 'Recordatorios' }
-]
+const navigationLinks = computed(() => {
+  const role = authStore.user?.role
+
+  if (role === USER_ROLES.SUPERADMIN) {
+    return [
+      { id: 'sa1', to: '/admin', icon: 'mdi-shield-crown', label: 'Admin Dashboard' },
+      { id: 'sa2', to: '/admin/users', icon: 'mdi-account-group', label: 'Gestión de Usuarios' },
+      { id: 'sa3', to: '/admin/haciendas', icon: 'mdi-home-group', label: 'Gestión de Haciendas' },
+      { id: 'sa4', to: '/admin/settings', icon: 'mdi-cog', label: 'Configuración del Sistema' },
+      { id: 'sa5', to: '/admin/logs', icon: 'mdi-text-box-search', label: 'Visor de Logs' },
+      { id: 'sa6', to: '/admin/exports', icon: 'mdi-export', label: 'Exportaciones' },
+      { id: 'sa7', to: '/admin/analytics', icon: 'mdi-chart-bar', label: 'Super Admin Analytics' },
+      { id: 'sa8', to: '/admin/metrics', icon: 'mdi-chart-line', label: 'Usage Metrics' },
+      { id: 'sa9', to: '/admin/data-mining', icon: 'mdi-database-search', label: 'Data Mining Tools' },
+      { id: 'sa10', to: '/knowledge/search', icon: 'mdi-magnify', label: 'Búsqueda Unificada' },
+    ]
+  }
+
+  const links = [
+    { id: 1, to: '/dashboard', icon: 'mdi-view-dashboard', label: t('sidebar.dashboard') },
+    { id: 2, to: '/siembras', icon: 'mdi-sprout', label: t('sidebar.sowings') },
+    { id: 3, to: '/actividades', icon: 'mdi-gesture-tap-button', label: t('sidebar.activities') },
+    { id: 4, to: '/programaciones', icon: 'mdi-alarm-check', label: t('sidebar.schedules') },
+    { id: 5, to: '/bitacora', icon: 'mdi-book-open-variant', label: t('sidebar.bitacora') },
+    { id: 6, to: '/zonas', icon: 'mdi-map', label: t('sidebar.zones') }
+  ]
+
+  if (role !== USER_ROLES.OPERADOR) {
+    links.push({ id: 7, to: '/finanzas', icon: 'mdi-cash-multiple', label: t('sidebar.finances') })
+    links.push({ id: 8, to: '/recordatorios', icon: 'mdi-alarm-light-outline', label: t('sidebar.reminders') })
+    links.push({ id: 9, to: '/reports', icon: 'mdi-chart-box', label: t('sidebar.reports') })
+  }
+
+  return links
+})
 
 let checkInterval = null
 

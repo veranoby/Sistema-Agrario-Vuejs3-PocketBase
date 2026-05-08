@@ -230,9 +230,10 @@ const usarFecha = ref(!!props.recordatorio?.fecha_recordatorio)
 const { siembras } = storeToRefs(siembrasStore)
 const actividadesOptions = computed(() => actividadesStore.actividades)
 const { zonas, tiposZonas } = storeToRefs(zonasStore)
+const { t } = useI18n()
 
 // Computed
-const formTitle = computed(() => (props.isEditing ? 'Editar Recordatorio' : 'Nuevo Recordatorio'))
+const formTitle = computed(() => (props.isEditing ? t('reminders.edit_reminder') : t('reminders.new_reminder')))
 
 //const formColor = computed(() => (props.isEditing ? 'amber' : 'green'))
 

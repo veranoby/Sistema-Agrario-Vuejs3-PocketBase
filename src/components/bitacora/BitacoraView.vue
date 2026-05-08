@@ -4,7 +4,7 @@
       <v-col cols="12">
         <v-card>
           <v-card-title class="d-flex align-center">
-            <span class="headline">Bitácora General de Actividades</span>
+            <span class="headline">{{ $t('bitacora.general_title') }}</span>
             <v-spacer />
             <v-btn
               v-if="!isLoading && displayedEntries.length > 0"
@@ -15,7 +15,7 @@
               :loading="exportingPDF"
               class="mr-2"
             >
-              Exportar PDF
+              {{ $t('bitacora.export_pdf') }}
             </v-btn>
             <v-btn
               v-if="!isLoading && displayedEntries.length > 0"
@@ -25,7 +25,7 @@
               @click="exportToExcel"
               :loading="exportingExcel"
             >
-              Exportar Excel
+              {{ $t('bitacora.export_excel') }}
             </v-btn>
           </v-card-title>
           <v-card-subtitle>Todas las entradas registradas para la hacienda actual.</v-card-subtitle>
@@ -102,7 +102,7 @@
     <v-row v-if="!isLoading && displayedEntries.length === 0 && !error">
       <v-col cols="12">
         <v-alert type="info" class="text-center">
-          No hay entradas en la bitácora que coincidan con los filtros aplicados, o no hay entradas registradas aún.
+          {{ $t('bitacora.no_entries') }}
         </v-alert>
       </v-col>
     </v-row>

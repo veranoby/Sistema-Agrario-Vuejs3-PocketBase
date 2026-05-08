@@ -8,7 +8,7 @@
   >
     <v-card>
       <v-toolbar color="success" dark>
-        <v-toolbar-title>Nueva Actividad</v-toolbar-title>
+        <v-toolbar-title>{{ $t('activities.new_activity') }}</v-toolbar-title>
         <v-spacer></v-spacer>
       </v-toolbar>
       <v-form @submit.prevent="crearActividad">
@@ -22,7 +22,7 @@
                 :items="tiposActividades"
                 item-title="nombre"
                 item-value="id"
-                label="Tipo de Actividad"
+                :label="$t('activities.activity_type')"
                 required
               ></v-select>
             </div>

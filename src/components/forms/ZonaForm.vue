@@ -3,7 +3,7 @@
     <v-form ref="form" v-model="formularioValido" lazy-validation>
       <v-toolbar color="success" dark flat>
         <v-toolbar-title class="font-weight-bold">
-          {{ modoEdicion ? 'EDITAR' : 'CREAR' }} {{ tipoZonaActual?.nombre }}
+          {{ modoEdicion ? $t('zones.edit') : $t('zones.create') }} {{ tipoZonaActual?.nombre }}
           <template v-if="siembraContext">
             <v-icon size="small" class="mx-2">mdi-chevron-right</v-icon>
             <span class="text-subtitle-2 opacity-80">{{ siembraContext.nombre }}</span>
@@ -461,6 +461,7 @@
 
 <script setup>
 import { ref, computed, watch, reactive } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useZonasStore } from '@/stores/zonasStore'
 import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import { storeToRefs } from 'pinia'
@@ -508,6 +509,7 @@ const props = defineProps({
   }
 })
 
+const { t } = useI18n();
 const emit = defineEmits(['close', 'saved'])
 const zonasStore = useZonasStore()
 const uiFeedbackStore = useUiFeedbackStore()

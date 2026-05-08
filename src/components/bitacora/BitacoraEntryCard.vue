@@ -77,8 +77,8 @@
       <v-card-actions v-if="entry.id">
         <BitacoraSignature :bitacoraId="entry.id" :existingSignature="entry.signature" />
         <v-spacer></v-spacer>
-        <v-btn v-role="'BITACORA_EDIT'" icon="mdi-pencil" size="small" variant="text" @click="$emit('edit', entry)" />
-        <v-btn v-role="'BITACORA_EDIT'" icon="mdi-delete" size="small" variant="text" color="error" @click="$emit('delete', entry)" />
+        <v-btn v-if="canEdit" icon="mdi-pencil" size="small" variant="text" @click="$emit('edit', entry)" />
+        <v-btn v-if="canDelete" icon="mdi-delete" size="small" variant="text" color="error" @click="$emit('delete', entry)" />
         <v-chip variant="outlined" size="small" pill>ID: {{ entry.id }}</v-chip>
     </v-card-actions>
   </v-card>
@@ -86,7 +86,12 @@
 
 <script setup>
 import { computed } from 'vue';
+import { useAuthStore } from '@/stores/authStore'
 import BitacoraSignature from './BitacoraSignature.vue';
+
+const authStore = useAuthStore()
+const canEdit = computed(() => authStore.canEdit)
+const canDelete = computed(() => authStore.canDelete)
 
 const props = defineProps({
   entry: {

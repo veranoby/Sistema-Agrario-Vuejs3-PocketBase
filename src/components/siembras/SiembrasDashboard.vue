@@ -48,6 +48,7 @@
             </div>
             <div class="w-full sm:w-auto z-10">
               <v-btn
+                v-if="canCreate"
                 block
                 sm:inline-flex
                 size="small"
@@ -58,7 +59,7 @@
                 @click="abrirDialogCreacion"
                 class="min-w-[210px]"
               >
-                Nueva Siembra
+                {{ $t('sowings.new_sowing') }}
               </v-btn>
             </div>
           </div>
@@ -74,7 +75,7 @@
         <!-- Grid de Siembras con Cards Enriquecidas -->
         <v-row class="mb-6">
           <v-alert v-if="siembras.length === 0" type="info" class="mx-4">
-            No hay siembras registradas
+            {{ $t('sowings.no_sowings_registered') }}
           </v-alert>
 
           <v-col v-for="siembra in siembras" :key="siembra.id" cols="12" sm="6" md="4" lg="3">
@@ -95,7 +96,7 @@
                   <div class="estado-bar" :class="`estado-${siembra.estado?.replace('_', '-')}`"></div>
                   
                   <!-- Menú de acciones (Kebab) -->
-                  <div class="absolute top-2 right-2 z-20">
+                  <div v-if="canDelete" class="absolute top-2 right-2 z-20">
                     <v-menu location="bottom end">
                       <template v-slot:activator="{ props }">
                         <v-btn
@@ -110,7 +111,7 @@
                       <v-list density="compact">
                         <v-list-item
                           prepend-icon="mdi-delete"
-                          title="Eliminar Siembra"
+                          :title="$t('sowings.delete_sowing')"
                           base-color="error"
                           @click.stop="confirmarEliminacion(siembra)"
                         ></v-list-item>
@@ -176,7 +177,7 @@
             <v-card variant="elevated" elevation="2" class="h-100">
               <v-card-title class="pa-4">
                 <v-icon start color="success">mdi-map</v-icon>
-                Mapa de Siembras
+                {{ $t('sowings.sowings_map') }}
               </v-card-title>
               <v-divider />
               <v-card-text class="pa-0">
@@ -189,8 +190,8 @@
                   />
                   <div v-if="!siembrasGeoJSON && !mapLoading" class="map-overlay-empty d-flex flex-column align-center justify-center">
                     <v-icon size="48" color="grey-lighten-2" class="mb-2">mdi-map-off</v-icon>
-                    <div class="text-caption text-medium-emphasis">Sin geometrías de siembras detectadas</div>
-                    <div class="text-xxs text-grey mt-1">(Se requieren zonas tipo 'Lote' asignadas)</div>
+                    <div class="text-caption text-medium-emphasis">{{ $t('sowings.no_geometries_detected') }}</div>
+                    <div class="text-xxs text-grey mt-1">{{ $t('sowings.requires_lote_zones') }}</div>
                   </div>
                 </div>
               </v-card-text>
@@ -202,7 +203,7 @@
             <v-card variant="elevated" elevation="2" class="h-100">
               <v-card-title class="pa-4">
                 <v-icon start color="success">mdi-chart-timeline-variant</v-icon>
-                Ciclos de Cultivo
+                {{ $t('sowings.crop_cycles') }}
               </v-card-title>
               <v-divider />
               <v-card-text>
@@ -265,6 +266,8 @@ const showDeleteModal = ref(false)
 const selectedSiembra = ref(null)
 
 const userRole = computed(() => authStore.user?.role || '')
+const canCreate = computed(() => authStore.canCreate)
+const canDelete = computed(() => authStore.canDelete)
 const avatarUrl = computed(() => authStore.avatarUrl)
 const mapLoading = ref(true)
 

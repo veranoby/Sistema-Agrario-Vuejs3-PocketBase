@@ -12,6 +12,7 @@
         <v-icon :color="complianceStateColor" size="18">{{ complianceStateIcon }}</v-icon>
         <span class="prog-title flex-grow-1">{{ programacion.descripcion }}</span>
         <v-btn
+          v-if="canEdit"
           icon="mdi-pencil-outline"
           size="x-small"
           variant="text"

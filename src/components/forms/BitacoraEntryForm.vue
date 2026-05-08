@@ -173,7 +173,7 @@ const rules = {
 };
 
 const isEditMode = computed(() => !!props.entryToEdit);
-const formTitle = computed(() => isEditMode.value ? 'Editar Entrada' : 'Nueva Entrada');
+const formTitle = computed(() => isEditMode.value ? t('bitacora.edit_entry') : t('bitacora.new_entry'));
 
 const contextSubtitle = computed(() => {
   if (isEditMode.value && props.entryToEdit?.expand?.siembras) {
@@ -474,7 +474,7 @@ async function submitForm() {
         dataToSubmit.programacion_origen = formData.programacion_origen_id;
       }
       await bitacoraStore.crearBitacoraEntry(dataToSubmit);
-      uiFeedbackStore.showSnackbar('Nueva entrada de bitácora creada con éxito.', 'success');
+      uiFeedbackStore.showSnackbar(t('bitacora.new_entry_success'), 'success');
 
       // After successful bitacora entry creation, finalize programacion execution if applicable
       if (formData.programacion_origen_id) {

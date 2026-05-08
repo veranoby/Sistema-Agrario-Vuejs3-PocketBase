@@ -28,7 +28,7 @@
                 </v-chip>
               </h3>
             </div>
-            <div class="w-full sm:w-auto z-10">
+            <div class="w-full sm:w-auto z-10" v-if="canCreate">
               <v-btn
                 block
                 sm:inline-flex
@@ -106,6 +106,7 @@ const uiFeedbackStore = useUiFeedbackStore()
 
 const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
 const userRole = computed(() => authStore.user.role)
+const canCreate = computed(() => authStore.canCreate)
 const avatarUrl = computed(() => authStore.avatarUrl)
 
 onMounted(async () => {
