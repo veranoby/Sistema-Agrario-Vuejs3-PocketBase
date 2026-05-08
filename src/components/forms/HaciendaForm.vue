@@ -24,32 +24,51 @@
           prepend-icon="mdi-map-marker"
         ></v-text-field>
 
-        <div class="d-flex align-center">
-          <v-text-field
-            class="flex-grow-1"
-            density="compact"
-            variant="outlined"
-            :model-value="formatGPS(formData.gps)"
-            :label="t('hacienda_info.gps')"
-            prepend-icon="mdi-crosshairs-gps"
-            readonly
-            hide-details
-          ></v-text-field>
-          <v-btn
-            color="primary"
-            size="small"
-            class="ml-2"
-            :loading="loadingGPS"
-            :disabled="!gpsAvailable"
-            @click="autoLocate"
-            variant="tonal"
-          >
-            Auto
-          </v-btn>
-        </div>
-        <div v-if="gpsError" class="text-caption text-error">
-          <v-icon start size="small">mdi-alert</v-icon>
-          {{ gpsError }}
+        <div class="flex flex-col gap-2">
+          <div class="flex items-center mb-1">
+            <v-icon color="primary" class="mr-2">mdi-crosshairs-gps</v-icon>
+            <span class="text-subtitle-2 font-medium">{{ t('hacienda_info.gps') }}</span>            <v-btn
+              color="primary"
+              size="small"
+              :loading="loadingGPS"
+              :disabled="!gpsAvailable"
+              @click="autoLocate"
+              variant="tonal"
+            >
+              <v-icon start>mdi-crosshairs-gps</v-icon>
+              Auto-detectar
+            </v-btn>
+            <div v-if="gpsError" class="text-caption text-error">
+              <v-icon start size="small">mdi-alert</v-icon>
+              {{ gpsError }}
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <v-text-field
+              v-model.number="formData.gps.lat"
+              label="Latitud"
+              type="number"
+              step="0.000001"
+              prepend-icon="mdi-latitude"
+              density="compact"
+              variant="outlined"
+              :rules="[v => v === null || v === '' || (v >= -90 && v <= 90) || 'Latitud debe estar entre -90 y 90']"
+              hint="Grados decimales (-90 a 90)"
+              persistent-hint
+            ></v-text-field>
+            <v-text-field
+              v-model.number="formData.gps.lng"
+              label="Longitud"
+              type="number"
+              step="0.000001"
+              prepend-icon="mdi-longitude"
+              density="compact"
+              variant="outlined"
+              :rules="[v => v === null || v === '' || (v >= -180 && v <= 180) || 'Longitud debe estar entre -180 y 180']"
+              hint="Grados decimales (-180 a 180)"
+              persistent-hint
+            ></v-text-field>
+          </div>
         </div>
       </div>
 
@@ -119,7 +138,7 @@
           variant="flat"
           prepend-icon="mdi-plus"
           color="green-lighten-3"
-          @click="addMetricaDialog = true"
+          @click="openAddMetricaDialog"
         >
           {{ t('hacienda_info.add_metric') }}
         </v-btn>
@@ -139,6 +158,7 @@
                   density="compact"
                 >
                   <template v-slot:append>
+                    <v-icon size="small" color="primary" class="mr-1" @click.stop="editMetrica(key, metrica)">mdi-pencil</v-icon>
                     <v-icon size="small" @click.stop="removeMetrica(key)" color="red-lighten-2">mdi-delete</v-icon>
                   </template>
                 </v-select>
@@ -151,6 +171,7 @@
                   variant="outlined"
                 >
                   <template v-slot:append>
+                    <v-icon size="small" color="primary" class="mr-1" @click.stop="editMetrica(key, metrica)">mdi-pencil</v-icon>
                     <v-icon size="small" @click.stop="removeMetrica(key)" color="red-lighten-2">mdi-delete</v-icon>
                   </template>
                 </v-text-field>
@@ -162,6 +183,7 @@
                   variant="outlined"
                 >
                   <template v-slot:append>
+                    <v-icon size="small" color="primary" class="mr-1" @click.stop="editMetrica(key, metrica)">mdi-pencil</v-icon>
                     <v-icon size="small" @click.stop="removeMetrica(key)" color="red-lighten-2">mdi-delete</v-icon>
                   </template>
                 </v-text-field>
@@ -174,6 +196,7 @@
                   variant="outlined"
                 >
                   <template v-slot:append>
+                    <v-icon size="small" color="primary" class="mr-1" @click.stop="editMetrica(key, metrica)">mdi-pencil</v-icon>
                     <v-icon size="small" @click.stop="removeMetrica(key)" color="red-lighten-2">mdi-delete</v-icon>
                   </template>
                 </v-text-field>
@@ -185,6 +208,7 @@
                   hide-details
                 >
                   <template v-slot:append>
+                    <v-icon size="small" color="primary" class="mr-1" @click.stop="editMetrica(key, metrica)">mdi-pencil</v-icon>
                     <v-icon size="small" @click.stop="removeMetrica(key)" color="red-lighten-2">mdi-delete</v-icon>
                   </template>
                 </v-checkbox>
@@ -215,7 +239,7 @@
     <v-dialog v-model="addMetricaDialog" persistent max-width="400px">
       <v-card rounded="xl">
         <v-toolbar color="success" density="compact">
-          <v-toolbar-title class="">{{ t('hacienda_info.add_metric') }}</v-toolbar-title>
+          <v-toolbar-title class="">{{ isEditingMetrica ? (t('hacienda_info.edit_metric') || 'Editar Métrica') : t('hacienda_info.add_metric') }}</v-toolbar-title>
           <v-spacer></v-spacer>
         </v-toolbar>
         <v-card-text class="pa-4">
@@ -245,7 +269,7 @@
         <v-card-actions class="pa-4 pt-0">
           <v-spacer></v-spacer>
           <v-btn variant="flat" color="red-lighten-3" @click="addMetricaDialog = false">{{ t('hacienda_info.cancel') }}</v-btn>
-          <v-btn variant="flat" color="green-lighten-3" @click="handleAddMetrica">{{ t('hacienda_info.add') }}</v-btn>
+          <v-btn variant="flat" color="green-lighten-3" @click="handleAddMetrica">{{ isEditingMetrica ? (t('hacienda_info.save') || 'Guardar') : t('hacienda_info.add') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -279,6 +303,14 @@ const uiFeedback = useUiFeedbackStore()
 
 const formData = ref(JSON.parse(JSON.stringify(props.initialData)))
 
+// Ensure GPS object has valid structure
+if (!formData.value.gps || typeof formData.value.gps !== 'object') {
+  formData.value.gps = { lat: null, lng: null }
+} else {
+  formData.value.gps.lat = typeof formData.value.gps.lat === 'number' ? formData.value.gps.lat : null
+  formData.value.gps.lng = typeof formData.value.gps.lng === 'number' ? formData.value.gps.lng : null
+}
+
 // GPS State
 const loadingGPS = ref(false)
 const gpsAvailable = ref(true)
@@ -290,6 +322,8 @@ const testingAI = ref(false)
 
 // Metrics State
 const addMetricaDialog = ref(false)
+const isEditingMetrica = ref(false)
+const editingMetricaKey = ref('')
 const newMetrica = ref({
   titulo: '',
   descripcion: '',
@@ -349,6 +383,24 @@ const testAIConnection = async () => {
   }
 }
 
+const openAddMetricaDialog = () => {
+  addMetricaDialog.value = true
+  isEditingMetrica.value = false
+  editingMetricaKey.value = ''
+  newMetrica.value = { titulo: '', descripcion: '', tipo: 'text' }
+}
+
+const editMetrica = (key, metrica) => {
+  isEditingMetrica.value = true
+  editingMetricaKey.value = key
+  newMetrica.value = {
+    titulo: key.replace(/_/g, ' ').toUpperCase(),
+    descripcion: metrica.descripcion || '',
+    tipo: metrica.tipo || 'text'
+  }
+  addMetricaDialog.value = true
+}
+
 const handleAddMetrica = () => {
   if (!newMetrica.value.titulo) return
 
@@ -358,11 +410,19 @@ const handleAddMetrica = () => {
     formData.value.metricas = {}
   }
 
-  formData.value.metricas[key] = {
+  const metricaData = {
     tipo: newMetrica.value.tipo,
-    valor: haciendaStore.getDefaultMetricaValue(newMetrica.value.tipo),
+    valor: (isEditingMetrica.value && formData.value.metricas[editingMetricaKey.value]?.tipo === newMetrica.value.tipo)
+      ? formData.value.metricas[editingMetricaKey.value].valor
+      : haciendaStore.getDefaultMetricaValue(newMetrica.value.tipo),
     descripcion: newMetrica.value.descripcion
   }
+
+  if (isEditingMetrica.value && editingMetricaKey.value !== key) {
+    delete formData.value.metricas[editingMetricaKey.value]
+  }
+
+  formData.value.metricas[key] = metricaData
 
   newMetrica.value = {
     titulo: '',
@@ -371,6 +431,8 @@ const handleAddMetrica = () => {
   }
 
   addMetricaDialog.value = false
+  isEditingMetrica.value = false
+  editingMetricaKey.value = ''
 }
 
 const removeMetrica = (key) => {

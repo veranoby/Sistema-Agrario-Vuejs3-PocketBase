@@ -29,7 +29,7 @@
                 size="small"
               >
                 <div class="text-subtitle-2">{{ getTemplateName(item.templateId) }}</div>
-                <div class="text-caption text-medium-emphasis">
+                <div class="">
                   {{ formatDate(item.generatedAt) }}
                 </div>
                 <div class="text-caption">
@@ -71,7 +71,7 @@
                     <div class=" font-weight-bold mb-1">
                       {{ template.name }}
                     </div>
-                    <div class="text-caption text-medium-emphasis">
+                    <div class="">
                       {{ template.description }}
                     </div>
                   </v-card-text>

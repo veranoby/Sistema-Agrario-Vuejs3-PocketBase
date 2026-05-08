@@ -249,45 +249,79 @@
                 Geometría y Ubicación (GIS)
               </div>
               
-              <!-- GPS Editable Row -->
-              <div class="flex gap-2 mb-4">
-                <v-text-field
-                  v-model="zonaLocal.gps"
-                  label="Coordenadas GPS"
-                  density="compact"
-                  variant="outlined"
-                  hide-details
-                  prepend-inner-icon="mdi-earth"
-                  class="flex-grow-1"
-                  @click:prepend-inner="centerOnGPS"
-                  placeholder='{"lat": 0, "lng": 0}'
-                >
-                  <template v-slot:append-inner>
+              <!-- GPS Editable Fields (alineado a HaciendaForm) -->
+              <div class="mb-4">
+                <div class="text-caption font-weight-bold mb-2">Coordenadas GPS</div>
+                <div class="flex flex-wrap gap-4 items-center">
+                  <div class="grid grid-cols-2 gap-2 flex-grow-1" style="min-width: 200px;">
+                    <v-text-field
+                      v-model.number="zonaLocal.gps.lat"
+                      label="Latitud"
+                      type="number"
+                      step="0.000001"
+                      prepend-icon="mdi-latitude"
+                      density="compact"
+                      variant="outlined"
+                      :rules="[v => v === null || v === '' || (v >= -90 && v <= 90) || 'Latitud debe estar entre -90 y 90']"
+                      hint="Grados decimales (-90 a 90)"
+                      persistent-hint
+                    ></v-text-field>
+                    <v-text-field
+                      v-model.number="zonaLocal.gps.lng"
+                      label="Longitud"
+                      type="number"
+                      step="0.000001"
+                      prepend-icon="mdi-longitude"
+                      density="compact"
+                      variant="outlined"
+                      :rules="[v => v === null || v === '' || (v >= -180 && v <= 180) || 'Longitud debe estar entre -180 y 180']"
+                      hint="Grados decimales (-180 a 180)"
+                      persistent-hint
+                    ></v-text-field>
+                  </div>
+                  <!-- Botones en línea horizontal -->
+                  <div class="flex flex-row flex-wrap gap-2 items-center">
                     <v-btn
                       icon="mdi-target-variant"
-                      size="x-small"
+                      size="small"
                       variant="text"
                       color="blue"
                       @click="centerOnGPS"
                       title="Centrar mapa en estas coordenadas"
                     ></v-btn>
-                  </template>
-                </v-text-field>
-                <v-btn
-                  color="primary"
-                  :loading="loadingGPS"
-                  :disabled="!gpsAvailable"
-                  @click="autoLocate"
-                  variant="flat"
-                  height="40"
-                  prepend-icon="mdi-crosshairs-gps"
-                >
-                  AUTO
-                </v-btn>
+                    <v-btn
+                      icon="mdi-home"
+                      size="small"
+                      variant="text"
+                      color="green"
+                      @click="centerOnHaciendaGPS"
+                      title="Centrar mapa en GPS de la Hacienda"
+                    ></v-btn>
+                    <v-btn
+                      icon="mdi-restore"
+                      size="small"
+                      variant="text"
+                      color="grey"
+                      @click="resetMapToInitial"
+                      title="Volver al punto inicial del mapa"
+                    ></v-btn>
+                    <v-btn
+                      color="primary"
+                      :loading="loadingGPS"
+                      :disabled="!gpsAvailable"
+                      @click="autoLocate"
+                      variant="flat"
+                      height="40"
+                      prepend-icon="mdi-crosshairs-gps"
+                    >
+                      AUTO
+                    </v-btn>
+                  </div>
+                </div>
               </div>
 
               <!-- Map Container -->
-              <div class="border rounded-lg overflow-hidden elevation-1 bg-white">
+              <div class="border rounded-lg overflow-hidden elevation-1 bg-white mt-4">
                 <v-toolbar density="compact" flat color="grey-lighten-4">
                   <v-icon start size="x-small" class="ml-2">mdi-draw-polygon</v-icon>
                   <span class="text-caption font-weight-bold">
@@ -305,14 +339,27 @@
                   :center="mapCenter"
                   :zoom="mapZoom"
                   :initial-geo-json="zonaLocal.geometria"
+                  :hacienda-gps="mi_hacienda?.gps"
                   @geometry-updated="handleGeometryUpdated"
-                  style="height: 550px; width: 100%;"
+                  style="height: 1100px; width: 100%;"
                 />
               </div>
 
               <div v-if="gpsError" class="mt-2 text-caption text-error d-flex align-center">
                 <v-icon start size="small">mdi-alert</v-icon>
                 {{ gpsError }}
+              </div>
+
+              <!-- Vértices de polígono (post-dibujo) -->
+              <div v-if="polygonVertices.length > 0" class="mt-2 p-2 bg-grey-lighten-4 rounded-lg text-caption">
+                <div class="font-weight-bold mb-1">Vértices del polígono ({{ polygonVertices.length }}):</div>
+                <div v-for="(vertex, index) in polygonVertices" :key="index" class="d-flex gap-2">
+                  <span>V{{ index + 1 }}:</span>
+                  <span>
+                    Lat: {{ vertex.lat.toFixed(6) }},
+                    Lng: {{ vertex.lng.toFixed(6) }}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -435,7 +482,7 @@
           v-model="newMetrica.opcionesText"
           label="Opciones (separadas por coma)"
           placeholder="Opción 1, Opción 2, Opción 3"
-          hint="*INGRESA LAS OPCIONES SEPARADAS POR COMAS"
+          hint="*INGRESAR OPCIONES SEPARADAS POR COMAS"
           persistent-hint
         />
       </v-card-text>
@@ -485,7 +532,7 @@ const props = defineProps({
       area: { area: null, unidad: 'ha' },
       info: '',
       contabilizable: true,
-      gps: '',
+      gps: null,
       avatar: null,
       datos_bpa: [],
       metricas: {}
@@ -539,6 +586,13 @@ const gpsAccuracy = ref(null)
 const mapCenter = ref([4.5709, -74.2973])
 const mapZoom = ref(13)
 
+// Estado para vértices de polígono
+const polygonVertices = ref([])
+
+// Almacenar centro y zoom iniciales del mapa
+const initialMapCenter = ref([4.5709, -74.2973])
+const initialMapZoom = ref(13)
+
 // Estado inicial
 const initialState = {
   nombre: '',
@@ -550,7 +604,7 @@ const initialState = {
   datos_bpa: [],
   metricas: {},
   contabilizable: true,
-  gps: '',
+  gps: { lat: null, lng: null },
   geometria: null
 }
 
@@ -581,18 +635,28 @@ const drawMode = computed(() => {
 })
 
 const handleGeometryUpdated = ({ geojson, areaHa }) => {
+  polygonVertices.value = []
   zonaLocal.geometria = geojson
   if (areaHa > 0 && drawMode.value === 'polygon') {
     zonaLocal.area.area = areaHa
     zonaLocal.area.unidad = 'ha'
   }
   
-  // Si es un punto (marker), también actualizamos el campo GPS para consistencia
+  // Si es un punto (marker), actualizamos el campo GPS para consistencia
   if (geojson && geojson.type === 'Point') {
-    zonaLocal.gps = JSON.stringify({
+    zonaLocal.gps = {
       lat: geojson.coordinates[1],
       lng: geojson.coordinates[0]
-    })
+    }
+  }
+
+  // Si es un polígono, extraer vértices de la anilla exterior
+  if (geojson && geojson.type === 'Polygon') {
+    const exteriorRing = geojson.coordinates[0] || []
+    polygonVertices.value = exteriorRing.map(coord => ({
+      lng: coord[0],
+      lat: coord[1]
+    }))
   }
 }
 
@@ -651,10 +715,11 @@ function addMetrica() {
         .filter((opt) => opt)
     }
 
+    // Corregido: Usar sanitizedTitulo (con 'z')
     zonaLocal.metricas[sanitizedTitulo] = {
       descripcion: newMetrica.value.descripcion,
       tipo: newMetrica.value.tipo,
-      valor: newMetrica.value.tipo === 'multi-select' ? [] : null, // Array vacío para multi-select
+      valor: newMetrica.value.tipo === 'multi-select' ? [] : null,
       opciones: opciones.length > 0 ? opciones : undefined
     }
 
@@ -685,29 +750,39 @@ async function autoLocate() {
     // Intentar obtener ubicación a través del coordinador
     const position = await locationCoordinator.getPosition()
 
-    // Actualizar campo GPS con coordenadas
-    const gpsString = JSON.stringify({
-      lat: position.latitude,
-      lng: position.longitude
-    })
-    zonaLocal.gps = gpsString
+    // Manejar tanto formato de API estándar como posible formato personalizado
+    const coords = position.coords || position
+
+    // Actualizar campo GPS con coordenadas (objeto, no string)
+    zonaLocal.gps = {
+      lat: coords.latitude,
+      lng: coords.longitude
+    }
+
+    if (drawMode.value === 'marker' || !zonaLocal.geometria) {
+      zonaLocal.geometria = {
+        type: 'Point',
+        // Estándar GeoJSON: [longitud, latitud]
+        coordinates: [coords.longitude, coords.latitude]
+      }
+    }
     
     // Centrar mapa instantáneamente con zoom cercano
-    mapCenter.value = [position.latitude, position.longitude]
+    mapCenter.value = [coords.latitude, coords.longitude]
     mapZoom.value = 18
 
     // GUARDAR precisión si está disponible
-    if (position.accuracy !== null) {
-      gpsAccuracy.value = Math.round(position.accuracy)
+    if (coords.accuracy !== null) {
+      gpsAccuracy.value = Math.round(coords.accuracy)
       uiFeedbackStore.showSnackbar(`Ubicación obtenida (precisión: ${gpsAccuracy.value}m)`, 'success')
     } else {
       uiFeedbackStore.showSnackbar('Ubicación obtenida exitosamente', 'success')
     }
 
     logger.debug('[ZonaForm] Coordenadas GPS obtenidas:', {
-      latitude: position.latitude,
-      longitude: position.longitude,
-      accuracy: position.accuracy
+      latitude: coords.latitude,
+      longitude: coords.longitude,
+      accuracy: coords.accuracy
     })
   } catch (error) {
     // Manejo específico de errores para guiar al usuario
@@ -729,20 +804,39 @@ async function autoLocate() {
  * Centra el mapa en las coordenadas actuales del campo GPS
  */
 function centerOnGPS() {
-  if (!zonaLocal.gps) return
-  
-  try {
-    const coords = typeof zonaLocal.gps === 'object' ? zonaLocal.gps : JSON.parse(zonaLocal.gps)
-    if (coords.lat && coords.lng) {
-      mapCenter.value = [coords.lat, coords.lng]
-      mapZoom.value = 18
-      uiFeedbackStore.showSnackbar('Mapa centrado en coordenadas', 'info')
-    }
-  } catch (e) {
-    uiFeedbackStore.showError('Formato de coordenadas inválido para centrar')
-    logger.warn('[ZonaForm] Error parseando GPS para centrado manual:', e)
+  const { lat, lng } = zonaLocal.gps || {}
+  if (lat != null && lng != null) {
+    mapCenter.value = [lat, lng]
+    mapZoom.value = 18
+    uiFeedbackStore.showSnackbar('Mapa centrado en coordenadas', 'info')
+  } else {
+    uiFeedbackStore.showError('Coordenadas GPS no válidas para centrar')
   }
 }
+
+/**
+ * Centra el mapa en las coordenadas GPS de la hacienda
+ */
+function centerOnHaciendaGPS() {
+  const haciendaGps = mi_hacienda.value?.gps
+  if (!haciendaGps || typeof haciendaGps.lat !== 'number' || typeof haciendaGps.lng !== 'number') {
+    uiFeedbackStore.showError('No se encontraron coordenadas GPS válidas de la hacienda')
+    return
+  }
+  mapCenter.value = [haciendaGps.lat, haciendaGps.lng]
+  mapZoom.value = 18
+  uiFeedbackStore.showSnackbar('Mapa centrado en GPS de la hacienda', 'info')
+}
+
+/**
+ * Resetea el mapa al punto inicial (zona existente o GPS de hacienda)
+ */
+function resetMapToInitial() {
+  mapCenter.value = [...initialMapCenter.value]
+  mapZoom.value = initialMapZoom.value
+  uiFeedbackStore.showSnackbar('Mapa restaurado al punto inicial', 'info')
+}
+
 async function guardar() {
   const { valid } = await form.value.validate()
   if (!valid) {
@@ -754,20 +848,10 @@ async function guardar() {
     // Sanitizar objeto para evitar proxies y campos de sistema de PocketBase
     const rawData = JSON.parse(JSON.stringify(zonaLocal))
     
-    // Normalizar GPS a objeto antes de guardar si es una cadena JSON
-    let gpsData = rawData.gps
-    if (typeof gpsData === 'string' && gpsData.trim().startsWith('{')) {
-      try {
-        gpsData = JSON.parse(gpsData)
-      } catch (e) {
-        console.error('Error al parsear GPS antes de guardar:', e)
-      }
-    }
-
     const zonaToSave = {
       ...rawData,
       nombre: (rawData.nombre || '').toUpperCase(),
-      gps: gpsData
+      gps: rawData.gps || { lat: null, lng: null }
       // Nota: No incluimos 'avatar' aquí, se maneja por separado si hay un archivo nuevo
     }
 
@@ -827,23 +911,51 @@ watch(
     if (newZona && Object.keys(newZona).length > 0) {
       // Modo edición - Preservar los valores existentes con un clon profundo para evitar mutar props
       const cleanZona = JSON.parse(JSON.stringify(newZona))
+      
+      // Procesar GPS: asegurar que sea objeto {lat, lng}
+      let gpsObj = { lat: null, lng: null }
+      if (cleanZona.gps) {
+        if (typeof cleanZona.gps === 'string') {
+          try {
+            const parsed = JSON.parse(cleanZona.gps)
+            if (parsed && typeof parsed === 'object') {
+              gpsObj = {
+                lat: typeof parsed.lat === 'number' ? parsed.lat : null,
+                lng: typeof parsed.lng === 'number' ? parsed.lng : null
+              }
+            }
+          } catch (e) {
+            logger.warn('[ZonaForm] Error parseando GPS string en edición:', e)
+          }
+        } else if (typeof cleanZona.gps === 'object') {
+          gpsObj = {
+            lat: typeof cleanZona.gps.lat === 'number' ? cleanZona.gps.lat : null,
+            lng: typeof cleanZona.gps.lng === 'number' ? cleanZona.gps.lng : null
+          }
+        }
+      }
+
       Object.assign(zonaLocal, {
         ...cleanZona,
-        gps: typeof cleanZona.gps === 'object' ? JSON.stringify(cleanZona.gps) : cleanZona.gps || '',
+        gps: gpsObj,
         datos_bpa: Array.isArray(cleanZona.datos_bpa) ? cleanZona.datos_bpa : [],
         metricas: typeof cleanZona.metricas === 'object' ? cleanZona.metricas : {}
       })
 
-      // Actualizar centro del mapa si hay coordenadas válidas
-      if (cleanZona.gps) {
-        try {
-          const coords = typeof cleanZona.gps === 'object' ? cleanZona.gps : JSON.parse(cleanZona.gps)
-          if (coords.lat && coords.lng) {
-            mapCenter.value = [coords.lat, coords.lng]
-            mapZoom.value = 18
+      // Actualizar centro del mapa y punto inicial si hay coordenadas válidas
+      if (gpsObj.lat != null && gpsObj.lng != null && gpsObj.lat >= -90 && gpsObj.lat <= 90 && gpsObj.lng >= -180 && gpsObj.lng <= 180) {
+        mapCenter.value = [gpsObj.lat, gpsObj.lng]
+        initialMapCenter.value = [gpsObj.lat, gpsObj.lng]
+        mapZoom.value = 18
+        initialMapZoom.value = 18
+
+        // Fallback visual: si existe GPS pero no geometría, generamos el Point al vuelo
+        if (!cleanZona.geometria) {
+          zonaLocal.geometria = {
+            type: 'Point',
+            // Estándar GeoJSON: [longitud, latitud]
+            coordinates: [gpsObj.lng, gpsObj.lat]
           }
-        } catch (e) {
-          logger.warn('[ZonaForm] Error parseando GPS para centrar mapa:', e)
         }
       }
     } else {
@@ -854,6 +966,12 @@ watch(
         datos_bpa: initializeDatosBpa(props.tipoZonaActual),
         metricas: initializeMetricas(props.tipoZonaActual)
       })
+
+      // En modo creación, el punto inicial es el GPS de la hacienda
+      if (mi_hacienda.value?.gps?.lat && mi_hacienda.value?.gps?.lng) {
+        initialMapCenter.value = [mi_hacienda.value.gps.lat, mi_hacienda.value.gps.lng]
+        initialMapZoom.value = 18
+      }
     }
   },
   { immediate: true, deep: true }
@@ -867,9 +985,41 @@ watch(
       zonaLocal.tipos_zonas = newTipoZona.id
       zonaLocal.datos_bpa = initializeDatosBpa(newTipoZona)
       zonaLocal.metricas = initializeMetricas(newTipoZona)
+
+      // Actualizar punto inicial si cambia la hacienda
+      if (mi_hacienda.value?.gps?.lat && mi_hacienda.value?.gps?.lng) {
+        initialMapCenter.value = [mi_hacienda.value.gps.lat, mi_hacienda.value.gps.lng]
+        initialMapZoom.value = 18
+      }
     }
   },
   { immediate: true }
+)
+
+// Watch para recentrar mapa automáticamente al editar coordenadas GPS
+watch(
+  () => [zonaLocal.gps?.lat, zonaLocal.gps?.lng],
+  ([newLat, newLng]) => {
+    if (
+      newLat != null &&
+      newLng != null &&
+      newLat >= -90 && newLat <= 90 &&
+      newLng >= -180 && newLng <= 180 &&
+      (newLat !== mapCenter.value[0] || newLng !== mapCenter.value[1])
+    ) {
+      mapCenter.value = [newLat, newLng]
+      mapZoom.value = 18
+
+      // Sincronizar geometría si es marcador o no hay geometría previa
+      if (drawMode.value === 'marker' || !zonaLocal.geometria) {
+        zonaLocal.geometria = {
+          type: 'Point',
+          // Estándar GeoJSON: [longitud, latitud]
+          coordinates: [newLng, newLat]
+        }
+      }
+    }
+  }
 )
 
 // Función para obtener valor por defecto según tipo

@@ -176,6 +176,9 @@ export const useSiembrasStore = defineStore('siembras', {
         
         this.applySyncedCreate(record.id, record)
         
+        // Invalidar caché de siembras paginadas
+        tieredCache.invalidatePattern('siembras:page:')
+        
         if (record.gps || record.geometria) {
           await offlineGeoStorage.saveSiembra(record).catch(e => 
             logger.warn('[SIEMBRAS_STORE] Error guardando en offlineGeoStorage:', e)
@@ -237,6 +240,9 @@ export const useSiembrasStore = defineStore('siembras', {
         
         this.applySyncedUpdate(id, record)
         
+        // Invalidar caché de siembras paginadas
+        tieredCache.invalidatePattern('siembras:page:')
+        
         if (record.gps || record.geometria) {
           await offlineGeoStorage.saveSiembra(record).catch(e => 
             logger.warn('[SIEMBRAS_STORE] Error actualizando en offlineGeoStorage:', e)
@@ -287,7 +293,11 @@ export const useSiembrasStore = defineStore('siembras', {
       try {
         await pb.collection('Siembras').delete(id)
         
+        // Limpiar estado local y caché
         this.applySyncedDelete(id)
+        
+        // Invalidar caché de siembras paginadas
+        tieredCache.invalidatePattern('siembras:page:')
         
         await offlineGeoStorage.deleteSiembra(id).catch(e => 
           logger.warn('[SIEMBRAS_STORE] Error eliminando de offlineGeoStorage:', e)
@@ -478,6 +488,9 @@ export const useSiembrasStore = defineStore('siembras', {
         
         // Limpiar estado local y caché
         this.applySyncedDelete(siembraId);
+        // Invalidar caché
+        tieredCache.invalidatePattern('siembras:page:');
+        
         await offlineGeoStorage.deleteSiembra(siembraId).catch(e => 
           logger.warn('[SIEMBRAS_STORE] Error eliminando de offlineGeoStorage:', e)
         );

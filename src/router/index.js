@@ -19,7 +19,7 @@ const ROUTE_ROLE_MATRIX = {
   admin: ['/admin'], // Future: Super admin panel
   
   // Hacienda management - administrador + auditor
-  hacienda: ['/siembras', '/zonas', '/actividades', '/programaciones', '/recordatorios'],
+  hacienda: ['/siembras', '/zonas', '/actividades', '/programaciones', '/recordatorios', '/metricas'],
   
   // Financial management - administrador only
   finanzas: ['/finanzas'],
@@ -122,6 +122,15 @@ const routes = [
     path: '/bitacora',
     component: () => import('@/components/bitacora/BitacoraView.vue'),
     name: 'Bitácora',
+    meta: {
+      requiresAuth: true,
+      roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR, ROLES.OPERADOR]
+    }
+  },
+  {
+    path: '/metricas',
+    component: () => import('@/views/MetricasView.vue'),
+    name: 'Métricas e Inteligencia',
     meta: {
       requiresAuth: true,
       roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR, ROLES.OPERADOR]

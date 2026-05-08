@@ -17,7 +17,7 @@ import { useZonasStore } from '@/stores/zonasStore'
 import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useActividadesStore } from '@/stores/actividadesStore'
 import { useRecordatoriosStore } from '@/stores/recordatoriosStore'
-import { useProgramacionesStore } from '@/stores/programaciones'
+import { useProgramacionesStore } from '@/stores/programaciones/programacionesStore'
 import { useBitacoraStore } from '@/stores/bitacoraStore'
 import { IndexedDBStorage } from '@/utils/indexedDBStorage'
 
@@ -102,13 +102,20 @@ export const useSyncStore = defineStore('sync', {
   },
 
   actions: {
+    generateTempId() {
+      if (this.idMapper) {
+        return this.idMapper.generateTempId()
+      }
+      return `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    },
+
     async resolveStore(name) {
       const map = {
         zonas: () => import('@/stores/zonasStore'),
         siembras: () => import('@/stores/siembrasStore'),
         actividades: () => import('@/stores/actividadesStore'),
         recordatorios: () => import('@/stores/recordatoriosStore'),
-        programaciones: () => import('@/stores/programaciones'),
+        programaciones: () => import('@/stores/programaciones/programacionesStore'),
         bitacora: () => import('@/stores/bitacoraStore'),
         finanzas: () => import('@/stores/finanzaStore'),
         Haciendas: () => import('@/stores/haciendaStore'),
@@ -139,7 +146,7 @@ export const useSyncStore = defineStore('sync', {
         import('@/stores/siembrasStore'),
         import('@/stores/actividadesStore'),
         import('@/stores/recordatoriosStore'),
-        import('@/stores/programaciones'),
+        import('@/stores/programaciones/programacionesStore'),
         import('@/stores/bitacoraStore')
       ])
       const stores = storeModules.map(m => m[Object.keys(m).find(k => k.startsWith('use'))]())

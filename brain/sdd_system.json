@@ -1,0 +1,57 @@
+{
+  "identity": {
+    "name": "Sistema Integral de Gestión Agrícola",
+    "type": "SaaS Modular Offline-first",
+    "vision": "Gestión data-driven bajo estándares BPA",
+    "version": "6.0",
+    "status": "PRODUCTION READY (2026-04-15)"
+  },
+
+  "business_model": {
+    "monetization": "Mensual base + Usuarios + Módulos Plus (Finanzas, AI, GIS, Programación)",
+    "ai_strategy": "Sugerencias técnicas contextuales (riego/fertilización) vía botón"
+  },
+
+  "core_modules": {
+    "users": "Safeguard RBAC (SuperAdmin, Admin, Auditor, Operador)",
+    "siembras": "Dashboard paginado + Mapas GIS + Catálogos",
+    "bitacora": "Formularios adaptativos + BPA scoring + Fotos + Offline Sync",
+    "programaciones": "Recurrencia + Batch operations + Compliance Checker",
+    "admin": "Analytics global + Gestión suscripciones + Logs + Minería de datos"
+  },
+
+  "architecture": {
+    "frontend": "Vue 3.5 + Vuetify 3.8 + Pinia (Modular)",
+    "backend": "PocketBase 0.21 (SQLite WAL)",
+    "patterns": ["Container/Presenter", "Composition API", "Service Layer", "N+1 Prevention"],
+    "offline_sync": "SyncQueue + Conflict resolution (409) + IndexedDB roadmap"
+  },
+
+  "scalability": {
+    "limit": "200 concurrent users (SQLite write lock bottleneck)",
+    "roadmap": [
+      "Fase 1: IndexedDB + Paginación API (Actual)",
+      "Fase 2: Híbrido PostgreSQL (Auth + Data)",
+      "Fase 3: Node.js + PostgreSQL (10k+ users)"
+    ]
+  },
+
+  "workflows": {
+    "execution": "Programación → Alarma → Bitácora (hereda métricas)",
+    "batch": "v-dialog → Selección fechas → Inserción directa bitacoraStore",
+    "bpa": "Métricas actividad → Scoring automático → Alertas cumplimiento"
+  },
+
+  "optimizations": {
+    "concurrency": "Promise.all en App.vue y cargado de datos",
+    "error_handling": "handleEndpointError centralizado (87% DRY en hooks)",
+    "bundle": "304 KB gzipped (Lodash removed, tree-shaking)"
+  },
+
+  "next_roadmap": {
+    "phase_7": "Testing & Calidad (Vitest/Playwright) - PRIORIDAD P0",
+    "phase_9": "Refactor monolíticos (SiembraWorkspace, ProgramacionPanel)",
+    "phase_10": "Accesibilidad WCAG + CI/CD",
+    "v3_future": ["Predictive Analytics", "IoT Sensors", "Native App", "Blockchain"]
+  }
+}
