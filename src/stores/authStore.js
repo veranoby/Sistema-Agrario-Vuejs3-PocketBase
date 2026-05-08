@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { pb } from '@/utils/pocketbase'
 import { authProvider } from '@/services/authProvider'
 import { handleError } from '@/utils/errorHandler'
 import { useUiFeedbackStore } from './uiFeedbackStore'
@@ -67,8 +68,6 @@ export const useAuthStore = defineStore('auth', {
       try {
         await profileService.changePassword(this.user?.id, oldPassword, newPassword)
         uiFeedbackStore.showSnackbar('Password changed successfully', 'success')
-      } catch (error) {
-        throw error
       } finally {
         uiFeedbackStore.hideLoading()
       }
@@ -83,15 +82,13 @@ export const useAuthStore = defineStore('auth', {
         localStorage.setItem('user', JSON.stringify(this.user))
         uiFeedbackStore.showSnackbar('Perfil actualizado con éxito', 'success')
         return updatedUser
-      } catch (error) {
-        throw error
       } finally {
         uiFeedbackStore.hideLoading()
       }
     },
 
     async attemptTokenRefresh() {
-      const syncStore = useSyncStore()
+
       logger.auth('Attempting token refresh...')
 
       try {
@@ -234,12 +231,12 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async login(username, email, password, rememberMe = false) {
-      const syncStore = useSyncStore()
       if (this.loading) return
       this.loading = true
 
       const uiFeedbackStore = useUiFeedbackStore()
 
+      const syncStore = useSyncStore()
       if (!syncStore.isOnline) {
         this.loading = false
         uiFeedbackStore.hideLoading()
@@ -272,8 +269,6 @@ export const useAuthStore = defineStore('auth', {
 
     async refreshToken() {
       logger.auth('Attempting to refresh token. Current authProvider.authStore.isValid:', authProvider.authStore.isValid)
-      const syncStore = useSyncStore()
-
       if (!authProvider.authStore.isValid) {
         return false
       }
@@ -328,8 +323,34 @@ export const useAuthStore = defineStore('auth', {
     async handleSuccessfulLogin(authData, rememberMe = false) {
       logger.auth('Iniciando handleSuccessfulLogin, rememberMe:', rememberMe)
 
+      // Validar si la cuenta está suspendida directamente
+      if (authData.record.status === 'suspended') {
+        await this.logout()
+        throw new Error('Cuenta suspendida')
+      }
+
+      // Validar cascada si no es superadmin
+      if (authData.record.role !== 'superadmin' && authData.record.hacienda) {
+        try {
+          const haciendaId = typeof authData.record.hacienda === 'object' ? authData.record.hacienda.id : authData.record.hacienda
+          const adminQuery = await pb.collection('users').getFirstListItem(`hacienda="${haciendaId}" && role="administrador"`)
+
+          if (adminQuery && adminQuery.status === 'suspended') {
+            await this.logout()
+            throw new Error('La cuenta principal de su hacienda se encuentra suspendida')
+          }
+        } catch (err) {
+          // Si el error es de tipo NotFound, significa que no hay administrador o no se encontró.
+          // Solo relanzamos si el error es explícitamente nuestra excepción de "cuenta suspendida".
+          if (err.message === 'La cuenta principal de su hacienda se encuentra suspendida') {
+            throw err
+          }
+          logger.warn('Error al verificar el estado del administrador de la hacienda:', err.message)
+        }
+      }
+
       this.setSession(authData.record)
-      const syncStore = useSyncStore()
+
 
       const authDataToStore = { token: authProvider.authStore.token, model: authProvider.authStore.model }
       localStorage.setItem('pocketbase_auth', JSON.stringify(authDataToStore))
@@ -357,6 +378,7 @@ export const useAuthStore = defineStore('auth', {
         logger.auth('Cleared remembered user credentials.')
       }
 
+      const syncStore = useSyncStore()
       syncStore.init()
 
       const haciendaStore = useHaciendaStore()
@@ -548,7 +570,7 @@ export const useAuthStore = defineStore('auth', {
 
     async logout() {
       const uiFeedbackStore = useUiFeedbackStore()
-      const syncStore = useSyncStore()
+
 
       try {
         this.stopRefreshTimer()
