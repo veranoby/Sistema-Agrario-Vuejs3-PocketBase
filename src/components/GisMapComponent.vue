@@ -273,7 +273,7 @@ export default defineComponent({
           draw: {
             polygon: props.drawMode === 'polygon' ? {
               allowIntersection: false,
-              showArea: true
+              showArea: false
             } : false,
             polyline: false,
             rectangle: props.drawMode === 'polygon',

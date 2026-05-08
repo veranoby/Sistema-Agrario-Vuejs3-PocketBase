@@ -186,6 +186,7 @@
                     :center="mapCenter"
                     :readonly="true"
                     :loading="mapLoading"
+                    :hacienda-gps="mi_hacienda?.gps"
                   />
                   <div v-if="!siembrasGeoJSON && !mapLoading" class="map-overlay-empty d-flex flex-column align-center justify-center">
                     <v-icon size="48" color="grey-lighten-2" class="mb-2">mdi-map-off</v-icon>

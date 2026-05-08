@@ -1,74 +1,44 @@
-# Plan: Sistema de Inteligencia y Métricas Agrícolas
+# Plan de Solución: Optimización GIS (Mapas)
 
-## Goal
-Transformar la gestión de métricas en un "Metric Hub" independiente. Se creará una página dedicada (`/metricas`) para analizar el rendimiento, consumo de recursos y salud de los cultivos, extrayendo datos reales de las bitácoras y zonas. Se optimizará el ingreso de datos en bitácora unificando selección y edición.
+Este plan aborda los problemas de visualización y edición en el mapa de haciendas y zonas, asumiendo que el campo `geometria` tipo JSON ya existe correctamente en la colección `zonas` de PocketBase.
 
-## User Review Required
-> [!IMPORTANT]
-> **Instalación de Librerías:** ¿Autorizas la ejecución de `npm install vue-chartjs chart.js` para los gráficos?
-
-> [!WARNING]
-> **Resolución de Conflicto de Claves de Métricas y Transformer:** Tras auditar `brain/tipo_actividades.json` y el recién añadido `src/utils/bitacoraMetricTransformer.js`, se confirma que el Transformer usa claves legacy (ej. `rendimiento_kg`) mientras que la Base de Datos usa claves dinámicas (ej. `cantidad_cosechada`). **El nuevo Dashboard ignorará el transformer legacy y extraerá el valor directamente del JSON crudo de la bitácora (`bitacora.metricas.cantidad_cosechada`)**.
+## Análisis Actualizado del Problema
+Ya que el campo `geometria` existe, los problemas de que el pin "no se grabe" ni "se pueda borrar" derivan de dos vectores principales en el frontend:
+1. **Fallback Ausente:** Las zonas antiguas que solo tienen `gps` (lat, lng) pero `geometria = null` no generan una capa inicial (`drawnItems`) en Leaflet. Si no hay capa inicial, la herramienta de "Borrar" (`edit: { remove: true }`) permanece deshabilitada o inoperante.
+2. **Desincronización en Auto-Ubicación:** Cuando el usuario usa el botón "AUTO" (GPS automático) o edita los campos numéricos manualmente, actualizamos `zonaLocal.gps`, pero **olvidamos generar el objeto geojson para `zonaLocal.geometria`**. Como resultado, al guardar, se envía `geometria: null`, borrando el punto visual de los dashboards.
 
 ## Proposed Changes
 
-### 1. Preparación y Navegación
-- **Nueva Página (`src/views/MetricasView.vue`):** Componente principal del dashboard (se creará en la Fase 1).
-- **Router y Sidebar:** Añadir ruta `/metricas` en `src/router/index.js` y el objeto de navegación en `src/components/Sidebar.vue`. (Roles: Admin, Auditor, Operador).
+### Dashboards
+#### [MODIFY] src/components/Dashboard.vue
+- Añadir la propiedad `:hacienda-gps="mi_hacienda?.gps"` en la instanciación de `<GisMapComponent>` para habilitar de nuevo el renderizado del círculo rojo (GPS principal de la hacienda).
 
-### 2. Refactor de `FormularioMetricas.vue` (UI Unificada)
-- Renderizar una única vista con un `v-checkbox` (para habilitar) acompañado de un `v-text-field` o `v-select` (para el valor) por cada métrica.
+#### [MODIFY] src/components/siembras/SiembrasDashboard.vue
+- Añadir la propiedad `:hacienda-gps="mi_hacienda?.gps"` en `<GisMapComponent>` para unificar el punto central de la hacienda a lo largo de las vistas principales.
 
-### 3. Capa de Datos y KPIs Avanzados (Análisis de BD)
-Se crearán getters de agregación en `bitacoraStore.js` (o en un nuevo `useMetrics.js`).
-- **Índice de Sanidad (Control de Plagas):** Mapear `nivel_afectacion` ("Bajo"=1, "Moderado"=2, "Alto"=3) para graficar picos de infestación en el tiempo.
-- **Calidad de Cosecha (Pie Chart):** Usar `clasificacion_producto` ("Primera", "Segunda", "Tercera") de la actividad de Cosecha para ver el % de producto premium.
-- **Eficiencia de Siembra (Zonas + Actividades):** Comparar la `cantidad_cosechada` vs la `densidad_siembra` (del Lote asociado) para obtener un "Rendimiento por Planta".
-- **Horas-Hombre en Seguridad:** Multiplicar `participantes` por `duracion_capacitacion` de la actividad "Capacitación".
+### GIS Core
+#### [MODIFY] src/components/GisMapComponent.vue
+- **Bug Fix:** Cambiar `showArea: true` a `showArea: false` en `drawOptions` del modo polígono. Esto soluciona de raíz el crash nativo de `leaflet-draw` (`ReferenceError: type is not defined`) causado por el formateador de tooltips de medición en la librería base al dibujar el tercer vértice.
 
-### 4. Definición Final de Gráficos Base (Claves Corregidas a DB)
-| Actividad / Categoría | Clave Real en PocketBase | Tipo de Gráfico |
-| :--- | :--- | :--- |
-| **Producción** (Cosecha) | `cantidad_cosechada` | Barras Apiladas |
-| **Calidad** (Cosecha) | `clasificacion_producto` | Gráfico de Pastel (Doughnut) |
-| **Recursos** (Riego) | `volumen_agua_utilizada` | Línea de Tendencia |
-| **Insumos** (Fertilización) | `dosis_aplicada` | Barras |
-| **Sanidad** (Plagas) | `nivel_afectacion` | Línea de Picos de Alerta |
+#### [MODIFY] src/components/forms/ZonaForm.vue
+- **Fallback Visual (Init):** Al inicializar la zona en modo edición, si el `gps` existe pero la `geometria` es falsy, autogeneraremos un GeoJSON `Point` válido. Esto asegura que el pin aparezca y active la herramienta de "Borrar".
+- **Sincronización `autoLocate`:** Cuando se obtengan coordenadas con el GPS del navegador o al editar manualmente los text-fields, actualizaremos simultáneamente `zonaLocal.geometria` con la estructura `{ type: 'Point', coordinates: [lng, lat] }`. Esto garantizará que el "dibujo" se envíe a PocketBase incluso si no se usó explícitamente el toolbar del mapa.
 
 ## Verification Plan
-1. **Verificar Claves Reales:** Validar que al crear una bitácora de riego, se guarda en el JSON como `volumen_agua_utilizada` y no como `dosis_agua`.
-2. **Dashboard de KPIs:** Verificar que el gráfico de pastel agrupa correctamente los kilos según su `clasificacion_producto`.
+1. **Automated / Code:** 
+   - Revisión de la reactividad cruzada entre `gps` (lat/lng numérico) y `geometria` (GeoJSON Point).
+2. **Manual:** 
+   - Se probará dibujar un polígono de 3+ puntos (Validar que no ocurre crash de `ReferenceError`).
+   - Se usará la Auto-ubicación y se guardará la zona, verificando que el pin aparezca instantáneamente en el Dashboard.
+   - Se abrirá una zona antigua sin geometría y se verificará que Leaflet genere un pin interactivo (editable/borrable) a partir de sus coordenadas legacy.
 
-- [ ] **Fase 0: Pre-requisitos**
-  - [x] Fix Import: Corregir ruta en `src/stores/sync/index.js` (Resuelto, ahora apunta a `programacionesStore.js`).
-  - [ ] Instalar Dependencias: Ejecutar `npm install vue-chartjs chart.js`.
-  - [ ] Crear Vista: Crear `src/views/MetricasView.vue` (esqueleto base).
-
-- [ ] **Fase 1: Preparación y Navegación**
-  - [ ] Router (`src/router/index.js`): Añadir `/metricas` a `ROUTE_ROLE_MATRIX.hacienda` y definir la ruta con `meta.roles` para Administrador, Auditor y Operador.
-  - [ ] Sidebar (`src/components/Sidebar.vue`): Añadir navlink visual para "Métricas".
-
-- [ ] **Fase 2: Refactor del Formulario de Métricas en Bitácora**
-  - [ ] Eliminar en `src/components/forms/FormularioMetricas.vue` la lógica de renderizado condicional por "modo".
-  - [ ] Unificar la vista: iterar sobre `metricasDisponibles` y renderizar `v-checkbox` (para habilitar inclusión) emparejado con un campo dinámico (`v-text-field`, `v-select`) que recibe el valor explícito.
-  - [ ] Validar Flujo: Asegurar que `BitacoraEntryForm.vue` procese correctamente el nuevo formato.
-
-- [ ] **Fase 3: Capa de Inteligencia y Extracción de Datos**
-  - [ ] Crear composable `useMetrics.js` o actualizar `bitacoraStore.js`.
-  - [ ] Implementar extracción de JSON crudo (`bitacora.metricas.cantidad_cosechada`). **IGNORAR** `src/utils/bitacoraMetricTransformer.js` para los gráficos, ya que usa constantes legacy.
-  - [ ] Desarrollar calculadoras de Agregación:
-    - [ ] `getTotalCosecha()` (Suma).
-    - [ ] `calcularRendimientoPorPlanta()` (Cruza Cosecha con Densidad de Zona).
-    - [ ] `calcularIndiceSalud()` (Mapea `nivel_afectacion`).
-
-- [ ] **Fase 4: Desarrollo de `MetricasDashboard`**
-  - [ ] Componentizar filtros por Siembra, Actividad y Fechas en la nueva vista.
-  - [ ] Implementar tarjetas de KPIs superiores usando los getters de la Fase 3.
-  - [ ] Implementar gráficos:
-    - [ ] **Doughnut Chart:** Calidad de Cosecha (`clasificacion_producto`).
-    - [ ] **Bar Chart Apilado:** Producción (`cantidad_cosechada`).
-    - [ ] **Line Chart:** Consumo de Agua (`volumen_agua_utilizada`).
-    - [ ] **Bar Chart:** Insumos (`dosis_aplicada`).
-
-- [ ] **Fase 5: Validación Cruzada**
-  - [ ] Simular carga de 3 bitácoras y validar que los gráficos renderizan correctamente basándose en los JSONs dinámicos.
+- [ ] 1. Actualizar `src/components/Dashboard.vue`
+  - [ ] Añadir prop `:hacienda-gps="mi_hacienda?.gps"` a `GisMapComponent`.
+- [ ] 2. Actualizar `src/components/siembras/SiembrasDashboard.vue`
+  - [ ] Añadir prop `:hacienda-gps="mi_hacienda?.gps"` a `GisMapComponent`.
+- [ ] 3. Actualizar `src/components/GisMapComponent.vue`
+  - [ ] Cambiar `showArea: false` en `drawOptions` de `polygon`.
+- [ ] 4. Actualizar `src/components/forms/ZonaForm.vue`
+  - [ ] Sincronizar `autoLocate` para que modifique `zonaLocal.geometria` al tipo `Point`.
+  - [ ] En el `watch` de `props.zonaInicial`, si hay `gps` válido pero no `geometria`, generar el `Point` al vuelo para que leaflet renderice el pin inicial.
+  - [ ] En el `watch` reactivo de los text fields lat/lng manuales, también sincronizar `zonaLocal.geometria` como `Point`.

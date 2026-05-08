@@ -179,6 +179,7 @@
                   :center="haciendaCenter || undefined"
                   :readonly="true"
                   :hacienda-name="mi_hacienda?.name"
+                  :hacienda-gps="mi_hacienda?.gps"
                 />
                 <div v-else class="d-flex flex-column align-center justify-center pa-10 text-grey" style="min-height: 600px;">
                   <v-icon size="64" class="mb-4">mdi-map-marker-off</v-icon>

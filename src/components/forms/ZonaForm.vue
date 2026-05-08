@@ -756,6 +756,14 @@ async function autoLocate() {
       lat: coords.latitude,
       lng: coords.longitude
     }
+
+    if (drawMode.value === 'marker' || !zonaLocal.geometria) {
+      zonaLocal.geometria = {
+        type: 'Point',
+        // Estándar GeoJSON: [longitud, latitud]
+        coordinates: [coords.longitude, coords.latitude]
+      }
+    }
     
     // Centrar mapa instantáneamente con zoom cercano
     mapCenter.value = [coords.latitude, coords.longitude]
@@ -933,11 +941,20 @@ watch(
       })
 
       // Actualizar centro del mapa y punto inicial si hay coordenadas válidas
-      if (gpsObj.lat != null && gpsObj.lng != null) {
+      if (gpsObj.lat != null && gpsObj.lng != null && gpsObj.lat >= -90 && gpsObj.lat <= 90 && gpsObj.lng >= -180 && gpsObj.lng <= 180) {
         mapCenter.value = [gpsObj.lat, gpsObj.lng]
         initialMapCenter.value = [gpsObj.lat, gpsObj.lng]
         mapZoom.value = 18
         initialMapZoom.value = 18
+
+        // Fallback visual: si existe GPS pero no geometría, generamos el Point al vuelo
+        if (!cleanZona.geometria) {
+          zonaLocal.geometria = {
+            type: 'Point',
+            // Estándar GeoJSON: [longitud, latitud]
+            coordinates: [gpsObj.lng, gpsObj.lat]
+          }
+        }
       }
     } else {
       // Modo creación - Inicializar con valores por defecto
@@ -984,10 +1001,21 @@ watch(
     if (
       newLat != null &&
       newLng != null &&
+      newLat >= -90 && newLat <= 90 &&
+      newLng >= -180 && newLng <= 180 &&
       (newLat !== mapCenter.value[0] || newLng !== mapCenter.value[1])
     ) {
       mapCenter.value = [newLat, newLng]
       mapZoom.value = 18
+
+      // Sincronizar geometría si es marcador o no hay geometría previa
+      if (drawMode.value === 'marker' || !zonaLocal.geometria) {
+        zonaLocal.geometria = {
+          type: 'Point',
+          // Estándar GeoJSON: [longitud, latitud]
+          coordinates: [newLng, newLat]
+        }
+      }
     }
   }
 )
