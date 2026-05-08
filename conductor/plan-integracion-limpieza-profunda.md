@@ -1,59 +1,74 @@
-# Smart Deletion Procedure for Siembras
+# Plan: Sistema de Inteligencia y Métricas Agrícolas
 
-Implementation of a granular deletion system that analyzes dependencies (Zones, Activities, Schedules, Reminders) before removing a Sowing record.
+## Goal
+Transformar la gestión de métricas en un "Metric Hub" independiente. Se creará una página dedicada (`/metricas`) para analizar el rendimiento, consumo de recursos y salud de los cultivos, extrayendo datos reales de las bitácoras y zonas. Se optimizará el ingreso de datos en bitácora unificando selección y edición.
 
 ## User Review Required
-
 > [!IMPORTANT]
-> **Data Integrity**: The deletion process will be multi-step. First, it analyzes dependencies, then presents a summary to the user.
-> **Shared Items**: Items shared with other sowings will default to "Detach" instead of "Delete".
+> **Instalación de Librerías:** ¿Autorizas la ejecución de `npm install vue-chartjs chart.js` para los gráficos?
+
+> [!WARNING]
+> **Resolución de Conflicto de Claves de Métricas y Transformer:** Tras auditar `brain/tipo_actividades.json` y el recién añadido `src/utils/bitacoraMetricTransformer.js`, se confirma que el Transformer usa claves legacy (ej. `rendimiento_kg`) mientras que la Base de Datos usa claves dinámicas (ej. `cantidad_cosechada`). **El nuevo Dashboard ignorará el transformer legacy y extraerá el valor directamente del JSON crudo de la bitácora (`bitacora.metricas.cantidad_cosechada`)**.
 
 ## Proposed Changes
 
-### [Component: Siembras]
+### 1. Preparación y Navegación
+- **Nueva Página (`src/views/MetricasView.vue`):** Componente principal del dashboard (se creará en la Fase 1).
+- **Router y Sidebar:** Añadir ruta `/metricas` en `src/router/index.js` y el objeto de navegación en `src/components/Sidebar.vue`. (Roles: Admin, Auditor, Operador).
 
-#### [NEW] [SiembraDeleteModal.vue](file:///home/veranoby/sistema-agri/src/components/siembras/SiembraDeleteModal.vue)
-- Create a new modal component that:
-  - Receives `siembraId`.
-  - Performs a `fetch` for all related items in `zonas`, `actividades`, `programaciones`, and `recordatorios`.
-  - Classifies items into "Exclusive" and "Shared".
-  - Displays two lists with checkboxes for user confirmation.
-  - Executes the deletion/update logic in batch.
+### 2. Refactor de `FormularioMetricas.vue` (UI Unificada)
+- Renderizar una única vista con un `v-checkbox` (para habilitar) acompañado de un `v-text-field` o `v-select` (para el valor) por cada métrica.
 
-#### [MODIFY] [SiembrasDashboard.vue](file:///home/veranoby/sistema-agri/src/components/siembras/SiembrasDashboard.vue)
-- Add a "kebab" menu (`v-menu` with `v-list`) to the siembra cards.
-- Add an "Eliminar" option that triggers the `SiembraDeleteModal`.
+### 3. Capa de Datos y KPIs Avanzados (Análisis de BD)
+Se crearán getters de agregación en `bitacoraStore.js` (o en un nuevo `useMetrics.js`).
+- **Índice de Sanidad (Control de Plagas):** Mapear `nivel_afectacion` ("Bajo"=1, "Moderado"=2, "Alto"=3) para graficar picos de infestación en el tiempo.
+- **Calidad de Cosecha (Pie Chart):** Usar `clasificacion_producto` ("Primera", "Segunda", "Tercera") de la actividad de Cosecha para ver el % de producto premium.
+- **Eficiencia de Siembra (Zonas + Actividades):** Comparar la `cantidad_cosechada` vs la `densidad_siembra` (del Lote asociado) para obtener un "Rendimiento por Planta".
+- **Horas-Hombre en Seguridad:** Multiplicar `participantes` por `duracion_capacitacion` de la actividad "Capacitación".
 
-#### [MODIFY] [siembrasStore.js](file:///home/veranoby/sistema-agri/src/stores/siembrasStore.js)
-- Add an advanced deletion action that handles the cleanup of related items if needed, or simply integrates with the new modal logic.
-
-## Deletion Logic Details
-
-### 1. Analysis Phase
-For a given `targetId`:
-- **Zones**: `pb.collection('zonas').getFullList({ filter: 'siembra = "' + targetId + '"' })`
-- **Activities**: `pb.collection('actividades').getFullList({ filter: 'siembras ~ "' + targetId + '"' })`
-- **Schedules**: `pb.collection('programaciones').getFullList({ filter: 'siembras ~ "' + targetId + '"' })`
-- **Reminders**: `pb.collection('recordatorios').getFullList({ filter: 'siembras ~ "' + targetId + '"' })`
-
-### 2. Classification
-- **Exclusive**: `item.siembras.length === 1` (or only linked to targetId).
-- **Shared**: `item.siembras.length > 1`.
-
-### 3. Final Actions
-- **Delete Record**: `pb.collection(c).delete(id)`
-- **Cleanup Relation**: `pb.collection(c).update(id, { siembras: item.siembras.filter(s => s !== targetId) })`
+### 4. Definición Final de Gráficos Base (Claves Corregidas a DB)
+| Actividad / Categoría | Clave Real en PocketBase | Tipo de Gráfico |
+| :--- | :--- | :--- |
+| **Producción** (Cosecha) | `cantidad_cosechada` | Barras Apiladas |
+| **Calidad** (Cosecha) | `clasificacion_producto` | Gráfico de Pastel (Doughnut) |
+| **Recursos** (Riego) | `volumen_agua_utilizada` | Línea de Tendencia |
+| **Insumos** (Fertilización) | `dosis_aplicada` | Barras |
+| **Sanidad** (Plagas) | `nivel_afectacion` | Línea de Picos de Alerta |
 
 ## Verification Plan
+1. **Verificar Claves Reales:** Validar que al crear una bitácora de riego, se guarda en el JSON como `volumen_agua_utilizada` y no como `dosis_agua`.
+2. **Dashboard de KPIs:** Verificar que el gráfico de pastel agrupa correctamente los kilos según su `clasificacion_producto`.
 
-### Manual Verification
-- Create a test Sowing with:
-  - 1 exclusive Zone.
-  - 1 exclusive Activity.
-  - 1 Activity shared with another Sowing.
-- Trigger the deletion from the Dashboard.
-- Verify the modal correctly identifies each item.
-- Process the deletion and verify:
-  - The Sowing is gone.
-  - The exclusive Zone and Activity are deleted.
-  - The shared Activity still exists but no longer points to the deleted Sowing.
+- [ ] **Fase 0: Pre-requisitos**
+  - [x] Fix Import: Corregir ruta en `src/stores/sync/index.js` (Resuelto, ahora apunta a `programacionesStore.js`).
+  - [ ] Instalar Dependencias: Ejecutar `npm install vue-chartjs chart.js`.
+  - [ ] Crear Vista: Crear `src/views/MetricasView.vue` (esqueleto base).
+
+- [ ] **Fase 1: Preparación y Navegación**
+  - [ ] Router (`src/router/index.js`): Añadir `/metricas` a `ROUTE_ROLE_MATRIX.hacienda` y definir la ruta con `meta.roles` para Administrador, Auditor y Operador.
+  - [ ] Sidebar (`src/components/Sidebar.vue`): Añadir navlink visual para "Métricas".
+
+- [ ] **Fase 2: Refactor del Formulario de Métricas en Bitácora**
+  - [ ] Eliminar en `src/components/forms/FormularioMetricas.vue` la lógica de renderizado condicional por "modo".
+  - [ ] Unificar la vista: iterar sobre `metricasDisponibles` y renderizar `v-checkbox` (para habilitar inclusión) emparejado con un campo dinámico (`v-text-field`, `v-select`) que recibe el valor explícito.
+  - [ ] Validar Flujo: Asegurar que `BitacoraEntryForm.vue` procese correctamente el nuevo formato.
+
+- [ ] **Fase 3: Capa de Inteligencia y Extracción de Datos**
+  - [ ] Crear composable `useMetrics.js` o actualizar `bitacoraStore.js`.
+  - [ ] Implementar extracción de JSON crudo (`bitacora.metricas.cantidad_cosechada`). **IGNORAR** `src/utils/bitacoraMetricTransformer.js` para los gráficos, ya que usa constantes legacy.
+  - [ ] Desarrollar calculadoras de Agregación:
+    - [ ] `getTotalCosecha()` (Suma).
+    - [ ] `calcularRendimientoPorPlanta()` (Cruza Cosecha con Densidad de Zona).
+    - [ ] `calcularIndiceSalud()` (Mapea `nivel_afectacion`).
+
+- [ ] **Fase 4: Desarrollo de `MetricasDashboard`**
+  - [ ] Componentizar filtros por Siembra, Actividad y Fechas en la nueva vista.
+  - [ ] Implementar tarjetas de KPIs superiores usando los getters de la Fase 3.
+  - [ ] Implementar gráficos:
+    - [ ] **Doughnut Chart:** Calidad de Cosecha (`clasificacion_producto`).
+    - [ ] **Bar Chart Apilado:** Producción (`cantidad_cosechada`).
+    - [ ] **Line Chart:** Consumo de Agua (`volumen_agua_utilizada`).
+    - [ ] **Bar Chart:** Insumos (`dosis_aplicada`).
+
+- [ ] **Fase 5: Validación Cruzada**
+  - [ ] Simular carga de 3 bitácoras y validar que los gráficos renderizan correctamente basándose en los JSONs dinámicos.

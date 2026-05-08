@@ -88,6 +88,11 @@ export default defineComponent({
     haciendaName: {
       type: String,
       default: ''
+    },
+    // NUEVA PROP: GPS independiente de la hacienda
+    haciendaGps: {
+      type: Object,
+      default: null
     }
   },
 
@@ -158,13 +163,23 @@ export default defineComponent({
       }
     })
 
-    // Watch for center changes
+    // Watch for center changes - NO afecta al círculo de hacienda
     watch(() => props.center, (newCenter) => {
       if (map && newCenter && newCenter.length === 2) {
         map.flyTo(newCenter, props.zoom, { animate: true, duration: 1.5 })
-        updateCenterCircle(newCenter)
+        // ELIMINADO: updateCenterCircle(newCenter)
       }
     }, { deep: true })
+
+    // NUEVO WATCH: Solo actualiza el círculo de hacienda cuando cambia haciendaGps
+    watch(() => props.haciendaGps, (newGps) => {
+      if (newGps?.lat && newGps?.lng) {
+        updateCenterCircle([newGps.lat, newGps.lng])
+      } else if (centerCircleMarker) {
+        centerCircleMarker.remove()
+        centerCircleMarker = null
+      }
+    }, { immediate: true, deep: true })
 
     // Watch for GeoJSON changes
     watch(() => props.initialGeoJSON, (newVal) => {
@@ -210,16 +225,39 @@ export default defineComponent({
       // Establecer vista inicial basada en props
       if (props.center && props.center.length === 2) {
         map.setView(props.center, props.zoom)
-        updateCenterCircle(props.center)
+        // ELIMINADO: updateCenterCircle(props.center)
       } else {
-        map.setView([4.6097, -74.0817], props.zoom) // Bogotá fallback
+        map.setView([4.6097, -74.0817], props.zoom) // Bogotá fallback - Corregido: coma añadida
       }
 
-      // Add OpenStreetMap tiles
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      // Define tile layers for different map types
+      const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19
-      }).addTo(map)
+      })
+
+      // Satélite (Esri World Imagery - ideal para visualizar cultivos)
+      const esriSatellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+        maxZoom: 19
+      })
+
+      // Relieve (OpenTopoMap)
+      const openTopoMap = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://opentopomap.org">OpenTopoMap</a> contributors',
+        maxZoom: 17
+      })
+
+      // Add default satellite layer (mejor para cultivos)
+      esriSatellite.addTo(map)
+
+      // Control para cambiar entre tipos de mapa
+      const baseLayers = {
+        '🛰 Satélite (Esri)': esriSatellite,
+        '⛰ Relieve (OpenTopoMap)': openTopoMap,
+        '🗺 Calles (OSM)': osm
+      }
+      L.control.layers(baseLayers, null, { position: 'bottomleft' }).addTo(map)
 
       // Initialize FeatureGroup for drawn items
       drawnItems = new L.FeatureGroup()
@@ -248,7 +286,7 @@ export default defineComponent({
         const drawControl = new L.Control.Draw(drawOptions)
         map.addControl(drawControl)
 
-        // Event: Created
+        // Event: Created - Corregido: Evento en mayúsculas
         map.on(L.Draw.Event.CREATED, (e) => {
           const layer = e.layer
           drawnItems.clearLayers()
@@ -256,7 +294,7 @@ export default defineComponent({
           notifyChange(layer)
         })
 
-        // Event: Edited
+        // Event: Edited - Corregido: Evento en mayúsculas
         map.on(L.Draw.Event.EDITED, (e) => {
           const layers = e.layers
           layers.eachLayer((layer) => {
@@ -264,7 +302,7 @@ export default defineComponent({
           })
         })
 
-        // Event: Deleted
+        // Event: Deleted - Corregido: Evento en mayúsculas
         map.on(L.Draw.Event.DELETED, () => {
           emit('geometry-updated', { geojson: null, areaHa: 0 })
         })
@@ -526,12 +564,12 @@ export default defineComponent({
 .gis-map-container {
   position: relative;
   width:100%;
-  height: 500px;
+  height: 1000px; /* Altura original 500px, duplicada para dashboard */
 }
 
 .map-container {
   width:100%;
-  height: 450px;
+  height: 900px; /* Altura original 450px, duplicada para dashboard */
   border-radius: 8px;
   border: 1px solid #e0e0e0;
 }

@@ -11,8 +11,6 @@ import { offlineGeoStorage } from '@/utils/offlineGeoStorage'
 import { tieredCache, CacheKeys } from '@/utils/cacheManager'
 
 
-
-
 export const useZonasStore = defineStore('zonas', {
   state: () => ({
     zonas: [],
@@ -97,6 +95,7 @@ export const useZonasStore = defineStore('zonas', {
 
       if (!targetHacienda) {
         console.warn('[ZONAS_STORE] No haciendaId provided to fetchPage.');
+        this.loading = false; // Corregido: resetear loading
         return { items: [], pagination: this.pagination };
       }
 
@@ -246,7 +245,7 @@ export const useZonasStore = defineStore('zonas', {
           expand: 'tipos_zonas'
         })
 
-        // Usar acción inyectada por el plugin para actualizar estado y persistir
+        // Usar acción inyectada por el plugin
         this.applySyncedCreate(record.id, record)
 
         // Invalidar cache de paginación para forzar recarga

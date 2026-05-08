@@ -73,7 +73,7 @@
               {{ email }}
             </v-chip>
           </div>
-          <p v-else class="text-caption text-medium-emphasis mt-2">
+          <p v-else class=" mt-2">
             No hay destinatarios configurados
           </p>
         </div>

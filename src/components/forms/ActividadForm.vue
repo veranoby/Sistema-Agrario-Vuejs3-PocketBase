@@ -81,7 +81,7 @@
               <v-chip
                 v-for="zona in filteredZonas"
                 :key="zona.id"
-                :text="`${zona.nombre}(${zonasStore.getZonaById(zona.id)?.expand?.tipos_zonas?.nombre.toUpperCase()})`"
+                :text="`${zona.nombre} (${tiposZonas.find(t => t.id === zona.tipos_zonas)?.nombre?.toUpperCase() || 'SIN TIPO'})`"
                 :value="zona.id"
                 filter
                 size="small"

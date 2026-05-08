@@ -126,7 +126,7 @@
               Operativo
             </v-chip>
           </div>
-          <div class="text-caption text-medium-emphasis">
+          <div class="">
             Última actualización: {{ new Date().toLocaleString('es-ES') }}
           </div>
         </div>

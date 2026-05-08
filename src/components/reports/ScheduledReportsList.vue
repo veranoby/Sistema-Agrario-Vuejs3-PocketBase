@@ -29,7 +29,7 @@
               <div class="font-weight-medium">
                 {{ getTemplateName(item.templateId) }}
               </div>
-              <div class="text-caption text-medium-emphasis">
+              <div class="">
                 {{ getTemplateDescription(item.templateId) }}
               </div>
             </div>

@@ -138,7 +138,7 @@
           variant="flat"
           prepend-icon="mdi-plus"
           color="green-lighten-3"
-          @click="addMetricaDialog = true"
+          @click="openAddMetricaDialog"
         >
           {{ t('hacienda_info.add_metric') }}
         </v-btn>
@@ -158,6 +158,7 @@
                   density="compact"
                 >
                   <template v-slot:append>
+                    <v-icon size="small" color="primary" class="mr-1" @click.stop="editMetrica(key, metrica)">mdi-pencil</v-icon>
                     <v-icon size="small" @click.stop="removeMetrica(key)" color="red-lighten-2">mdi-delete</v-icon>
                   </template>
                 </v-select>
@@ -170,6 +171,7 @@
                   variant="outlined"
                 >
                   <template v-slot:append>
+                    <v-icon size="small" color="primary" class="mr-1" @click.stop="editMetrica(key, metrica)">mdi-pencil</v-icon>
                     <v-icon size="small" @click.stop="removeMetrica(key)" color="red-lighten-2">mdi-delete</v-icon>
                   </template>
                 </v-text-field>
@@ -181,6 +183,7 @@
                   variant="outlined"
                 >
                   <template v-slot:append>
+                    <v-icon size="small" color="primary" class="mr-1" @click.stop="editMetrica(key, metrica)">mdi-pencil</v-icon>
                     <v-icon size="small" @click.stop="removeMetrica(key)" color="red-lighten-2">mdi-delete</v-icon>
                   </template>
                 </v-text-field>
@@ -193,6 +196,7 @@
                   variant="outlined"
                 >
                   <template v-slot:append>
+                    <v-icon size="small" color="primary" class="mr-1" @click.stop="editMetrica(key, metrica)">mdi-pencil</v-icon>
                     <v-icon size="small" @click.stop="removeMetrica(key)" color="red-lighten-2">mdi-delete</v-icon>
                   </template>
                 </v-text-field>
@@ -204,6 +208,7 @@
                   hide-details
                 >
                   <template v-slot:append>
+                    <v-icon size="small" color="primary" class="mr-1" @click.stop="editMetrica(key, metrica)">mdi-pencil</v-icon>
                     <v-icon size="small" @click.stop="removeMetrica(key)" color="red-lighten-2">mdi-delete</v-icon>
                   </template>
                 </v-checkbox>
@@ -234,7 +239,7 @@
     <v-dialog v-model="addMetricaDialog" persistent max-width="400px">
       <v-card rounded="xl">
         <v-toolbar color="success" density="compact">
-          <v-toolbar-title class="">{{ t('hacienda_info.add_metric') }}</v-toolbar-title>
+          <v-toolbar-title class="">{{ isEditingMetrica ? (t('hacienda_info.edit_metric') || 'Editar Métrica') : t('hacienda_info.add_metric') }}</v-toolbar-title>
           <v-spacer></v-spacer>
         </v-toolbar>
         <v-card-text class="pa-4">
@@ -264,7 +269,7 @@
         <v-card-actions class="pa-4 pt-0">
           <v-spacer></v-spacer>
           <v-btn variant="flat" color="red-lighten-3" @click="addMetricaDialog = false">{{ t('hacienda_info.cancel') }}</v-btn>
-          <v-btn variant="flat" color="green-lighten-3" @click="handleAddMetrica">{{ t('hacienda_info.add') }}</v-btn>
+          <v-btn variant="flat" color="green-lighten-3" @click="handleAddMetrica">{{ isEditingMetrica ? (t('hacienda_info.save') || 'Guardar') : t('hacienda_info.add') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -317,6 +322,8 @@ const testingAI = ref(false)
 
 // Metrics State
 const addMetricaDialog = ref(false)
+const isEditingMetrica = ref(false)
+const editingMetricaKey = ref('')
 const newMetrica = ref({
   titulo: '',
   descripcion: '',
@@ -376,6 +383,24 @@ const testAIConnection = async () => {
   }
 }
 
+const openAddMetricaDialog = () => {
+  addMetricaDialog.value = true
+  isEditingMetrica.value = false
+  editingMetricaKey.value = ''
+  newMetrica.value = { titulo: '', descripcion: '', tipo: 'text' }
+}
+
+const editMetrica = (key, metrica) => {
+  isEditingMetrica.value = true
+  editingMetricaKey.value = key
+  newMetrica.value = {
+    titulo: key.replace(/_/g, ' ').toUpperCase(),
+    descripcion: metrica.descripcion || '',
+    tipo: metrica.tipo || 'text'
+  }
+  addMetricaDialog.value = true
+}
+
 const handleAddMetrica = () => {
   if (!newMetrica.value.titulo) return
 
@@ -385,11 +410,19 @@ const handleAddMetrica = () => {
     formData.value.metricas = {}
   }
 
-  formData.value.metricas[key] = {
+  const metricaData = {
     tipo: newMetrica.value.tipo,
-    valor: haciendaStore.getDefaultMetricaValue(newMetrica.value.tipo),
+    valor: (isEditingMetrica.value && formData.value.metricas[editingMetricaKey.value]?.tipo === newMetrica.value.tipo)
+      ? formData.value.metricas[editingMetricaKey.value].valor
+      : haciendaStore.getDefaultMetricaValue(newMetrica.value.tipo),
     descripcion: newMetrica.value.descripcion
   }
+
+  if (isEditingMetrica.value && editingMetricaKey.value !== key) {
+    delete formData.value.metricas[editingMetricaKey.value]
+  }
+
+  formData.value.metricas[key] = metricaData
 
   newMetrica.value = {
     titulo: '',
@@ -398,6 +431,8 @@ const handleAddMetrica = () => {
   }
 
   addMetricaDialog.value = false
+  isEditingMetrica.value = false
+  editingMetricaKey.value = ''
 }
 
 const removeMetrica = (key) => {

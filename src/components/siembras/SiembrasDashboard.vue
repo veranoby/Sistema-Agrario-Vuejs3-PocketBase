@@ -172,7 +172,7 @@
         <!-- Mapa y Lista -->
         <v-row>
           <!-- Mapa de siembras -->
-          <v-col cols="12" lg="8">
+          <v-col cols="12">
             <v-card variant="elevated" elevation="2" class="h-100">
               <v-card-title class="pa-4">
                 <v-icon start color="success">mdi-map</v-icon>
@@ -189,7 +189,7 @@
                   />
                   <div v-if="!siembrasGeoJSON && !mapLoading" class="map-overlay-empty d-flex flex-column align-center justify-center">
                     <v-icon size="48" color="grey-lighten-2" class="mb-2">mdi-map-off</v-icon>
-                    <div class="text-caption text-medium-emphasis">Sin geometrías de siembras detectadas</div>
+                    <div class="">Sin geometrías de siembras detectadas</div>
                     <div class="text-xxs text-grey mt-1">(Se requieren zonas tipo 'Lote' asignadas)</div>
                   </div>
                 </div>
@@ -197,19 +197,7 @@
             </v-card>
           </v-col>
 
-          <!-- Ciclos de cultivo -->
-          <v-col cols="12" lg="4">
-            <v-card variant="elevated" elevation="2" class="h-100">
-              <v-card-title class="pa-4">
-                <v-icon start color="success">mdi-chart-timeline-variant</v-icon>
-                Ciclos de Cultivo
-              </v-card-title>
-              <v-divider />
-              <v-card-text>
-                <CycleChart :siembras="siembras" />
-              </v-card-text>
-            </v-card>
-          </v-col>
+
         </v-row>
       </v-container>
     </main>
@@ -238,7 +226,6 @@ import { storeToRefs } from 'pinia'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import GisMapComponent from '@/components/GisMapComponent.vue'
-import CycleChart from './CycleChart.vue'
 import SiembraCreateDialog from './SiembraCreateDialog.vue'
 import SiembraDeleteModal from './SiembraDeleteModal.vue'
 import { useAvatarStore } from '@/stores/avatarStore'

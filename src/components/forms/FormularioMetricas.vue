@@ -29,87 +29,128 @@
     </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-      <!-- MODO SELECCIÓN (Checklist para Batch) -->
-      <template v-if="mode === 'select'">
-        <v-card
-          v-for="metrica in metricasDisponibles"
-          :key="metrica.key"
-          variant="flat"
-          class="transition-all rounded-lg bg-grey-lighten-4"
-          :class="{ 'bg-success-lighten-5 elevation-1': localSelection.includes(metrica.key) }"
-          @click="toggleMetricSelection(metrica.key)"
-        >
-          <v-card-text class="pa-3 flex items-start">
+      <v-card
+        v-for="grupo in metricasAgrupadas"
+        :key="grupo.principal.key"
+        variant="flat"
+        class="transition-all rounded-lg bg-grey-lighten-4"
+        :class="{ 'bg-success-lighten-5 elevation-1': localSelection.includes(grupo.principal.key) }"
+      >
+        <v-card-text class="pa-3">
+          <div class="flex items-center mb-2">
             <v-checkbox-btn
-              :model-value="localSelection.includes(metrica.key)"
+              :model-value="localSelection.includes(grupo.principal.key)"
+              @update:model-value="toggleMetricSelection(grupo.principal.key, grupo.unidad?.key)"
               color="success"
               density="compact"
-              class="mt-n1"
+              class="mr-2 mt-n1"
             />
-            <div class="flex flex-col ml-1">
-              <span class="text-body-2" :class="localSelection.includes(metrica.key) ? 'text-success font-weight-bold' : 'text-grey-darken-3'">
-                {{ metrica.descripcion }}
-              </span>
-              <span class="text-caption text-grey-darken-1">
-                {{ metrica.valor }} <span class="text-grey">{{ metrica.unidad }}</span>
+            <div class="flex flex-col" @click="toggleMetricSelection(grupo.principal.key, grupo.unidad?.key)" style="cursor: pointer;">
+              <span class="text-body-2" :class="localSelection.includes(grupo.principal.key) ? 'text-success font-weight-bold' : 'text-grey-darken-3'">
+                {{ grupo.principal.descripcion }}
               </span>
             </div>
-          </v-card-text>
-        </v-card>
-      </template>
+          </div>
+          
+          <div class="mt-2 flex gap-2">
+            <!-- Principal Metric -->
+            <div :class="grupo.unidad ? 'w-2/3' : 'w-full'">
+              <template v-if="grupo.principal.tipo === 'select'">
+                <v-select
+                  v-model="metricasValues[grupo.principal.key]"
+                  :items="grupo.principal.opciones"
+                  :label="grupo.principal.descripcion"
+                  variant="outlined"
+                  density="compact"
+                  class="rounded-lg bg-white"
+                  :rules="grupo.principal.requerido && localSelection.includes(grupo.principal.key) ? [v => !!v || 'Requerido'] : []"
+                  hide-details="auto"
+                  :disabled="!localSelection.includes(grupo.principal.key)"
+                ></v-select>
+              </template>
+              <template v-else-if="grupo.principal.tipo === 'multi-select'">
+                <v-select
+                  v-model="metricasValues[grupo.principal.key]"
+                  :items="grupo.principal.opciones"
+                  :label="grupo.principal.descripcion"
+                  multiple
+                  chips
+                  variant="outlined"
+                  density="compact"
+                  class="rounded-lg bg-white"
+                  :rules="grupo.principal.requerido && localSelection.includes(grupo.principal.key) ? [v => !!v || 'Requerido'] : []"
+                  hide-details="auto"
+                  :disabled="!localSelection.includes(grupo.principal.key)"
+                ></v-select>
+              </template>
+              <template v-else-if="grupo.principal.tipo === 'boolean' || grupo.principal.tipo === 'checkbox'">
+                <v-checkbox
+                  v-model="metricasValues[grupo.principal.key]"
+                  :label="grupo.principal.descripcion"
+                  density="compact"
+                  color="success"
+                  hide-details="auto"
+                  :disabled="!localSelection.includes(grupo.principal.key)"
+                ></v-checkbox>
+              </template>
+              <template v-else-if="grupo.principal.tipo === 'number'">
+                <v-text-field
+                  v-model.number="metricasValues[grupo.principal.key]"
+                  :label="grupo.principal.descripcion"
+                  type="number"
+                  variant="outlined"
+                  density="compact"
+                  :suffix="grupo.principal.unidad"
+                  class="bg-white rounded-lg"
+                  :rules="grupo.principal.requerido && localSelection.includes(grupo.principal.key) ? [v => !!v || 'Requerido'] : []"
+                  hide-details="auto"
+                  :disabled="!localSelection.includes(grupo.principal.key)"
+                ></v-text-field>
+              </template>
+              <template v-else-if="grupo.principal.tipo === 'date'">
+                <v-text-field
+                  v-model="metricasValues[grupo.principal.key]"
+                  :label="grupo.principal.descripcion"
+                  type="date"
+                  variant="outlined"
+                  density="compact"
+                  class="bg-white rounded-lg"
+                  :rules="grupo.principal.requerido && localSelection.includes(grupo.principal.key) ? [v => !!v || 'Requerido'] : []"
+                  hide-details="auto"
+                  :disabled="!localSelection.includes(grupo.principal.key)"
+                ></v-text-field>
+              </template>
+              <template v-else>
+                <v-text-field
+                  v-model="metricasValues[grupo.principal.key]"
+                  :label="grupo.principal.descripcion"
+                  variant="outlined"
+                  density="compact"
+                  class="bg-white rounded-lg"
+                  :rules="grupo.principal.requerido && localSelection.includes(grupo.principal.key) ? [v => !!v || 'Requerido'] : []"
+                  hide-details="auto"
+                  :disabled="!localSelection.includes(grupo.principal.key)"
+                ></v-text-field>
+              </template>
+            </div>
 
-      <!-- MODO EDICIÓN (Inputs para Bitácora Individual) -->
-      <template v-else-if="mode === 'edit'">
-        <div
-          v-for="metrica in metricasDisponibles"
-          :key="metrica.key"
-          class="flex flex-col"
-        >
-          <template v-if="metrica.tipo === 'select'">
-            <v-select
-              v-model="metricasValues[metrica.key]"
-              :items="metrica.opciones"
-              :label="metrica.descripcion"
-              variant="outlined"
-              density="compact"
-              class="rounded-lg"
-              :rules="metrica.requerido ? [v => !!v || 'Requerido'] : []"
-              hide-details="auto"
-            ></v-select>
-          </template>
-          <template v-else-if="metrica.tipo === 'boolean' || metrica.tipo === 'checkbox'">
-            <v-checkbox
-              v-model="metricasValues[metrica.key]"
-              :label="metrica.descripcion"
-              density="compact"
-              color="success"
-              hide-details="auto"
-            ></v-checkbox>
-          </template>
-          <template v-else-if="metrica.tipo === 'number'">
-            <v-text-field
-              v-model.number="metricasValues[metrica.key]"
-              :label="metrica.descripcion"
-              type="number"
-              variant="outlined"
-              density="compact"
-              :suffix="metrica.unidad"
-              :rules="metrica.requerido ? [v => !!v || 'Requerido'] : []"
-              hide-details="auto"
-            ></v-text-field>
-          </template>
-          <template v-else>
-            <v-text-field
-              v-model="metricasValues[metrica.key]"
-              :label="metrica.descripcion"
-              variant="outlined"
-              density="compact"
-              :rules="metrica.requerido ? [v => !!v || 'Requerido'] : []"
-              hide-details="auto"
-            ></v-text-field>
-          </template>
-        </div>
-      </template>
+            <!-- Unit Metric (if exists) -->
+            <div v-if="grupo.unidad" class="w-1/3">
+              <v-select
+                v-model="metricasValues[grupo.unidad.key]"
+                :items="grupo.unidad.opciones"
+                variant="outlined"
+                density="compact"
+                class="rounded-lg bg-white"
+                :rules="grupo.unidad.requerido && localSelection.includes(grupo.principal.key) ? [v => !!v || 'Req.'] : []"
+                hide-details="auto"
+                :disabled="!localSelection.includes(grupo.principal.key)"
+                placeholder="Unidad"
+              ></v-select>
+            </div>
+          </div>
+        </v-card-text>
+      </v-card>
     </div>
 
     <!-- Selection Summary -->
@@ -179,12 +220,34 @@ const anyMetricsSelected = computed(() => {
   return localSelection.value.length > 0;
 });
 
-const toggleMetricSelection = (metricKey) => {
+const metricasAgrupadas = computed(() => {
+  const grupos = [];
+  let currentGrupo = null;
+
+  for (const metrica of props.metricasDisponibles) {
+    if (metrica.key.startsWith('unidad_') && currentGrupo && currentGrupo.principal.tipo === 'number') {
+      currentGrupo.unidad = metrica;
+    } else {
+      currentGrupo = { principal: metrica, unidad: null };
+      grupos.push(currentGrupo);
+    }
+  }
+  return grupos;
+});
+
+const toggleMetricSelection = (metricKey, unitKey = null) => {
   const index = localSelection.value.indexOf(metricKey);
   if (index > -1) {
     localSelection.value.splice(index, 1);
+    if (unitKey) {
+      const unitIndex = localSelection.value.indexOf(unitKey);
+      if (unitIndex > -1) localSelection.value.splice(unitIndex, 1);
+    }
   } else {
     localSelection.value.push(metricKey);
+    if (unitKey && !localSelection.value.includes(unitKey)) {
+      localSelection.value.push(unitKey);
+    }
   }
 };
 

@@ -77,7 +77,8 @@ const navigationLinks = [
   { id: 5, to: '/bitacora', icon: 'mdi-book-open-variant', label: 'Bitácora' },
   { id: 6, to: '/zonas', icon: 'mdi-map', label: 'Zonas' },
   { id: 7, to: '/finanzas', icon: 'mdi-cash-multiple', label: 'Finanzas' },
-  { id: 8, to: '/recordatorios', icon: 'mdi-alarm-light-outline', label: 'Recordatorios' }
+  { id: 8, to: '/recordatorios', icon: 'mdi-alarm-light-outline', label: 'Recordatorios' },
+  { id: 9, to: '/metricas', icon: 'mdi-chart-areaspline', label: 'Métricas e Inteligencia' }
 ]
 
 let checkInterval = null

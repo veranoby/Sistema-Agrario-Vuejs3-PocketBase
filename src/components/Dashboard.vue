@@ -172,7 +172,7 @@
             </v-card-title>
             <v-divider />
             <v-card-text class="pa-0">
-              <div style="height: 500px;">
+              <div style="height: 1000px;">
                 <GisMapComponent
                   v-if="haciendaGeoJSON || haciendaCenter"
                   :initial-geo-json="haciendaGeoJSON"
@@ -180,7 +180,7 @@
                   :readonly="true"
                   :hacienda-name="mi_hacienda?.name"
                 />
-                <div v-else class="d-flex flex-column align-center justify-center h-100 pa-10 text-grey" style="min-height: 400px;">
+                <div v-else class="d-flex flex-column align-center justify-center pa-10 text-grey" style="min-height: 600px;">
                   <v-icon size="64" class="mb-4">mdi-map-marker-off</v-icon>
                   <p>{{ t('dashboard.no_geo_data') }}</p>
                   <v-btn variant="text" color="primary" class="mt-2" to="/siembras">
