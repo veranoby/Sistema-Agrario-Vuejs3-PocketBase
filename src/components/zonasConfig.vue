@@ -89,6 +89,7 @@
                 ></span>
 
                 <v-btn
+                  v-if="canCreate"
                   color="green-lighten-2"
                   icon="mdi-plus"
                   size="small"
@@ -147,8 +148,8 @@
                   </template>
 
                   <template #[`item.actions`]="{ item }">
-                    <v-icon class="me-2" @click="editarZona(item)"> mdi-pencil </v-icon>
-                    <v-icon @click="confirmarEliminarZona(item)"> mdi-delete </v-icon>
+                    <v-icon v-if="canEdit" class="me-2" @click="editarZona(item)"> mdi-pencil </v-icon>
+                    <v-icon v-if="canDelete" @click="confirmarEliminarZona(item)"> mdi-delete </v-icon>
                   </template>
 
                   <template #expanded-row="{ columns, item }">
@@ -279,6 +280,10 @@ const colorBpaEstado = computed(() => {
 const { zonas, tiposZonas } = storeToRefs(zonasStore)
 const { cargarZonas, cargarTiposZonas, eliminarZona } = zonasStore
 const { siembras } = storeToRefs(siembrasStore)
+
+const canEdit = computed(() => authStore.canEdit)
+const canCreate = computed(() => authStore.canCreate)
+const canDelete = computed(() => authStore.canDelete)
 
 const dialogoCrear = ref(false)
 const modoEdicion = ref(false)

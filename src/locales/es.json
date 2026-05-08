@@ -181,10 +181,9 @@
     "signed": "Firmado",
     "unsigned": "Sin firma",
     "no_geo_data": "No hay datos geográficos registrados en esta hacienda",
-    "go_to_sowings": "Ir a Siembras para registrar áreas"
+    "go_to_sowings": "Ir a Siembras para registrar áreas",
+    "overdue_schedules": "Programaciones Vencidas"
   },
-
-
   "sowings": {
     "sowing_management": "GESTIÓN DE SIEMBRA",
     "new_sowing": "NUEVA SIEMBRA",
@@ -204,7 +203,13 @@
     "create_sowing": "CREAR SIEMBRA",
     "error_loading_sowings": "ERROR AL CARGAR LAS SIEMBRAS O ZONAS",
     "sowing_created_successfully": "SIEMBRA CREADA EXITOSAMENTE",
-    "error_creating_sowing": "ERROR AL CREAR LA SIEMBRA"
+    "error_creating_sowing": "ERROR AL CREAR LA SIEMBRA",
+    "no_sowings_registered": "No hay siembras registradas",
+    "delete_sowing": "Eliminar Siembra",
+    "sowings_map": "Mapa de Siembras",
+    "no_geometries_detected": "Sin geometrías de siembras detectadas",
+    "requires_lote_zones": "(Se requieren zonas tipo Lote asignadas)",
+    "crop_cycles": "Ciclos de Cultivo"
   },
   "sowing_workspace": {
     "my_sowings": "MIS SIEMBRAS/PROYECTOS",
@@ -267,7 +272,6 @@
     "zone_saved_successfully": "ZONA GUARDADA EXITOSAMENTE",
     "loading": "CARGANDO..."
   },
-
   "zones": {
     "zones_and_logistics": "ZONAS Y LOGÍSTICA DE TRABAJO",
     "bpa_progress": "AVANCE BPA",
@@ -289,7 +293,9 @@
     "error_loading_data": "ERROR AL CARGAR LOS DATOS",
     "confirm_delete_zone": "¿ESTÁS SEGURO DE QUE QUIERES ELIMINAR LA ZONA \"{zoneName}\"?",
     "error_deleting_zone": "ERROR AL ELIMINAR LA ZONA",
-    "zone_saved_successfully": "ZONA GUARDADA EXITOSAMENTE"
+    "zone_saved_successfully": "ZONA GUARDADA EXITOSAMENTE",
+    "create": "CREAR",
+    "edit": "EDITAR"
   },
   "activities": {
     "activity_management": "GESTIÓN DE ACTIVIDADES",
@@ -297,7 +303,8 @@
     "no_activities": "NO HAY ACTIVIDADES REGISTRADAS",
     "active": "ACTIVA",
     "stopped": "DETENIDA",
-    "error_loading_activities": "ERROR AL CARGAR LAS ACTIVIDADES"
+    "error_loading_activities": "ERROR AL CARGAR LAS ACTIVIDADES",
+    "activity_type": "Tipo de Actividad"
   },
   "activity_workspace": {
     "my_activities": "MIS ACTIVIDADES",
@@ -343,7 +350,9 @@
     "new_schedule": "NUEVA PROGRAMACIÓN",
     "sowing_project": "SIEMBRA/PROYECTO",
     "activity": "ACTIVIDAD",
-    "no_schedules": "NO HAY PROGRAMACIONES DE ACTIVIDADES REGISTRADAS"
+    "no_schedules": "NO HAY PROGRAMACIONES DE ACTIVIDADES REGISTRADAS",
+    "edit_schedule": "Editar Programación",
+    "new_schedule_title": "Nueva Programación"
   },
   "reminders": {
     "reminder_management": "GESTIÓN DE RECORDATORIOS",
@@ -352,7 +361,8 @@
     "in_progress": "EN PROGRESO",
     "completed": "COMPLETADOS",
     "reminder_saved": "RECORDATORIO GUARDADO",
-    "error_saving_reminder": "ERROR AL GUARDAR RECORDATORIO"
+    "error_saving_reminder": "ERROR AL GUARDAR RECORDATORIO",
+    "edit_reminder": "Editar Recordatorio"
   },
   "finance": {
     "financial_management": "GESTIÓN FINANCIERA",
@@ -405,7 +415,10 @@
     "filter_by_sowing": "Filtrar por Siembra",
     "filter_by_activity": "Filtrar por Actividad",
     "filter_by_date": "Filtrar por Fecha",
-    "load_more": "Cargar Más"
+    "load_more": "Cargar Más",
+    "new_entry": "Nueva Entrada",
+    "edit_entry": "Editar Entrada",
+    "new_entry_success": "Nueva entrada de bitácora creada con éxito."
   },
   "scheduler": {
     "status_on": "Scheduler ON",
@@ -431,5 +444,18 @@
     "tecnico": "Técnico",
     "técnico": "Técnico",
     "operador": "Operador"
+  },
+  "sidebar": {
+    "profile_hacienda": "PERFIL / HACIENDA",
+    "logout": "CERRAR SESIÓN",
+    "dashboard": "DASHBOARD",
+    "sowings": "Siembras/Proyectos",
+    "activities": "Actividades",
+    "schedules": "Programaciones",
+    "bitacora": "Bitácora",
+    "zones": "Zonas",
+    "finances": "Finanzas",
+    "reminders": "Recordatorios",
+    "reports": "Reportes"
   }
 }

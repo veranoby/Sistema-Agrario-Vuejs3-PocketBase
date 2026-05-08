@@ -35,7 +35,7 @@
             <v-icon icon="mdi-account-circle"></v-icon>
           </template>
 
-          <v-list-item-title class="text-xs"> P E R F I L / H A C I E N D A </v-list-item-title>
+          <v-list-item-title class="text-xs"> {{ $t('sidebar.profile_hacienda') }} </v-list-item-title>
         </v-list-item>
 
         <v-list-item v-if="isLoggedIn" @click="handleLogout" link class="vivid-hover">
@@ -43,7 +43,7 @@
             <v-icon icon="mdi-logout"></v-icon>
           </template>
 
-          <v-list-item-title class="text-xs">L O G O U T</v-list-item-title>
+          <v-list-item-title class="text-xs"> {{ $t('sidebar.logout') }} </v-list-item-title>
         </v-list-item>
       </v-list>
     </div>
@@ -58,8 +58,8 @@ import { useRoute } from 'vue-router'
 
 // Module mapping for navigation links
 const MODULE_MAP = {
-  'Gestion rapida financiera': 'finanzas',
-  'Gestion de Recordatorios': 'recordatorios'
+  'Finanzas': 'finanzas',
+  'Recordatorios': 'recordatorios'
 }
 
 export default {

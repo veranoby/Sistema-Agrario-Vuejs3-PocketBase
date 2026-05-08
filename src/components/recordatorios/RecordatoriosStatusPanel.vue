@@ -31,6 +31,7 @@
               </p>
 
               <v-btn
+                v-if="canEdit"
                 icon
                 variant="text"
                 class="mr-1"
@@ -40,7 +41,7 @@
                 <v-icon color="grey-darken-1">mdi-pencil</v-icon>
               </v-btn>
               <!-- Menú de acciones -->
-              <v-menu location="bottom">
+              <v-menu v-if="canDelete || canEdit" location="bottom">
                 <template v-slot:activator="{ props }">
                   <v-btn icon variant="tonal" size="sm" v-bind="props" class="mr-1">
                     <v-icon>mdi-dots-vertical</v-icon>
@@ -50,6 +51,7 @@
                 <v-list density="compact">
                   <!-- Opciones de estado -->
                   <v-list-item
+                    v-if="canEdit"
                     v-for="status in availableStatuses"
                     :key="status"
                     @click="updateStatus(item.id, status)"
@@ -59,10 +61,10 @@
                     }}</v-list-item-title>
                   </v-list-item>
 
-                  <v-divider inset></v-divider>
+                  <v-divider inset v-if="canEdit && canDelete"></v-divider>
 
                   <!-- Opción eliminar -->
-                  <v-list-item @click="$emit('delete', item.id)">
+                  <v-list-item v-if="canDelete" @click="$emit('delete', item.id)">
                     <v-list-item-title class="text-xs text-red">
                       <v-icon color="error" small class="mr-2">mdi-delete</v-icon>
                       Eliminar
@@ -155,10 +157,15 @@
 import { computed } from 'vue'
 import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useZonasStore } from '@/stores/zonasStore'
+import { useAuthStore } from '@/stores/authStore'
 import { formatDate } from '@/utils/formatters'
 
 const siembrasStore = useSiembrasStore()
 const zonasStore = useZonasStore()
+const authStore = useAuthStore()
+
+const canEdit = computed(() => authStore.canEdit)
+const canDelete = computed(() => authStore.canDelete)
 
 const props = defineProps({
   title: String,

@@ -102,7 +102,7 @@
           <v-card v-if="programacionesVencidas.length" class="bg-dinamico p-4 rounded-xl" color="transparent" flat>
             <v-card-title class="px-0 pb-4 d-flex align-center">
               <v-icon start color="error">mdi-clock-alert-outline</v-icon>
-              <span class="text-h6 font-weight-bold text-error">Programaciones Vencidas</span>
+              <span class="text-h6 font-weight-bold text-error">{{ $t('dashboard.overdue_schedules') }}</span>
               <v-spacer />
               <v-chip size="x-small" color="error" variant="flat">{{ programacionesVencidas.length }}</v-chip>
             </v-card-title>

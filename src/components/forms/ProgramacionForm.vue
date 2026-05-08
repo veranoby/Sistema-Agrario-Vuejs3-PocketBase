@@ -7,7 +7,7 @@
   >
     <v-card>
       <v-toolbar :color="formTitleColor" dark>
-        <v-toolbar-title>{{ esEdicion ? 'Editar' : 'Nueva' }} Programación</v-toolbar-title>
+        <v-toolbar-title>{{ esEdicion ? $t('schedules.edit_schedule') : $t('schedules.new_schedule_title') }}</v-toolbar-title>
         <v-spacer></v-spacer>
         <v-btn icon @click="cerrarDialog">
           <v-icon>mdi-close</v-icon>

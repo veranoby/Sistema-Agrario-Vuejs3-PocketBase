@@ -5,6 +5,7 @@
         <span v-if="actividadInfo.siembras.length > 0">{{ t('activity_workspace.associated_sowings') }}</span>
       </h2>
       <v-btn
+        v-if="canEdit"
         size="small"
         color="green-lighten-2"
         icon
@@ -62,9 +63,14 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useZonasStore } from '@/stores/zonasStore'
+import { useAuthStore } from '@/stores/authStore'
+
+const authStore = useAuthStore()
+const canEdit = computed(() => authStore.canEdit)
 
 const props = defineProps({
   actividadInfo: {

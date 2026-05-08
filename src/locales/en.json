@@ -181,10 +181,9 @@
     "signed": "Signed",
     "unsigned": "Unsigned",
     "no_geo_data": "No geographic data registered in this hacienda",
-    "go_to_sowings": "Go to Sowings to register areas"
+    "go_to_sowings": "Go to Sowings to register areas",
+    "overdue_schedules": "Overdue Schedules"
   },
-
-
   "sowings": {
     "sowing_management": "SOWING MANAGEMENT",
     "new_sowing": "NEW SOWING",
@@ -204,7 +203,13 @@
     "create_sowing": "CREATE SOWING",
     "error_loading_sowings": "ERROR LOADING SOWINGS OR ZONES",
     "sowing_created_successfully": "SOWING CREATED SUCCESSFULLY",
-    "error_creating_sowing": "ERROR CREATING SOWING"
+    "error_creating_sowing": "ERROR CREATING SOWING",
+    "no_sowings_registered": "No sowings registered",
+    "delete_sowing": "Delete Sowing",
+    "sowings_map": "Sowings Map",
+    "no_geometries_detected": "No sowing geometries detected",
+    "requires_lote_zones": "(Lote type zones required)",
+    "crop_cycles": "Crop Cycles"
   },
   "sowing_workspace": {
     "my_sowings": "MY SOWINGS/PROJECTS",
@@ -267,7 +272,6 @@
     "zone_saved_successfully": "ZONE SAVED SUCCESSFULLY",
     "loading": "LOADING..."
   },
-
   "zones": {
     "zones_and_logistics": "ZONES AND WORK LOGISTICS",
     "bpa_progress": "BPA PROGRESS",
@@ -289,7 +293,9 @@
     "error_loading_data": "ERROR LOADING DATA",
     "confirm_delete_zone": "ARE YOU SURE YOU WANT TO DELETE THE ZONE \"{zoneName}\"?",
     "error_deleting_zone": "ERROR DELETING ZONE",
-    "zone_saved_successfully": "ZONE SAVED SUCCESSFULLY"
+    "zone_saved_successfully": "ZONE SAVED SUCCESSFULLY",
+    "create": "CREATE",
+    "edit": "EDIT"
   },
   "activities": {
     "activity_management": "ACTIVITY MANAGEMENT",
@@ -297,7 +303,8 @@
     "no_activities": "NO REGISTERED ACTIVITIES",
     "active": "ACTIVE",
     "stopped": "STOPPED",
-    "error_loading_activities": "ERROR LOADING ACTIVITIES"
+    "error_loading_activities": "ERROR LOADING ACTIVITIES",
+    "activity_type": "Activity Type"
   },
   "activity_workspace": {
     "my_activities": "MY ACTIVITIES",
@@ -343,7 +350,9 @@
     "new_schedule": "NEW SCHEDULE",
     "sowing_project": "SOWING/PROJECT",
     "activity": "ACTIVITY",
-    "no_schedules": "NO REGISTERED ACTIVITY SCHEDULES"
+    "no_schedules": "NO REGISTERED ACTIVITY SCHEDULES",
+    "edit_schedule": "Edit Schedule",
+    "new_schedule_title": "New Schedule"
   },
   "reminders": {
     "reminder_management": "REMINDER MANAGEMENT",
@@ -352,7 +361,8 @@
     "in_progress": "IN PROGRESS",
     "completed": "COMPLETED",
     "reminder_saved": "REMINDER SAVED",
-    "error_saving_reminder": "ERROR SAVING REMINDER"
+    "error_saving_reminder": "ERROR SAVING REMINDER",
+    "edit_reminder": "Edit Reminder"
   },
   "finance": {
     "financial_management": "FINANCIAL MANAGEMENT",
@@ -405,7 +415,10 @@
     "filter_by_sowing": "Filter by Sowing",
     "filter_by_activity": "Filter by Activity",
     "filter_by_date": "Filter by Date",
-    "load_more": "Load More"
+    "load_more": "Load More",
+    "new_entry": "New Entry",
+    "edit_entry": "Edit Entry",
+    "new_entry_success": "New log entry created successfully."
   },
   "scheduler": {
     "status_on": "Scheduler ON",
@@ -431,5 +444,18 @@
     "tecnico": "Technician",
     "técnico": "Technician",
     "operador": "Operator"
+  },
+  "sidebar": {
+    "profile_hacienda": "PROFILE / HACIENDA",
+    "logout": "LOGOUT",
+    "dashboard": "DASHBOARD",
+    "sowings": "Sowings/Projects",
+    "activities": "Activities",
+    "schedules": "Schedules",
+    "bitacora": "Logbook",
+    "zones": "Zones",
+    "finances": "Finances",
+    "reminders": "Reminders",
+    "reports": "Reports"
   }
 }
