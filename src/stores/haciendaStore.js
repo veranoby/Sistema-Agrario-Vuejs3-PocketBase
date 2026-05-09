@@ -25,6 +25,22 @@ export const useHaciendaStore = defineStore('hacienda', {
   }),
 
   getters: {
+    isPlanExpired: (state) => {
+      if (!state.mi_hacienda?.subscription_end) return false
+      const end = new Date(state.mi_hacienda.subscription_end)
+      return end < new Date()
+    },
+    isFreePlan: (state) => {
+      // Asume que si no hay plan definido, o si expiró, o si se llama "gratis" es un plan libre.
+      // Se delega la verdadera expiración al isPlanExpired
+      if (!state.mi_hacienda) return true
+      if (!state.mi_hacienda.plan) return true
+
+      const planEnd = state.mi_hacienda.subscription_end ? new Date(state.mi_hacienda.subscription_end) : null
+      if (planEnd && planEnd < new Date()) return true
+
+      return false
+    },
     haciendaName: (state) => state.mi_hacienda?.name || '',
     avatarHaciendaUrl: (state) => {
       const avatarStore = useAvatarStore()

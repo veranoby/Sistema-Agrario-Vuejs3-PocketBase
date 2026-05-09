@@ -43,6 +43,17 @@
           {{ t('ai_assistant.analyzing_context', { name: siembra?.nombre }) }}
         </v-alert>
 
+        <v-alert
+          v-if="isUsingGlobalKey"
+          type="info"
+          variant="tonal"
+          class="mb-4 text-caption"
+          density="compact"
+          border="start"
+        >
+          Usando clave global. Consultas restantes: {{ remainingQuota }} de {{ settingsStore.aiRateLimit || 5 }}
+        </v-alert>
+
         <v-card v-if="loading" class="d-flex flex-column align-center justify-center pa-8 mb-4" flat bg-color="transparent">
           <v-progress-circular indeterminate color="green-darken-2" size="64" width="6"></v-progress-circular>
           <p class="mt-4 text-body-2 text-grey-darken-1 font-weight-medium">
@@ -94,7 +105,10 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useSettingsStore } from '@/stores/settingsStore'
+import { useAiUsageStore } from '@/stores/aiUsageStore'
+import { useHaciendaStore } from '@/stores/haciendaStore'
 import { useI18n } from 'vue-i18n'
 import { generateAIResponse } from '@/services/aiService'
 import { buildSiembraContext } from '@/services/aiContextBuilder'
@@ -105,6 +119,22 @@ const props = defineProps({
   siembra: { type: Object, required: true },
   actividades: { type: Array, default: () => [] },
   zonas: { type: Array, default: () => [] }
+})
+
+const settingsStore = useSettingsStore()
+const aiUsageStore = useAiUsageStore()
+const haciendaStore = useHaciendaStore()
+
+const isUsingGlobalKey = computed(() => !haciendaStore.mi_hacienda?.openrouter_key)
+const remainingQuota = computed(() => {
+    const limit = settingsStore.aiRateLimit || 5
+    const used = aiUsageStore.getUsage
+    return Math.max(0, limit - used)
+})
+
+onMounted(async () => {
+    await settingsStore.fetchConfig()
+    aiUsageStore.loadFromLocal()
 })
 
 const drawer = ref(false)
