@@ -238,6 +238,62 @@
                 class="quill-editor"
               />
             </div>
+
+            <!-- Section: BPA Compliance (Moved to Left Column) -->
+            <div class="mt-4 p-4 bg-grey-lighten-5 rounded-lg border" v-if="zonaLocal.tipos_zonas">
+              <div class="text-subtitle-2 font-weight-bold mb-4 d-flex align-center">
+                <v-icon start color="green-darken-2" size="small">mdi-shield-check-outline</v-icon>
+                Seguimiento de BPA
+              </div>
+              
+              <div class="grid grid-cols-1 gap-4">
+                <v-card 
+                  v-for="(pregunta, index) in getBpaPreguntas" 
+                  :key="index"
+                  variant="flat"
+                  class="pa-4 bg-white border rounded-xl"
+                >
+                  <div class="d-flex align-start gap-3 mb-2">
+                    <v-avatar size="24" color="success" variant="tonal">
+                      <span class="text-caption font-weight-bold">{{ index + 1 }}</span>
+                    </v-avatar>
+                    <div class="text-caption font-weight-bold text-grey-darken-3 leading-tight">
+                      {{ pregunta.pregunta }}
+                      <v-tooltip
+                        v-if="pregunta.descripcion"
+                        activator="parent"
+                        location="top"
+                      >
+                        <div class="text-caption pa-2">{{ pregunta.descripcion }}</div>
+                      </v-tooltip>
+                    </div>
+                  </div>
+
+                  <v-radio-group
+                    v-if="zonaLocal.datos_bpa && zonaLocal.datos_bpa[index]"
+                    v-model="zonaLocal.datos_bpa[index].respuesta"
+                    hide-details
+                    density="compact"
+                    class="mt-1"
+                  >
+                    <div class="flex flex-wrap gap-x-4 gap-y-1">
+                      <v-radio
+                        v-for="(opcion, opcionIndex) in pregunta.opciones"
+                        :key="`${index}-${opcionIndex}`"
+                        :label="opcion"
+                        :value="opcion"
+                        density="compact"
+                        color="success"
+                      >
+                        <template v-slot:label>
+                          <span class="text-caption font-weight-medium">{{ opcion }}</span>
+                        </template>
+                      </v-radio>
+                    </div>
+                  </v-radio-group>
+                </v-card>
+              </div>
+            </div>
           </div>
 
           <!-- RIGHT COLUMN: GIS Visualization (7/12) -->
@@ -263,7 +319,6 @@
                       density="compact"
                       variant="outlined"
                       :rules="[v => v === null || v === '' || (v >= -90 && v <= 90) || 'Latitud debe estar entre -90 y 90']"
-                      hint="Grados decimales (-90 a 90)"
                       persistent-hint
                     ></v-text-field>
                     <v-text-field
@@ -275,7 +330,6 @@
                       density="compact"
                       variant="outlined"
                       :rules="[v => v === null || v === '' || (v >= -180 && v <= 180) || 'Longitud debe estar entre -180 y 180']"
-                      hint="Grados decimales (-180 a 180)"
                       persistent-hint
                     ></v-text-field>
                   </div>
@@ -338,10 +392,11 @@
                   :draw-mode="drawMode"
                   :center="mapCenter"
                   :zoom="mapZoom"
-                  :initial-geo-json="zonaLocal.geometria"
+                  :initialGeoJSON="zonaLocal.geometria"
                   :hacienda-gps="mi_hacienda?.gps"
                   @geometry-updated="handleGeometryUpdated"
-                  style="height: 1100px; width: 100%;"
+                  @first-point-placed="handleFirstPointPlaced"
+                  style="height: 600px; width: 100%;"
                 />
               </div>
 
@@ -350,74 +405,39 @@
                 {{ gpsError }}
               </div>
 
-              <!-- Vértices de polígono (post-dibujo) -->
-              <div v-if="polygonVertices.length > 0" class="mt-2 p-2 bg-grey-lighten-4 rounded-lg text-caption">
-                <div class="font-weight-bold mb-1">Vértices del polígono ({{ polygonVertices.length }}):</div>
-                <div v-for="(vertex, index) in polygonVertices" :key="index" class="d-flex gap-2">
-                  <span>V{{ index + 1 }}:</span>
-                  <span>
-                    Lat: {{ vertex.lat.toFixed(6) }},
-                    Lng: {{ vertex.lng.toFixed(6) }}
-                  </span>
+              <!-- Vértices de polígono editables (post-dibujo) -->
+              <div v-if="polygonVertices.length > 0" class="mt-4 p-4 bg-grey-lighten-4 rounded-lg border">
+                <div class="text-subtitle-2 font-weight-bold mb-3 d-flex align-center">
+                  <v-icon start color="blue" size="small">mdi-shape-polygon-plus</v-icon>
+                  Vértices del polígono ({{ polygonVertices.length }})
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div v-for="(vertex, index) in polygonVertices" :key="index" class="d-flex gap-2 align-center bg-white p-2 rounded border shadow-sm">
+                    <v-chip size="small" color="blue" variant="flat" class="font-weight-bold">V{{ index + 1 }}</v-chip>
+                    <v-text-field
+                      v-model.number="vertex.lat"
+                      label="Lat"
+                      type="number"
+                      step="0.000001"
+                      density="compact"
+                      variant="outlined"
+                      hide-details
+                      @change="updatePolygonFromVertices"
+                    ></v-text-field>
+                    <v-text-field
+                      v-model.number="vertex.lng"
+                      label="Lng"
+                      type="number"
+                      step="0.000001"
+                      density="compact"
+                      variant="outlined"
+                      hide-details
+                      @change="updatePolygonFromVertices"
+                    ></v-text-field>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-
-        <!-- BOTTOM SECTION: BPA Compliance (Full Width) -->
-        <div class="mt-8 pt-6 border-t" v-if="zonaLocal.tipos_zonas">
-          <div class="text-h6 font-weight-bold mb-4 d-flex align-center">
-            <v-icon start color="green-darken-2">mdi-shield-check-outline</v-icon>
-            Seguimiento de Buenas Prácticas Agrícolas (BPA)
-          </div>
-          
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <v-card 
-              v-for="(pregunta, index) in getBpaPreguntas" 
-              :key="index"
-              variant="flat"
-              class="pa-4 bg-grey-lighten-5 border rounded-xl"
-            >
-              <div class="d-flex align-start gap-3 mb-2">
-                <v-avatar size="24" color="success" variant="tonal">
-                  <span class="text-caption font-weight-bold">{{ index + 1 }}</span>
-                </v-avatar>
-                <div class="text-caption font-weight-bold text-grey-darken-3 leading-tight">
-                  {{ pregunta.pregunta }}
-                  <v-tooltip
-                    v-if="pregunta.descripcion"
-                    activator="parent"
-                    location="top"
-                  >
-                    <div class="text-caption pa-2">{{ pregunta.descripcion }}</div>
-                  </v-tooltip>
-                </div>
-              </div>
-
-              <v-radio-group
-                v-if="zonaLocal.datos_bpa && zonaLocal.datos_bpa[index]"
-                v-model="zonaLocal.datos_bpa[index].respuesta"
-                hide-details
-                density="compact"
-                class="mt-1"
-              >
-                <div class="flex flex-wrap gap-x-4 gap-y-1">
-                  <v-radio
-                    v-for="(opcion, opcionIndex) in pregunta.opciones"
-                    :key="`${index}-${opcionIndex}`"
-                    :label="opcion"
-                    :value="opcion"
-                    density="compact"
-                    color="success"
-                  >
-                    <template v-slot:label>
-                      <span class="text-caption font-weight-medium">{{ opcion }}</span>
-                    </template>
-                  </v-radio>
-                </div>
-              </v-radio-group>
-            </v-card>
           </div>
         </div>
       </v-card-text>
@@ -507,7 +527,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, reactive } from 'vue'
+import { ref, computed, watch, reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useZonasStore } from '@/stores/zonasStore'
 import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
@@ -516,6 +536,7 @@ import { useHaciendaStore } from '@/stores/haciendaStore'
 import { useAvatarStore } from '@/stores/avatarStore'
 import AvatarForm from '@/components/forms/AvatarForm.vue'
 import GisMapComponent from '@/components/GisMapComponent.vue'
+import L from 'leaflet'
 
 
 const showAvatarDialog = ref(false)
@@ -621,7 +642,7 @@ const showOpcionesField = ref(false)
 import placeholderZonas from '@/assets/placeholder-zonas.png'
 
 // Estado local usando reactive en lugar de ref para mejor manejo de objetos anidados
-const zonaLocal = reactive({ ...initialState })
+const zonaLocal = reactive({ ...initialState, ...props.zonaInicial })
 
 // Computed properties
 const getBpaPreguntas = computed(() => {
@@ -635,6 +656,7 @@ const drawMode = computed(() => {
 })
 
 const handleGeometryUpdated = ({ geojson, areaHa }) => {
+  console.log("[TRACE-FORM] Geometría actualizada recibida:", geojson);
   polygonVertices.value = []
   zonaLocal.geometria = geojson
   if (areaHa > 0 && drawMode.value === 'polygon') {
@@ -653,10 +675,53 @@ const handleGeometryUpdated = ({ geojson, areaHa }) => {
   // Si es un polígono, extraer vértices de la anilla exterior
   if (geojson && geojson.type === 'Polygon') {
     const exteriorRing = geojson.coordinates[0] || []
-    polygonVertices.value = exteriorRing.map(coord => ({
+    let displayVertices = [...exteriorRing]
+    
+    // Si el último punto es igual al primero (anillo cerrado GeoJSON), removemos el último para la UI editable
+    if (displayVertices.length > 1) {
+      const first = displayVertices[0]
+      const last = displayVertices[displayVertices.length - 1]
+      if (first[0] === last[0] && first[1] === last[1]) {
+        displayVertices.pop()
+      }
+    }
+    
+    polygonVertices.value = displayVertices.map(coord => ({
       lng: coord[0],
       lat: coord[1]
     }))
+  }
+}
+
+/**
+ * Reconstruye la geometría del polígono a partir de los vértices editados manualmente
+ */
+function updatePolygonFromVertices() {
+  if (zonaLocal.geometria && zonaLocal.geometria.type === 'Polygon') {
+    const newCoords = polygonVertices.value.map(v => [Number(v.lng), Number(v.lat)])
+    
+    if (newCoords.length > 0) {
+      // Asegurar el cierre del anillo para el estándar GeoJSON
+      const closedCoords = [...newCoords, [...newCoords[0]]]
+      
+      zonaLocal.geometria = {
+        ...zonaLocal.geometria,
+        coordinates: [closedCoords]
+      }
+      
+      // Intentar recalcular el área si tenemos suficientes puntos (mínimo 3 + cierre = 4)
+      if (closedCoords.length >= 4) {
+        try {
+          // Leaflet GeometryUtil espera un array de L.LatLng
+          const latlngs = closedCoords.map(c => L.latLng(c[1], c[0]))
+          const areaSqMeters = L.GeometryUtil.geodesicArea(latlngs)
+          zonaLocal.area.area = (areaSqMeters / 10000).toFixed(2)
+          zonaLocal.area.unidad = 'ha'
+        } catch (e) {
+          console.warn('[ZonaForm] Error recalculating area', e)
+        }
+      }
+    }
   }
 }
 
@@ -804,8 +869,11 @@ async function autoLocate() {
  * Centra el mapa en las coordenadas actuales del campo GPS
  */
 function centerOnGPS() {
-  const { lat, lng } = zonaLocal.gps || {}
-  if (lat != null && lng != null) {
+  const rawGps = zonaLocal.gps || {}
+  const gps = JSON.parse(JSON.stringify(rawGps))
+  const lat = Number(gps.lat)
+  const lng = Number(gps.lng)
+  if (gps.lat !== null && gps.lng !== null && !isNaN(lat) && !isNaN(lng)) {
     mapCenter.value = [lat, lng]
     mapZoom.value = 18
     uiFeedbackStore.showSnackbar('Mapa centrado en coordenadas', 'info')
@@ -818,14 +886,22 @@ function centerOnGPS() {
  * Centra el mapa en las coordenadas GPS de la hacienda
  */
 function centerOnHaciendaGPS() {
-  const haciendaGps = mi_hacienda.value?.gps
-  if (!haciendaGps || typeof haciendaGps.lat !== 'number' || typeof haciendaGps.lng !== 'number') {
-    uiFeedbackStore.showError('No se encontraron coordenadas GPS válidas de la hacienda')
-    return
+  let rawGps = mi_hacienda.value?.gps
+  if (typeof rawGps === 'string') {
+    try { rawGps = JSON.parse(rawGps) } catch (e) { rawGps = null }
   }
-  mapCenter.value = [haciendaGps.lat, haciendaGps.lng]
-  mapZoom.value = 18
-  uiFeedbackStore.showSnackbar('Mapa centrado en GPS de la hacienda', 'info')
+  
+  const gps = JSON.parse(JSON.stringify(rawGps))
+  const lat = Number(gps?.lat)
+  const lng = Number(gps?.lng)
+
+  if (gps && !isNaN(lat) && !isNaN(lng)) {
+    mapCenter.value = [lat, lng]
+    mapZoom.value = 18
+    uiFeedbackStore.showSnackbar('Mapa centrado en GPS de la hacienda', 'info')
+  } else {
+    uiFeedbackStore.showError('No se encontraron coordenadas GPS válidas de la hacienda')
+  }
 }
 
 /**
@@ -835,6 +911,15 @@ function resetMapToInitial() {
   mapCenter.value = [...initialMapCenter.value]
   mapZoom.value = initialMapZoom.value
   uiFeedbackStore.showSnackbar('Mapa restaurado al punto inicial', 'info')
+}
+
+const handleFirstPointPlaced = (latlng) => {
+  // Sincronizamos las coordenadas con los campos GPS (para polígonos el primer punto, para marcadores el punto único)
+  if (latlng) {
+    // Forzamos parseFloat para asegurar que se guarde un número y no un string
+    zonaLocal.gps.lat = parseFloat(Number(latlng.lat).toFixed(6))
+    zonaLocal.gps.lng = parseFloat(Number(latlng.lng).toFixed(6))
+  }
 }
 
 async function guardar() {
@@ -935,6 +1020,31 @@ watch(
         }
       }
 
+      // Procesar Geometría: asegurar que sea objeto plano y desempaquetar si es necesario
+      if (cleanZona.geometria) {
+        let geom = typeof cleanZona.geometria === 'string' ? JSON.parse(cleanZona.geometria) : cleanZona.geometria
+        cleanZona.geometria = JSON.parse(JSON.stringify(geom))
+
+        // Inicializar vértices para edición si es un polígono
+        if (cleanZona.geometria.type === 'Polygon') {
+          const exteriorRing = cleanZona.geometria.coordinates[0] || []
+          let displayVertices = [...exteriorRing]
+          
+          if (displayVertices.length > 1) {
+            const first = displayVertices[0]
+            const last = displayVertices[displayVertices.length - 1]
+            if (first[0] === last[0] && first[1] === last[1]) {
+              displayVertices.pop()
+            }
+          }
+          
+          polygonVertices.value = displayVertices.map(coord => ({
+            lng: coord[0],
+            lat: coord[1]
+          }))
+        }
+      }
+
       Object.assign(zonaLocal, {
         ...cleanZona,
         gps: gpsObj,
@@ -971,6 +1081,9 @@ watch(
       if (mi_hacienda.value?.gps?.lat && mi_hacienda.value?.gps?.lng) {
         initialMapCenter.value = [mi_hacienda.value.gps.lat, mi_hacienda.value.gps.lng]
         initialMapZoom.value = 18
+        // Sincronizar mapCenter para que el mapa se posicione correctamente al inicio
+        mapCenter.value = [...initialMapCenter.value]
+        mapZoom.value = initialMapZoom.value
       }
     }
   },
@@ -990,6 +1103,8 @@ watch(
       if (mi_hacienda.value?.gps?.lat && mi_hacienda.value?.gps?.lng) {
         initialMapCenter.value = [mi_hacienda.value.gps.lat, mi_hacienda.value.gps.lng]
         initialMapZoom.value = 18
+        mapCenter.value = [...initialMapCenter.value]
+        mapZoom.value = initialMapZoom.value
       }
     }
   },
@@ -1008,6 +1123,7 @@ watch(
       (newLat !== mapCenter.value[0] || newLng !== mapCenter.value[1])
     ) {
       mapCenter.value = [newLat, newLng]
+      initialMapCenter.value = [newLat, newLng]
       mapZoom.value = 18
 
       // Sincronizar geometría si es marcador o no hay geometría previa

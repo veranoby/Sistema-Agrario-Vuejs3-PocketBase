@@ -257,10 +257,6 @@
       </v-col>
     </v-row>
 
-    <!-- Snackbar -->
-    <v-snackbar v-model="snackbar" :color="snackbarColor" :timeout="3000">
-      {{ snackbarMessage }}
-    </v-snackbar>
   </v-container>
 </template>
 
@@ -273,9 +269,6 @@ import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 const uiFeedbackStore = useUiFeedbackStore()
 
 // Estado
-const snackbar = ref(false)
-const snackbarColor = ref('success')
-const snackbarMessage = ref('')
 const backupFile = ref(null)
 const envChanged = ref(false)
 
@@ -500,9 +493,7 @@ async function restoreBackup() {
 }
 
 function showSnackbar(message, color = 'success') {
-  snackbarMessage.value = message
-  snackbarColor.value = color
-  snackbar.value = true
+  uiFeedbackStore.showSnackbar(message, color)
 }
 </script>
 

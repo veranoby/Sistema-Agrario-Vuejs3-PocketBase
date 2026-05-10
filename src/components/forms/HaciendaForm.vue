@@ -53,7 +53,6 @@
               density="compact"
               variant="outlined"
               :rules="[v => v === null || v === '' || (v >= -90 && v <= 90) || 'Latitud debe estar entre -90 y 90']"
-              hint="Grados decimales (-90 a 90)"
               persistent-hint
             ></v-text-field>
             <v-text-field
@@ -65,7 +64,6 @@
               density="compact"
               variant="outlined"
               :rules="[v => v === null || v === '' || (v >= -180 && v <= 180) || 'Longitud debe estar entre -180 y 180']"
-              hint="Grados decimales (-180 a 180)"
               persistent-hint
             ></v-text-field>
           </div>

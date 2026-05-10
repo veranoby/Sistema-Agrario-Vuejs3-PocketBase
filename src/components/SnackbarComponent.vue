@@ -1,5 +1,5 @@
 <template>
-  <v-snackbar v-model="isVisible" :color="color" :timeout="2000" multi-line>
+  <v-snackbar v-model="isVisible" :color="color" :timeout="timeout" multi-line>
     {{ message }}
     <template v-slot:actions>
       <v-btn color="white" variant="text" size="small" @click="closeSnackbar" v-if="cloaseComp">
@@ -19,24 +19,25 @@ export default {
     const uiFeedbackStore = useUiFeedbackStore()
 
     const isVisible = computed({
-      get: () => uiFeedbackStore.show,
-      set: (val) => (val ? uiFeedbackStore.showSnackbar() : uiFeedbackStore.hideSnackbar())
+      get: () => uiFeedbackStore.toast.show,
+      set: (val) => { if (!val) uiFeedbackStore.hideSnackbar() }
     })
-    const message = computed(() => uiFeedbackStore.message)
-    const color = computed(() => uiFeedbackStore.color)
+    const message = computed(() => uiFeedbackStore.toast.text)
+    const color = computed(() => uiFeedbackStore.toast.color)
+    const timeout = computed(() => uiFeedbackStore.toast.timeout || 3000)
 
-    const loadComp = computed(() => uiFeedbackStore.loading) // nuevo estado para mostrar un loading mientras se procesa algo
-    const cloaseComp = computed(() => uiFeedbackStore.closing) // nuevo estado para mostrar un CERRAR mientras sale mensaje
+    const loadComp = computed(() => uiFeedbackStore.globalLoading) // globalLoading state
+    const cloaseComp = computed(() => true) // Siempre mostrar cerrar
 
     const closeSnackbar = () => {
       uiFeedbackStore.hideSnackbar()
-      // uiFeedbackStore.show = false
     }
 
     return {
       isVisible,
       message,
       color,
+      timeout,
       loadComp,
       cloaseComp,
       closeSnackbar

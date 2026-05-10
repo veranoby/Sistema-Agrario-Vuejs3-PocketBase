@@ -66,8 +66,9 @@ class Logger {
       this.lastReset = now
     }
 
-    // En desarrollo, siempre log (excepto spam extremo)
-    if (this.isDev && level !== 'spam') {
+    // En desarrollo, siempre log (excepto spam extremo y debug que es ruidoso)
+    if (this.isDev) {
+      if (level === 'spam' || level === 'debug') return false
       return true
     }
 

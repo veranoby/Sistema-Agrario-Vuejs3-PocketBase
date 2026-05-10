@@ -1,5 +1,4 @@
 import { defineStore } from 'pinia'
-import { toRaw } from 'vue'
 import { pb } from '@/utils/pocketbase'
 import { useUiFeedbackStore } from './uiFeedbackStore'
 import { handleError } from '@/utils/errorHandler'
@@ -77,7 +76,7 @@ export const useSiembrasStore = defineStore('siembras', {
       this.loading = true;
 
       try {
-        if (this.siembras.length > 0 && !navigator.onLine) {
+        if (this.siembras.length > 0 && !syncStore.isOnline) {
           this.loading = false;
           return this.siembras;
         }
@@ -103,7 +102,7 @@ export const useSiembrasStore = defineStore('siembras', {
         this.totalPages = resultList.totalPages
 
         // CORRECTO: Sanitizar con JSON.parse(JSON.stringify()) para IndexedDB
-        syncStore.saveToLocalStorage('siembras', JSON.parse(JSON.stringify(toRaw(this.siembras))));
+        syncStore.saveToLocalStorage('siembras', JSON.parse(JSON.stringify(this.siembras)));
         
         for (const siembra of resultList.items) {
           if (siembra.gps || siembra.geometria) {
@@ -332,7 +331,7 @@ export const useSiembrasStore = defineStore('siembras', {
           this.siembras.push(record)
         }
         // CORRECTO: Sanitizar para IndexedDB
-        syncStore.saveToLocalStorage('siembras', JSON.parse(JSON.stringify(toRaw(this.siembras))));
+        syncStore.saveToLocalStorage('siembras', JSON.parse(JSON.stringify(this.siembras)));
         return record
       }
 

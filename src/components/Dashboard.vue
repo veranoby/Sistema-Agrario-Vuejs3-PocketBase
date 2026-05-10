@@ -175,7 +175,7 @@
               <div style="height: 1000px;">
                 <GisMapComponent
                   v-if="haciendaGeoJSON || haciendaCenter"
-                  :initial-geo-json="haciendaGeoJSON"
+                  :initialGeoJSON="haciendaGeoJSON"
                   :center="haciendaCenter || undefined"
                   :readonly="true"
                   :hacienda-name="mi_hacienda?.name"
@@ -273,80 +273,120 @@ const haciendaCenter = computed(() => {
   return null
 })
 
+const parseGeometry = (geo) => {
+  if (!geo) return null
+  try {
+    let parsed = typeof geo === 'string' ? JSON.parse(geo) : geo
+    // Clonación profunda para asegurar objeto plano sin Proxies de Vue
+    return JSON.parse(JSON.stringify(parsed))
+  } catch (e) {
+    console.warn('[DASHBOARD] Error parsing geometry', e)
+    return null
+  }
+}
+
 const haciendaGeoJSON = computed(() => {
-  if (!siembrasStore.siembras || !zonasStore.zonas) return null
+  if (!zonasStore.zonas || zonasStore.zonas.length === 0) {
+    console.log('[TRACE-DASHBOARD] No hay zonas en el store');
+    return null
+  }
 
   const features = []
   const hexColorRegex = /^#([0-9A-F]{3}){1,2}$/i
 
-  // El GPS Principal de la Hacienda ahora se maneja directamente
-  // vía props.center en GisMapComponent para garantizar visibilidad permanente
-  // y evitar bugs del parseador de GeoJSON.
+  console.log(`[TRACE-DASHBOARD] Procesando ${zonasStore.zonas.length} zonas...`);
 
-  // 1. Siembras (Polígonos de lotes)
-  siembrasStore.siembras.forEach(s => {
-    if (s.geometria) {
-      features.push({
-        type: 'Feature',
-        properties: { 
-          id: s.id, 
-          nombre: s.nombre, 
-          type: 'siembra', 
-          source: 'direct', 
-          estado: s.estado,
-          color: SIEMBRA_COLORS[s.estado] || SIEMBRA_COLORS.finalizada
-        },
-        geometry: s.geometria
-      })
-    } else {
-      // Agregación de zonas lote asociadas
-      const lotes = zonasStore.zonas.filter(z => {
-        const matchesSiembra = Array.isArray(z.siembra) ? z.siembra.includes(s.id) : z.siembra === s.id
-        const tipo = zonasStore.tiposZonas.find(t => t.id === z.tipos_zonas)
-        const esLote = tipo?.nombre?.toLowerCase().includes('lote') || z.nombre?.toLowerCase().includes('lote')
-        return matchesSiembra && esLote && z.geometria
-      })
-      
-      lotes.forEach(lote => {
-        features.push({
-          type: 'Feature',
-          properties: { 
-            id: s.id, 
-            nombre: `${s.nombre} (${lote.nombre})`, 
-            type: 'siembra-lote', 
-            source: 'zone', 
-            estado: s.estado,
-            color: SIEMBRA_COLORS[s.estado] || SIEMBRA_COLORS.finalizada
-          },
-          geometry: lote.geometria
-        })
-      })
-    }
-  })
-
-  // 3. Otras Zonas (No Lotes -> Markers)
+  // 1. Procesar TODAS las zonas registradas (Lotes y Puntos de Interés)
   zonasStore.zonas.forEach(z => {
-    const tipo = zonasStore.tiposZonas.find(t => t.id === z.tipos_zonas)
-    const isLote = tipo?.nombre?.toLowerCase().includes('lote') || z.nombre?.toLowerCase().includes('lote')
+    let geom = parseGeometry(z.geometria)
     
-    if (!isLote && z.geometria) {
-      const isValidHex = hexColorRegex.test(z.color)
-      const poiColor = isValidHex ? z.color : POI_FALLBACK_COLOR
-      features.push({
-        type: 'Feature',
-        properties: { 
-          id: z.id, 
-          nombre: z.nombre, 
-          type: 'punto-interes', 
-          tipoNombre: tipo?.nombre || 'Zona',
-          source: 'zone-point',
-          color: poiColor
-        },
-        geometry: z.geometria
-      })
+    // Fallback: Si no hay geometría, intentar usar el campo gps como Point
+    if (!geom && z.gps) {
+      try {
+        const gps = typeof z.gps === 'string' ? JSON.parse(z.gps) : z.gps
+        if (gps?.lat && gps?.lng) {
+          geom = {
+            type: 'Point',
+            coordinates: [Number(gps.lng), Number(gps.lat)] // GeoJSON usa [lng, lat]
+          }
+        }
+      } catch (e) {
+        console.warn('[DASHBOARD] Error parsing GPS to Point', e)
+      }
+    }
+
+    if (!geom) {
+      console.log(`[TRACE-DASHBOARD] Zona ${z.id} (${z.nombre}) descartada por falta de geometría/GPS`);
+      return
+    }
+
+    const tipo = zonasStore.tiposZonas?.find(t => t.id === z.tipos_zonas)
+    const esLote = tipo?.nombre?.toLowerCase().includes('lote') || z.nombre?.toLowerCase().includes('lote')
+    
+    // Buscar si hay una siembra vinculada a esta zona
+    let siembraVinculada = null
+    if (z.siembra && siembrasStore.siembras) {
+      siembraVinculada = siembrasStore.siembras.find(s => 
+        Array.isArray(z.siembra) ? z.siembra.includes(s.id) : s.id === z.siembra
+      )
+    }
+
+    if (esLote) {
+       // El color depende del estado de la siembra, o café suave si está vacío
+       const loteColor = siembraVinculada 
+         ? (SIEMBRA_COLORS[siembraVinculada.estado] || SIEMBRA_COLORS.finalizada) 
+         : '#8d6e63' // Color tierra para lotes sin siembra
+         
+       features.push({
+         type: 'Feature',
+         properties: {
+           id: z.id,
+           nombre: siembraVinculada ? `${siembraVinculada.nombre} (${z.nombre})` : z.nombre,
+           type: siembraVinculada ? 'siembra-lote' : 'lote',
+           estado: siembraVinculada?.estado || 'Disponible',
+           color: loteColor
+         },
+         geometry: geom
+       })
+    } else {
+       // Es un Punto de Interés (Pin)
+       const poiColor = hexColorRegex.test(z.color) ? z.color : POI_FALLBACK_COLOR
+       features.push({
+         type: 'Feature',
+         properties: {
+           id: z.id,
+           nombre: z.nombre,
+           type: 'punto-interes',
+           tipoNombre: tipo?.nombre || 'Zona',
+           source: 'zone-point',
+           color: poiColor
+         },
+         geometry: geom
+       })
     }
   })
 
+  // 2. Procesar Siembras con geometría directa (legado)
+  if (siembrasStore.siembras) {
+    siembrasStore.siembras.forEach(s => {
+      const geom = parseGeometry(s.geometria)
+      if (geom) {
+         features.push({
+           type: 'Feature',
+           properties: { 
+             id: s.id, 
+             nombre: s.nombre, 
+             type: 'siembra', 
+             estado: s.estado, 
+             color: SIEMBRA_COLORS[s.estado] || SIEMBRA_COLORS.finalizada 
+           },
+           geometry: geom
+         })
+      }
+    })
+  }
+
+  console.log(`[TRACE-DASHBOARD] FeatureCollection finalizada con ${features.length} elementos`);
   return features.length > 0 ? { type: 'FeatureCollection', features } : null
 })
 
@@ -358,15 +398,20 @@ onMounted(async () => {
 })
 
 async function loadWithTraditionalMethod() {
-  await Promise.all([
-    haciendaStore.init(),
-    bitacoraStore.cargarBitacoraEntries(haciendaStore.mi_hacienda?.id), // Correcto
-    recordatoriosStore.cargarRecordatorios(),
-    siembrasStore.cargarSiembras(),
-    actividadesStore.cargarActividades(),
-    zonasStore.cargarZonas(),
-    programacionesStore.cargarProgramaciones()
-  ])
+  // CARGA SECUENCIAL: Evita race conditions con el ID de la hacienda
+  await haciendaStore.init()
+  
+  const haciendaId = haciendaStore.mi_hacienda?.id
+  if (haciendaId) {
+    await Promise.all([
+      bitacoraStore.cargarBitacoraEntries(haciendaId),
+      recordatoriosStore.cargarRecordatorios(),
+      siembrasStore.cargarSiembras(),
+      actividadesStore.cargarActividades(),
+      zonasStore.init(),
+      programacionesStore.cargarProgramaciones()
+    ])
+  }
 }
 
 async function handleRequestSingleExecution(programacion) {

@@ -133,7 +133,7 @@ const routes = [
     name: 'Métricas e Inteligencia',
     meta: {
       requiresAuth: true,
-      roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR, ROLES.OPERADOR]
+      roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR]
     }
   },
   {

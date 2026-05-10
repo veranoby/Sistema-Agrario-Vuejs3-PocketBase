@@ -169,7 +169,7 @@ const initApp = async () => {
       try {
         await syncStore.init()
       } catch (syncError) {
-        console.warn('[App] Sync init falló o estamos offline, continuando...', syncError.message)
+         // console.warn('[App] Sync init falló o estamos offline, continuando...', syncError.message)
       }
 
       // Cargar hacienda tras syncStore (IndexedDB listo). 
@@ -185,7 +185,7 @@ const initApp = async () => {
           await haciendaStore.fetchHacienda(haciendaId)
         }
       } catch (haciendaError) {
-        console.warn('[App] Hacienda init falló, Dashboard mostrará fallback:', haciendaError.message)
+         // console.warn('[App] Hacienda init falló, Dashboard mostrará fallback:', haciendaError.message)
       }
     }
   } catch (error) {

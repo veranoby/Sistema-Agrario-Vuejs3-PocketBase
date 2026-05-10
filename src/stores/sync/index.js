@@ -102,6 +102,22 @@ export const useSyncStore = defineStore('sync', {
   },
 
   actions: {
+    async checkConnection() {
+      if (this._checkConnectivity) {
+        await this._checkConnectivity()
+      }
+      return this.isOnline
+    },
+
+    dispose() {
+      if (this._networkCleanup) {
+        this._networkCleanup()
+        this._networkCleanup = null
+      }
+      this._checkConnectivity = null
+      this.initialized = false
+    },
+
     generateTempId() {
       if (this.idMapper) {
         return this.idMapper.generateTempId()
@@ -134,22 +150,29 @@ export const useSyncStore = defineStore('sync', {
       const notify = (msg, type) => snackbar.showSnackbar(msg, type)
 
       // Network monitor
-      const { isOnline, cleanup } = initNetworkMonitor((online) => {
+      const { isOnline, cleanup, checkConnectivity } = initNetworkMonitor((online) => {
         this.isOnline = online
         if (online && this.queue.length > 0) this.processPendingQueue()
       })
       this._networkCleanup = cleanup
+      this._checkConnectivity = checkConnectivity
 
-      // Cargar stores críticos para idMapper
-      const storeModules = await Promise.all([
-        import('@/stores/zonasStore'),
-        import('@/stores/siembrasStore'),
-        import('@/stores/actividadesStore'),
-        import('@/stores/recordatoriosStore'),
-        import('@/stores/programaciones/programacionesStore'),
-        import('@/stores/bitacoraStore')
-      ])
-      const stores = storeModules.map(m => m[Object.keys(m).find(k => k.startsWith('use'))]())
+      // Cargar stores críticos para idMapper con resiliencia
+      let stores = []
+      try {
+        const storeModules = await Promise.all([
+          import('@/stores/zonasStore'),
+          import('@/stores/siembrasStore'),
+          import('@/stores/actividadesStore'),
+          import('@/stores/recordatoriosStore'),
+          import('@/stores/programaciones/programacionesStore'),
+          import('@/stores/bitacoraStore')
+        ])
+        stores = storeModules.map(m => m[Object.keys(m).find(k => k.startsWith('use'))]())
+      } catch (loadError) {
+        logger.error('[SYNC] Error crítico cargando módulos. Abortando init para reintento manual.', loadError)
+        return // No marcamos como initialized para permitir reintento
+      }
 
       // Factories
       this.idMapper = createIdMapper({ stores, cacheManager: syncCache })
@@ -180,7 +203,7 @@ export const useSyncStore = defineStore('sync', {
       this.initialized = true
 
       // Procesar cola pendiente si online
-      if (navigator.onLine && this.queue.length > 0) {
+      if (this.isOnline && this.queue.length > 0) {
         await this.processPendingQueue()
       }
     },

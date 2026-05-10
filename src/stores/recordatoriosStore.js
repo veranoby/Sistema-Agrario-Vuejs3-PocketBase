@@ -1,5 +1,4 @@
 import { defineStore } from 'pinia'
-import { toRaw } from 'vue'
 import { pb } from '@/utils/pocketbase'
 import { useSyncStore } from '@/stores/sync/index'
 import { handleError } from '@/utils/errorHandler'
@@ -87,7 +86,7 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
       this.error = null
       this.loading = true
 
-      if (this.recordatorios.length > 0 && !navigator.onLine) {
+      if (this.recordatorios.length > 0 && !syncStore.isOnline) {
         this.loading = false
         return this.recordatorios
       }
@@ -102,7 +101,7 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
         this.lastSync = Date.now()
 
         // CORRECTO: Sanitizar con JSON.parse(JSON.stringify()) para IndexedDB
-        syncStore.saveToLocalStorage('recordatorios', JSON.parse(JSON.stringify(toRaw(this.recordatorios))));
+        syncStore.saveToLocalStorage('recordatorios', JSON.parse(JSON.stringify(this.recordatorios)));
 
         return records
       } catch (error) {
@@ -150,7 +149,7 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
 
         this.recordatorios.unshift(tempRecordatorio)
         // CORRECTO: Sanitizar para IndexedDB
-        syncStore.saveToLocalStorage('recordatorios', JSON.parse(JSON.stringify(toRaw(this.recordatorios))));
+        syncStore.saveToLocalStorage('recordatorios', JSON.parse(JSON.stringify(this.recordatorios)));
 
         await syncStore.queueOperation({
           type: 'create',
@@ -169,7 +168,7 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
         })
         this.recordatorios.push(record)
         // CORRECTO: Sanitizar para IndexedDB
-        syncStore.saveToLocalStorage('recordatorios', JSON.parse(JSON.stringify(toRaw(this.recordatorios))));
+        syncStore.saveToLocalStorage('recordatorios', JSON.parse(JSON.stringify(this.recordatorios)));
         return record
       } catch (error) {
         handleError(error, 'Error al crear recordatorio')
@@ -228,7 +227,7 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
 
         uiFeedbackStore.hideLoading()
         // CORRECTO: Sanitizar para IndexedDB
-        syncStore.saveToLocalStorage('recordatorios', JSON.parse(JSON.stringify(toRaw(this.recordatorios))));
+        syncStore.saveToLocalStorage('recordatorios', JSON.parse(JSON.stringify(this.recordatorios)));
         return this.recordatorios[index]
       }
 
@@ -242,7 +241,7 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
           this.recordatorios[index] = record
         }
         // CORRECTO: Sanitizar para IndexedDB
-        syncStore.saveToLocalStorage('recordatorios', JSON.parse(JSON.stringify(toRaw(this.recordatorios))));
+        syncStore.saveToLocalStorage('recordatorios', JSON.parse(JSON.stringify(this.recordatorios)));
         return record
       } catch (error) {
         handleError(error, 'Error al actualizar recordatorio')
@@ -278,7 +277,7 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
         })
         uiFeedbackStore.hideLoading()
         // CORRECTO: Sanitizar para IndexedDB
-        syncStore.saveToLocalStorage('recordatorios', JSON.parse(JSON.stringify(toRaw(this.recordatorios))));
+        syncStore.saveToLocalStorage('recordatorios', JSON.parse(JSON.stringify(this.recordatorios)));
         return true
       }
 
@@ -286,7 +285,7 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
         await pb.collection('recordatorios').delete(id)
         this.recordatorios = this.recordatorios.filter((r) => r.id !== id)
         // CORRECTO: Sanitizar para IndexedDB
-        syncStore.saveToLocalStorage('recordatorios', JSON.parse(JSON.stringify(toRaw(this.recordatorios))));
+        syncStore.saveToLocalStorage('recordatorios', JSON.parse(JSON.stringify(this.recordatorios)));
         return true
       } catch (error) {
         handleError(error, 'Error al eliminar recordatorio')

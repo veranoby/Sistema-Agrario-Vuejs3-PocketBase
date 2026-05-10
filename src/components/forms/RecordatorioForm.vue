@@ -192,6 +192,7 @@ import { useActividadesStore } from '@/stores/actividadesStore'
 import { useZonasStore } from '@/stores/zonasStore'
 import { handleError } from '@/utils/errorHandler'
 import { storeToRefs } from 'pinia'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   modelValue: Boolean,

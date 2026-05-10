@@ -101,9 +101,9 @@ const navigationLinks = computed(() => {
   ]
 
   if (role !== USER_ROLES.OPERADOR) {
-    links.push({ id: 7, to: '/finanzas', icon: 'mdi-cash-multiple', label: t('sidebar.finances') })
-    links.push({ id: 8, to: '/recordatorios', icon: 'mdi-alarm-light-outline', label: t('sidebar.reminders') })
-    links.push({ id: 9, to: '/reports', icon: 'mdi-chart-box', label: t('sidebar.reports') })
+    links.push({ id: 7, to: '/metricas', icon: 'mdi-chart-areaspline', label: t('sidebar.metrics') })
+    links.push({ id: 8, to: '/finanzas', icon: 'mdi-cash-multiple', label: t('sidebar.finances') })
+    links.push({ id: 9, to: '/recordatorios', icon: 'mdi-alarm-light-outline', label: t('sidebar.reminders') })
   }
 
   return links
@@ -159,7 +159,7 @@ onMounted(async () => {
   checkInterval = setInterval(async () => {
     const haciendaActual = authStore.haciendaActual
     if (haciendaActual) {
-      console.log('[App] Verificando alertas para', haciendaActual.nombre)
+       // console.log('[App] Verificando alertas para', haciendaActual.nombre)
       await Promise.all([
         checkProximoActivities(haciendaActual.id),
         checkBPACertificados(haciendaActual.id)
@@ -192,14 +192,14 @@ onBeforeUnmount(() => {
 
 const handleWindowFocus = () => {
   if (import.meta.env.DEV) {
-    console.log('[APP] Ventana recuperó el foco')
+     // console.log('[APP] Ventana recuperó el foco')
   }
   refreshTokenIfNeeded()
 }
 
 const handleVisibilityChange = () => {
   if (import.meta.env.DEV) {
-    console.log('[APP] Cambio de visibilidad:', document.visibilityState)
+     // console.log('[APP] Cambio de visibilidad:', document.visibilityState)
   }
   if (document.visibilityState === 'visible') {
     refreshTokenIfNeeded()
@@ -210,12 +210,12 @@ const refreshTokenIfNeeded = async () => {
   if (authStore.isLoggedIn) {
     try {
       if (authStore.tokenNeedsRefresh()) {
-        console.log('[APP] Ejecutando refresh token...')
+         // console.log('[APP] Ejecutando refresh token...')
         await authStore.refreshToken()
-        console.log('[APP] Refresh token completado')
+         // console.log('[APP] Refresh token completado')
       }
     } catch (error) {
-      console.error('[APP] Error en refreshTokenIfNeeded:', error)
+       // console.error('[APP] Error en refreshTokenIfNeeded:', error)
       const syncStore = useSyncStore()
       const rememberMe = syncStore.loadFromLocalStorage('rememberMe')
       if (rememberMe) {
@@ -226,7 +226,7 @@ const refreshTokenIfNeeded = async () => {
 }
 
 function handleConflictResolution(resolvedConflicts) {
-  console.log('[APP] Resolviendo conflictos:', resolvedConflicts)
+   // console.log('[APP] Resolviendo conflictos:', resolvedConflicts)
   syncStore.resolveMultipleConflicts(resolvedConflicts)
 }
 </script>

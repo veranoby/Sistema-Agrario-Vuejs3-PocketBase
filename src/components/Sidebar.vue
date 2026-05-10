@@ -26,7 +26,7 @@
     <div class="flex flex-col">
       <v-list>
         <v-list-item
-          v-if="isLoggedIn"
+          v-if="isLoggedIn && authStore.user?.role !== 'superadmin'"
           @click="$router.push('/profile')"
           link
           :class="{ 'active-link': isActive('/profile'), 'vivid-hover': true }"
@@ -108,7 +108,8 @@ export default {
       isLoggedIn, 
       handleLogout, 
       isActive,
-      filteredNavigationLinks
+      filteredNavigationLinks,
+      authStore
     }
   }
 }

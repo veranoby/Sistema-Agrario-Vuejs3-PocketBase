@@ -180,6 +180,7 @@ import { useActividadesStore } from '@/stores/actividadesStore'
 import { differenceInDays, differenceInMonths, isBefore, isValid } from 'date-fns'
 import { useProgramacionesStore } from '@/stores/programaciones'
 import { useBitacoraStore } from '@/stores/bitacoraStore'
+import { useAuthStore } from '@/stores/authStore'
 import BatchExecutionDialog from '@/components/dialogs/BatchExecutionDialog.vue';
 
 const props = defineProps({
@@ -200,6 +201,9 @@ const props = defineProps({
 const actividadesStore = useActividadesStore()
 const programacionesStore = useProgramacionesStore()
 const bitacoraStore = useBitacoraStore()
+const authStore = useAuthStore()
+
+const canEdit = computed(() => authStore.canEdit)
 
 const colorEstado = computed(
   () =>
