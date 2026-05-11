@@ -79,7 +79,7 @@ export default defineComponent({
     drawMode: {
       type: String,
       default: 'polygon',
-      validator: (val) => ['polygon', 'marker'].includes(val)
+      validator: (val) => ['polygon', 'marker', 'both'].includes(val)
     },
     // Loading state
     loading: {
@@ -95,6 +95,11 @@ export default defineComponent({
     haciendaGps: {
       type: Object,
       default: null
+    },
+    // NUEVA PROP: Quitar relleno en dibujos
+    noFill: {
+      type: Boolean,
+      default: false
     }
   },
 
@@ -303,14 +308,31 @@ export default defineComponent({
             remove: true
           },
           draw: {
-            polygon: props.drawMode === 'polygon' ? {
+            polygon: ['polygon', 'both'].includes(props.drawMode) ? {
               allowIntersection: false,
-              showArea: false
+              showArea: false,
+              shapeOptions: props.noFill ? {
+                fill: false,
+                color: '#4CAF50',
+                weight: 3,
+                dashArray: '5, 5'
+              } : {
+                fillOpacity: 0.4
+              }
             } : false,
             polyline: false,
-            rectangle: props.drawMode === 'polygon',
+            rectangle: ['polygon', 'both'].includes(props.drawMode) ? {
+              shapeOptions: props.noFill ? {
+                fill: false,
+                color: '#4CAF50',
+                weight: 3,
+                dashArray: '5, 5'
+              } : {
+                fillOpacity: 0.4
+              }
+            } : false,
             circle: false,
-            marker: props.drawMode === 'marker',
+            marker: ['marker', 'both'].includes(props.drawMode),
             circlemarker: false
           }
         }
@@ -321,17 +343,23 @@ export default defineComponent({
         // Event: Created - Corregido: Evento en mayúsculas
         map.on(L.Draw.Event.CREATED, (e) => {
           const layer = e.layer
-          drawnItems.clearLayers()
-          drawnItems.addLayer(layer)
-          notifyChange(layer)
+          
+          if (layer instanceof L.Marker) {
+            // Si es un pin, notificamos el punto para el GPS pero no lo añadimos a drawnItems (que es para la geometría JSON)
+            // El centerCircleMarker del componente se encargará de mostrar el pin de hacienda basado en la prop haciendaGps
+            emit('first-point-placed', layer.getLatLng())
+            // No añadimos el marcador temporal a drawnItems para evitar duplicidad visual con centerCircleMarker
+          } else {
+            drawnItems.clearLayers()
+            drawnItems.addLayer(layer)
+            notifyChange(layer)
 
-          // Si es un marcador o el primer punto de un polígono, sincronizar GPS
-          if (layer.getLatLng) {
-            emit('first-point-placed', layer.getLatLng());
-          } else if (layer.getLatLngs) {
-            const latlngs = layer.getLatLngs();
-            const firstPoint = Array.isArray(latlngs[0]) ? latlngs[0][0] : latlngs[0];
-            if (firstPoint) emit('first-point-placed', firstPoint);
+            // Si es el primer punto de un polígono, sincronizar GPS
+            if (layer.getLatLngs) {
+              const latlngs = layer.getLatLngs()
+              const firstPoint = Array.isArray(latlngs[0]) ? latlngs[0][0] : latlngs[0]
+              if (firstPoint) emit('first-point-placed', firstPoint)
+            }
           }
         })
 
@@ -414,11 +442,14 @@ export default defineComponent({
               ring.map(coord => [coord[1], coord[0]])
             );
             
+            const isNoFill = properties.noFill === true || props.noFill === true;
+            
             const poly = L.polygon(rings, {
-              color: properties.color || '#2196f3',
-              fillColor: properties.color || '#2196f3',
-              fillOpacity: 0.4,
-              weight: 2
+              color: properties.color || (isNoFill ? '#4CAF50' : '#2196f3'),
+              fillColor: isNoFill ? 'transparent' : (properties.color || '#2196f3'),
+              fillOpacity: isNoFill ? 0 : 0.4,
+              weight: isNoFill ? 3 : 2,
+              dashArray: isNoFill ? '5, 5' : null
             });
             
             setupLayer(poly, properties);

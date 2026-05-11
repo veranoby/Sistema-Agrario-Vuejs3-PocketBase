@@ -89,7 +89,7 @@
       <!-- Edit Dialog -->
       <v-dialog
         v-model="editDialog"
-        max-width="900px"
+        max-width="1600px"
         persistent
         transition="dialog-bottom-transition"
         scrollable
@@ -180,6 +180,7 @@ const saveHacienda = async () => {
       name: editedHacienda.value.name,
       location: editedHacienda.value.location,
       gps: editedHacienda.value.gps || { lat: null, lng: null },
+      geometria: editedHacienda.value.geometria || null,
       info: editedHacienda.value.info,
       plan: editedHacienda.value.plan?.id || editedHacienda.value.plan,
       metricas: editedHacienda.value.metricas || {},
@@ -187,7 +188,6 @@ const saveHacienda = async () => {
       contacto_telefono: editedHacienda.value.contacto_telefono,
       openrouter_key: editedHacienda.value.openrouter_key
     }
-
     await haciendaStore.updateHacienda(dataToUpdate)
     closeEditDialog()
   }

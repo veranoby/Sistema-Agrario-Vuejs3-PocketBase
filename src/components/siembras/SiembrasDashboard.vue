@@ -355,72 +355,90 @@ const parseGeometry = (geo) => {
 
 // GeoJSON para mapa
 const siembrasGeoJSON = computed(() => {
-  if (!siembras.value || siembras.value.length === 0) return null
-
   const features = []
 
-  siembras.value.forEach(s => {
-    const siembraColor = SIEMBRA_COLORS[s.estado] || SIEMBRA_COLORS.finalizada
-
-    // 1. Geometría directa de la siembra (prioridad alta)
-    const directGeom = parseGeometry(s.geometria)
-    if (directGeom) {
+  // 0. Polígono de la Hacienda (Delimitador sin relleno)
+  if (mi_hacienda.value?.geometria) {
+    const haciendaGeom = parseGeometry(mi_hacienda.value.geometria)
+    if (haciendaGeom) {
       features.push({
         type: 'Feature',
-        properties: { 
-          id: s.id, 
-          nombre: s.nombre, 
-          estado: s.estado, 
-          area: s.area_total, 
-          source: 'direct',
-          color: siembraColor
+        properties: {
+          id: mi_hacienda.value.id,
+          nombre: `Perímetro: ${mi_hacienda.value.name}`,
+          type: 'hacienda-boundary',
+          noFill: true,
+          color: '#4CAF50'
         },
-        geometry: directGeom
-      })
-    } 
-
-    // 2. Geometrías de zonas vinculadas (siempre buscamos, por si la siembra es compuesta)
-    if (zonas.value) {
-      const lotesAsociados = zonas.value.filter(z => {
-        const matchesSiembra = Array.isArray(z.siembra) ? z.siembra.includes(s.id) : z.siembra === s.id
-        return matchesSiembra && (z.geometria || z.gps)
-      })
-
-      lotesAsociados.forEach(lote => {
-        let loteGeom = parseGeometry(lote.geometria)
-        
-        // Fallback: Si no hay geometría, intentar usar el campo gps como Point
-        if (!loteGeom && lote.gps) {
-          try {
-            const gps = typeof lote.gps === 'string' ? JSON.parse(lote.gps) : lote.gps
-            if (gps?.lat && gps?.lng) {
-              loteGeom = {
-                type: 'Point',
-                coordinates: [Number(gps.lng), Number(gps.lat)] // GeoJSON usa [lng, lat]
-              }
-            }
-          } catch (e) {
-            console.warn('[SIEMBRAS_DASHBOARD] Error parsing GPS to Point for lote', e)
-          }
-        }
-
-        if (loteGeom) {
-          features.push({
-            type: 'Feature',
-            properties: { 
-              id: s.id, 
-              nombre: `${s.nombre} (${lote.nombre})`, 
-              estado: s.estado,
-              area: lote.area?.area,
-              source: 'zone',
-              color: siembraColor
-            },
-            geometry: loteGeom
-          })
-        }
+        geometry: haciendaGeom
       })
     }
-  })
+  }
+
+  if (siembras.value && siembras.value.length > 0) {
+    siembras.value.forEach(s => {
+      const siembraColor = SIEMBRA_COLORS[s.estado] || SIEMBRA_COLORS.finalizada
+
+      // 1. Geometría directa de la siembra (prioridad alta)
+      const directGeom = parseGeometry(s.geometria)
+      if (directGeom) {
+        features.push({
+          type: 'Feature',
+          properties: { 
+            id: s.id, 
+            nombre: s.nombre, 
+            estado: s.estado, 
+            area: s.area_total, 
+            source: 'direct',
+            color: siembraColor
+          },
+          geometry: directGeom
+        })
+      } 
+
+      // 2. Geometrías de zonas vinculadas (siempre buscamos, por si la siembra es compuesta)
+      if (zonas.value) {
+        const lotesAsociados = zonas.value.filter(z => {
+          const matchesSiembra = Array.isArray(z.siembra) ? z.siembra.includes(s.id) : z.siembra === s.id
+          return matchesSiembra && (z.geometria || z.gps)
+        })
+
+        lotesAsociados.forEach(lote => {
+          let loteGeom = parseGeometry(lote.geometria)
+          
+          // Fallback: Si no hay geometría, intentar usar el campo gps como Point
+          if (!loteGeom && lote.gps) {
+            try {
+              const gps = typeof lote.gps === 'string' ? JSON.parse(lote.gps) : lote.gps
+              if (gps?.lat && gps?.lng) {
+                loteGeom = {
+                  type: 'Point',
+                  coordinates: [Number(gps.lng), Number(gps.lat)] // GeoJSON usa [lng, lat]
+                }
+              }
+            } catch (e) {
+              console.warn('[SIEMBRAS_DASHBOARD] Error parsing GPS to Point for lote', e)
+            }
+          }
+
+          if (loteGeom) {
+            features.push({
+              type: 'Feature',
+              properties: { 
+                id: s.id, 
+                nombre: `${s.nombre} (${lote.nombre})`, 
+                estado: s.estado,
+                area: lote.area?.area,
+                source: 'zone',
+                color: siembraColor
+              },
+              geometry: loteGeom
+            })
+          }
+        })
+      }
+    })
+  }
 
   return features.length > 0 ? { type: 'FeatureCollection', features } : null
 })
