@@ -182,6 +182,7 @@
               <v-card-text class="pa-0">
                 <div class="map-container" style="height: 600px;">
                   <GisMapComponent
+                    v-if="siembrasGeoJSON"
                     :initialGeoJSON="siembrasGeoJSON"
                     :center="mapCenter"
                     :readonly="true"
@@ -354,20 +355,12 @@ const parseGeometry = (geo) => {
 
 // GeoJSON para mapa
 const siembrasGeoJSON = computed(() => {
-  console.log("[TRACE-SIEMBRAS] Calculando siembrasGeoJSON...");
   if (!siembras.value || siembras.value.length === 0) return null
 
   const features = []
 
   siembras.value.forEach(s => {
     const siembraColor = SIEMBRA_COLORS[s.estado] || SIEMBRA_COLORS.finalizada
-
-    // Log para depurar qué está llegando al mapa de siembras
-    console.log(`[TRACE-SIEMBRAS] Evaluando siembra ${s.id} (${s.nombre})`, {
-      estado: s.estado,
-      color: siembraColor,
-      tiene_geom: !!s.geometria
-    });
 
     // 1. Geometría directa de la siembra (prioridad alta)
     const directGeom = parseGeometry(s.geometria)
@@ -429,7 +422,6 @@ const siembrasGeoJSON = computed(() => {
     }
   })
 
-  console.log(`[TRACE-SIEMBRAS] FeatureCollection finalizada con ${features.length} elementos`);
   return features.length > 0 ? { type: 'FeatureCollection', features } : null
 })
 

@@ -656,7 +656,6 @@ const drawMode = computed(() => {
 })
 
 const handleGeometryUpdated = ({ geojson, areaHa }) => {
-  console.log("[TRACE-FORM] Geometría actualizada recibida:", geojson);
   polygonVertices.value = []
   zonaLocal.geometria = geojson
   if (areaHa > 0 && drawMode.value === 'polygon') {

@@ -129,29 +129,15 @@ export const useZonasStore = defineStore('zonas', {
 
           const filterString = filterParts.join(' && ');
 
-          console.log(`[TRACE-STORE] Solicitando zonas a PocketBase con filtro: ${filterString}`);
           const rawResult = await pb.collection('zonas').getList(page, perPage, {
             filter: filterString,
             sort: '-created',
             expand: "actividad_realizada,actividad_realizada.tipo_actividades,siembra"
           });
 
-          console.log(`[TRACE-STORE] PocketBase devolvió ${rawResult.items?.length} items.`);
-          if (rawResult.items?.length > 0) {
-            const firstItem = rawResult.items[0];
-            console.log(`[TRACE-STORE] Ejemplo Zona Cruda (${firstItem.nombre}):`, {
-              id: firstItem.id,
-              geometria_presente: !!firstItem.geometria,
-              gps_presente: !!firstItem.gps,
-              geometria_tipo: typeof firstItem.geometria,
-              gps_tipo: typeof firstItem.gps
-            });
-          }
-
           return rawResult;
         })
 
-        console.log(`[TRACE-STORE] Resultado final (post-cache): ${result.items?.length} items.`);
 
         this.pagination = {
           page: result.page,

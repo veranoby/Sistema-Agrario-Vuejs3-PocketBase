@@ -287,14 +287,12 @@ const parseGeometry = (geo) => {
 
 const haciendaGeoJSON = computed(() => {
   if (!zonasStore.zonas || zonasStore.zonas.length === 0) {
-    console.log('[TRACE-DASHBOARD] No hay zonas en el store');
     return null
   }
 
   const features = []
   const hexColorRegex = /^#([0-9A-F]{3}){1,2}$/i
 
-  console.log(`[TRACE-DASHBOARD] Procesando ${zonasStore.zonas.length} zonas...`);
 
   // 1. Procesar TODAS las zonas registradas (Lotes y Puntos de Interés)
   zonasStore.zonas.forEach(z => {
@@ -316,7 +314,6 @@ const haciendaGeoJSON = computed(() => {
     }
 
     if (!geom) {
-      console.log(`[TRACE-DASHBOARD] Zona ${z.id} (${z.nombre}) descartada por falta de geometría/GPS`);
       return
     }
 
@@ -386,7 +383,6 @@ const haciendaGeoJSON = computed(() => {
     })
   }
 
-  console.log(`[TRACE-DASHBOARD] FeatureCollection finalizada con ${features.length} elementos`);
   return features.length > 0 ? { type: 'FeatureCollection', features } : null
 })
 

@@ -348,6 +348,11 @@ export default defineComponent({
           emit('geometry-updated', { geojson: null, areaHa: 0 })
         })
       }
+
+      // Load initial polygon if provided
+      if (props.initialGeoJSON) {
+        loadPolygon(props.initialGeoJSON)
+      }
     }
 
     const notifyChange = (layer) => {
@@ -366,15 +371,11 @@ export default defineComponent({
     }
 
     const loadPolygon = (rawGeoJSON) => {
-      console.log('[TRACE-GIS] loadPolygon llamado. GeoJSON recibido:', !!rawGeoJSON);
       if (!map || !drawnItems || !rawGeoJSON) {
-        if (!map) console.warn('[TRACE-GIS] Mapa no inicializado');
-        if (!drawnItems) console.warn('[TRACE-GIS] drawnItems no inicializado');
         return
       }
       
       try {
-        console.log('[TRACE-GIS] Limpiando capas anteriores...');
         drawnItems.clearLayers()
 
         // 1. Asegurar objeto plano (limpio de Proxies)
@@ -387,13 +388,11 @@ export default defineComponent({
           data = parsed;
         }
 
-        console.log(`[TRACE-GIS] Iniciando renderizado imperativo de tipo: ${data?.type}`);
 
         // 2. RENDERIZADO IMPERATIVO (Nativo Leaflet)
         const addImperatively = (obj) => {
           if (!obj) return;
           if (obj.type === 'FeatureCollection') {
-            console.log(`[TRACE-GIS] Procesando FeatureCollection con ${obj.features?.length} features`);
             obj.features.forEach(addImperatively);
           } else if (obj.type === 'Feature') {
             renderGeometry(obj.geometry, obj.properties || {});
@@ -404,11 +403,9 @@ export default defineComponent({
 
         const renderGeometry = (geom, properties) => {
           if (!geom || !geom.type || !geom.coordinates) {
-            console.warn('[TRACE-GIS] Geometría inválida omitida:', geom);
             return;
           }
 
-          console.log(`[TRACE-GIS] Dibujando ${geom.type} para: ${properties.nombre || 'sin nombre'}`);
 
           if (geom.type === 'Polygon') {
             // GeoJSON: [lng, lat] -> Leaflet: [lat, lng]
@@ -426,7 +423,6 @@ export default defineComponent({
             
             setupLayer(poly, properties);
             drawnItems.addLayer(poly);
-            console.log('[TRACE-GIS] Polígono añadido al mapa');
 
           } else if (geom.type === 'Point') {
             const latlng = [geom.coordinates[1], geom.coordinates[0]];
@@ -440,7 +436,6 @@ export default defineComponent({
             const marker = customPointToLayer({ properties: propsForMarker }, latlng);
             setupLayer(marker, propsForMarker);
             drawnItems.addLayer(marker);
-            console.log('[TRACE-GIS] Marcador añadido al mapa');
           }
         };
 
@@ -465,21 +460,17 @@ export default defineComponent({
 
         // Ejecutar dibujo
         addImperatively(data);
-        console.log('[TRACE-GIS] Proceso de dibujo finalizado');
 
         // 3. Auto-ajuste de vista (FlyTo o FitBounds)
         setTimeout(() => {
           if (!map) return;
           map.invalidateSize();
           const layers = drawnItems.getLayers();
-          console.log(`[TRACE-GIS] Capas en el mapa tras dibujo: ${layers.length}`);
           if (layers.length === 0) return;
 
           if (layers.length === 1 && layers[0] instanceof L.Marker) {
-            console.log('[TRACE-GIS] Haciendo flyTo al único marcador');
             map.flyTo(layers[0].getLatLng(), 18, { animate: true });
           } else if (drawnItems.getBounds && drawnItems.getBounds().isValid()) {
-            console.log('[TRACE-GIS] Haciendo fitBounds a la colección');
             map.fitBounds(drawnItems.getBounds(), { padding: [50, 50], animate: true });
           }
         }, 200);
