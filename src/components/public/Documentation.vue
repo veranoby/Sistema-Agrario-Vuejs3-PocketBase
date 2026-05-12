@@ -18,9 +18,10 @@
             </section>
 
             <!-- Funcionalidades Clave (Ahora primero) -->
+
             <section>
               <h2 class="text-3xl font-bold mb-8">Funcionalidades Clave</h2>
-              <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+              <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 <!-- Siembras/Proyectos -->
                 <div class="rounded-xl border bg-background p-6 shadow-lg">
                   <div class="flex items-center mb-4">
@@ -28,64 +29,45 @@
                     <h3 class="text-xl font-semibold">Siembras y Proyectos</h3>
                   </div>
                   <p class="text-muted-foreground mb-4">
-                    Centro de control para la gestión integral de tus cultivos:
+                    Control absoluto de los ciclos de siembra, permitiendo el rastreo de etapas y estados fenológicos.
                   </p>
-                  <ul class="list-disc pl-5 space-y-2">
-                    <li>Organización por ciclos de cultivo</li>
-                    <li>Seguimiento de estados y progreso</li>
-                    <li>Vinculación con zonas y actividades</li>
-                    <li>Métricas específicas por siembra</li>
-                  </ul>
                 </div>
 
-                <!-- Zonas -->
+                <!-- Finanzas -->
                 <div class="rounded-xl border bg-background p-6 shadow-lg">
                   <div class="flex items-center mb-4">
-                    <v-icon color="green" class="mr-2">mdi-map</v-icon>
-                    <h3 class="text-xl font-semibold">Zonas de Cultivo</h3>
+                    <v-icon color="blue" class="mr-2">mdi-cash-multiple</v-icon>
+                    <h3 class="text-xl font-semibold">Gestión Financiera</h3>
                   </div>
                   <p class="text-muted-foreground mb-4">
-                    Gestión espacial de tus áreas productivas:
+                    Lleve el control de ingresos, gastos e inventario para calcular márgenes operativos de sus lotes.
                   </p>
-                  <ul class="list-disc pl-5 space-y-2">
-                    <li>Definición de áreas de trabajo</li>
-                    <li>Clasificación por tipos de zona</li>
-                    <li>Control de áreas activas</li>
-                    <li>Asociación con siembras</li>
-                  </ul>
                 </div>
 
-                <!-- Actividades -->
+                <!-- GIS Map -->
                 <div class="rounded-xl border bg-background p-6 shadow-lg">
                   <div class="flex items-center mb-4">
-                    <v-icon color="green" class="mr-2">mdi-calendar-check</v-icon>
-                    <h3 class="text-xl font-semibold">Actividades</h3>
+                    <v-icon color="orange" class="mr-2">mdi-map-marker-path</v-icon>
+                    <h3 class="text-xl font-semibold">Mapeo GIS</h3>
                   </div>
-                  <p class="text-muted-foreground mb-4">Planificación y seguimiento operativo:</p>
-                  <ul class="list-disc pl-5 space-y-2">
-                    <li>Creación de tareas específicas</li>
-                    <li>Asignación a zonas y siembras</li>
-                    <li>Estados de progreso</li>
-                    <li>Historial de actividades</li>
-                  </ul>
+                  <p class="text-muted-foreground mb-4">
+                    Herramientas de dibujo en mapa para definir zonas, lotes y áreas de impacto ecológico visualmente.
+                  </p>
                 </div>
 
-                <!-- Recordatorios -->
+                <!-- Knowledge Hub -->
                 <div class="rounded-xl border bg-background p-6 shadow-lg">
                   <div class="flex items-center mb-4">
-                    <v-icon color="green" class="mr-2">mdi-bell</v-icon>
-                    <h3 class="text-xl font-semibold">Recordatorios</h3>
+                    <v-icon color="purple" class="mr-2">mdi-brain</v-icon>
+                    <h3 class="text-xl font-semibold">Knowledge Hub (Exportación)</h3>
                   </div>
-                  <p class="text-muted-foreground mb-4">Sistema de alertas y seguimiento:</p>
-                  <ul class="list-disc pl-5 space-y-2">
-                    <li>Notificaciones por actividad</li>
-                    <li>Priorización de tareas</li>
-                    <li>Estados de completitud</li>
-                    <li>Vinculación con calendario</li>
-                  </ul>
+                  <p class="text-muted-foreground mb-4">
+                    Centralice su conocimiento. Exporte información clave a formatos como Markdown o PDF para auditorías.
+                  </p>
                 </div>
               </div>
             </section>
+
 
             <!-- Guía de Uso por Sección - Versión Mejorada -->
             <section class="mt-12">

@@ -29,6 +29,14 @@ const ROUTE_ROLE_MATRIX = {
 }
 
 const routes = [
+  {
+    path: '/plan-expired',
+    component: () => import('@/components/public/PlanExpired.vue'),
+    name: 'Plan Expirado',
+    meta: {
+      requiresAuth: true
+    }
+  },
   { path: '/', component: () => import('@/components/LandingPage.vue') },
   { path: '/about', component: () => import('@/components/public/AboutUs.vue') },
   { path: '/plans', component: () => import('@/components/hacienda/OurPlans.vue') },
@@ -237,6 +245,19 @@ const adminHaciendasRoute = {
   }
 }
 
+const adminSubscriptionsRoute = {
+  path: '/admin/subscriptions',
+  component: () => import('@/components/admin/SuperAdminSuscripciones.vue'),
+  name: 'Gestión de Suscripciones',
+  meta: {
+    requiresAuth: true,
+    requiresSuperAdmin: true,
+    roles: [ROLES.SUPERADMIN]
+  }
+}
+
+routes.push(adminSubscriptionsRoute)
+
 const adminSettingsRoute = {
   path: '/admin/settings',
   component: () => import('@/components/admin/SystemSettings.vue'),
@@ -442,6 +463,22 @@ router.beforeEach(async (to, from, next) => {
         query: { redirect: to.fullPath, loginRequired: 'true' }
       })
       return
+    }
+
+    // --- BLOQUEO DE PLAN EXPIRADO/GRATIS ---
+    if (userRole !== ROLES.SUPERADMIN && to.path !== '/plan-expired') {
+      const { useHaciendaStore } = await import('@/stores/haciendaStore')
+      const haciendaStore = useHaciendaStore()
+
+      // Wait for hacienda to load if not present
+      if (!haciendaStore.mi_hacienda && authStore.user?.hacienda) {
+        await haciendaStore.loadCurrentHacienda(authStore.user.hacienda)
+      }
+
+      if (haciendaStore.isFreePlan && userRole !== ROLES.ADMINISTRADOR) {
+         next({ path: '/plan-expired' })
+         return
+      }
     }
 
     // Check if route requires specific roles

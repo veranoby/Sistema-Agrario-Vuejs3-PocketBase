@@ -431,7 +431,7 @@
                   >
                     Básico
                   </h3>
-                  <p class="text-xs text-muted-foreground">3 usuarios con 3 roles</p>
+                  <p class="text-xs text-muted-foreground">Roles: admin, auditor, operador</p>
                 </div>
                 <div class="p-6">
                   <div class="flex flex-col gap-4">
@@ -463,7 +463,7 @@
                   >
                     Premium
                   </h3>
-                  <p class="text-xs text-muted-foreground">10 usuarios con 3 roles</p>
+                  <p class="text-xs text-muted-foreground">Roles: admin, auditor, operador</p>
                 </div>
                 <div class="p-6">
                   <div class="flex flex-col gap-4">

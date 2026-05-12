@@ -34,15 +34,15 @@ function getCachedFormatter(locale, options) {
  * @param {string} [formatStr='yyyy-MM-dd'] - Formato deseado
  * @returns {string} Fecha formateada o 'N/A'
  */
-export function formatDate(date, formatStr = 'yyyy-MM-dd') {
-  if (!date) return 'N/A'
+export function formatDate(date, formatStr = 'dd/MM/yyyy', invalidValue = 'N/A') {
+  if (date === null || date === undefined || date === '') return invalidValue
 
   try {
-    const dateObj = typeof date === 'string' ? new Date(date) : date
-    if (isNaN(dateObj.getTime())) return 'N/A'
+    const dateObj = typeof date === 'number' ? new Date(date) : typeof date === 'string' ? new Date(date) : date
+    if (isNaN(dateObj.getTime())) return invalidValue
     return format(dateObj, formatStr, { locale: es })
   } catch {
-    return 'N/A'
+    return invalidValue
   }
 }
 
@@ -86,9 +86,14 @@ export function formatRelativeTime(date) {
  * @param {string} [locale='es-ES'] - Locale a usar
  * @returns {string} Número formateado o 'N/A' si es inválido
  */
-export function formatNumber(num, locale = 'es-ES') {
-  if (num == null || Number.isNaN(Number(num))) return 'N/A'
-  return getCachedFormatter(locale).format(num)
+export function formatNumber(num, decimals = 0, locale = 'es-ES') {
+  if (num === null || num === undefined || num === '') return 'N/A'
+  if (Number.isNaN(Number(num))) return 'N/A'
+
+  return getCachedFormatter(locale, {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals
+  }).format(Number(num))
 }
 
 /**
@@ -99,11 +104,15 @@ export function formatNumber(num, locale = 'es-ES') {
  * @returns {string} Cantidad formateada o 'N/A' si es inválida
  */
 export function formatCurrency(amount, currency = 'EUR', locale = 'es-ES') {
-  if (amount == null || Number.isNaN(Number(amount))) return 'N/A'
+  if (amount === null || amount === undefined || amount === '') return 'N/A'
+  if (Number.isNaN(Number(amount))) return 'N/A'
+
   return getCachedFormatter(locale, {
     style: 'currency',
-    currency
-  }).format(amount)
+    currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(Number(amount))
 }
 
 /**

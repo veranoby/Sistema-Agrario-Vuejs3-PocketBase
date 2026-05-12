@@ -1,37 +1,20 @@
-/**
- * aiService.js - Servicio de Inteligencia Artificial
- * Implementa estrategia Offline-First y Self-hosted (Llama 3) para datos sensibles.
- * @module services/aiService
- */
-
 import { logger } from '@/utils/logger'
 import { IndexedDBStorage } from '@/utils/indexedDBStorage'
+import { useSettingsStore } from '@/stores/settingsStore'
+import { useAiUsageStore } from '@/stores/aiUsageStore'
 
 const AI_CACHE_DB = new IndexedDBStorage('aiResponsesDB', 'responses')
 
-/**
- * Configuración del servicio
- */
 const config = {
-  // Endpoint para modelo self-hosted (Llama 3)
   localEndpoint: import.meta.env.VITE_AI_LOCAL_ENDPOINT || 'http://localhost:11434/api/generate',
-  // Endpoint para fallback (OpenAI, etc.) - Solo datos NO sensibles
   cloudEndpoint: import.meta.env.VITE_AI_CLOUD_ENDPOINT || '',
   model: 'llama3',
-  cacheTTL: 1000 * 60 * 60 * 24 // 24 horas
+  cacheTTL: 1000 * 60 * 60 * 24
 }
 
-/**
- * Genera una respuesta de IA basada en el contexto agrícola
- * @param {string} prompt - Prompt para la IA
- * @param {Object} context - Contexto agrícola (siembra, actividades, zonas)
- * @param {boolean} [sensitive=true] - Si los datos son sensibles (usa local)
- * @returns {Promise<string>} Respuesta de la IA
- */
 export async function generateAIResponse(prompt, context = {}, sensitive = true) {
   const cacheKey = `ai_${btoa(prompt).substring(0, 50)}`
 
-  // 1. Intentar cache offline primero
   try {
     const cached = await AI_CACHE_DB.getItem(cacheKey)
     if (cached && Date.now() - cached.timestamp < config.cacheTTL) {
@@ -42,121 +25,129 @@ export async function generateAIResponse(prompt, context = {}, sensitive = true)
     logger.warn('[AIService] Error leyendo cache:', e)
   }
 
-  // 2. Determinar endpoint y si hay BYOK
   let openRouterKey = null
+  let isUsingGlobalKey = false
+
   try {
     const { useHaciendaStore } = await import('@/stores/haciendaStore')
     const haciendaStore = useHaciendaStore()
     openRouterKey = haciendaStore.mi_hacienda?.openrouter_key
+
+    if (!openRouterKey) {
+      const settingsStore = useSettingsStore()
+      await settingsStore.fetchConfig() // Asegurar carga
+      openRouterKey = settingsStore.globalOpenRouterKey
+      isUsingGlobalKey = true
+    }
   } catch (e) {
-    logger.warn('[AIService] No se pudo obtener haciendaStore para BYOK')
+    logger.warn('[AIService] No se pudo obtener BYOK', e)
   }
 
-  let endpoint = config.localEndpoint
-  let headers = { 'Content-Type': 'application/json' }
-  let requestBody = {
-    model: config.model,
-    prompt: `${buildSystemPrompt(context)}\n\nUser: ${prompt}`,
-    stream: false
+  // Rate Limiting para llave global
+  if (isUsingGlobalKey) {
+    const settingsStore = useSettingsStore()
+    const aiUsageStore = useAiUsageStore()
+    aiUsageStore.loadFromLocal()
+
+    const limit = settingsStore.aiRateLimit || 5
+    const windowMs = settingsStore.aiRateWindow || 3600000
+
+    if (!aiUsageStore.canUseAi(limit, windowMs)) {
+      throw new Error(`Has alcanzado el límite de uso gratuito de IA (${limit} peticiones). Por favor, ingresa tu propia API Key en la configuración de la hacienda.`)
+    }
+    aiUsageStore.incrementUsage(limit, windowMs)
   }
 
-  if (openRouterKey) {
-    endpoint = 'https://openrouter.ai/api/v1/chat/completions'
-    headers['Authorization'] = `Bearer ${openRouterKey}`
-    headers['HTTP-Referer'] = window.location.origin
-    headers['X-Title'] = 'Sistema Agri'
-
-    requestBody = {
-      model: 'meta-llama/llama-3-8b-instruct:free',
-      messages: [
-        { role: 'system', content: buildSystemPrompt(context) },
-        { role: 'user', content: prompt }
-      ]
-    }
-  } else {
-    endpoint = (sensitive || !config.cloudEndpoint)
-      ? config.localEndpoint
-      : config.cloudEndpoint
-
-    if (!endpoint) {
-      throw new Error('No hay endpoint de IA configurado')
-    }
+  // Si aún no hay key (ni BYOK ni global), simular
+  if (!openRouterKey && !config.cloudEndpoint) {
+      const simulatedResponse = simulateAI(prompt, context)
+      await AI_CACHE_DB.setItem(cacheKey, { response: simulatedResponse, timestamp: Date.now() })
+      return simulatedResponse
   }
 
   try {
-    const response = await fetch(endpoint, {
+    const headers = { 'Content-Type': 'application/json' }
+    if (openRouterKey) {
+      headers['Authorization'] = `Bearer ${openRouterKey}`
+    }
+
+    const res = await fetch(config.cloudEndpoint || "https://openrouter.ai/api/v1/chat/completions", {
       method: 'POST',
       headers,
-      body: JSON.stringify(requestBody)
+      body: JSON.stringify({
+        model: "openai/gpt-3.5-turbo",
+        messages: [
+          { role: "system", content: "You are a helpful agricultural assistant." },
+          { role: "user", content: `Context: ${JSON.stringify(context)}\n\nPrompt: ${prompt}` }
+        ]
+      })
     })
 
-    if (!response.ok) throw new Error(`Error IA: ${response.statusText}`)
+    if (!res.ok) throw new Error('API request failed')
 
-    const data = await response.json()
-    const aiText = data.response || data.choices?.[0]?.message?.content || ''
+    const data = await res.json()
+    const responseText = data.choices?.[0]?.message?.content || "No response received"
 
-    // 3. GUARDAR en cache
     await AI_CACHE_DB.setItem(cacheKey, {
-      response: aiText,
+      response: responseText,
       timestamp: Date.now()
     })
 
-    return aiText
+    return responseText
   } catch (error) {
-    logger.error('[AIService] Error generando respuesta:', error)
-    throw error
+    logger.error('[AIService] Fallo en API Cloud, usando simulación local', error)
+    const fallback = simulateAI(prompt, context)
+    return fallback
   }
 }
 
-/**
- * Construye el system prompt con contexto agrícola
- */
-function buildSystemPrompt(context) {
-  return `Eres un asistente experto en agronomía para el "Sistema Agri". 
-Analiza la siguiente información y proporciona recomendaciones técnicas.
-Contexto: ${JSON.stringify(context)}`
+function simulateAI(prompt, context) {
+  logger.info('[AIService] Generando respuesta simulada (Offline)')
+  return `Basado en el contexto: He analizado tu consulta sobre "${prompt.substring(0, 30)}...".
+  Te recomiendo registrar esta actividad en la bitácora y programar un seguimiento para la próxima semana.
+  (Esta es una respuesta simulada por seguridad de datos offline).`
 }
 
 /**
- * Autocompleta una bitácora basada en entradas informales
+ * Autocompleta datos de la bitácora basado en un input informal
  */
 export async function autocompleteBitacora(informalInput, metricasConfig) {
-  const prompt = `Convierte esta entrada informal en datos estructurados para bitácora: "${informalInput}". 
-  Usa este formato de métricas: ${JSON.stringify(metricasConfig)}`
-
-  return generateAIResponse(prompt, {}, false) // No sensible, puede usar nube
-}
-
-/**
- * Sugiere calendario de actividades
- */
-export async function suggestActivityCalendar(siembraContext, weatherForecast) {
-  const prompt = `Sugiere un calendario óptimo de actividades para esta siembra: ${JSON.stringify(siembraContext)} 
-  considerando el clima: ${weatherForecast}`
-
-  return generateAIResponse(prompt, siembraContext, true) // Sensible, usa local
-}
-
-/**
- * Prueba la conexión con OpenRouter
- */
-export async function testConnection(apiKey) {
+  const prompt = `Extrae información estructurada del siguiente texto: "${informalInput}". Las métricas esperadas son: ${JSON.stringify(metricasConfig)}. Formato de salida: JSON válido con llaves correspondientes a las métricas.`;
+  const response = await generateAIResponse(prompt, { tipo: 'autocomplete' }, true);
   try {
-    const response = await fetch('https://openrouter.ai/api/v1/models', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`
+      // Intentar extraer JSON de la respuesta (puede venir con texto adicional)
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+          return JSON.parse(jsonMatch[0]);
       }
-    })
-    return response.ok
-  } catch (error) {
-    return false
+      return {};
+  } catch (e) {
+      logger.error('[AIService] Error parseando respuesta autocompletado', e);
+      return {};
   }
 }
 
+/**
+ * Sugiere un calendario de actividades basado en el cultivo
+ */
+export async function suggestActivityCalendar(crop, conditions) {
+  const prompt = `Genera un calendario sugerido de actividades agrícolas para el cultivo: "${crop}" bajo las condiciones: ${JSON.stringify(conditions)}. Devuelve un arreglo en formato JSON con 'nombre', 'descripcion', y 'dias_desde_inicio'.`;
+  const response = await generateAIResponse(prompt, { tipo: 'calendar_suggestion' }, true);
+  try {
+      const jsonMatch = response.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+          return JSON.parse(jsonMatch[0]);
+      }
+      return [];
+  } catch (e) {
+      logger.error('[AIService] Error parseando respuesta de calendario', e);
+      return [];
+  }
+}
+
+// Export object for backwards compatibility with components that import aiService
 export const aiService = {
   generateAIResponse,
   autocompleteBitacora,
-  suggestActivityCalendar,
-  testConnection
+  suggestActivityCalendar
 }

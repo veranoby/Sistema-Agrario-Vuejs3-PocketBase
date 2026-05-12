@@ -2,7 +2,7 @@
   <v-container fluid class="system-settings">
     <h2 class="text-h5 mb-4">Configuración del Sistema</h2>
 
-    <v-row>
+    <v-row v-if="!settingsStore.loading">
       <!-- Configuración General -->
       <v-col cols="12" md="6">
         <v-card>
@@ -13,482 +13,162 @@
           <v-card-text>
             <v-form>
               <v-text-field
-                v-model="settings.systemName"
+                v-model="localConfig.system_name"
                 label="Nombre del Sistema"
                 hint="Nombre que se muestra en la interfaz"
                 persistent-hint
               />
               <v-text-field
-                v-model="settings.supportEmail"
+                v-model="localConfig.support_email"
                 label="Email de Soporte"
                 type="email"
                 hint="Email para contacto de soporte"
                 persistent-hint
               />
-              <v-select
-                v-model="settings.timezone"
-                label="Zona Horaria"
-                :items="timezones"
-                hint="Zona horaria del sistema"
+              <v-switch
+                v-model="localConfig.maintenance_mode"
+                label="Modo Mantenimiento"
+                color="warning"
+                hint="Bloquea el acceso a usuarios no-superadmin"
                 persistent-hint
               />
-              <v-select
-                v-model="settings.locale"
-                label="Idioma"
-                :items="locales"
-                hint="Idioma predeterminado"
-                persistent-hint
-              />
-            </v-form>
-          </v-card-text>
-          <v-card-actions>
-            <v-btn color="primary" @click="saveGeneralSettings">GUARDAR Cambios</v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-col>
-
-      <!-- Límites del Sistema -->
-      <v-col cols="12" md="6">
-        <v-card>
-          <v-card-title>
-            <v-icon start color="secondary">mdi-scale-balance</v-icon>
-            Límites del Sistema
-          </v-card-title>
-          <v-card-text>
-            <v-form>
-              <v-text-field
-                v-model="settings.maxUsers"
-                label="Máximo de Usuarios"
-                type="number"
-                hint="Número máximo de usuarios en el sistema"
-                persistent-hint
-              />
-              <v-text-field
-                v-model="settings.maxHaciendas"
-                label="Máximo de Haciendas"
-                type="number"
-                hint="Número máximo de haciendas"
-                persistent-hint
-              />
-              <v-text-field
-                v-model="settings.storageLimit"
-                label="Límite de Almacenamiento (GB)"
-                type="number"
-                hint="Límite de almacenamiento por hacienda"
-                persistent-hint
-              />
-              <v-text-field
-                v-model="settings.maxExportRecords"
-                label="Máximo Registros Exportación"
-                type="number"
-                hint="Límite de registros por exportación"
+              <v-switch
+                v-model="localConfig.allow_registration"
+                label="Permitir Registros"
+                color="success"
+                hint="Permite nuevos registros desde el landing page"
                 persistent-hint
               />
             </v-form>
           </v-card-text>
-          <v-card-actions>
-            <v-btn color="secondary" @click="saveLimitsSettings">GUARDAR Límites</v-btn>
-          </v-card-actions>
         </v-card>
       </v-col>
 
-      <!-- Umbrales de Alertas -->
+      <!-- Configuración IA y Correo -->
       <v-col cols="12" md="6">
         <v-card>
           <v-card-title>
-            <v-icon start color="warning">mdi-alert</v-icon>
-            Umbrales de Alertas
+            <v-icon start color="orange">mdi-robot</v-icon>
+            Configuración IA y APIS
           </v-card-title>
           <v-card-text>
-            <v-form>
-              <v-slider
-                v-model="settings.alertSyncQueueThreshold"
-                label="Alerta Cola de Sincronización"
-                min="10"
-                max="100"
-                step="5"
-                thumb-label="always"
-                hint="Número de operaciones para alertar"
-                persistent-hint
-              />
-              <v-slider
-                v-model="settings.alertCacheHitRate"
-                label="Alerta Cache Hit Rate Mínimo"
-                min="50"
-                max="100"
-                step="5"
-                thumb-label="always"
-                hint="Porcentaje mínimo de aciertos de cache"
-                persistent-hint
-              />
-              <v-slider
-                v-model="settings.alertErrorRate"
-                label="Alerta Tasa de Error Máxima"
-                min="1"
-                max="20"
-                step="1"
-                thumb-label="always"
-                hint="Porcentaje máximo de errores"
-                persistent-hint
-              />
-            </v-form>
-          </v-card-text>
-          <v-card-actions>
-            <v-btn color="warning" @click="saveAlertSettings">GUARDAR Umbrales</v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-col>
-
-      <!-- Feature Flags -->
-      <v-col cols="12" md="6">
-        <v-card>
-          <v-card-title>
-            <v-icon start color="info">mdi-flag</v-icon>
-            Feature Flags
-          </v-card-title>
-          <v-card-text>
-            <v-list>
-              <v-list-item v-for="feature in featureFlags" :key="feature.key">
-                <v-list-item-title>{{ feature.name }}</v-list-item-title>
-                <v-list-item-subtitle>{{ feature.description }}</v-list-item-subtitle>
-                <template v-slot:append>
-                  <v-switch
-                    v-model="feature.enabled"
-                    color="primary"
-                    hide-details
-                    @change="toggleFeature(feature)"
-                  />
-                </template>
-              </v-list-item>
-            </v-list>
-          </v-card-text>
-        </v-card>
-      </v-col>
-
-      <!-- Backup y Restore -->
-      <v-col cols="12">
-        <v-card>
-          <v-card-title>
-            <v-icon start color="success">mdi-database</v-icon>
-            Backup y Restore
-          </v-card-title>
-          <v-card-text>
+            <v-text-field
+              v-model="localConfig.global_openrouter_key"
+              label="OpenRouter Global Key"
+              hint="Llave de respaldo para haciendas sin llave propia"
+              persistent-hint
+            />
+            <v-text-field
+              v-model="localConfig.resend_api_key"
+              label="Resend API Key"
+              hint="Llave para envío de correos"
+              persistent-hint
+            />
             <v-row>
-              <v-col cols="12" md="6">
-                <h4 class=" mb-2">Crear Backup</h4>
-                <p class="text-body-2 text-grey mb-3">
-                  Genera un backup completo de todos los datos del sistema.
-                </p>
-                <v-btn color="success" prepend-icon="mdi-download" @click="createBackup">
-                  Crear Backup Ahora
-                </v-btn>
-              </v-col>
-              <v-col cols="12" md="6">
-                <h4 class=" mb-2">Restaurar Backup</h4>
-                <p class="text-body-2 text-grey mb-3">
-                  Restaura los datos desde un archivo de backup.
-                </p>
-                <v-file-input
-                  v-model="backupFile"
-                  label="Seleccionar archivo de backup"
-                  accept=".zip,.sql"
-                  prepend-icon="mdi-upload"
-                  @change="onBackupFileSelected"
+              <v-col cols="6">
+                <v-text-field
+                  v-model.number="localConfig.ai_rate_limit"
+                  label="Límite IA"
+                  type="number"
+                  hint="Ej: 5 peticiones"
+                  persistent-hint
                 />
-                <v-btn
-                  color="error"
-                  prepend-icon="mdi-restore"
-                  :disabled="!backupFile"
-                  @click="restoreBackup"
-                >
-                  Restaurar Backup
-                </v-btn>
+              </v-col>
+              <v-col cols="6">
+                <v-text-field
+                  v-model.number="localConfig.ai_rate_window"
+                  label="Ventana de IA (ms)"
+                  type="number"
+                  hint="Ej: 3600000 para 1h"
+                  persistent-hint
+                />
               </v-col>
             </v-row>
           </v-card-text>
         </v-card>
       </v-col>
 
-      <!-- Variables de Entorno -->
+      <!-- Instrucciones Bancarias -->
       <v-col cols="12">
         <v-card>
           <v-card-title>
-            <v-icon start color="purple">mdi-code-braces</v-icon>
-            Variables de Entorno
+            <v-icon start color="green">mdi-bank</v-icon>
+            Información Bancaria
           </v-card-title>
           <v-card-text>
             <v-alert type="info" density="compact" class="mb-3">
-              Estas variables se almacenan en el servidor y requieren reinicio para aplicar cambios.
+              Estas instrucciones se mostrarán a los usuarios cuando deseen pagar su suscripción por transferencia.
             </v-alert>
-            <v-data-table
-              :headers="envHeaders"
-              :items="envVariables"
-              density="compact"
-            >
-              <template #item.value="{ item }">
-                <v-text-field
-                  v-model="item.value"
-                  :type="item.secret ? 'password' : 'text'"
-                  density="compact"
-                  hide-details
-                  @change="markEnvChanged(item)"
-                />
-              </template>
-              <template #item.actions="{ item }">
-                <v-btn
-                  icon="mdi-eye"
-                  size="small"
-                  variant="text"
-                  @click="item.secret = !item.secret"
-                />
-              </template>
-            </v-data-table>
-            <v-btn
-              color="purple"
-              class="mt-3"
-              prepend-icon="mdi-content-save"
-              :disabled="!envChanged"
-              @click="saveEnvVariables"
-            >
-              GUARDAR Variables
-            </v-btn>
+            <v-textarea
+              v-model="localConfig.bank_account_info"
+              label="Instrucciones Bancarias (Se permite Markdown)"
+              rows="5"
+            />
           </v-card-text>
         </v-card>
       </v-col>
     </v-row>
 
+    <!-- Botón de Guardar General -->
+    <v-row v-if="!settingsStore.loading">
+      <v-col cols="12" class="text-right">
+        <v-btn color="primary" size="large" @click="saveSettings">
+          Guardar Configuración
+        </v-btn>
+      </v-col>
+    </v-row>
+
+    <!-- Loading State -->
+    <v-row v-else>
+      <v-col cols="12" class="text-center">
+        <v-progress-circular indeterminate color="primary"></v-progress-circular>
+      </v-col>
+    </v-row>
+
+    <!-- Snackbar -->
+    <v-snackbar v-model="snackbar" :color="snackbarColor" :timeout="3000">
+      {{ snackbarMessage }}
+    </v-snackbar>
   </v-container>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { pb } from '@/utils/pocketbase'
+import { ref, onMounted, watch } from 'vue'
+import { useSettingsStore } from '@/stores/settingsStore'
 import { handleError } from '@/utils/errorHandler'
-import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 
-const uiFeedbackStore = useUiFeedbackStore()
+const settingsStore = useSettingsStore()
 
-// Estado
-const backupFile = ref(null)
-const envChanged = ref(false)
+// Estado UI
+const snackbar = ref(false)
+const snackbarColor = ref('success')
+const snackbarMessage = ref('')
 
-// Configuración general
-const settings = ref({
-  systemName: 'ConAgri',
-  supportEmail: 'soporte@agroassist.com',
-  timezone: 'America/Guayaquil',
-  locale: 'es-EC',
-  maxUsers: 1000,
-  maxHaciendas: 100,
-  storageLimit: 10,
-  maxExportRecords: 10000,
-  alertSyncQueueThreshold: 50,
-  alertCacheHitRate: 70,
-  alertErrorRate: 5
+const localConfig = ref({
+  system_name: '',
+  support_email: '',
+  maintenance_mode: false,
+  allow_registration: true,
+  bank_account_info: '',
+  resend_api_key: '',
+  global_openrouter_key: '',
+  ai_rate_limit: 5,
+  ai_rate_window: 3600000
 })
-
-// Feature flags
-const featureFlags = ref([
-  { key: 'ai_assistant', name: 'AI Assistant', description: 'Asistente IA en siembras', enabled: true },
-  { key: 'advanced_reports', name: 'Reportes Avanzados', description: 'Reportes personalizados', enabled: true },
-  { key: 'module_marketplace', name: 'Mercado de Módulos', description: 'Suscripción modular', enabled: false },
-  { key: 'knowledge_hub', name: 'Knowledge Hub', description: 'Exportación a Markdown', enabled: false },
-  { key: 'auto_backup', name: 'Backup Automático', description: 'Backups programados', enabled: true }
-])
-
-// Variables de entorno
-const envVariables = ref([
-  { key: 'PB_BASE_URL', value: '', secret: false, changed: false },
-  { key: 'GEMINI_API_KEY', value: '', secret: true, changed: false },
-  { key: 'MAX_CONCURRENT_USERS', value: '200', secret: false, changed: false },
-  { key: 'CACHE_TTL', value: '600000', secret: false, changed: false }
-])
-
-const envHeaders = [
-  { title: 'Variable', key: 'key' },
-  { title: 'Valor', key: 'value' },
-  { title: 'Acciones', key: 'actions', align: 'end' }
-]
-
-// Opciones
-const timezones = [
-  { title: 'America/Guayaquil (ECT)', value: 'America/Guayaquil' },
-  { title: 'America/New_York (EST)', value: 'America/New_York' },
-  { title: 'America/Mexico_City (CST)', value: 'America/Mexico_City' },
-  { title: 'UTC', value: 'UTC' }
-]
-
-const locales = [
-  { title: 'Español (Ecuador)', value: 'es-EC' },
-  { title: 'Español (México)', value: 'es-MX' },
-  { title: 'English (US)', value: 'en-US' }
-]
 
 onMounted(async () => {
-  await loadSettings()
-  await loadFeatureFlags()
-  await loadEnvVariables()
+  await settingsStore.fetchConfig()
+  if (settingsStore.system_config) {
+    localConfig.value = { ...settingsStore.system_config }
+  }
 })
 
-// Cargar configuración
-async function loadSettings() {
-  try {
-    const response = await pb.collection('settings').getFirstListItem('')
-    settings.value = { ...settings.value, ...response }
-  } catch (error) {
-    if (error.status !== 404) {
-      handleError(error, 'Error al cargar configuración')
-    }
-  }
-}
-
-// Cargar feature flags
-async function loadFeatureFlags() {
-  try {
-    const response = await pb.collection('feature_flags').getFullList()
-    if (response.length) {
-      featureFlags.value = response.map(f => ({
-        key: f.key,
-        name: f.name,
-        description: f.description,
-        enabled: f.enabled
-      }))
-    }
-  } catch (error) {
-    // Feature flags no existen aún
-  }
-}
-
-// Cargar variables de entorno
-async function loadEnvVariables() {
-  try {
-    const response = await pb.collection('env_variables').getFullList()
-    if (response.length) {
-      envVariables.value = response.map(e => ({
-        key: e.key,
-        value: e.value,
-        secret: e.secret || false,
-        changed: false
-      }))
-    }
-  } catch (error) {
-    // Env variables no existen aún
-  }
-}
-
-// GUARDAR configuración general
-async function saveGeneralSettings() {
-  try {
-    await pb.collection('settings').upsert({
-      key: 'general',
-      ...settings.value
-    })
-    showSnackbar('Configuración guardada', 'success')
-  } catch (error) {
-    handleError(error, 'Error al guardar configuración')
-  }
-}
-
-// GUARDAR límites
-async function saveLimitsSettings() {
-  try {
-    await pb.collection('settings').upsert({
-      key: 'limits',
-      maxUsers: settings.value.maxUsers,
-      maxHaciendas: settings.value.maxHaciendas,
-      storageLimit: settings.value.storageLimit,
-      maxExportRecords: settings.value.maxExportRecords
-    })
-    showSnackbar('Límites guardados', 'success')
-  } catch (error) {
-    handleError(error, 'Error al guardar límites')
-  }
-}
-
-// GUARDAR umbrales de alertas
-async function saveAlertSettings() {
-  try {
-    await pb.collection('settings').upsert({
-      key: 'alerts',
-      alertSyncQueueThreshold: settings.value.alertSyncQueueThreshold,
-      alertCacheHitRate: settings.value.alertCacheHitRate,
-      alertErrorRate: settings.value.alertErrorRate
-    })
-    showSnackbar('Umbrales guardados', 'success')
-  } catch (error) {
-    handleError(error, 'Error al guardar umbrales')
-  }
-}
-
-// Toggle feature flag
-async function toggleFeature(feature) {
-  try {
-    await pb.collection('feature_flags').upsert({
-      key: feature.key,
-      name: feature.name,
-      description: feature.description,
-      enabled: feature.enabled
-    })
-    showSnackbar(`Feature ${feature.enabled ? 'activada' : 'desactivada'}`, 'success')
-  } catch (error) {
-    handleError(error, 'Error al actualizar feature flag')
-    feature.enabled = !feature.enabled
-  }
-}
-
-// Marcar variable como cambiada
-function markEnvChanged(item) {
-  item.changed = true
-  envChanged.value = envVariables.value.some(e => e.changed)
-}
-
-// GUARDAR variables de entorno
-async function saveEnvVariables() {
-  try {
-    const changed = envVariables.value.filter(e => e.changed)
-    await Promise.all(
-      changed.map(e =>
-        pb.collection('env_variables').upsert({
-          key: e.key,
-          value: e.value,
-          secret: e.secret
-        })
-      )
-    )
-    envChanged.value = false
-    showSnackbar('Variables guardadas', 'success')
-  } catch (error) {
-    handleError(error, 'Error al guardar variables')
-  }
-}
-
-// Crear backup
-async function createBackup() {
-  try {
-    showSnackbar('Generando backup...', 'info')
-    // Implementar lógica de backup
-    showSnackbar('Backup creado exitosamente', 'success')
-  } catch (error) {
-    handleError(error, 'Error al crear backup')
-  }
-}
-
-// Seleccionar archivo de backup
-function onBackupFileSelected(file) {
-  backupFile.value = file
-}
-
-// Restaurar backup
-async function restoreBackup() {
-  try {
-    if (!backupFile.value) return
-    
-    showSnackbar('Restaurando backup...', 'info')
-    // Implementar lógica de restore
-    showSnackbar('Backup restaurado exitosamente', 'success')
-    backupFile.value = null
-  } catch (error) {
-    handleError(error, 'Error al restaurar backup')
+async function saveSettings() {
+  const success = await settingsStore.updateConfig(localConfig.value)
+  if (success) {
+    showSnackbar('Configuración guardada correctamente', 'success')
+  } else {
+    showSnackbar('Error al guardar configuración', 'error')
   }
 }
 
