@@ -25,6 +25,7 @@
     "jspdf-autotable": "^5.0.7",
     "leaflet": "^1.9.4",
     "leaflet-draw": "^1.0.4",
+    "leaflet-geometryutil": "^0.10.3",
     "mitt": "^3.0.1",
     "pinia": "^2.2.6",
     "pinia-plugin-persistedstate": "~4.2.0",

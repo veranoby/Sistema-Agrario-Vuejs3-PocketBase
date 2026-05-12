@@ -254,10 +254,6 @@
       </v-card>
     </v-dialog>
 
-    <!-- Snackbar -->
-    <v-snackbar v-model="snackbar" :color="snackbarColor" :timeout="3000">
-      {{ snackbarMessage }}
-    </v-snackbar>
   </v-container>
 </template>
 
@@ -275,9 +271,6 @@ const logs = ref([])
 const autoRefresh = ref(false)
 const metadataDialog = ref(false)
 const selectedLog = ref(null)
-const snackbar = ref(false)
-const snackbarColor = ref('success')
-const snackbarMessage = ref('')
 
 // Filtros
 const filters = ref({
@@ -484,9 +477,7 @@ function downloadFile(content, filename, mimeType) {
 }
 
 function showSnackbar(message, color = 'success') {
-  snackbarMessage.value = message
-  snackbarColor.value = color
-  snackbar.value = true
+  uiFeedbackStore.showSnackbar(message, color)
 }
 
 // Mock logs generator (para demo)

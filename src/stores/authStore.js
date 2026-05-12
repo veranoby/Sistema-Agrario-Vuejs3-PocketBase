@@ -580,6 +580,9 @@ export const useAuthStore = defineStore('auth', {
         }
 
         authProvider.logout()
+        const syncStore = useSyncStore()
+        syncStore.dispose()
+        
         this.user = null
         this.token = null
         this.isLoggedIn = false

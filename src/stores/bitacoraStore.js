@@ -1,5 +1,4 @@
 import { defineStore } from 'pinia';
-import { toRaw } from 'vue';
 import { pb } from '@/utils/pocketbase';
 import { handleError } from '@/utils/errorHandler';
 import { useSyncStore } from '@/stores/sync/index'
@@ -221,7 +220,7 @@ export const useBitacoraStore = defineStore('bitacora', {
         
         this.lastSync = Date.now();
         // CORRECTO: Sanitizar con JSON.parse(JSON.stringify()) para IndexedDB
-        syncStore.saveToLocalStorage('bitacoraEntries', JSON.parse(JSON.stringify(toRaw(this.bitacoraEntries))));
+        syncStore.saveToLocalStorage('bitacoraEntries', JSON.parse(JSON.stringify(this.bitacoraEntries)));
         logger.debug(`[BITACORA_STORE] Fetched page ${page}: ${entries.length} items (Total: ${result.totalItems})`);
         
         return {

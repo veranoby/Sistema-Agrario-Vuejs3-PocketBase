@@ -90,6 +90,12 @@ export function handleError(error, customMessage = null, options = { silent: fal
     // Forzar evento offline para que el syncStore detecte el cambio si navigator.onLine falla
     window.dispatchEvent(new Event('offline'))
     
+    // Notificar al syncStore para que inicie su ciclo de recuperación (heartbeat)
+    import('@/stores/sync').then(({ useSyncStore }) => {
+      const syncStore = useSyncStore()
+      syncStore.checkConnection()
+    }).catch(() => {})
+    
     return networkError
   }
 

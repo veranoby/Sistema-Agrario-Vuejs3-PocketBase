@@ -25,24 +25,26 @@
 <script>
 import { defineComponent, onMounted, onBeforeUnmount, ref, computed, watch } from 'vue'
 import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 import 'leaflet-draw'
+import 'leaflet-draw/dist/leaflet.draw.css'
+import 'leaflet-geometryutil'
 
 import { offlineGeoStorage } from '@/utils/offlineGeoStorage'
 import { locationCoordinator } from '@/services/locationCoordinator'
 import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
+import { useSyncStore } from '@/stores/sync'
 import { logger } from '@/utils/logger'
 import { SIEMBRA_COLORS, POI_FALLBACK_COLOR, HACIENDA_CENTER_COLOR } from '@/constants/mapColors'
 
-// Leaflet CSS
-
-
-// Fix Leaflet default icon issue
+// Fix for Leaflet default icon issues in production/build
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png'
 })
+
 
 export default defineComponent({
   name: 'GisMapComponent',
@@ -77,7 +79,7 @@ export default defineComponent({
     drawMode: {
       type: String,
       default: 'polygon',
-      validator: (val) => ['polygon', 'marker'].includes(val)
+      validator: (val) => ['polygon', 'marker', 'both'].includes(val)
     },
     // Loading state
     loading: {
@@ -93,16 +95,22 @@ export default defineComponent({
     haciendaGps: {
       type: Object,
       default: null
+    },
+    // NUEVA PROP: Quitar relleno en dibujos
+    noFill: {
+      type: Boolean,
+      default: false
     }
   },
 
-  emits: ['polygon-saved', 'geometry-updated'],
+  emits: ['polygon-saved', 'geometry-updated', 'first-point-placed'],
 
   
   setup(props, { emit }) {
     const mapContainer = ref(null)
     const saving = ref(false)
-    const isOffline = ref(!navigator.onLine)
+    const syncStore = useSyncStore()
+    const isOffline = computed(() => !syncStore.isOnline)
     const cachedGeoJSON = ref(null)
     const cachingTiles = ref(false)
     const uiFeedback = useUiFeedbackStore()
@@ -112,10 +120,14 @@ export default defineComponent({
     let centerCircleMarker = null // Referencia persistente al círculo de la hacienda
 
     const updateCenterCircle = (latlng) => {
-      if (!map || !latlng || latlng.length !== 2) return;
+      if (!map || !latlng) return;
       
+      // Asegurar que latlng sea [lat, lng]
+      const coords = Array.isArray(latlng) ? latlng : [latlng.lat, latlng.lng];
+      if (isNaN(coords[0]) || isNaN(coords[1])) return;
+
       if (centerCircleMarker) {
-        centerCircleMarker.setLatLng(latlng);
+        centerCircleMarker.setLatLng(coords);
         // Actualizar contenido de popup/tooltip
         centerCircleMarker.unbindPopup();
         centerCircleMarker.unbindTooltip();
@@ -125,13 +137,21 @@ export default defineComponent({
         centerCircleMarker.bindPopup(popupContent);
         centerCircleMarker.bindTooltip(props.haciendaName || 'Centro de Hacienda', { permanent: false, direction: 'top' });
       } else {
-        // Un círculo geográfico fijo de 15 metros. A prueba de fallos de iconos.
-        centerCircleMarker = L.circle(latlng, {
+        // Crear pane personalizado para que siempre esté arriba
+        if (!map.getPane('haciendaPane')) {
+          map.createPane('haciendaPane');
+          map.getPane('haciendaPane').style.zIndex = 350; // Bajado de 650 para que polígonos (400) queden arriba
+          map.getPane('haciendaPane').style.pointerEvents = 'none';
+        }
+
+        // Un círculo geográfico fijo de 15 metros.
+        centerCircleMarker = L.circle(coords, {
+          pane: 'haciendaPane',
           color: '#ffffff',
           weight: 3,
           fillColor: HACIENDA_CENTER_COLOR,
           fillOpacity: 1,
-          radius: 15 // Radio en metros
+          radius: 15
         }).addTo(map);
         
         const popupContent = props.haciendaName 
@@ -156,8 +176,7 @@ export default defineComponent({
     });
 
     // Watch for online/offline status
-    watch(() => navigator.onLine, (online) => {
-      isOffline.value = !online
+    watch(() => syncStore.isOnline, (online) => {
       if (!online) {
         loadCachedGeometries()
       }
@@ -167,14 +186,22 @@ export default defineComponent({
     watch(() => props.center, (newCenter) => {
       if (map && newCenter && newCenter.length === 2) {
         map.flyTo(newCenter, props.zoom, { animate: true, duration: 1.5 })
-        // ELIMINADO: updateCenterCircle(newCenter)
       }
     }, { deep: true })
 
     // NUEVO WATCH: Solo actualiza el círculo de hacienda cuando cambia haciendaGps
     watch(() => props.haciendaGps, (newGps) => {
-      if (newGps?.lat && newGps?.lng) {
-        updateCenterCircle([newGps.lat, newGps.lng])
+      let gpsData = newGps;
+      if (typeof newGps === 'string') {
+        try {
+          gpsData = JSON.parse(newGps);
+        } catch (e) {
+          return;
+        }
+      }
+
+      if (gpsData?.lat && gpsData?.lng) {
+        updateCenterCircle([Number(gpsData.lat), Number(gpsData.lng)])
       } else if (centerCircleMarker) {
         centerCircleMarker.remove()
         centerCircleMarker = null
@@ -183,11 +210,11 @@ export default defineComponent({
 
     // Watch for GeoJSON changes
     watch(() => props.initialGeoJSON, (newVal) => {
-      if (map && newVal) {
+      if (!newVal) return
+      if (map) {
         loadPolygon(newVal)
       }
-    }, { deep: true })
-    
+    }, { deep: true, immediate: true })    
     const polygonGeoJSON = computed(() => {
       if (!drawnItems || drawnItems.getLayers().length === 0) return null
       
@@ -225,9 +252,19 @@ export default defineComponent({
       // Establecer vista inicial basada en props
       if (props.center && props.center.length === 2) {
         map.setView(props.center, props.zoom)
-        // ELIMINADO: updateCenterCircle(props.center)
       } else {
         map.setView([4.6097, -74.0817], props.zoom) // Bogotá fallback - Corregido: coma añadida
+      }
+
+      // Mostrar círculo de hacienda si existe GPS
+      if (props.haciendaGps) {
+        let gpsData = props.haciendaGps;
+        if (typeof gpsData === 'string') {
+          try { gpsData = JSON.parse(gpsData); } catch (e) { gpsData = null; }
+        }
+        if (gpsData?.lat && gpsData?.lng) {
+          updateCenterCircle([Number(gpsData.lat), Number(gpsData.lng)])
+        }
       }
 
       // Define tile layers for different map types
@@ -271,14 +308,31 @@ export default defineComponent({
             remove: true
           },
           draw: {
-            polygon: props.drawMode === 'polygon' ? {
+            polygon: ['polygon', 'both'].includes(props.drawMode) ? {
               allowIntersection: false,
-              showArea: false
+              showArea: false,
+              shapeOptions: props.noFill ? {
+                fill: false,
+                color: '#4CAF50',
+                weight: 3,
+                dashArray: '5, 5'
+              } : {
+                fillOpacity: 0.4
+              }
             } : false,
             polyline: false,
-            rectangle: props.drawMode === 'polygon',
+            rectangle: ['polygon', 'both'].includes(props.drawMode) ? {
+              shapeOptions: props.noFill ? {
+                fill: false,
+                color: '#4CAF50',
+                weight: 3,
+                dashArray: '5, 5'
+              } : {
+                fillOpacity: 0.4
+              }
+            } : false,
             circle: false,
-            marker: props.drawMode === 'marker',
+            marker: ['marker', 'both'].includes(props.drawMode),
             circlemarker: false
           }
         }
@@ -289,9 +343,24 @@ export default defineComponent({
         // Event: Created - Corregido: Evento en mayúsculas
         map.on(L.Draw.Event.CREATED, (e) => {
           const layer = e.layer
-          drawnItems.clearLayers()
-          drawnItems.addLayer(layer)
-          notifyChange(layer)
+          
+          if (layer instanceof L.Marker) {
+            // Si es un pin, notificamos el punto para el GPS pero no lo añadimos a drawnItems (que es para la geometría JSON)
+            // El centerCircleMarker del componente se encargará de mostrar el pin de hacienda basado en la prop haciendaGps
+            emit('first-point-placed', layer.getLatLng())
+            // No añadimos el marcador temporal a drawnItems para evitar duplicidad visual con centerCircleMarker
+          } else {
+            drawnItems.clearLayers()
+            drawnItems.addLayer(layer)
+            notifyChange(layer)
+
+            // Si es el primer punto de un polígono, sincronizar GPS
+            if (layer.getLatLngs) {
+              const latlngs = layer.getLatLngs()
+              const firstPoint = Array.isArray(latlngs[0]) ? latlngs[0][0] : latlngs[0]
+              if (firstPoint) emit('first-point-placed', firstPoint)
+            }
+          }
         })
 
         // Event: Edited - Corregido: Evento en mayúsculas
@@ -315,12 +384,12 @@ export default defineComponent({
     }
 
     const notifyChange = (layer) => {
-      const geojson = layer.toGeoJSON().geometry
+      // Usar toGeoJSON() de Leaflet genera una Feature. Extraemos la geometry pura.
+      const feature = layer.toGeoJSON();
+      const geojson = feature.geometry;
       let areaHa = 0
       
       if (geojson.type === 'Polygon') {
-        // L.GeometryUtil.geodesicArea expects an array of LatLngs
-        // For Polygons, getLatLngs() returns an array of arrays (rings)
         const latlngs = layer.getLatLngs()[0]
         const areaSqMeters = L.GeometryUtil.geodesicArea(latlngs)
         areaHa = (areaSqMeters / 10000).toFixed(2)
@@ -329,69 +398,116 @@ export default defineComponent({
       emit('geometry-updated', { geojson, areaHa })
     }
 
-    
-    const loadPolygon = (geoJSON) => {
-      if (!map || !drawnItems || !geoJSON) return
+    const loadPolygon = (rawGeoJSON) => {
+      if (!map || !drawnItems || !rawGeoJSON) {
+        return
+      }
       
       try {
         drawnItems.clearLayers()
-        
-        let layer = null
-        let bounds = null
 
-        // Handle Array of Features or raw Features
-        if (Array.isArray(geoJSON)) {
-          layer = L.geoJSON(geoJSON, { onEachFeature: onEachFeatureHandler, pointToLayer: customPointToLayer })
-        } else if (geoJSON.type === 'FeatureCollection' || geoJSON.type === 'Feature' || geoJSON.type === 'GeometryCollection') {
-          layer = L.geoJSON(geoJSON, { onEachFeature: onEachFeatureHandler, pointToLayer: customPointToLayer })
-        } else {
-          // It's a single geometry object (Polygon, Point, etc.)
-          layer = L.GeoJSON.geometryToLayer(geoJSON)
+        // 1. Asegurar objeto plano (limpio de Proxies)
+        let parsed = typeof rawGeoJSON === 'string' ? JSON.parse(rawGeoJSON) : rawGeoJSON;
+        let data = null;
+        try {
+          // Clonación profunda es el método más fiable para Leaflet
+          data = JSON.parse(JSON.stringify(parsed));
+        } catch (e) {
+          data = parsed;
         }
 
-        if (layer) {
-          drawnItems.addLayer(layer)
-          
-          // Determinar si debemos usar flyTo (para puntos únicos) o fitBounds (para formas)
-          let isSinglePoint = false
-          let pointLatLng = null
 
-          if (geoJSON.type === 'Point') {
-            isSinglePoint = true
-            pointLatLng = layer.getLatLng()
-          } else if (geoJSON.type === 'Feature' && geoJSON.geometry?.type === 'Point') {
-            isSinglePoint = true
-            pointLatLng = layer.getLatLng()
-          } else if (geoJSON.type === 'FeatureCollection' && geoJSON.features?.length === 1 && geoJSON.features[0].geometry?.type === 'Point') {
-            isSinglePoint = true
-            // En una FeatureCollection, layer es un FeatureGroup. Obtenemos el primer marker.
-            const layers = layer.getLayers()
-            if (layers.length > 0 && layers[0].getLatLng) {
-              pointLatLng = layers[0].getLatLng()
-            }
+        // 2. RENDERIZADO IMPERATIVO (Nativo Leaflet)
+        const addImperatively = (obj) => {
+          if (!obj) return;
+          if (obj.type === 'FeatureCollection') {
+            obj.features.forEach(addImperatively);
+          } else if (obj.type === 'Feature') {
+            renderGeometry(obj.geometry, obj.properties || {});
+          } else {
+            renderGeometry(obj, {});
           }
-          
-          if (isSinglePoint && pointLatLng) {
-            setTimeout(() => {
-              if (map) {
-                map.invalidateSize()
-                map.flyTo(pointLatLng, 18, { animate: true })
-              }
-            }, 100)
-          } else if (layer.getBounds) {
-            bounds = layer.getBounds()
-            if (bounds.isValid()) {
-              setTimeout(() => {
-                if (map) {
-                  map.invalidateSize()
-                  map.fitBounds(bounds, { padding: [50, 50], animate: true })
-                }
-              }, 100)
-            }
+        };
+
+        const renderGeometry = (geom, properties) => {
+          if (!geom || !geom.type || !geom.coordinates) {
+            return;
           }
-        }
+
+
+          if (geom.type === 'Polygon') {
+            // GeoJSON: [lng, lat] -> Leaflet: [lat, lng]
+            // Soportamos polígonos con múltiples anillos (huecos)
+            const rings = geom.coordinates.map(ring => 
+              ring.map(coord => [coord[1], coord[0]])
+            );
+            
+            const isNoFill = properties.noFill === true || props.noFill === true;
+            
+            const poly = L.polygon(rings, {
+              color: properties.color || (isNoFill ? '#4CAF50' : '#2196f3'),
+              fillColor: isNoFill ? 'transparent' : (properties.color || '#2196f3'),
+              fillOpacity: isNoFill ? 0 : 0.4,
+              weight: isNoFill ? 3 : 2,
+              dashArray: isNoFill ? '5, 5' : null
+            });
+            
+            setupLayer(poly, properties);
+            drawnItems.addLayer(poly);
+
+          } else if (geom.type === 'Point') {
+            const latlng = [geom.coordinates[1], geom.coordinates[0]];
+            
+            // Estética de Pin de Zona (Amarillo/Naranja por defecto si no es lote)
+            const propsForMarker = { ...properties };
+            if (!propsForMarker.source && !propsForMarker.type?.includes('siembra')) {
+               propsForMarker.source = 'zone-point';
+            }
+
+            const marker = customPointToLayer({ properties: propsForMarker }, latlng);
+            setupLayer(marker, propsForMarker);
+            drawnItems.addLayer(marker);
+          }
+        };
+
+        const setupLayer = (layer, props) => {
+          if (props.nombre) {
+            layer.bindTooltip(props.nombre, { permanent: false, direction: 'top', offset: [0, -10] });
+            
+            let popup = `<div class="pa-1"><strong>${props.nombre}</strong>`;
+            if (props.tipoNombre) popup += `<br/><span class="text-caption">Tipo: ${props.tipoNombre}</span>`;
+            if (props.estado) popup += `<br/><span class="text-caption">Estado: ${props.estado}</span>`;
+            if (props.area) popup += `<br/><span class="text-caption">Área: ${props.area} ha</span>`;
+            popup += `</div>`;
+            layer.bindPopup(popup);
+          }
+
+          if (layer instanceof L.Polygon) {
+            const baseStyle = { fillOpacity: 0.4, weight: 2 };
+            layer.on('mouseover', () => layer.setStyle({ fillOpacity: 0.6, weight: 4 }));
+            layer.on('mouseout', () => layer.setStyle(baseStyle));
+          }
+        };
+
+        // Ejecutar dibujo
+        addImperatively(data);
+
+        // 3. Auto-ajuste de vista (FlyTo o FitBounds)
+        setTimeout(() => {
+          if (!map) return;
+          map.invalidateSize();
+          const layers = drawnItems.getLayers();
+          if (layers.length === 0) return;
+
+          if (layers.length === 1 && layers[0] instanceof L.Marker) {
+            map.flyTo(layers[0].getLatLng(), 18, { animate: true });
+          } else if (drawnItems.getBounds && drawnItems.getBounds().isValid()) {
+            map.fitBounds(drawnItems.getBounds(), { padding: [50, 50], animate: true });
+          }
+        }, 200);
+
       } catch (error) {
-        logger.error('[GisMap] Error loading geometry:', error)
+        logger.error('[GisMap] Error en renderizado imperativo:', error);
       }
     }
 

@@ -90,7 +90,7 @@ export const useHaciendaStore = defineStore('hacienda', {
       }
 
       const dataToUpdate = {}
-      const fields = ['name', 'location', 'gps', 'info', 'metricas', 'contacto_email', 'contacto_telefono', 'openrouter_key']
+      const fields = ['name', 'location', 'gps', 'geometria', 'info', 'metricas', 'contacto_email', 'contacto_telefono', 'openrouter_key']
       fields.forEach(field => {
 
         if (haciendaData[field] !== undefined) {

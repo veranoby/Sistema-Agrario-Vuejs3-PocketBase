@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { markRaw, toRaw } from 'vue'
+import { markRaw } from 'vue'
 import { pb } from '@/utils/pocketbase'
 import { useSyncStore } from '@/stores/sync/index'
 import { useUiFeedbackStore } from './uiFeedbackStore'
@@ -69,6 +69,9 @@ export const useZonasStore = defineStore('zonas', {
       this.loading = true;
 
       try {
+        // INVALIDAR CACHE: Asegurar que traemos geometrías y GPS frescos
+        await tieredCache.invalidatePattern('zonas:page:')
+
         await this.cargarTiposZonas()
 
         await this.cargarZonas() // Cargar zonas desde el servidor
@@ -126,12 +129,15 @@ export const useZonasStore = defineStore('zonas', {
 
           const filterString = filterParts.join(' && ');
 
-          return await pb.collection('zonas').getList(page, perPage, {
+          const rawResult = await pb.collection('zonas').getList(page, perPage, {
             filter: filterString,
             sort: '-created',
             expand: "actividad_realizada,actividad_realizada.tipo_actividades,siembra"
           });
+
+          return rawResult;
         })
+
 
         this.pagination = {
           page: result.page,
@@ -154,7 +160,7 @@ export const useZonasStore = defineStore('zonas', {
 
         this.lastSync = Date.now();
         // CORRECTO: Sanitizar con JSON.parse(JSON.stringify()) para IndexedDB
-        syncStore.saveToLocalStorage('zonas', JSON.parse(JSON.stringify(toRaw(this.zonas))));
+        syncStore.saveToLocalStorage('zonas', JSON.parse(JSON.stringify(this.zonas)));
 
         // Persistir geometrías en IndexedDB
         for (const zona of result.items) {
@@ -403,7 +409,8 @@ export const useZonasStore = defineStore('zonas', {
       // Local storage loading is now handled by initFromLocalStorage.
 
 
-      if (this.tiposZonas.length > 0 && !navigator.onLine) {
+      const syncStore = useSyncStore()
+      if (this.tiposZonas.length > 0 && !syncStore.isOnline) {
         return this.tiposZonas;
       }
 
@@ -414,7 +421,7 @@ export const useZonasStore = defineStore('zonas', {
         // markRaw: lookup data doesn't need deep reactivity
         this.tiposZonas = markRaw(records)
         // GUARDAR zonas en localStorage para uso offline
-        useSyncStore().saveToLocalStorage('tiposZonas', JSON.parse(JSON.stringify(toRaw(this.tiposZonas))))
+        useSyncStore().saveToLocalStorage('tiposZonas', JSON.parse(JSON.stringify(this.tiposZonas)))
       } catch (error) {
         handleError(error, 'Error al cargar tipos de zonas')
       }

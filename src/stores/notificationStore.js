@@ -67,11 +67,11 @@ export const useNotificationStore = defineStore('notifications', {
      */
     async init() {
       if (this.initialized) {
-        console.log('[NotificationStore] Ya inicializado')
+         // console.log('[NotificationStore] Ya inicializado')
         return
       }
 
-      console.log('[NotificationStore] Inicializando...')
+       // console.log('[NotificationStore] Inicializando...')
 
       // Cargar notificaciones desde localStorage
       this.loadFromStorage()
@@ -82,15 +82,15 @@ export const useNotificationStore = defineStore('notifications', {
 
         // Si el permiso está otorgado, verificar si hay notificaciones pendientes
         if (this.permission === 'granted') {
-          console.log('[NotificationStore] Permisos de notificación otorgados')
+           // console.log('[NotificationStore] Permisos de notificación otorgados')
         }
       } else {
-        console.warn('[NotificationStore] Notification API no soportada')
+         // console.warn('[NotificationStore] Notification API no soportada')
         this.permission = 'unsupported'
       }
 
       this.initialized = true
-      console.log('[NotificationStore] Inicialización completada')
+       // console.log('[NotificationStore] Inicialización completada')
     },
 
     /**
@@ -98,28 +98,28 @@ export const useNotificationStore = defineStore('notifications', {
      */
     async requestPermission() {
       if (!('Notification' in window)) {
-        console.warn('[NotificationStore] Notification API no soportada')
+         // console.warn('[NotificationStore] Notification API no soportada')
         this.permission = 'unsupported'
         return false
       }
 
       if (this.permission === 'granted') {
-        console.log('[NotificationStore] Permisos ya otorgados')
+         // console.log('[NotificationStore] Permisos ya otorgados')
         return true
       }
 
       if (this.permission === 'denied') {
-        console.warn('[NotificationStore] Permisos denegados por el usuario')
+         // console.warn('[NotificationStore] Permisos denegados por el usuario')
         return false
       }
 
       try {
-        console.log('[NotificationStore] Solicitando permisos...')
+         // console.log('[NotificationStore] Solicitando permisos...')
         const result = await Notification.requestPermission()
         this.permission = result
 
         if (result === 'granted') {
-          console.log('[NotificationStore] Permisos otorgados')
+           // console.log('[NotificationStore] Permisos otorgados')
           // Notificación de prueba
           new Notification('ConAgri', {
             body: 'Notificaciones activadas correctamente',
@@ -127,7 +127,7 @@ export const useNotificationStore = defineStore('notifications', {
           })
           return true
         } else {
-          console.warn('[NotificationStore] Permisos denegados')
+           // console.warn('[NotificationStore] Permisos denegados')
           return false
         }
       } catch (error) {
@@ -213,7 +213,7 @@ export const useNotificationStore = defineStore('notifications', {
         n.read = true
       })
       this.saveToStorage()
-      console.log('[NotificationStore] Todas las notificaciones marcadas como leídas')
+       // console.log('[NotificationStore] Todas las notificaciones marcadas como leídas')
     },
 
     /**
@@ -230,7 +230,7 @@ export const useNotificationStore = defineStore('notifications', {
     clearAll() {
       this.notifications = []
       this.saveToStorage()
-      console.log('[NotificationStore] Todas las notificaciones eliminadas')
+       // console.log('[NotificationStore] Todas las notificaciones eliminadas')
     },
 
     /**
@@ -299,7 +299,7 @@ export const useNotificationStore = defineStore('notifications', {
             data: alert.data,
             hacienda: alert.hacienda
           })
-          console.log('[NotificationStore] Email de alerta enviado')
+           // console.log('[NotificationStore] Email de alerta enviado')
         } catch (error) {
           handleError(error, 'Error enviando alerta por email')
         }
@@ -310,7 +310,7 @@ export const useNotificationStore = defineStore('notifications', {
      * Reset del store (para logout)
      */
     reset() {
-      console.log('[NotificationStore] Reset store...')
+       // console.log('[NotificationStore] Reset store...')
       this.notifications = []
       this.initialized = false
       // No reseteamos permission porque es una configuración del navegador

@@ -28,7 +28,7 @@
             <GisMapComponent
               v-if="siembraFeatureCollection"
               :readonly="true"
-              :initial-geo-json="siembraFeatureCollection"
+              :initialGeoJSON="siembraFeatureCollection"
               style="height: 350px;"
             />
             <div v-else class="pa-4 text-center text-caption text-grey">
@@ -362,25 +362,51 @@ const { expandedZonas, expandedActividades, areaUnit, estadosSiembra, headers, h
 const siembraFeatureCollection = computed(() => {
   if (!zonasfiltradas.value) return null
   
-  const lotes = zonasfiltradas.value.filter(z => {
+  const features = []
+  
+  zonasfiltradas.value.forEach(z => {
     const tipo = tiposZonas.value.find(t => t.id === z.tipos_zonas)
-    return (tipo?.nombre?.toLowerCase().includes('lote') || z.nombre?.toLowerCase().includes('lote')) && z.geometria
+    const esLote = tipo?.nombre?.toLowerCase().includes('lote') || z.nombre?.toLowerCase().includes('lote')
+    
+    let geom = null
+    if (z.geometria) {
+      try {
+        geom = typeof z.geometria === 'string' ? JSON.parse(z.geometria) : z.geometria
+      } catch (e) {
+        console.warn('[SIEMBRA_WORKSPACE] Error parsing geometry', e)
+      }
+    } else if (z.gps) {
+      try {
+        const gps = typeof z.gps === 'string' ? JSON.parse(z.gps) : z.gps
+        if (gps?.lat && gps?.lng) {
+          geom = {
+            type: 'Point',
+            coordinates: [Number(gps.lng), Number(gps.lat)]
+          }
+        }
+      } catch (e) {
+        console.warn('[SIEMBRA_WORKSPACE] Error parsing GPS', e)
+      }
+    }
+
+    if (geom) {
+      features.push({
+        type: 'Feature',
+        geometry: geom,
+        properties: {
+          nombre: z.nombre,
+          area: z.area?.area,
+          unidad: z.area?.unidad,
+          type: esLote ? 'lote' : 'punto-interes'
+        }
+      })
+    }
   })
   
-  if (lotes.length === 0) return null
-  
-  return {
+  return features.length > 0 ? {
     type: 'FeatureCollection',
-    features: lotes.map(lote => ({
-      type: 'Feature',
-      geometry: lote.geometria,
-      properties: {
-        nombre: lote.nombre,
-        area: lote.area?.area,
-        unidad: lote.area?.unidad
-      }
-    }))
-  }
+    features
+  } : null
 })
 
 

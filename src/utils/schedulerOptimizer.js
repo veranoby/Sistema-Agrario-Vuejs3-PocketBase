@@ -37,7 +37,7 @@ export class SchedulerOptimizer {
     // Verificar si el caché es válido
     if (this.isCacheValid()) {
       const cached = this.getCachedPending()
-      console.log('[SchedulerOptimizer] Usando caché - pendientes:', cached.length)
+       // console.log('[SchedulerOptimizer] Usando caché - pendientes:', cached.length)
       return { cached: true, programaciones: cached }
     }
 
@@ -64,11 +64,11 @@ export class SchedulerOptimizer {
       // Actualizar caché
       this.updateCache(programaciones)
 
-      console.log('[SchedulerOptimizer] Fetch optimizado - pendientes:', programaciones.length)
+       // console.log('[SchedulerOptimizer] Fetch optimizado - pendientes:', programaciones.length)
       return { cached: false, programaciones }
 
     } catch (error) {
-      console.error('[SchedulerOptimizer] Error en fetch optimizado:', error)
+       // console.error('[SchedulerOptimizer] Error en fetch optimizado:', error)
       // En caso de error, retornar caché si existe
       const cached = this.getCachedPending()
       return { cached: true, programaciones: cached, error }
@@ -122,7 +122,7 @@ export class SchedulerOptimizer {
   clearCache() {
     this.cache.clear()
     this.lastFullSync = null
-    console.log('[SchedulerOptimizer] Caché limpiado')
+     // console.log('[SchedulerOptimizer] Caché limpiado')
   }
 
   /**
@@ -151,7 +151,7 @@ export class SchedulerOptimizer {
 
     const inactiveTime = Date.now() - lastActivity
     if (inactiveTime > 30 * 60 * 1000) {
-      console.log('[SchedulerOptimizer] Usuario inactivo, omitiendo check')
+       // console.log('[SchedulerOptimizer] Usuario inactivo, omitiendo check')
       return false
     }
 

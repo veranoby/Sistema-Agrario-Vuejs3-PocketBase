@@ -303,10 +303,6 @@
       </v-card>
     </v-dialog>
 
-    <!-- Snackbar -->
-    <v-snackbar v-model="snackbar" :color="snackbarColor" :timeout="3000">
-      {{ snackbarMessage }}
-    </v-snackbar>
   </v-container>
 </template>
 
@@ -317,7 +313,9 @@ import { exportHaciendasToMarkdown } from '@/utils/exporters/markdownExporter'
 import { formatDate } from '@/utils/formatters'
 import { useHaciendaManagementStore } from '@/stores/haciendaManagementStore'
 import { usePlanStore } from '@/stores/planStore'
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 
+const uiFeedbackStore = useUiFeedbackStore()
 const haciendaManagementStore = useHaciendaManagementStore()
 const planStore = usePlanStore()
 
@@ -569,9 +567,8 @@ function formatModule(module) {
 }
 
 
-function showSnackbar(message) {
-  // El uiFeedbackStore ya está integrado en el store
-  console.log(message)
+function showSnackbar(message, color = 'success') {
+  uiFeedbackStore.showSnackbar(message, color)
 }
 </script>
 

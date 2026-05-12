@@ -173,9 +173,7 @@ async function saveSettings() {
 }
 
 function showSnackbar(message, color = 'success') {
-  snackbarMessage.value = message
-  snackbarColor.value = color
-  snackbar.value = true
+  uiFeedbackStore.showSnackbar(message, color)
 }
 </script>
 

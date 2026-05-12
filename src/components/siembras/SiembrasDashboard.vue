@@ -170,9 +170,8 @@
           </v-col>
         </v-row>
 
-        <!-- Mapa y Lista -->
+        <!-- Mapa de siembras -->
         <v-row>
-          <!-- Mapa de siembras -->
           <v-col cols="12">
             <v-card variant="elevated" elevation="2" class="h-100">
               <v-card-title class="pa-4">
@@ -181,9 +180,10 @@
               </v-card-title>
               <v-divider />
               <v-card-text class="pa-0">
-                <div class="map-container" style="height: 400px;">
+                <div class="map-container" style="height: 600px;">
                   <GisMapComponent
-                    :initial-geo-json="siembrasGeoJSON"
+                    v-if="siembrasGeoJSON"
+                    :initialGeoJSON="siembrasGeoJSON"
                     :center="mapCenter"
                     :readonly="true"
                     :loading="mapLoading"
@@ -195,20 +195,6 @@
                     <div class="text-xxs text-grey mt-1">{{ $t('sowings.requires_lote_zones') }}</div>
                   </div>
                 </div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-
-          <!-- Ciclos de cultivo -->
-          <v-col cols="12" lg="4">
-            <v-card variant="elevated" elevation="2" class="h-100">
-              <v-card-title class="pa-4">
-                <v-icon start color="success">mdi-chart-timeline-variant</v-icon>
-                {{ $t('sowings.crop_cycles') }}
-              </v-card-title>
-              <v-divider />
-              <v-card-text>
-                <CycleChart :siembras="siembras" />
               </v-card-text>
             </v-card>
           </v-col>
@@ -240,6 +226,7 @@ import { storeToRefs } from 'pinia'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import GisMapComponent from '@/components/GisMapComponent.vue'
+import { SIEMBRA_COLORS, POI_FALLBACK_COLOR } from '@/constants/mapColors'
 import SiembraCreateDialog from './SiembraCreateDialog.vue'
 import SiembraDeleteModal from './SiembraDeleteModal.vue'
 import { useAvatarStore } from '@/stores/avatarStore'
@@ -288,12 +275,17 @@ const getSiembraAvatarUrl = (siembra) => {
 onMounted(async () => {
   try {
     mapLoading.value = true
-    await Promise.all([
-      siembrasStore.init(),
-      zonasStore.cargarTiposZonas(),
-      zonasStore.cargarZonas()
-    ])
-    logger.debug('[SiembrasDashboard] Datos cargados con éxito')
+
+    // CARGA SECUENCIAL: Asegurar ID de hacienda primero
+    await haciendaStore.init()
+
+    if (haciendaStore.mi_hacienda?.id) {
+      await Promise.all([
+        siembrasStore.cargarSiembras(),
+        zonasStore.init()
+      ])
+      logger.debug('[SiembrasDashboard] Datos cargados con éxito')
+    }
   } catch (error) {
     console.error('Error cargando datos:', error)
     uiFeedbackStore.showError('Error cargando datos del dashboard')
@@ -350,47 +342,103 @@ const metrics = computed(() => {
   }
 })
 
+const parseGeometry = (geo) => {
+  if (!geo) return null
+  try {
+    let parsed = typeof geo === 'string' ? JSON.parse(geo) : geo
+    return JSON.parse(JSON.stringify(parsed))
+  } catch (e) {
+    console.warn('[SIEMBRAS_DASHBOARD] Error parsing geometry', e)
+    return null
+  }
+}
+
 // GeoJSON para mapa
 const siembrasGeoJSON = computed(() => {
-  if (!siembras.value || siembras.value.length === 0) return null
-
   const features = []
 
-  siembras.value.forEach(s => {
-    // Prioridad 1: Geometría directa de la siembra
-    if (s.geometria) {
+  // 0. Polígono de la Hacienda (Delimitador sin relleno)
+  if (mi_hacienda.value?.geometria) {
+    const haciendaGeom = parseGeometry(mi_hacienda.value.geometria)
+    if (haciendaGeom) {
       features.push({
         type: 'Feature',
-        properties: { id: s.id, nombre: s.nombre, estado: s.estado, area: s.area_total, source: 'direct' },
-        geometry: s.geometria
+        properties: {
+          id: mi_hacienda.value.id,
+          nombre: `Perímetro: ${mi_hacienda.value.name}`,
+          type: 'hacienda-boundary',
+          noFill: true,
+          color: '#4CAF50'
+        },
+        geometry: haciendaGeom
       })
-    } 
-    // Prioridad 2: Agregación de zonas tipo 'Lotes'
-    else {
-      const lotesSiembra = zonas.value.filter(z => {
-        const matchesSiembra = Array.isArray(z.siembra) ? z.siembra.includes(s.id) : z.siembra === s.id
-        const tipo = tiposZonas.value.find(t => t.id === z.tipos_zonas)
-        const esLote = tipo?.nombre?.toLowerCase().includes('lote') || 
-                       z.nombre?.toLowerCase().includes('lote') ||
-                       z.nombre?.toLowerCase().startsWith('l-')
-        return matchesSiembra && esLote && z.geometria
-      })
+    }
+  }
 
-      lotesSiembra.forEach(lote => {
+  if (siembras.value && siembras.value.length > 0) {
+    siembras.value.forEach(s => {
+      const siembraColor = SIEMBRA_COLORS[s.estado] || SIEMBRA_COLORS.finalizada
+
+      // 1. Geometría directa de la siembra (prioridad alta)
+      const directGeom = parseGeometry(s.geometria)
+      if (directGeom) {
         features.push({
           type: 'Feature',
           properties: { 
             id: s.id, 
-            nombre: `${s.nombre} (${lote.nombre})`, 
-            estado: s.estado,
-            area: lote.area?.area,
-            source: 'zone'
+            nombre: s.nombre, 
+            estado: s.estado, 
+            area: s.area_total, 
+            source: 'direct',
+            color: siembraColor
           },
-          geometry: lote.geometria
+          geometry: directGeom
         })
-      })
-    }
-  })
+      } 
+
+      // 2. Geometrías de zonas vinculadas (siempre buscamos, por si la siembra es compuesta)
+      if (zonas.value) {
+        const lotesAsociados = zonas.value.filter(z => {
+          const matchesSiembra = Array.isArray(z.siembra) ? z.siembra.includes(s.id) : z.siembra === s.id
+          return matchesSiembra && (z.geometria || z.gps)
+        })
+
+        lotesAsociados.forEach(lote => {
+          let loteGeom = parseGeometry(lote.geometria)
+          
+          // Fallback: Si no hay geometría, intentar usar el campo gps como Point
+          if (!loteGeom && lote.gps) {
+            try {
+              const gps = typeof lote.gps === 'string' ? JSON.parse(lote.gps) : lote.gps
+              if (gps?.lat && gps?.lng) {
+                loteGeom = {
+                  type: 'Point',
+                  coordinates: [Number(gps.lng), Number(gps.lat)] // GeoJSON usa [lng, lat]
+                }
+              }
+            } catch (e) {
+              console.warn('[SIEMBRAS_DASHBOARD] Error parsing GPS to Point for lote', e)
+            }
+          }
+
+          if (loteGeom) {
+            features.push({
+              type: 'Feature',
+              properties: { 
+                id: s.id, 
+                nombre: `${s.nombre} (${lote.nombre})`, 
+                estado: s.estado,
+                area: lote.area?.area,
+                source: 'zone',
+                color: siembraColor
+              },
+              geometry: loteGeom
+            })
+          }
+        })
+      }
+    })
+  }
 
   return features.length > 0 ? { type: 'FeatureCollection', features } : null
 })
