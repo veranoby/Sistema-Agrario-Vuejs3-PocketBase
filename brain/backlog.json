@@ -1,86 +1,42 @@
 {
-  "metadata": {
-    "purpose": "Planificación detallada y atómica - Sistema Agri v6.0",
-    "project": "SaaS Modular de Digitalización Agrícola",
-    "version": "6.0",
-    "last_updated": "2026-04-15",
-    "current_phase": "FASE 7 - TESTING Y CALIDAD",
-    "next_phase": "FASE 9 - OPTIMIZACIÓN",
-    "completion_percentage": 85,
-    "total_tasks": 127,
-    "completed_tasks": 108,
-    "pending_tasks": 19
-  },
-  "project_status": {
-    "v1_completion": 78,
-    "v2_completion": 100,
-    "v1_status": "Core funcional, Fase 8 (Backend Integration) completada",
-    "v2_status": "Integraciones backend 100% completadas y verificadas",
-    "blockers": [],
-    "ready_for": "Fase 7 - Testing y Calidad"
-  },
-  "phase_7_testing": {
-    "id": "PHASE_7",
-    "name": "Testing y Calidad",
-    "priority": "P0 - CRITICAL",
-    "duration": "3 semanas",
-    "status": "READY_TO_START",
-    "objective": "Establecer 60-80% cobertura de tests en código crítico antes de avanzar a V2",
-    "subphases": {
-      "7_1_unit_tests_stores": {
-        "name": "Unit Tests para Stores Críticos",
-        "tasks": [
-          { "id": "T7-TEST-01-01", "title": "Unit Tests para authStore", "status": "pending", "priority": "P0" },
-          { "id": "T7-TEST-01-02", "title": "Unit Tests para syncStore", "status": "pending", "priority": "P0" },
-          { "id": "T7-TEST-01-03", "title": "Unit Tests para programacionesStore", "status": "pending", "priority": "P0" },
-          { "id": "T7-TEST-01-04", "title": "Unit Tests para actividadesStore", "status": "pending", "priority": "P1" },
-          { "id": "T7-TEST-01-05", "title": "Unit Tests para finanzaStore", "status": "pending", "priority": "P1" }
-        ]
-      },
-      "7_2_integration_tests": {
-        "name": "Integration Tests para Sync",
-        "tasks": [
-          { "id": "T7-TEST-02-01", "title": "Sync Flow Completo", "status": "pending" },
-          { "id": "T7-TEST-02-02", "title": "Conflict Resolution", "status": "pending" },
-          { "id": "T7-TEST-02-03", "title": "Offline/Online Transitions", "status": "pending" }
-        ]
-      },
-      "7_3_e2e_tests": {
-        "name": "E2E Tests con Playwright",
-        "tasks": [
-          { "id": "T7-TEST-03-01", "title": "Login Flow", "status": "pending" },
-          { "id": "T7-TEST-03-02", "title": "Creación de Siembra", "status": "pending" },
-          { "id": "T7-TEST-03-03", "title": "Registro en Bitácora", "status": "pending" }
-        ]
-      }
+  "project": "Gestión Agri",
+  "audit_version": "Owl Protocol 1.2 (Technical Blueprint)",
+  "implementation_backlog": [
+    {
+      "step": 1,
+      "task": "FIX A: Backend Enforcement (Modules)",
+      "details": "Update pb_hooks/main.js: Validate 'superadmin' role in /api/modulos/:id/activate and /api/modulos/:id/deactivate handlers using e.requestInfo().authRecord.",
+      "status": "Ready for Implementation"
+    },
+    {
+      "step": 2,
+      "task": "FIX B: Secure AI Proxy (/api/ai/chat)",
+      "details": "Create new POST endpoint in pb_hooks/main.js. Resolve API keys on server (BYOK from Hacienda or Global from settings). Implement 20 req/day rate limit for global key via _params collection.",
+      "status": "Ready for Implementation"
+    },
+    {
+      "step": 3,
+      "task": "FIX C: Secure Email Proxy (Resend Removal)",
+      "details": "Update src/services/emailService.js: Remove frontend VITE_RESEND_API_KEY. Redirect all internal calls to backend hook /api/alerts/send with JWT auth.",
+      "status": "Ready for Implementation"
+    },
+    {
+      "step": 4,
+      "task": "FIX D: Secure AI Frontend Integration",
+      "details": "Update src/services/aiService.js: Redirect calls to /api/ai/chat. Remove client-side key resolution and rate limiting. Maintain local simulation as fallback.",
+      "status": "Ready for Implementation"
+    },
+    {
+      "step": 5,
+      "task": "Verification: Zero-Key Bundle",
+      "details": "Run 'npm run build' and grep 'dist/' for any leaked 'sk-', 're_', or 'Bearer' tokens. Verify PocketBase restarts with new hooks.",
+      "status": "Pending Implementation"
+    },
+    {
+      "step": 6,
+      "task": "Integrity: Hook Transactions",
+      "details": "Wrap reports.pb.js and other multi-record writes in $app.dao().runInTransaction().",
+      "status": "Pending Implementation"
     }
-  },
-  "phase_9_optimization": {
-    "id": "PHASE_9",
-    "name": "Optimización V1",
-    "status": "PENDING",
-    "tasks": [
-      { "id": "T9-OPT-01", "title": "Refactor ProgramacionPanel", "description": "833 a <350 líneas", "status": "pending" },
-      { "id": "T9-OPT-02", "title": "BaseForm Component", "description": "Componente reutilizable para forms", "status": "pending" },
-      { "id": "T9-OPT-03", "title": "Optimizar Patrones Duplicados", "description": "DRY en componentes de formulario", "status": "pending" }
-    ]
-  },
-  "phase_10_polish": {
-    "id": "PHASE_10",
-    "name": "Pulido y Limpieza",
-    "status": "PENDING",
-    "tasks": [
-      { "id": "T10-CLN-01", "title": "Mejorar Accesibilidad WCAG", "status": "pending" },
-      { "id": "T10-CLN-02", "title": "Preparar Deployment (CI/CD, Staging)", "status": "pending" }
-    ]
-  },
-  "task_statistics": {
-    "total_tasks": 127,
-    "completed_tasks": 108,
-    "pending_tasks": 19,
-    "estimated_weeks_remaining": 4
-  },
-  "definition_of_done": {
-    "task_complete": ["Acceptance criteria met", "Tests passing", "Code review approved", "Docs updated"]
-  }
+  ]
 }

@@ -92,7 +92,8 @@ export const useSyncStore = defineStore('sync', {
     lastSyncTime: null,
     syncStatus: 'idle',
     initialized: false,
-    errors: []
+    errors: [],
+    isProcessing: false
   }),
 
   getters: {
@@ -209,11 +210,16 @@ export const useSyncStore = defineStore('sync', {
     },
 
     async processPendingQueue() {
-      if (!this.processor) return { processed: 0, failed: 0 }
-      const result = await this.processor.processQueue(this.queue)
-      this.queue = this.queue.filter(op => op.status !== 'completed')
-      this.persistQueueState()
-      return result
+      if (!this.processor || this.isProcessing) return { processed: 0, failed: 0 }
+      this.isProcessing = true
+      try {
+        const result = await this.processor.processQueue(this.queue)
+        this.queue = this.queue.filter(op => op.status !== 'completed')
+        this.persistQueueState()
+        return result
+      } finally {
+        this.isProcessing = false
+      }
     },
 
     persistQueueState() {

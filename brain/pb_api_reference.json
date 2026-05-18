@@ -1,0 +1,184 @@
+{
+  "api_type": "PocketBase JSVM / REST",
+  "base_collections": [
+    "users",
+    "Haciendas",
+    "zonas",
+    "Siembras",
+    "bitacora",
+    "actividades",
+    "tipos_zonas",
+    "tipo_actividades",
+    "recordatorios",
+    "programaciones",
+    "subscriptions",
+    "scheduled_reports"
+  ],
+  "custom_hooks": [
+    {
+      "path": "/api/ai/chat",
+      "method": "POST",
+      "handler": "pb_hooks/main.js",
+      "audit_status": "✅ 100%",
+      "validation": "Validates prompt, haciendaId, and caller.",
+      "error_handling": "Returns 429 for rate limit, 500 for proxy fail.",
+      "security": "Proxy logic protects BYOK/Global keys. RequireAuth check."
+    },
+    {
+      "path": "/api/alerts/send",
+      "method": "POST",
+      "handler": "pb_hooks/main.js",
+      "audit_status": "✅ 100%",
+      "validation": "Validates required fields in request.",
+      "error_handling": "Generic 500.",
+      "security": "RequireAuth check. Proxy masks Resend API."
+    },
+    {
+      "path": "/api/reports/check-pending",
+      "method": "POST",
+      "handler": "pb_hooks/reports.pb.js",
+      "audit_status": "❌ 0%",
+      "simulation_result": "OBSOLETE. Ghost Logs mechanism replaced by UI-driven Work Orders.",
+      "note": "Route returns { executed: 0 } as a no-op."
+    },
+    {
+      "path": "/api/modulos/:id/activate",
+      "method": "POST",
+      "handler": "pb_hooks/main.js",
+      "audit_status": "✅ 100%",
+      "validation": "Validates params and checks existing subscriptions.",
+      "error_handling": "Atomic transaction with rollback on failure.",
+      "security": "SuperAdmin role check enforced."
+    },
+    {
+      "path": "/api/modulos/:id/deactivate",
+      "method": "POST",
+      "handler": "pb_hooks/main.js",
+      "audit_status": "✅ 100%",
+      "validation": "Validates active subscription exists.",
+      "error_handling": "Updates subscription state.",
+      "security": "SuperAdmin role check enforced."
+    },
+    {
+      "path": "/api/admin/users",
+      "method": "GET/POST",
+      "handler": "pb_hooks/main.js",
+      "audit_status": "🟡 80%",
+      "validation": "Basic CRUD.",
+      "error_handling": "Basic.",
+      "security": "SuperAdmin role check enforced. Missing deep search filters."
+    },
+    {
+      "path": "/api/admin/users/:id",
+      "method": "PUT/DELETE",
+      "handler": "pb_hooks/main.js",
+      "audit_status": "✅ 100%",
+      "security": "SuperAdmin role check enforced."
+    },
+    {
+      "path": "/api/admin/users/:id/reset-password",
+      "method": "POST",
+      "handler": "pb_hooks/main.js",
+      "audit_status": "✅ 100%",
+      "security": "SuperAdmin role check enforced."
+    },
+    {
+      "path": "/api/admin/users/:id/haciendas",
+      "method": "POST",
+      "handler": "pb_hooks/main.js",
+      "audit_status": "✅ 100%",
+      "security": "SuperAdmin role check enforced."
+    },
+    {
+      "path": "/api/admin/users/:id/roles",
+      "method": "POST",
+      "handler": "pb_hooks/main.js",
+      "audit_status": "✅ 100%",
+      "security": "SuperAdmin role check enforced."
+    },
+    {
+      "path": "/api/admin/haciendas",
+      "method": "GET/POST",
+      "handler": "pb_hooks/main.js",
+      "audit_status": "🟡 80%",
+      "security": "SuperAdmin role check enforced."
+    },
+    {
+      "path": "/api/admin/haciendas/:id",
+      "method": "PUT/DELETE",
+      "handler": "pb_hooks/main.js",
+      "audit_status": "✅ 100%",
+      "security": "SuperAdmin role check enforced."
+    },
+    {
+      "path": "/api/admin/haciendas/:id/owner",
+      "method": "POST",
+      "handler": "pb_hooks/main.js",
+      "audit_status": "✅ 100%",
+      "security": "SuperAdmin role check enforced."
+    },
+    {
+      "path": "/api/admin/haciendas/:id/plan",
+      "method": "POST",
+      "handler": "pb_hooks/main.js",
+      "audit_status": "🟡 80%",
+      "security": "SuperAdmin role check enforced. Missing financial trigger (invoicing)."
+    },
+    {
+      "path": "/api/admin/haciendas/:id/reactivate",
+      "method": "POST",
+      "handler": "pb_hooks/main.js",
+      "audit_status": "✅ 100%",
+      "security": "SuperAdmin role check enforced."
+    },
+    {
+      "path": "/api/admin/haciendas/:id/metrics",
+      "method": "GET",
+      "handler": "pb_hooks/main.js",
+      "audit_status": "✅ 100%",
+      "security": "SuperAdmin role check enforced."
+    },
+    {
+      "path": "/api/analytics/global",
+      "method": "GET",
+      "handler": "pb_hooks/main.js",
+      "audit_status": "🟡 80%",
+      "security": "SuperAdmin role check enforced."
+    },
+    {
+      "path": "/api/analytics/usage",
+      "method": "GET",
+      "handler": "pb_hooks/main.js",
+      "audit_status": "🟡 80%",
+      "security": "SuperAdmin role check enforced."
+    },
+    {
+      "path": "/api/analytics/patterns",
+      "method": "GET",
+      "handler": "pb_hooks/main.js",
+      "audit_status": "🟡 50%",
+      "security": "SuperAdmin role check enforced. Missing dynamic pattern intelligence."
+    },
+    {
+      "path": "/api/reports/scheduled",
+      "method": "GET/POST",
+      "handler": "pb_hooks/main.js",
+      "audit_status": "🟡 60%",
+      "security": "Auth required. Basic implementation."
+    },
+    {
+      "path": "/api/reports/scheduled/:id",
+      "method": "PUT/DELETE",
+      "handler": "pb_hooks/main.js",
+      "audit_status": "🟡 60%",
+      "security": "Auth required (owner check)."
+    },
+    {
+      "path": "Cron: Every Monday 08:00",
+      "method": "CRON",
+      "handler": "pb_hooks/cron.alerts.pb.js",
+      "audit_status": "PLANNED",
+      "simulation_result": "Targets: Weekly Digest (Past/Future) + Critical Emergencies"
+    }
+  ]
+}

@@ -7,13 +7,14 @@ const ROLES = {
   SUPERADMIN: 'superadmin', // Future: multi-tenant admin
   ADMINISTRADOR: 'administrador', // Hacienda admin
   AUDITOR: 'auditor', // Read-only with BPA audit permissions
-  OPERADOR: 'operador' // Field worker, limited permissions
+  OPERADOR: 'operador', // Field worker, limited permissions
+  ASESOR: 'asesor' // Technical Advisor
 }
 
 // Route access matrix by role
 const ROUTE_ROLE_MATRIX = {
   // Public routes - no auth required
-  public: ['/', '/about', '/plans', '/documentation', '/contact', '/faq'],
+  public: ['/', '/plans', '/documentation', '/contact', '/faq'],
   
   // Admin-only routes
   admin: ['/admin'], // Future: Super admin panel
@@ -38,7 +39,6 @@ const routes = [
     }
   },
   { path: '/', component: () => import('@/components/LandingPage.vue') },
-  { path: '/about', component: () => import('@/components/public/AboutUs.vue') },
   { path: '/plans', component: () => import('@/components/hacienda/OurPlans.vue') },
   { path: '/documentation', component: () => import('@/components/public/Documentation.vue') },
   { path: '/contact', component: () => import('@/components/public/ContactUs.vue') },
@@ -170,6 +170,64 @@ const routes = [
     meta: {
       requiresAuth: true,
       roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR, ROLES.OPERADOR]
+    }
+  },
+  
+  // --- RUTAS DE HACIENDA PARA ASESORES ---
+  {
+    path: '/hacienda/directorio-asesores',
+    component: () => import('@/views/hacienda/DirectorioAsesores.vue'),
+    name: 'Directorio de Asesores',
+    meta: {
+      requiresAuth: true,
+      roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR]
+    }
+  },
+  {
+    path: '/hacienda/mis-asesores/:asesor_user_id/recetas',
+    component: () => import('@/views/hacienda/RecetasAsesor.vue'),
+    name: 'Recetas de Asesor',
+    meta: {
+      requiresAuth: true,
+      roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR]
+    }
+  },
+
+  // --- RUTAS DEL PANEL DEL ASESOR ---
+  {
+    path: '/asesor/dashboard',
+    component: () => import('@/views/asesor/Dashboard.vue'),
+    name: 'Dashboard Asesor',
+    meta: {
+      requiresAuth: true,
+      roles: [ROLES.ASESOR]
+    }
+  },
+  {
+    path: '/asesor/haciendas',
+    component: () => import('@/views/asesor/HaciendasList.vue'),
+    name: 'Haciendas Vinculadas',
+    meta: {
+      requiresAuth: true,
+      roles: [ROLES.ASESOR]
+    }
+  },
+  {
+    path: '/asesor/haciendas/:hacienda_id',
+    component: () => import('@/views/asesor/HaciendaDetail.vue'),
+    name: 'Detalle Hacienda Vinculada',
+    meta: {
+      requiresAuth: true,
+      roles: [ROLES.ASESOR]
+    }
+  },
+  {
+    path: '/asesor/perfil',
+    component: () => import('@/views/asesor/Perfil.vue'),
+    name: 'Perfil Asesor',
+    meta: {
+      requiresAuth: true,
+      roles: [ROLES.ASESOR]
     }
   }
   // Future: Super Admin Dashboard
@@ -466,13 +524,13 @@ router.beforeEach(async (to, from, next) => {
     }
 
     // --- BLOQUEO DE PLAN EXPIRADO/GRATIS ---
-    if (userRole !== ROLES.SUPERADMIN && to.path !== '/plan-expired') {
+    if (userRole !== ROLES.SUPERADMIN && userRole !== ROLES.ASESOR && to.path !== '/plan-expired') {
       const { useHaciendaStore } = await import('@/stores/haciendaStore')
       const haciendaStore = useHaciendaStore()
 
       // Wait for hacienda to load if not present
       if (!haciendaStore.mi_hacienda && authStore.user?.hacienda) {
-        await haciendaStore.loadCurrentHacienda(authStore.user.hacienda)
+        await haciendaStore.fetchHacienda(authStore.user.hacienda)
       }
 
       if (haciendaStore.isFreePlan && userRole !== ROLES.ADMINISTRADOR) {
@@ -486,8 +544,12 @@ router.beforeEach(async (to, from, next) => {
       if (!to.meta.roles.includes(userRole)) {
         // User doesn't have required role - cache this result
         setCachedValidation(to.path, userRole, { allowed: false })
+        
+        // Redirección inteligente
+        const fallbackPath = userRole === ROLES.ASESOR ? '/asesor/dashboard' : '/dashboard'
+        
         next({
-          path: '/dashboard',
+          path: fallbackPath,
           query: { accessDenied: 'role' }
         })
         return

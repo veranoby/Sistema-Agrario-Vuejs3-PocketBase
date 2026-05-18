@@ -151,21 +151,43 @@ const operadores = ref([])
 const createUserModalOpen = ref(false)
 const userTypeToCreate = ref('')
 const loading = ref(false)
-const limitCheck = ref(null)
 
-const canAddAuditor = computed(() => {
-  return limitCheck.value?.canAdd !== false && userTypeToCreate.value === 'auditor'
+// Estado reactivo de cuotas
+const limits = ref({
+  canAddAuditor: true,
+  canAddOperador: true,
+  reasons: { auditor: '', operador: '' }
 })
 
-const canAddOperador = computed(() => {
-  return limitCheck.value?.canAdd !== false && userTypeToCreate.value === 'operador'
-})
+const canAddAuditor = computed(() => limits.value.canAddAuditor)
+const canAddOperador = computed(() => limits.value.canAddOperador)
+
+const updateSubscriptionLimits = async () => {
+  try {
+    const checkAuditor = await canAddUser(mi_hacienda.value.id, 'auditor')
+    const checkOperador = await canAddUser(mi_hacienda.value.id, 'operador')
+    
+    limits.value = {
+      canAddAuditor: checkAuditor.canAdd,
+      canAddOperador: checkOperador.canAdd,
+      reasons: {
+        auditor: checkAuditor.reason,
+        operador: checkOperador.reason
+      }
+    }
+  } catch (error) {
+    console.error('[SUBSCRIPTION_LIMITS] Error updating limits:', error)
+  }
+}
 
 const fetchHaciendaUsers = async () => {
   try {
     const users = await userStore.fetchHaciendaUsers(mi_hacienda.value.id)
     auditores.value = users.filter((user) => user.role === 'auditor')
     operadores.value = users.filter((user) => user.role === 'operador')
+    
+    // Actualizar límites tras cargar usuarios
+    await updateSubscriptionLimits()
   } catch (error) {
     uiFeedbackStore.showSnackbar(t('user_management.error_fetching_users'), 'error')
   }
@@ -174,17 +196,16 @@ const fetchHaciendaUsers = async () => {
 const openCreateUserModal = async (userType) => {
   userTypeToCreate.value = userType
   
-  // Validar límites de suscripción
-  try {
-    const check = await canAddUser(mi_hacienda.value.id, userType)
-    limitCheck.value = check
-    
-    if (!check.canAdd) {
-      uiFeedbackStore.showSnackbar(check.reason, 'error')
-      return
-    }
-  } catch (error) {
-    uiFeedbackStore.showSnackbar(t('user_management.error_checking_limits') + ': ' + error.message, 'error')
+  // Doble verificación al abrir (redundante pero segura)
+  await updateSubscriptionLimits()
+  
+  if (userType === 'auditor' && !limits.value.canAddAuditor) {
+    uiFeedbackStore.showSnackbar(limits.value.reasons.auditor, 'error')
+    return
+  }
+  
+  if (userType === 'operador' && !limits.value.canAddOperador) {
+    uiFeedbackStore.showSnackbar(limits.value.reasons.operador, 'error')
     return
   }
 
@@ -198,7 +219,8 @@ const createUser = async (formData) => {
     emit(EVENTS.USUARIO_ADDED, { userId: user.id, haciendaId: mi_hacienda.value.id, role: userTypeToCreate.value })
     uiFeedbackStore.showSnackbar(t('user_management.user_created'), 'success')
     createUserModalOpen.value = false
-    limitCheck.value = null
+    
+    // Recargar lista y RE-VALIDAR CUOTAS
     await fetchHaciendaUsers()
   } catch (error) {
     uiFeedbackStore.showSnackbar(t('user_management.error_creating_user') + ': ' + error.message, 'error')
@@ -212,7 +234,10 @@ const deleteUser = async (userId) => {
     try {
       await userStore.deleteUser(userId, { soft: true })
       emit(EVENTS.USUARIO_REMOVED, { userId, soft: true })
+      
+      // Recargar lista y RE-VALIDAR CUOTAS (liberar espacio)
       await fetchHaciendaUsers()
+      
       uiFeedbackStore.showSnackbar(t('user_management.user_deleted'), 'success')
     } catch (error) {
       uiFeedbackStore.showSnackbar(t('user_management.error_deleting_user') + ': ' + error.message, 'error')

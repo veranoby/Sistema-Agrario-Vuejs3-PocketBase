@@ -1,0 +1,28 @@
+{
+  "bpa_schema": {
+    "_note": "Para ver los 12 tipos_actividades y 11 tipos_zonas completos, por favor revisar la colección en PocketBase directamente. Este esquema documenta ejemplos.",
+    "tipo_actividades_bpa": [
+      {
+        "id": "jk8v864r1d42794",
+        "nombre": "Riego y Monitoreo de Agua",
+        "preguntas_count": 1,
+        "metricas_operativas": ["fuente_agua", "tipo_riego", "tiempo_riego", "volumen_agua_utilizada"],
+        "compliance_logic": "Score = (Index(Respuesta) / (Opciones.length - 1)) * 100"
+      }
+    ],
+    "tipos_zonas_bpa": [
+      {
+        "id": "szchz23m8v0uboh",
+        "nombre": "Infraestructura General",
+        "preguntas_count": 2,
+        "metricas_gestion": ["tipo_infraestructura", "superficie_total_m2", "estado_conservacion"],
+        "compliance_logic": "Media aritmética de respuestas normalizadas"
+      }
+    ],
+    "global_logic": {
+      "scoring_engine": "src/utils/agriMetrics.js",
+      "storage_format": "JSON flattened in 'bitacora' (metricas) + indexed array (bpa_respuestas)",
+      "validation": "WebCrypto RSA-PSS Signature required for 'completada' status"
+    }
+  }
+}

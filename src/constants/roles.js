@@ -13,7 +13,8 @@ export const USER_ROLES = {
   SUPERADMIN: 'superadmin',
   ADMINISTRADOR: 'administrador',
   AUDITOR: 'auditor',
-  OPERADOR: 'operador'
+  OPERADOR: 'operador',
+  ASESOR: 'asesor'
 }
 
 /**
@@ -24,7 +25,8 @@ export const ROLE_COLORS = {
   [USER_ROLES.SUPERADMIN]: 'error',
   [USER_ROLES.ADMINISTRADOR]: 'primary',
   [USER_ROLES.AUDITOR]: 'info',
-  [USER_ROLES.OPERADOR]: 'success'
+  [USER_ROLES.OPERADOR]: 'success',
+  [USER_ROLES.ASESOR]: 'teal'
 }
 
 /**
@@ -35,7 +37,8 @@ export const ROLE_LABELS = {
   [USER_ROLES.SUPERADMIN]: 'Super Admin',
   [USER_ROLES.ADMINISTRADOR]: 'Administrador',
   [USER_ROLES.AUDITOR]: 'Auditor',
-  [USER_ROLES.OPERADOR]: 'Operador'
+  [USER_ROLES.OPERADOR]: 'Operador',
+  [USER_ROLES.ASESOR]: 'Asesor Técnico'
 }
 
 /**
@@ -45,7 +48,8 @@ export const ROLE_OPTIONS = [
   { title: ROLE_LABELS[USER_ROLES.SUPERADMIN], value: USER_ROLES.SUPERADMIN },
   { title: ROLE_LABELS[USER_ROLES.ADMINISTRADOR], value: USER_ROLES.ADMINISTRADOR },
   { title: ROLE_LABELS[USER_ROLES.AUDITOR], value: USER_ROLES.AUDITOR },
-  { title: ROLE_LABELS[USER_ROLES.OPERADOR], value: USER_ROLES.OPERADOR }
+  { title: ROLE_LABELS[USER_ROLES.OPERADOR], value: USER_ROLES.OPERADOR },
+  { title: ROLE_LABELS[USER_ROLES.ASESOR], value: USER_ROLES.ASESOR }
 ]
 
 /**

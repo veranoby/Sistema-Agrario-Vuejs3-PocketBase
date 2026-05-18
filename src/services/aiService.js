@@ -25,77 +25,37 @@ export async function generateAIResponse(prompt, context = {}, sensitive = true)
     logger.warn('[AIService] Error leyendo cache:', e)
   }
 
-  let openRouterKey = null
-  let isUsingGlobalKey = false
-
+  // ── Llamada al proxy backend seguro ──
   try {
+    const { pb } = await import('@/utils/pocketbase')
     const { useHaciendaStore } = await import('@/stores/haciendaStore')
     const haciendaStore = useHaciendaStore()
-    openRouterKey = haciendaStore.mi_hacienda?.openrouter_key
+    const haciendaId = haciendaStore.mi_hacienda?.id
 
-    if (!openRouterKey) {
-      const settingsStore = useSettingsStore()
-      await settingsStore.fetchConfig() // Asegurar carga
-      openRouterKey = settingsStore.globalOpenRouterKey
-      isUsingGlobalKey = true
-    }
-  } catch (e) {
-    logger.warn('[AIService] No se pudo obtener BYOK', e)
-  }
-
-  // Rate Limiting para llave global
-  if (isUsingGlobalKey) {
-    const settingsStore = useSettingsStore()
-    const aiUsageStore = useAiUsageStore()
-    aiUsageStore.loadFromLocal()
-
-    const limit = settingsStore.aiRateLimit || 5
-    const windowMs = settingsStore.aiRateWindow || 3600000
-
-    if (!aiUsageStore.canUseAi(limit, windowMs)) {
-      throw new Error(`Has alcanzado el límite de uso gratuito de IA (${limit} peticiones). Por favor, ingresa tu propia API Key en la configuración de la hacienda.`)
-    }
-    aiUsageStore.incrementUsage(limit, windowMs)
-  }
-
-  // Si aún no hay key (ni BYOK ni global), simular
-  if (!openRouterKey && !config.cloudEndpoint) {
-      const simulatedResponse = simulateAI(prompt, context)
-      await AI_CACHE_DB.setItem(cacheKey, { response: simulatedResponse, timestamp: Date.now() })
-      return simulatedResponse
-  }
-
-  try {
-    const headers = { 'Content-Type': 'application/json' }
-    if (openRouterKey) {
-      headers['Authorization'] = `Bearer ${openRouterKey}`
-    }
-
-    const res = await fetch(config.cloudEndpoint || "https://openrouter.ai/api/v1/chat/completions", {
+    const res = await fetch('/api/ai/chat', {
       method: 'POST',
-      headers,
-      body: JSON.stringify({
-        model: "openai/gpt-3.5-turbo",
-        messages: [
-          { role: "system", content: "You are a helpful agricultural assistant." },
-          { role: "user", content: `Context: ${JSON.stringify(context)}\n\nPrompt: ${prompt}` }
-        ]
-      })
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${pb.authStore.token}`
+      },
+      body: JSON.stringify({ prompt, context, haciendaId })
     })
 
-    if (!res.ok) throw new Error('API request failed')
+    if (res.status === 429) {
+      const err = await res.json()
+      throw new Error(err.error || 'Límite de uso de IA alcanzado')
+    }
+
+    if (!res.ok) throw new Error('Error en servicio de IA')
 
     const data = await res.json()
-    const responseText = data.choices?.[0]?.message?.content || "No response received"
+    const responseText = data.response || 'Sin respuesta'
 
-    await AI_CACHE_DB.setItem(cacheKey, {
-      response: responseText,
-      timestamp: Date.now()
-    })
-
+    await AI_CACHE_DB.setItem(cacheKey, { response: responseText, timestamp: Date.now() })
     return responseText
+
   } catch (error) {
-    logger.error('[AIService] Fallo en API Cloud, usando simulación local', error)
+    logger.error('[AIService] Error en proxy backend, usando simulación', error)
     const fallback = simulateAI(prompt, context)
     return fallback
   }

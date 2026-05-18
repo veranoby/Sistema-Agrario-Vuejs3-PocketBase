@@ -1,0 +1,158 @@
+{
+  "stores": [
+    {
+      "name": "actividades",
+      "path": "src/stores/actividadesStore.js",
+      "usage": "CRUD Actividades, BPA Status calc, Activity Lookup Map",
+      "state_persistence": "Yes (localStorage)",
+      "audit_status": "✅ 100% - Verificado. Soporta paginación y caché de tipos."
+    },
+    {
+      "name": "aiUsage",
+      "path": "src/stores/aiUsageStore.js",
+      "usage": "Internal usage tracking for AI limits",
+      "state_persistence": "Yes (localStorage)",
+      "audit_status": "✅ 100% - Verificado."
+    },
+    {
+      "name": "analytics",
+      "path": "src/stores/analyticsStore.js",
+      "usage": "Global Usage/Patterns (SuperAdmin)",
+      "state_persistence": "No",
+      "audit_status": "🟡 60% - Lógica backend existe, frontend requiere visualizaciones complejas."
+    },
+    {
+      "name": "auth",
+      "path": "src/stores/authStore.js",
+      "usage": "RBAC, JWT, Profile Management, Session Refresh",
+      "state_persistence": "Yes (localStorage)",
+      "audit_status": "✅ 100% - Matriz de roles verificada."
+    },
+    {
+      "name": "avatar",
+      "path": "src/stores/avatarStore.js",
+      "usage": "Helper para gestión de URLs de imágenes y optimización",
+      "state_persistence": "Yes (localStorage)",
+      "audit_status": "✅ 100% - Verificado."
+    },
+    {
+      "name": "bitacora",
+      "path": "src/stores/bitacoraStore.js",
+      "usage": "Field logs, Digital Signatures (RSA-PSS), AI Autocomplete",
+      "state_persistence": "Yes (IndexedDB via Sync)",
+      "audit_status": "✅ 100% - Firmas RSA funcionales. Refactor de modos UX completado."
+    },
+    {
+      "name": "finanza",
+      "path": "src/stores/finanzaStore.js",
+      "usage": "Income/Expense CRUD, Filters, Excel Export",
+      "state_persistence": "Yes (localStorage)",
+      "audit_status": "🟡 60% - Falta integración SRI legal y enlace estricto con bitácoras."
+    },
+    {
+      "name": "haciendaManagement",
+      "path": "src/stores/haciendaManagementStore.js",
+      "usage": "CRUD administrativo de todas las Haciendas (SuperAdmin)",
+      "state_persistence": "No",
+      "audit_status": "✅ 100% - Verificado."
+    },
+    {
+      "name": "hacienda",
+      "path": "src/stores/haciendaStore.js",
+      "usage": "Hacienda Context, Expiry, Module Access, Plan Status",
+      "state_persistence": "Yes (localStorage)",
+      "audit_status": "✅ 100% - Expiración y avisos críticos verificados."
+    },
+    {
+      "name": "notification",
+      "path": "src/stores/notificationStore.js",
+      "usage": "In-app alerts, UI feedback, Persistent notifications",
+      "state_persistence": "Yes (localStorage)",
+      "audit_status": "🟡 80% - Notificaciones asíncronas / Cron jobs están incompletas."
+    },
+    {
+      "name": "plan",
+      "path": "src/stores/planStore.js",
+      "usage": "Subscription limits, Available modules, Activation state",
+      "state_persistence": "Yes (localStorage)",
+      "audit_status": "🟡 60% - Falta completar bloqueo reactivo de UI (P6)."
+    },
+    {
+      "name": "programaciones",
+      "path": "src/stores/programaciones/programacionesStore.js",
+      "usage": "Activity planners, Recurrence calculation, AI Suggestions",
+      "state_persistence": "Yes (IndexedDB via Sync)",
+      "audit_status": "✅ 100% - Modularizado. Lógica de finalizeProgramacionExecution atómica verificada."
+    },
+    {
+      "name": "recordatorios",
+      "path": "src/stores/recordatoriosStore.js",
+      "usage": "Event scheduling, Priorities, Association with Siembras/Zonas",
+      "state_persistence": "Yes (localStorage)",
+      "audit_status": "🟡 90% - Verificado localmente, pero falta disparador de alertas remotas (push/email)."
+    },
+    {
+      "name": "report",
+      "path": "src/stores/reportStore.js",
+      "usage": "Internal state for report generation",
+      "state_persistence": "No",
+      "audit_status": "✅ 100% - Verificado."
+    },
+    {
+      "name": "scheduler",
+      "path": "src/stores/schedulerStore.js",
+      "usage": "Internal helper for calendar operations",
+      "state_persistence": "Yes (localStorage)",
+      "audit_status": "✅ 100% - Verificado."
+    },
+    {
+      "name": "settings",
+      "path": "src/stores/settingsStore.js",
+      "usage": "User preferences and system config",
+      "state_persistence": "No",
+      "audit_status": "✅ 100% - Verificado."
+    },
+    {
+      "name": "siembras",
+      "path": "src/stores/siembrasStore.js",
+      "usage": "Agricultural Projects, Harvest projections, GIS integration",
+      "state_persistence": "Yes (localStorage)",
+      "audit_status": "✅ 100% - Verificado."
+    },
+    {
+      "name": "sync",
+      "path": "src/stores/sync/index.js",
+      "usage": "Offline Queue, IndexedDB caching, Network monitor, Conflict Resolution",
+      "state_persistence": "Yes (IndexedDB)",
+      "audit_status": "✅ 100% - Estado industrial verificado."
+    },
+    {
+      "name": "theme",
+      "path": "src/stores/themeStore.js",
+      "usage": "UI appearance management",
+      "state_persistence": "Yes (localStorage)",
+      "audit_status": "✅ 100% - Verificado."
+    },
+    {
+      "name": "uiFeedback",
+      "path": "src/stores/uiFeedbackStore.js",
+      "usage": "Global Loading, Snackbars, Dialog controls",
+      "state_persistence": "No",
+      "audit_status": "✅ 100% - Verificado."
+    },
+    {
+      "name": "user",
+      "path": "src/stores/userStore.js",
+      "usage": "Internal helper for user profile extension",
+      "state_persistence": "Yes (localStorage)",
+      "audit_status": "✅ 100% - Verificado."
+    },
+    {
+      "name": "zonas",
+      "path": "src/stores/zonasStore.js",
+      "usage": "GIS GeoJSON (Lotes/Puntos), BPA Status calc, Offline Cache",
+      "state_persistence": "Yes (localStorage + OfflineGeoStorage)",
+      "audit_status": "✅ 100% - Verificado."
+    }
+  ]
+}

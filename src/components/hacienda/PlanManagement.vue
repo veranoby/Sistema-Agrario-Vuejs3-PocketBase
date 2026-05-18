@@ -1,18 +1,39 @@
 <template>
-  <div class="flex flex-col border-1 m-5 px-6 pb-0 pt-4 bg-dinamico shadow-md hover:shadow-xl">
+  <div class="flex flex-col border-1 m-5 px-6 pb-0 pt-4 bg-dinamico shadow-md hover:shadow-xl rounded-xl border">
     <div class="flex items-center justify-between mb-4">
-      <h2 class="text-l font-bold">{{ t('plan_management.current_plan') }}</h2>
-      <v-chip :color="getPlanColor" variant="flat" size="small">
-        {{ currentPlan.nombre.toUpperCase() }}
-        <v-tooltip class="text-sm font-bold" activator="parent" location="bottom">
-          {{ t('plan_management.plan_tooltip', { auditores: currentPlan.auditores, operadores: currentPlan.operadores }) }}
-        </v-tooltip>
-      </v-chip>
+      <div>
+        <h2 class="text-l font-bold">{{ t('plan_management.current_plan') }}</h2>
+        <div class="text-caption text-grey">Gestiona tu suscripción y módulos</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <v-chip :color="getPlanColor" variant="flat" size="small">
+          {{ currentPlanName.toUpperCase() }}
+          <v-tooltip class="text-sm font-bold" activator="parent" location="bottom">
+            {{ currentPlanLimits }}
+          </v-tooltip>
+        </v-chip>
 
-      <v-btn color="green-lighten-2" @click="openChangePlanModal" icon size="small">
-        <v-icon>mdi-pencil</v-icon>
-      </v-btn>
+        <v-btn color="success" @click="openChangePlanModal" icon size="small" variant="tonal">
+          <v-icon>mdi-cog</v-icon>
+        </v-btn>
+      </div>
     </div>
+    
+    <!-- Alerta de expiración -->
+    <v-alert
+      v-if="daysUntilExpiration !== null"
+      :type="needsSubscriptionWarning ? 'warning' : (daysUntilExpiration <= 0 ? 'error' : 'info')"
+      variant="tonal"
+      density="compact"
+      class="mb-4"
+      border="start"
+    >
+      <template v-slot:prepend>
+        <v-icon>{{ daysUntilExpiration <= 0 ? 'mdi-alert-circle' : 'mdi-clock-outline' }}</v-icon>
+      </template>
+      {{ daysUntilExpiration <= 0 ? 'Suscripción expirada' : `Quedan ${daysUntilExpiration} días de suscripción` }}
+    </v-alert>
+
     <div v-if="pendingRequest" class="mt-2 mb-4">
         <v-alert type="info" variant="tonal" density="compact" border="start">
           Tienes una solicitud pendiente de revisión para el plan "{{ pendingRequest.expand?.plan_solicitado?.nombre }}".
@@ -22,89 +43,211 @@
 
   <v-dialog
     v-model="changePlanModalOpen"
-    max-width="800px"
+    max-width="1000px"
     persistent
     transition="dialog-bottom-transition"
     scrollable
   >
     <v-card elevation="3" class="plan-dialog">
       <v-toolbar color="success" dark>
-        <v-toolbar-title>{{ t('plan_management.select_your_plan') }}</v-toolbar-title>
+        <v-btn icon @click="goBack" v-if="currentStep > 1">
+          <v-icon>mdi-arrow-left</v-icon>
+        </v-btn>
+        <v-toolbar-title>{{ modalTitle }}</v-toolbar-title>
         <v-spacer></v-spacer>
         <v-btn icon @click="changePlanModalOpen = false"><v-icon>mdi-close</v-icon></v-btn>
       </v-toolbar>
 
-      <v-card-text class="plan-content">
-        <div v-if="pendingRequest" class="text-center py-6">
-            <v-icon color="warning" size="64" class="mb-4">mdi-clock-outline</v-icon>
-            <h3 class="text-h6">Solicitud en Proceso</h3>
-            <p class="text-body-1 mt-2">
-                Ya tienes una solicitud de mejora de plan en estado pendiente.
-                Por favor, espera a que un administrador la revise antes de enviar una nueva.
-            </p>
+      <v-card-text class="pa-0 bg-grey-lighten-5">
+        <!-- Stepper Indicator -->
+        <div class="bg-white border-b px-6 py-4">
+          <v-timeline direction="horizontal" density="compact" align="start" truncate-line="both">
+            <v-timeline-item
+              v-for="(stepName, index) in ['PLAN BASE', 'MÓDULOS', 'CHECKOUT']"
+              :key="index"
+              :dot-color="currentStep >= index + 1 ? 'success' : 'grey-lighten-2'"
+              :icon="currentStep > index + 1 ? 'mdi-check' : undefined"
+              size="small"
+              fill-dot
+            >
+              <div :class="['text-caption font-weight-bold mt-1 text-center', currentStep >= index + 1 ? 'text-success' : 'text-grey']">
+                {{ stepName }}
+              </div>
+            </v-timeline-item>
+          </v-timeline>
         </div>
-        <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div v-for="plan in availablePlans" :key="plan.id" @click="selectedPlan = plan.id">
-            <v-hover v-slot="{ isHovering, props }">
-              <v-card
-                v-bind="props"
-                class="plan-card p-6 shadow-md transition-all duration-300 cursor-pointer"
-                :class="{
-                  'plan-card-hover': isHovering,
-                  'plan-card-selected': selectedPlan === plan.id
-                }"
-              >
-                <div v-if="selectedPlan === plan.id" class="check-icon">
-                  <v-icon color="success">mdi-check-circle</v-icon>
-                </div>
-                <h3 class="text-xl font-bold mb-2 plan-name">{{ plan.nombre.toUpperCase() }}</h3>
-                <p class="text-2xl font-bold mb-4 plan-price">
-                  ${{ plan.precio }}<span class="text-sm font-normal text-gray-500">/mes</span>
+
+        <v-window v-model="currentStep" class="pa-6" style="min-height: 400px;">
+          <!-- STEP 1: PLAN BASE -->
+          <v-window-item :value="1">
+            <div v-if="pendingRequest" class="text-center py-6">
+                <v-icon color="warning" size="64" class="mb-4">mdi-clock-outline</v-icon>
+                <h3 class="text-h6">Solicitud en Proceso</h3>
+                <p class="text-body-1 mt-2">
+                    Ya tienes una solicitud de mejora de plan en estado pendiente.
+                    Por favor, espera la revisión administrativa.
                 </p>
-                <ul class="text-sm space-y-2 plan-features">
-                  <li class="flex items-center">
-                    <v-icon color="success" size="small" class="mr-2">mdi-check</v-icon>
-                    {{ plan.auditores }} Auditores
-                  </li>
-                  <li class="flex items-center">
-                    <v-icon color="success" size="small" class="mr-2">mdi-check</v-icon>
-                    {{ plan.operadores }} Operadores
-                  </li>
-                </ul>
-              </v-card>
-            </v-hover>
-          </div>
-        </div>
+            </div>
+            <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div v-for="plan in availablePlans" :key="plan.id" @click="selectedPlan = plan.id">
+                <v-hover v-slot="{ isHovering, props: hoverProps }">
+                  <v-card
+                    v-bind="hoverProps"
+                    class="plan-card p-6 shadow-md transition-all duration-300 cursor-pointer h-full border-2"
+                    :class="{
+                      'plan-card-hover border-success': isHovering,
+                      'plan-card-selected border-success bg-green-lighten-5': selectedPlan === plan.id,
+                      'border-transparent': !isHovering && selectedPlan !== plan.id
+                    }"
+                  >
+                    <div v-if="selectedPlan === plan.id" class="check-icon">
+                      <v-icon color="success">mdi-check-circle</v-icon>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2 plan-name">{{ plan.nombre.toUpperCase() }}</h3>
+                    <p class="text-2xl font-bold mb-4 plan-price">
+                      ${{ plan.precio }}<span class="text-sm font-normal text-gray-500">/mes</span>
+                    </p>
+                    <ul class="text-sm space-y-2 plan-features">
+                      <li class="flex items-center">
+                        <v-icon color="success" size="small" class="mr-2">mdi-account-check</v-icon>
+                        {{ plan.auditores }} Auditores
+                      </li>
+                      <li class="flex items-center">
+                        <v-icon color="success" size="small" class="mr-2">mdi-account-hard-hat</v-icon>
+                        {{ plan.operadores }} Operadores
+                      </li>
+                    </ul>
+                  </v-card>
+                </v-hover>
+              </div>
+            </div>
+          </v-window-item>
+
+          <!-- STEP 2: MODULOS -->
+          <v-window-item :value="2">
+            <div class="mb-4">
+              <h3 class="text-h6 mb-1">Personaliza tu experiencia</h3>
+              <p class="text-body-2 text-grey">Selecciona los módulos adicionales que deseas activar según tus necesidades operativas.</p>
+            </div>
+            
+            <v-row>
+              <v-col v-for="modulo in allModules" :key="modulo.id" cols="12" md="6">
+                <ModuleCard 
+                  :modulo="modulo" 
+                  :is-active="selectedModuleIds.includes(modulo.id)"
+                  @toggle="toggleModuleSelection"
+                />
+              </v-col>
+            </v-row>
+
+            <v-alert v-if="allModules.length === 0" type="info" class="mt-4">
+              No hay módulos adicionales disponibles en este momento.
+            </v-alert>
+          </v-window-item>
+
+          <!-- STEP 3: CHECKOUT -->
+          <v-window-item :value="3">
+            <v-row>
+              <v-col cols="12" md="6">
+                <h3 class="text-h6 mb-4">Resumen de Suscripción</h3>
+                <v-card variant="flat" class="mb-4 pa-4 border rounded-xl bg-white">
+                  <div class="d-flex justify-space-between mb-2">
+                    <span class="font-weight-medium">Plan Base ({{ selectedPlanData?.nombre || '?' }})</span>
+                    <span class="font-weight-bold">${{ selectedPlanData?.precio || 0 }}.00/mes</span>
+                  </div>
+                  
+                  <div v-if="selectedModulesData.length > 0" class="mb-2 mt-4">
+                    <div class="text-caption text-grey mb-2 uppercase font-weight-bold">Módulos Adicionales:</div>
+                    <div v-for="m in selectedModulesData" :key="m.id" class="d-flex justify-space-between pl-2 mb-2 text-body-2 bg-grey-lighten-5 pa-2 rounded border border-dashed">
+                      <span>• {{ m.name }}</span>
+                      <span class="font-weight-bold">${{ m.price_monthly }}.00</span>
+                    </div>
+                  </div>
+
+                  <v-divider class="my-4" />
+
+                  <div class="mb-4">
+                    <div class="text-caption text-grey mb-2">CICLO DE FACTURACIÓN</div>
+                    <v-btn-toggle v-model="billingCycle" mandatory color="success" density="compact" rounded="pill" class="w-full">
+                      <v-btn value="monthly" class="flex-grow-1">Mensual</v-btn>
+                      <v-btn value="yearly" class="flex-grow-1">Anual (-17%)</v-btn>
+                    </v-btn-toggle>
+                  </div>
+
+                  <div class="d-flex justify-space-between align-end mt-6">
+                    <div class="text-caption text-grey">TOTAL ESTIMADO</div>
+                    <div class="text-right">
+                      <div class="text-h4 font-weight-bold text-success">${{ totalAmount.toFixed(2) }}</div>
+                      <div class="text-caption text-grey">{{ billingCycle === 'monthly' ? 'por mes' : 'total anual' }}</div>
+                    </div>
+                  </div>
+                </v-card>
+
+                <v-alert v-if="billingCycle === 'yearly'" type="success" variant="tonal" density="compact" class="rounded-xl">
+                  <v-icon start>mdi-piggy-bank</v-icon>
+                  Estás ahorrando <strong>${{ annualSavings.toFixed(2) }}</strong> al año con el pago anual.
+                </v-alert>
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <h3 class="text-h6 mb-4">Finalizar Pago</h3>
+                <div class="bg-white pa-4 rounded-xl mb-4 border border-dashed">
+                  <div class="text-subtitle-2 font-weight-bold mb-2 flex items-center">
+                    <v-icon start color="primary" size="small">mdi-bank</v-icon>
+                    Instrucciones Bancarias
+                  </div>
+                  <div class="text-body-2 whitespace-pre-wrap text-grey-darken-2" v-html="bankInstructions"></div>
+                </div>
+
+                <v-file-input
+                  v-model="paymentReceipt"
+                  label="Adjuntar comprobante de transferencia"
+                  accept="image/jpeg, image/png, application/pdf"
+                  variant="outlined"
+                  density="comfortable"
+                  prepend-inner-icon="mdi-receipt"
+                  prepend-icon=""
+                  :error-messages="receiptError"
+                  show-size
+                  hint="PDF, JPG o PNG (Max 5MB)"
+                  persistent-hint
+                  class="bg-white rounded-xl"
+                ></v-file-input>
+              </v-col>
+            </v-row>
+          </v-window-item>
+        </v-window>
       </v-card-text>
 
-      <!-- Paso 2: Instrucciones de Pago y Comprobante -->
-      <v-card-text v-if="!pendingRequest && selectedPlan && selectedPlan !== haciendaStore.mi_hacienda.plan" class="border-t pt-4 bg-grey-lighten-4">
-          <h3 class="text-h6 mb-3">Instrucciones de Pago</h3>
-          <div class="bg-white p-4 rounded-lg border text-body-2 whitespace-pre-wrap mb-4" v-html="bankInstructions"></div>
+      <v-divider />
 
-          <h3 class="text-h6 mb-3">Adjuntar Comprobante</h3>
-          <v-file-input
-            v-model="paymentReceipt"
-            label="Selecciona tu comprobante (PDF, JPG, PNG)"
-            accept="image/jpeg, image/png, application/pdf"
-            variant="outlined"
-            density="comfortable"
-            prepend-icon="mdi-receipt"
-            :error-messages="receiptError"
-            show-size
-          ></v-file-input>
-      </v-card-text>
-
-      <v-card-actions class="plan-actions justify-end" v-if="!pendingRequest">
-        <v-btn color="grey-darken-1" variant="text" @click="changePlanModalOpen = false">
-          {{ t('general.cancel') }}
+      <v-card-actions class="pa-6 bg-white">
+        <v-btn color="grey-darken-1" variant="text" @click="changePlanModalOpen = false" rounded="pill">
+          Cancelar
+        </v-btn>
+        <v-spacer />
+        <v-btn
+          v-if="currentStep < 3"
+          color="success"
+          variant="flat"
+          @click="nextStep"
+          :disabled="pendingRequest || (currentStep === 1 && !selectedPlan)"
+          rounded="pill"
+          append-icon="mdi-chevron-right"
+          min-width="120"
+        >
+          Siguiente
         </v-btn>
         <v-btn
+          v-else
           color="success"
           variant="elevated"
-          @click="changePlan"
-          :disabled="!selectedPlan || (!haciendaStore.isPlanExpired && selectedPlan === haciendaStore.mi_hacienda.plan) || !paymentReceipt"
+          @click="submitUnifiedRequest"
+          :disabled="!paymentReceipt"
           :loading="isSubmitting"
+          rounded="pill"
+          append-icon="mdi-send"
+          min-width="150"
         >
           Enviar Solicitud
         </v-btn>
@@ -123,6 +266,8 @@ import { useAuthStore } from '@/stores/authStore'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { storeToRefs } from 'pinia'
 import { pb } from '@/utils/pocketbase'
+import ModuleCard from '@/components/cliente/ModuleCard.vue'
+import { ModuleCalculator } from '@/utils/moduleCalculator'
 
 const { t } = useI18n()
 const planStore = usePlanStore()
@@ -132,26 +277,76 @@ const authStore = useAuthStore()
 const settingsStore = useSettingsStore()
 
 const { currentPlan } = storeToRefs(planStore)
+const { daysUntilExpiration, needsSubscriptionWarning, mi_hacienda } = storeToRefs(haciendaStore)
 
+// Modal State
 const changePlanModalOpen = ref(false)
+const currentStep = ref(1)
+const billingCycle = ref('monthly')
+
+// Selection State
 const selectedPlan = ref(null)
+const selectedModuleIds = ref([])
 const availablePlans = ref([])
+const allModules = ref([])
+
+// Form State
 const pendingRequest = ref(null)
 const paymentReceipt = ref(null)
 const receiptError = ref('')
 const isSubmitting = ref(false)
 
-const getPlanColor = computed(() => {
-  if(!currentPlan.value) return 'grey'
-  switch (currentPlan.value.nombre.toLowerCase()) {
-    case 'gratis': return 'grey'
-    case 'basico': return 'teal-lighten-3'
-    case 'premium': return 'purple-lighten-3'
-    default: return 'grey-lighten-3'
+const modalTitle = computed(() => {
+  switch (currentStep.value) {
+    case 1: return 'Selecciona tu Plan Base'
+    case 2: return 'Personaliza con Módulos'
+    case 3: return 'Resumen y Pago'
+    default: return 'Suscripción'
   }
 })
 
+const currentPlanName = computed(() => currentPlan.value?.nombre || mi_hacienda.value?.expand?.plan?.nombre || 'Gratis')
+const currentPlanLimits = computed(() => {
+  const plan = currentPlan.value || mi_hacienda.value?.expand?.plan
+  if (!plan) return 'Límites básicos'
+  return t('plan_management.plan_tooltip', { auditores: plan.auditores, operadores: plan.operadores })
+})
+
+const getPlanColor = computed(() => {
+  const name = currentPlanName.value.toLowerCase()
+  if (name.includes('gratis')) return 'grey'
+  if (name.includes('basico')) return 'teal-lighten-3'
+  if (name.includes('premium')) return 'purple-lighten-3'
+  if (name.includes('enterprise')) return 'blue-darken-2'
+  return 'grey-lighten-3'
+})
+
 const bankInstructions = computed(() => settingsStore.bankAccountInfo || 'No hay instrucciones bancarias configuradas.')
+
+const selectedPlanData = computed(() => availablePlans.value.find(p => p.id === selectedPlan.value))
+const selectedModulesData = computed(() => allModules.value.filter(m => selectedModuleIds.value.includes(m.id)))
+
+const totalAmount = computed(() => {
+  const planPrice = selectedPlanData.value?.precio || 0
+  const modulesPrice = ModuleCalculator.calculateModulePrice(selectedModulesData.value, billingCycle.value)
+  
+  if (billingCycle.value === 'yearly') {
+    return (planPrice * 12) + modulesPrice
+  }
+  return planPrice + modulesPrice
+})
+
+const annualSavings = computed(() => {
+  const planMonthly = selectedPlanData.value?.precio || 0
+  const modulesMonthly = ModuleCalculator.calculateModulePrice(selectedModulesData.value, 'monthly')
+  const totalMonthly = (planMonthly + modulesMonthly) * 12
+  
+  const planYearly = planMonthly * 12
+  const modulesYearly = ModuleCalculator.calculateModulePrice(selectedModulesData.value, 'yearly')
+  const totalYearly = planYearly + modulesYearly
+  
+  return totalMonthly - totalYearly
+})
 
 onMounted(async () => {
     await checkPendingRequests()
@@ -159,17 +354,13 @@ onMounted(async () => {
 })
 
 const checkPendingRequests = async () => {
-    if (!haciendaStore.mi_hacienda?.id) return
+    if (!mi_hacienda.value?.id) return
     try {
         const result = await pb.collection('solicitudes_suscripcion').getList(1, 1, {
-            filter: `hacienda = "${haciendaStore.mi_hacienda.id}" && estado = "pendiente"`,
+            filter: `hacienda = "${mi_hacienda.value.id}" && estado = "pendiente"`,
             expand: 'plan_solicitado'
         })
-        if (result.items.length > 0) {
-            pendingRequest.value = result.items[0]
-        } else {
-            pendingRequest.value = null
-        }
+        pendingRequest.value = result.items[0] || null
     } catch (e) {
         console.error('Error fetching pending requests', e)
     }
@@ -177,29 +368,48 @@ const checkPendingRequests = async () => {
 
 const openChangePlanModal = async () => {
   try {
+    uiFeedbackStore.showLoading()
     await checkPendingRequests()
     availablePlans.value = await planStore.fetchAvailablePlans()
-    selectedPlan.value = haciendaStore.mi_hacienda.plan
+    allModules.value = await planStore.fetchModules()
+    
+    // Initial selection from current state
+    selectedPlan.value = mi_hacienda.value.plan
+    selectedModuleIds.value = Array.isArray(mi_hacienda.value.active_modules) ? [...mi_hacienda.value.active_modules] : []
+    
     paymentReceipt.value = null
+    currentStep.value = 1
     changePlanModalOpen.value = true
   } catch (error) {
     uiFeedbackStore.showSnackbar(t('plan_management.error_loading_plans'), 'error')
-    console.error('Error al cargar los planes disponibles:', error)
+  } finally {
+    uiFeedbackStore.hideLoading()
   }
 }
 
-const changePlan = async () => {
-  if (!selectedPlan.value) return;
-  if (!haciendaStore.isPlanExpired && selectedPlan.value === haciendaStore.mi_hacienda.plan) return;
+const nextStep = () => {
+  if (currentStep.value < 3) currentStep.value++
+}
 
+const goBack = () => {
+  if (currentStep.value > 1) currentStep.value--
+}
+
+const toggleModuleSelection = (moduleId, active) => {
+  if (active) {
+    if (!selectedModuleIds.value.includes(moduleId)) {
+      selectedModuleIds.value.push(moduleId)
+    }
+  } else {
+    selectedModuleIds.value = selectedModuleIds.value.filter(id => id !== moduleId)
+  }
+}
+
+const submitUnifiedRequest = async () => {
+  if (!selectedPlan.value) return
+  
   if (!paymentReceipt.value) {
       receiptError.value = "Debes adjuntar un comprobante de pago."
-      return
-  }
-
-  // Validar tamaño archivo max 5MB
-  if (paymentReceipt.value.size > 5 * 1024 * 1024) {
-      receiptError.value = "El comprobante no puede exceder los 5MB."
       return
   }
 
@@ -207,19 +417,24 @@ const changePlan = async () => {
   receiptError.value = ""
 
   try {
+      const receiptFile = Array.isArray(paymentReceipt.value) ? paymentReceipt.value[0] : paymentReceipt.value
+      
       const formData = new FormData()
-      formData.append('hacienda', haciendaStore.mi_hacienda.id)
+      formData.append('hacienda', mi_hacienda.value.id)
       formData.append('solicitante', authStore.user.id)
-      formData.append('tipo', 'plan_upgrade')
+      formData.append('tipo', 'suscripcion_unificada')
       formData.append('plan_solicitado', selectedPlan.value)
+      formData.append('modulos_solicitados', JSON.stringify(selectedModuleIds.value))
       formData.append('estado', 'pendiente')
-      formData.append('comprobante', paymentReceipt.value)
+      formData.append('comprobante', receiptFile)
+      formData.append('monto_total', totalAmount.value)
+      formData.append('ciclo_facturacion', billingCycle.value)
 
       await pb.collection('solicitudes_suscripcion').create(formData)
 
       uiFeedbackStore.showSnackbar("Solicitud enviada con éxito. Será revisada pronto.", "success")
       changePlanModalOpen.value = false
-      await checkPendingRequests() // Refrescar estado local
+      await checkPendingRequests()
 
   } catch (error) {
       uiFeedbackStore.showSnackbar("Error al enviar la solicitud", "error")
@@ -235,27 +450,19 @@ const changePlan = async () => {
   border-radius: 12px;
 }
 
-.plan-content {
-  padding: 24px;
-}
-
 .plan-card {
-  border: 2px solid #e0e0e0;
   transition: all 0.3s ease;
   position: relative;
+  background: white;
 }
 
 .plan-card-hover {
   transform: translateY(-5px);
-  border-color: #4caf50;
+  box-shadow: 0 8px 15px rgba(0,0,0,0.1);
 }
 
 .plan-card-selected {
-  border: 2px solid #4caf50;
-  background-color: #f5faf5;
-  box-shadow:
-    0 4px 6px -1px rgba(76, 175, 80, 0.1),
-    0 2px 4px -1px rgba(76, 175, 80, 0.06);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.15);
 }
 
 .check-icon {
@@ -265,21 +472,10 @@ const changePlan = async () => {
   background-color: white;
   border-radius: 50%;
   padding: 4px;
+  z-index: 1;
 }
 
-.plan-name {
-  color: #2c3e50;
-}
-
-.plan-price {
-  color: #4caf50;
-}
-
-.plan-features {
-  color: #546e7a;
-}
-
-.plan-actions {
-  padding: 16px 24px;
-}
+.plan-name { color: #2c3e50; }
+.plan-price { color: #4caf50; }
+.plan-features { color: #546e7a; }
 </style>

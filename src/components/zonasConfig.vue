@@ -241,6 +241,10 @@
         <v-btn @click="dialogoImagenGrande = false">{{ t('zones.close') }}</v-btn>
       </v-card-actions>
     </v-dialog>
+    <!-- AI Assistant -->
+    <AiAssistant
+      :zonas="zonas"
+    />
   </v-container>
 </template>
 
@@ -255,6 +259,7 @@ import { storeToRefs } from 'pinia'
 import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import { useAvatarStore } from '@/stores/avatarStore'
 import ZonaForm from '@/components/forms/ZonaForm.vue'
+import AiAssistant from '@/components/AiAssistant.vue'
 import { useDebouncedSearch } from '@/composables/useDebouncedSearch'
 
 const { t } = useI18n()

@@ -4,6 +4,7 @@ import { handleError } from '@/utils/errorHandler'
 import { useUiFeedbackStore } from './uiFeedbackStore'
 import { useSyncStore } from '@/stores/sync/index'
 import { useAvatarStore } from './avatarStore'
+import { useAuthStore } from './authStore'
 
 /**
  * Store de sesión: Hacienda actual del usuario logueado
@@ -30,6 +31,16 @@ export const useHaciendaStore = defineStore('hacienda', {
       const end = new Date(state.mi_hacienda.subscription_end)
       return end < new Date()
     },
+    daysUntilExpiration: (state) => {
+      if (!state.mi_hacienda?.subscription_end) return null
+      const end = new Date(state.mi_hacienda.subscription_end)
+      const diff = end - new Date()
+      return Math.ceil(diff / (1000 * 60 * 60 * 24))
+    },
+    needsSubscriptionWarning: (state) => {
+      const days = state.daysUntilExpiration
+      return days !== null && days <= 3
+    },
     isFreePlan: (state) => {
       // Asume que si no hay plan definido, o si expiró, o si se llama "gratis" es un plan libre.
       // Se delega la verdadera expiración al isPlanExpired
@@ -51,19 +62,22 @@ export const useHaciendaStore = defineStore('hacienda', {
   actions: {
     isModuleActive(moduleName) {
       if (!this.mi_hacienda) return false
-      
+
+      // Enterprise plan allows everything
+      const planName = this.mi_hacienda.expand?.plan?.nombre?.toLowerCase() || ''
+      if (planName.includes('enterprise')) return true
+
       if (this.mi_hacienda.active_modules && Array.isArray(this.mi_hacienda.active_modules)) {
         return this.mi_hacienda.active_modules.includes(moduleName)
       }
-      
-      if (this.mi_hacienda.plan && typeof this.mi_hacienda.plan === 'object') {
-        return true
-      }
-      
-      return true
+
+      return false
     },
 
     async init() {
+      const authStore = useAuthStore()
+      if (authStore.isAsesor) return
+
       if (!this.haciendaUsers.length) {
         await this.fetchHaciendaUsers()
       }
@@ -176,7 +190,9 @@ export const useHaciendaStore = defineStore('hacienda', {
 
       try {
         if (syncStore.isOnline) {
-          this.mi_hacienda = await pb.collection('Haciendas').getOne(haciendaId)
+          this.mi_hacienda = await pb.collection('Haciendas').getOne(haciendaId, {
+            expand: 'plan'
+          })
           this.baseImageUrl = pb.baseUrl + '/api/files'
 
           await syncStore.saveToLocalStorage('mi_hacienda', this.mi_hacienda)

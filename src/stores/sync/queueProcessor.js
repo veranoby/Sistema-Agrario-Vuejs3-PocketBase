@@ -82,9 +82,11 @@ export function createQueueProcessor({
       const latency = Date.now() - startTime
       metrics.totalProcessed++
       metrics.avgLatency = (metrics.avgLatency * (metrics.totalProcessed - 1) + latency) / metrics.totalProcessed
+      
+      // Persist queue state item-by-item
+      saveCache('syncQueue', queue.filter(op => op.status !== 'completed'))
     }
 
-    saveCache('syncQueue', queue.filter(op => op.status !== 'completed'))
     return results
   }
 

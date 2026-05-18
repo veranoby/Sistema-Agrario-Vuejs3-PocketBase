@@ -1,233 +1,117 @@
 <template>
   <v-container>
     <div class="w-full max-w-4xl mx-auto py-12 md:py-16 px-4 md:px-6">
-      <h1 class="text-3xl font-bold mb-8 text-center">Preguntas Frecuentes - ConAgri</h1>
+      <h1 class="text-3xl font-bold mb-8 text-center text-green-900">Preguntas Frecuentes - ConAgri</h1>
 
-      <details class="w-full bg-white border border-lightgray cursor-pointer mb-3 p-3">
-        <summary
-          class="w-full bg-white text-dark flex justify-between px-4 py-3 text-lg font-medium after:content-['+']"
-        >
-          Preguntas Generales
+      <!-- Grupo 1: Cumplimiento y Certificación (BPA) -->
+      <details class="w-full bg-white border border-lightgray cursor-pointer mb-3 p-3 rounded-lg shadow-sm">
+        <summary class="w-full bg-white text-green-800 flex justify-between px-4 py-3 text-lg font-semibold after:content-['+']">
+          Cumplimiento y Certificación (BPA)
         </summary>
-        <div>
-          <br />
-          <h3 className="text-lg font-bold">¿Qué es su plataforma SaaS de agricultura?</h3>
-
-          <br />
-          <p className="text-sm text-muted-foreground">
-            Nuestra plataforma SaaS de agricultura es una solución integral diseñada para ayudar a
-            los agricultores y empresas agrícolas a optimizar sus operaciones, mejorar la
-            productividad y tomar decisiones basadas en datos. Ofrece una amplia gama de funciones y
-            herramientas para gestionar diversos aspectos de las operaciones agrícolas.
-          </p>
-        </div>
-        <div>
-          <br />
-          <h3 className="text-lg font-bold">¿Quién puede usar su plataforma?</h3>
-
-          <br />
-          <p className="text-sm text-muted-foreground">
-            Nuestra plataforma está diseñada para una amplia gama de usuarios, incluyendo pequeños
-            agricultores, empresas agrícolas a gran escala y proveedores de servicios agrícolas. Ya
-            sea que esté gestionando una pequeña granja familiar o una operación comercial a gran
-            escala, nuestra plataforma puede adaptarse a sus necesidades.
-          </p>
-        </div>
-      </details>
-
-      <details class="w-full bg-white border border-lightgray cursor-pointer mb-3 p-3">
-        <summary
-          class="w-full bg-white text-dark flex justify-between px-4 py-3 text-lg font-medium after:content-['+']"
-        >
-          Características y Capacidades
-        </summary>
-        <div>
-          <br />
-          <h3 className="text-lg font-bold">
-            ¿Cuáles son las principales características de su plataforma?
-          </h3>
-
-          <br />
-          <p className="text-sm text-muted-foreground">
-            Nuestra plataforma SaaS de agricultura ofrece una amplia gama de funciones, incluyendo
-            gestión de cultivos y ganado, monitoreo del clima y el clima, herramientas de
-            agricultura de precisión, optimización de la cadena de suministro y análisis avanzado.
-            Nuestro objetivo es proporcionar una solución integral que aborde las diversas
-            necesidades de nuestros clientes.
-          </p>
-        </div>
-        <div>
-          <br />
-          <h3 className="text-lg font-bold">
-            ¿Puedo personalizar la plataforma para que se ajuste a mis necesidades específicas?
-          </h3>
-
-          <br />
-          <p className="text-sm text-muted-foreground">
-            ¡Absolutamente! Nuestra plataforma es altamente personalizable, lo que le permite
-            adaptarla a los requisitos específicos de su negocio. Puede configurar varios ajustes,
-            integrarse con herramientas de terceros e incluso desarrollar módulos personalizados
-            para ampliar la funcionalidad de la plataforma.
-          </p>
-        </div>
-      </details>
-
-      <details class="w-full bg-white border border-lightgray cursor-pointer mb-3 p-3">
-        <summary
-          class="w-full bg-white text-dark flex justify-between px-4 py-3 text-lg font-medium after:content-['+']"
-        >
-          Precios y Suscripción
-        </summary>
-        <div>
-          <br />
-          <h3 className="text-lg font-bold">¿Cuánto cuesta su plataforma?</h3>
-
-          <br />
-          <p className="text-sm text-muted-foreground">
-            Nuestra plataforma ofrece opciones de precios flexibles para adaptarse a las necesidades
-            de empresas de todos los tamaños. Tenemos una gama de planes de suscripción, que
-            incluyen un plan básico para pequeñas granjas, un plan profesional para operaciones de
-            tamaño medio y un plan empresarial para negocios agrícolas a gran escala. Los precios se
-            basan en el número de usuarios, la superficie cultivada y las funciones y servicios
-            específicos que requiera.
-          </p>
-        </div>
-        <div>
-          <br />
-          <h3 className="text-lg font-bold">¿Ofrecen alguna prueba gratuita o descuentos?</h3>
-
-          <br />
-          <p className="text-sm text-muted-foreground">
-            Sí, ofrecemos un esquema gratuito para que pueda explorar la plataforma y ver cómo puede
-            beneficiar a su negocio, con un numero limitado de usuarios activos. También ofrecemos
-            varios descuentos y ofertas promocionales, como descuentos por suscripciones anuales o
-            precios especiales para organizaciones sin fines de lucro e instituciones educativas.
-          </p>
-        </div>
-      </details>
-
-      <details class="w-full bg-white border border-lightgray cursor-pointer mb-3 p-3">
-        <summary
-          class="w-full bg-white text-dark flex justify-between px-4 py-3 text-lg font-medium after:content-['+']"
-        >
-          Soporte e Implementación
-        </summary>
-        <div>
-          <br />
-          <h3 className="text-lg font-bold">¿Qué tipo de soporte brindan?</h3>
-
-          <br />
-          <p className="text-sm text-muted-foreground">
-            Entendemos que implementar una nueva plataforma puede ser un desafío, por lo que
-            ofrecemos un soporte integral a nuestros clientes. Nuestro equipo de profesionales
-            experimentados está disponible para ayudarlo con la incorporación, la capacitación y el
-            soporte técnico continuo. También contamos con una sólida base de conocimientos y
-            documentación para ayudarlo a sacar el máximo provecho de nuestra plataforma.
-          </p>
-        </div>
-        <div>
-          <br />
-          <h3 className="text-lg font-bold">¿Cuánto tiempo lleva el proceso de implementación?</h3>
-
-          <br />
-          <p className="text-sm text-muted-foreground">
-            El proceso de implementación puede variar según el tamaño y la complejidad de su
-            organización, así como las funciones y las integraciones específicas que requiera. Sin
-            embargo, nos esforzamos por hacer que el proceso sea lo más fluido y eficiente posible.
-            Nuestro equipo trabajará en estrecha colaboración con usted para desarrollar un plan de
-            implementación a medida y garantizar una transición sin problemas a nuestra plataforma.
-          </p>
-        </div>
-      </details>
-
-      <!-- Sección Ampliada: Gestión Operativa -->
-      <details class="w-full bg-white border border-lightgray cursor-pointer mb-3 p-3">
-        <summary
-          class="w-full bg-white text-dark flex justify-between px-4 py-3 text-lg font-medium after:content-['+']"
-        >
-          Gestión de Actividades
-        </summary>
-        <div class="space-y-6">
+        <div class="px-4 pb-4 space-y-4">
           <div>
-            <h3 class="text-lg font-bold">¿Cómo asigno siembras y zonas a una actividad?</h3>
-            <div class="text-sm text-muted-foreground mt-2">
-              ConAgri permite crear y organizar siembras con detalles como tipo de cultivo,
-              fechas de siembra y áreas asignadas. Para zonas:
-              <ul class="list-disc pl-6 mt-2">
-                <li>Registre zonas con coordenadas GPS y tipo de suelo</li>
-                <li>Asigne siembras a múltiples zonas</li>
-                <li>Genere informes de productividad por zona</li>
-              </ul>
-            </div>
+            <h3 class="text-md font-bold text-gray-800">¿Cómo garantiza ConAgri el cumplimiento de las Buenas Prácticas Agrícolas (BPA)?</h3>
+            <p class="text-sm text-muted-foreground mt-1">
+              ConAgri estructura la bitácora de campo en base a las normativas internacionales de certificación como GlobalG.A.P. La plataforma valida obligatoriamente que cada registro operativo cuente con fecha, área geolocalizada, dosis/insumo utilizado, y la firma digital del operario responsable, eliminando la manipulación de registros y facilitando las auditorías físicas.
+            </p>
+          </div>
+          <div>
+            <h3 class="text-md font-bold text-gray-800">¿Cómo funciona la Firma Criptográfica RSA en las bitácoras?</h3>
+            <p class="text-sm text-muted-foreground mt-1">
+              Al realizar una actividad, el dispositivo del operador utiliza la API WebCrypto del navegador para generar firmas digitales con el algoritmo RSA-PSS. Los datos de la bitácora se cifran y sellan criptográficamente con una clave privada local, y la firma en Base64 se almacena de forma inmutable en PocketBase. Los auditores pueden verificar la autenticidad del registro al instante.
+            </p>
           </div>
         </div>
       </details>
 
-      <!-- Recordatorios y Notificaciones -->
-      <details class="w-full bg-white border border-lightgray cursor-pointer mb-3 p-3">
-        <summary
-          class="w-full bg-white text-dark flex justify-between px-4 py-3 text-lg font-medium after:content-['+']"
-        >
-          Recordatorios
+      <!-- Grupo 2: Resiliencia Offline-First -->
+      <details class="w-full bg-white border border-lightgray cursor-pointer mb-3 p-3 rounded-lg shadow-sm">
+        <summary class="w-full bg-white text-green-800 flex justify-between px-4 py-3 text-lg font-semibold after:content-['+']">
+          Tecnología Offline y Sincronización
         </summary>
-        <div class="space-y-6">
+        <div class="px-4 pb-4 space-y-4">
           <div>
-            <h3 class="text-lg font-bold">¿Qué tipos de recordatorios existen?</h3>
-            <div class="text-sm text-muted-foreground mt-2">
-              El sistema maneja:
-              <ul class="list-disc pl-6">
-                <li>Recordatorios por fecha específica</li>
-                <li>Notificaciones de estado (pendiente/en progreso/completado)</li>
-                <li>Prioridades configurables (baja/media/alta)</li>
-                <li>Vinculación con actividades y siembras</li>
-              </ul>
-            </div>
+            <h3 class="text-md font-bold text-gray-800">¿Puedo registrar mis actividades en zonas sin cobertura de internet?</h3>
+            <p class="text-sm text-muted-foreground mt-1">
+              Sí. ConAgri funciona bajo el paradigma "Offline-First". La aplicación almacena de forma segura las actividades y cambios geográficos en una base de datos IndexedDB local. Cuando el dispositivo detecta conexión a internet, el procesador de cola (`queueProcessor.js`) sincroniza los datos de forma atómica y ordenada en PocketBase, evitando duplicados o pérdidas.
+            </p>
+          </div>
+          <div>
+            <h3 class="text-md font-bold text-gray-800">¿Qué pasa si hay un conflicto de concurrencia durante la sincronización?</h3>
+            <p class="text-sm text-muted-foreground mt-1">
+              El sistema utiliza bloqueos de estado concurrentes (`isProcessing`) en los almacenes Pinia y marcas de tiempo criptográficas para asegurar que el último cambio confirmado localmente se guarde con integridad sin sobreescribir auditorías previas.
+            </p>
           </div>
         </div>
       </details>
 
-      <!-- Integraciones -->
-      <details class="w-full bg-white border border-lightgray cursor-pointer mb-3 p-3">
-        <summary
-          class="w-full bg-white text-dark flex justify-between px-4 py-3 text-lg font-medium after:content-['+']"
-        >
-          Datos y Métricas
+      <!-- Grupo 3: Asistente IA Agronómico -->
+      <details class="w-full bg-white border border-lightgray cursor-pointer mb-3 p-3 rounded-lg shadow-sm">
+        <summary class="w-full bg-white text-green-800 flex justify-between px-4 py-3 text-lg font-semibold after:content-['+']">
+          Asistente IA Agronómico
         </summary>
-        <div class="space-y-6">
+        <div class="px-4 pb-4 space-y-4">
           <div>
-            <h3 class="text-lg font-bold">¿Qué métricas puedo registrar?</h3>
-            <div class="text-sm text-muted-foreground mt-2">
-              El sistema permite:
-              <ul class="list-disc pl-6">
-                <li>Seguimiento de fechas clave</li>
-                <li>Registro de estados de actividad</li>
-                <li>Monitoreo de áreas asignadas</li>
-                <li>Seguimiento de progreso por siembra/zona</li>
-              </ul>
-            </div>
+            <h3 class="text-md font-bold text-gray-800">¿Qué es el Asistente IA y cómo ayuda al agricultor?</h3>
+            <p class="text-sm text-muted-foreground mt-1">
+              Es un asistente experto en agronomía integrado que utiliza modelos avanzados a través de un proxy seguro de OpenRouter. Permite consultar diagnósticos de plagas, recomendaciones de fertilización según tipo de suelo y planes de riego.
+            </p>
+          </div>
+          <div>
+            <h3 class="text-md font-bold text-gray-800">¿Qué son las "Action Cards" generadas por la IA?</h3>
+            <p class="text-sm text-muted-foreground mt-1">
+              Cuando realiza una pregunta sobre planificación, la IA no solo responde con texto, sino que genera recomendaciones estructuradas en formato JSON. Estas se renderizan como "Action Cards", permitiéndole presionar un botón para crear automáticamente una actividad o recordatorio en el sistema con un solo clic (Human-in-the-loop).
+            </p>
           </div>
         </div>
       </details>
 
-      <!-- Soporte -->
-      <details class="w-full bg-white border border-lightgray cursor-pointer mb-3 p-3">
-        <summary
-          class="w-full bg-white text-dark flex justify-between px-4 py-3 text-lg font-medium after:content-['+']"
-        >
-          Soporte Técnico
+      <!-- Grupo 4: Mapeo y Zonas GIS -->
+      <details class="w-full bg-white border border-lightgray cursor-pointer mb-3 p-3 rounded-lg shadow-sm">
+        <summary class="w-full bg-white text-green-800 flex justify-between px-4 py-3 text-lg font-semibold after:content-['+']">
+          Mapeo y Zonas GIS Leaflet
         </summary>
-        <div class="space-y-6">
+        <div class="px-4 pb-4 space-y-4">
           <div>
-            <h3 class="text-lg font-bold">¿Qué recursos de ayuda existen?</h3>
-            <div class="text-sm text-muted-foreground mt-2">
-              Ofrecemos:
-              <ul class="list-disc pl-6">
-                <li>Documentación técnica en la plataforma</li>
-                <li>Soporte por correo electrónico</li>
-                <li>Base de conocimiento con guías prácticas</li>
-                <li>Actualizaciones periódicas del sistema</li>
+            <h3 class="text-md font-bold text-gray-800">¿Cómo funciona el módulo de dibujo y zonas GIS?</h3>
+            <p class="text-sm text-muted-foreground mt-1">
+              ConAgri integra un mapa dinámico potenciado por Leaflet. Permite dibujar de forma manual polígonos sobre el terreno para delimitar lotes de cultivo y zonas protegidas. Estas coordenadas se guardan como objetos GeoJSON en PocketBase y se pre-cargan en la memoria local para su disponibilidad offline.
+            </p>
+          </div>
+        </div>
+      </details>
+
+      <!-- Grupo 5: Gestión Financiera -->
+      <details class="w-full bg-white border border-lightgray cursor-pointer mb-3 p-3 rounded-lg shadow-sm">
+        <summary class="w-full bg-white text-green-800 flex justify-between px-4 py-3 text-lg font-semibold after:content-['+']">
+          Módulo de Finanzas y Costos
+        </summary>
+        <div class="px-4 pb-4 space-y-4">
+          <div>
+            <h3 class="text-md font-bold text-gray-800">¿Qué tipo de control financiero puedo llevar en mis cultivos?</h3>
+            <p class="text-sm text-muted-foreground mt-1">
+              El módulo de finanzas le permite asociar costos fijos (insumos, herramientas) y costos variables (jornales, servicios) a cada siembra/proyecto específico. Esto facilita el cálculo automático del Retorno de Inversión (ROI) por hectárea y prepara los reportes estructurados listos para ser exportados.
+            </p>
+          </div>
+        </div>
+      </details>
+
+      <!-- Grupo 6: Roles y Licenciamiento -->
+      <details class="w-full bg-white border border-lightgray cursor-pointer mb-3 p-3 rounded-lg shadow-sm">
+        <summary class="w-full bg-white text-green-800 flex justify-between px-4 py-3 text-lg font-semibold after:content-['+']">
+          Seguridad, Roles y Suscripciones
+        </summary>
+        <div class="px-4 pb-4 space-y-4">
+          <div>
+            <h3 class="text-md font-bold text-gray-800">¿Cuáles son los roles definidos en la plataforma y qué permisos tienen?</h3>
+            <p class="text-sm text-muted-foreground mt-1">
+              La plataforma maneja un control estricto de accesos (RBAC):
+              <ul class="list-disc pl-6 mt-2 space-y-1">
+                <li><strong>Administrador:</strong> Control total de la configuración de la hacienda, invitar usuarios, modificar planes e integraciones.</li>
+                <li><strong>Auditor:</strong> Permiso de lectura completa y descarga de informes de trazabilidad, exportación de bitácoras y verificación de firmas RSA.</li>
+                <li><strong>Operador:</strong> Permiso de registro y firma de actividades diarias asignadas en campo.</li>
               </ul>
-            </div>
+            </p>
           </div>
         </div>
       </details>

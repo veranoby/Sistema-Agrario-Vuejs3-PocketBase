@@ -14,10 +14,6 @@
 
     <template v-slot:append>
       <div class="flex flex-row sm:flex-row text-sm sm:text-base">
-        <v-btn text size="small" @click="$router.push('/about')" class="flex items-center">
-          <v-icon class="mr-2" icon="mdi-information"></v-icon>
-          <span class="hidden sm:inline">{{ $t('header.about_us') }}</span>
-        </v-btn>
         <v-btn
           text
           size="small"

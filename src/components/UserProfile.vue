@@ -9,6 +9,7 @@
         </div>
         <div class="" v-if="isHaciendaAdmin">
           <PlanManagement />
+          <NotificationSettings />
           <HaciendaUserManagement />
         </div>
       </div>
@@ -28,6 +29,7 @@ import PasswordChange from '@/components/forms/auth/PasswordChange.vue'
 import HaciendaInfo from '@/components/hacienda/HaciendaInfo.vue'
 import PlanManagement from '@/components/hacienda/PlanManagement.vue'
 import HaciendaUserManagement from '@/components/hacienda/HaciendaUserManagement.vue'
+import NotificationSettings from '@/components/hacienda/NotificationSettings.vue'
 
 const authStore = useAuthStore()
 const haciendaStore = useHaciendaStore()

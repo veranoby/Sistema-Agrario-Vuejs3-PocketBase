@@ -16,7 +16,7 @@
 
 // Constants (module scope - evaluated once)
 const HTTP_STATUS = { BAD_REQUEST: 400, UNAUTHORIZED: 401, SERVER_ERROR: 500, OK: 200 }
-const VALID_ALERT_TYPES = ["actividad_critica", "bpa_vencido", "recordatorio", "actividad_asignada", "zona_atencion"]
+const VALID_ALERT_TYPES = ["actividad_critica", "bpa_vencido", "recordatorio", "actividad_asignada", "zona_atencion", "weekly_digest", "emergency"]
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const RESEND_API_URL = "https://api.resend.com/emails"
 const SETTINGS_CACHE_TTL = 60000 // 1 minute
@@ -168,6 +168,50 @@ const EMAIL_TEMPLATES = {
         ${data?.descripcion ? `<p style="margin: 0 0 10px 0; ${CSS.boldText}; color: #f5576c;">${data.descripcion}</p>` : ""}
         ${data?.actividadId ? `<p style="margin: 0; ${CSS.smallFontSize};"><a href="${frontendUrl}/actividades/${data.actividadId}">Ver actividad</a></p>` : ""}
       </div>`
+  },
+
+  weekly_digest: {
+    subject: (hacienda) => `📊 Resumen Gerencial Semanal - ${hacienda}`,
+    gradient: "linear-gradient(135deg, #43a047 0%, #1b5e20 100%)",
+    icon: "📊",
+    title: "Resumen Semanal",
+    color: "#43a047",
+    content: (data, frontendUrl) => `<div style="background: #ffffff; ${CSS.boxPadding}; border: 1px solid #e1e1e1; border-top: none; border-radius: 0 0 10px 10px;">
+      <h3 style="color: #43a047; border-bottom: 2px solid #e8f5e9; padding-bottom: 5px;">✅ Logros de la Semana Pasada</h3>
+      ${data.summary?.past?.length > 0 
+        ? `<ul style="${CSS.smallFontSize}; color: #555;">` + data.summary.past.map(log => `<li>${new Date(log.fecha).toLocaleDateString()}: Actividad registrada</li>`).join('') + `</ul>`
+        : `<p style="${CSS.smallFontSize}; color: #999;">No se registraron actividades completadas.</p>`
+      }
+      
+      <h3 style="color: #f57c00; border-bottom: 2px solid #fff3e0; padding-bottom: 5px; margin-top: 20px;">📅 Plan para esta Semana</h3>
+      ${data.summary?.future?.length > 0
+        ? `<ul style="${CSS.smallFontSize}; color: #555;">` + data.summary.future.map(p => `<li>${p.descripcion} (Vence: ${new Date(p.vencimiento).toLocaleDateString()})</li>`).join('') + `</ul>`
+        : `<p style="${CSS.smallFontSize}; color: #999;">No hay actividades programadas para esta semana.</p>`
+      }
+      
+      <div style="text-align: center; margin-top: 30px;">
+        <a href="${frontendUrl}/dashboard" style="background: #43a047; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ver Dashboard Completo</a>
+      </div>
+    </div>`
+  },
+
+  emergency: {
+    subject: (hacienda) => `🚨 ALERTA CRÍTICA - ${hacienda}`,
+    gradient: "linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%)",
+    icon: "🚨",
+    title: "Notificación de Emergencia",
+    color: "#d32f2f",
+    content: (data) => `<div style="background: #ffffff; ${CSS.boxPadding}; border: 1px solid #e1e1e1; border-top: none; border-radius: 0 0 10px 10px;">
+      <div style="background: #fff5f5; ${CSS.boxPadding}; border: 1px solid #ffcdd2; border-radius: 8px; text-align: center;">
+        <h2 style="color: #d32f2f; margin-top: 0;">Atención Inmediata Requerida</h2>
+        ${data.emergency_type === 'subscription_expiry' 
+          ? `<p style="${CSS.baseFontSize};">Su suscripción expirará en <strong>${data.days_remaining} días</strong>. Por favor, actualice su plan para evitar la suspensión del servicio.</p>`
+          : data.emergency_type === 'bpa_risk'
+          ? `<p style="${CSS.baseFontSize};">Se han detectado <strong>${data.critical_count} zonas</strong> con estado BPA crítico (menor al 50%). Se recomienda inspección urgente.</p>`
+          : `<p style="${CSS.baseFontSize};">Se ha detectado un evento crítico que requiere su atención en el sistema.</p>`
+        }
+      </div>
+    </div>`
   }
 }
 
@@ -330,7 +374,9 @@ routerAdd("GET", "/api/haciendas/:id/alerts", (e) => {
     return e.json(HTTP_STATUS.OK, {
       enabled_types: config.enabledTypes || [],
       recipients: config.recipients || [],
-      frequency: config.frequency || "immediate"
+      frequency: config.frequency || "immediate",
+      digestWeekly: config.digestWeekly || false,
+      emergencyAlerts: config.emergencyAlerts || false
     })
   } catch (err) {
     console.error("Error loading alert config:", err.message)
@@ -371,7 +417,9 @@ routerAdd("PUT", "/api/haciendas/:id/alerts", (e) => {
     record.set("alertConfig", {
       enabledTypes: body.enabled_types,
       recipients: body.recipients,
-      frequency: body.frequency || "immediate"
+      frequency: body.frequency || "immediate",
+      digestWeekly: body.digestWeekly || false,
+      emergencyAlerts: body.emergencyAlerts || false
     })
 
     $app.dao().saveRecord(record)
@@ -394,67 +442,51 @@ routerAdd("POST", "/api/modulos/:id/activate", (e) => {
   const moduloId = info.pathParam("id")
   const { haciendaId } = body || {}
 
-  if (!haciendaId) {
-    return e.json(HTTP_STATUS.BAD_REQUEST, { error: "haciendaId required" })
-  }
+  // ── Validación de inputs ──
+  if (!haciendaId) return e.json(HTTP_STATUS.BAD_REQUEST, { error: "haciendaId required" })
+  if (!moduloId)   return e.json(HTTP_STATUS.BAD_REQUEST, { error: "moduloId required" })
 
-  if (!moduloId) {
-    return e.json(HTTP_STATUS.BAD_REQUEST, { error: "moduloId required" })
+  // ── Validación de rol: solo superadmin puede activar módulos ──
+  const caller = info.authRecord
+  if (!caller || caller.get("role") !== "superadmin") {
+    return e.json(HTTP_STATUS.UNAUTHORIZED, {
+      error: "Solo un superadmin puede activar módulos. Contacta al equipo de ConAgri."
+    })
   }
 
   try {
-    // Verificar que el módulo existe
     const modulosCollection = $app.dao().findCollectionByNameOrId("modulos")
     const modulo = $app.dao().findFirstRecordByFilter(
       modulosCollection,
       $app.dao().filter("id = {:id}", { id: moduloId })
     )
+    if (!modulo) return e.json(404, { error: "Módulo no encontrado" })
 
-    if (!modulo) {
-      return e.json(404, { error: "Module not found" })
-    }
-
-    // Buscar suscripción existente para esta hacienda + módulo
     const subscriptionsCollection = $app.dao().findCollectionByNameOrId("subscriptions")
-    const existingSubscription = $app.dao().findFirstRecordByFilter(
+    const existing = $app.dao().findFirstRecordByFilter(
       subscriptionsCollection,
       $app.dao().filter("hacienda = {:haciendaId} && modulo = {:moduloId} && is_active = true", {
-        haciendaId,
-        moduloId
+        haciendaId, moduloId
       })
     )
-
-    // Si ya está activo, retornar éxito
-    if (existingSubscription) {
-      return e.json(HTTP_STATUS.OK, {
-        success: true,
-        message: "Module already active",
-        subscription_id: existingSubscription.id
-      })
+    if (existing) {
+      return e.json(HTTP_STATUS.OK, { success: true, message: "Módulo ya activo", subscription_id: existing.id })
     }
 
-    // Crear nueva suscripción
-    const newSubscription = $app.dao().createRecord(subscriptionsCollection, {
+    const newSub = $app.dao().createRecord(subscriptionsCollection, {
       hacienda: haciendaId,
       modulo: moduloId,
       is_active: true,
       start_date: new Date().toISOString().split('T')[0],
-      billing_cycle: "monthly"
+      billing_cycle: "monthly",
+      activated_by: caller.id
     })
 
-    return e.json(HTTP_STATUS.OK, {
-      success: true,
-      subscription_id: newSubscription.id,
-      modulo: moduloId,
-      hacienda: haciendaId
-    })
+    return e.json(HTTP_STATUS.OK, { success: true, subscription_id: newSub.id })
 
   } catch (err) {
-    console.error("Error activating module:", err.message)
-    return e.json(HTTP_STATUS.SERVER_ERROR, {
-      error: "Failed to activate module",
-      details: err.message
-    })
+    console.error("[activate] Error:", err.message)
+    return e.json(HTTP_STATUS.SERVER_ERROR, { error: "Error activando módulo", details: err.message })
   }
 }, $apis.requireAuth())
 
@@ -473,6 +505,13 @@ routerAdd("POST", "/api/modulos/:id/deactivate", (e) => {
 
   if (!moduloId) {
     return e.json(HTTP_STATUS.BAD_REQUEST, { error: "moduloId required" })
+  }
+
+  const caller = info.authRecord
+  if (!caller || caller.get("role") !== "superadmin") {
+    return e.json(HTTP_STATUS.UNAUTHORIZED, {
+      error: "Solo un superadmin puede desactivar módulos."
+    })
   }
 
   try {
@@ -1582,75 +1621,7 @@ function calculateNextExecution(frequency) {
  * POST /api/reports/check-pending
  * Verifica y ejecuta reportes programados pendientes
  */
-routerAdd("POST", "/api/reports/check-pending", async (e) => {
-  try {
-    const authRecord = $apis.requireAuth()(e)
-    const now = new Date().toISOString()
 
-    // Buscar colección de reportes programados
-    let scheduledCollection
-    try {
-      scheduledCollection = $app.dao().findCollectionByNameOrId("scheduled_reports")
-    } catch (err) {
-      // Colección no existe aún - retornar vacío (no es error)
-      return e.json(HTTP_STATUS.OK, {
-        success: true,
-        checked: now,
-        executed: 0,
-        pending: 0,
-        message: "Collection not created yet"
-      })
-    }
-
-    // Buscar reportes programados activos que deben ejecutarse
-    const reports = $app.dao().findRecordsByFilter(
-      scheduledCollection,
-      `isActive = true && nextExecution <= {:now}`,
-      "nextExecution",
-      100,
-      1,
-      null,
-      { now: now }
-    )
-
-    let executedCount = 0
-    const errors = []
-
-    for (const report of reports.items) {
-      try {
-        const reportType = report.get("type") || "custom"
-        const format = report.get("format") || "csv"
-        const recipients = report.get("recipients") || []
-        const filters = report.get("filters") || {}
-
-        // TODO: Generar reporte según tipo y formato
-        // Por ahora, solo actualizar nextExecution
-        console.log(`[Reports] Ejecutando reporte ${report.id}: ${report.get("name")}`)
-
-        // Calcular próxima ejecución según frecuencia
-        const nextRun = calculateNextExecution(report.get("frequency"))
-        report.set("nextExecution", nextRun)
-        report.set("lastExecuted", now)
-        $app.dao().saveRecord(report)
-
-        executedCount++
-      } catch (err) {
-        errors.push({ reportId: report.id, error: err.message })
-        console.error(`[Reports] Error ejecutando reporte ${report.id}:`, err)
-      }
-    }
-
-    return e.json(HTTP_STATUS.OK, {
-      success: true,
-      checked: now,
-      executed: executedCount,
-      pending: reports.items.length,
-      errors: errors.length > 0 ? errors : undefined
-    })
-  } catch (err) {
-    return handleEndpointError("check-pending", "check pending reports")(err)
-  }
-})
 
 /**
  * GET /api/reports/scheduled
@@ -1873,3 +1844,165 @@ routerAdd("DELETE", "/api/reports/scheduled/:id", (e) => {
     return handleEndpointError("deleting report", "delete scheduled report")(err)
   }
 })
+// ============================================
+// POST /api/ai/chat
+// Proxy seguro para OpenRouter — la key nunca llega al frontend
+// Body: { prompt, context, haciendaId }
+// ============================================
+routerAdd("POST", "/api/ai/chat", (e) => {
+  const info = e.requestInfo()
+  const { prompt, context, haciendaId } = info.json || {}
+
+  if (!prompt) return e.json(HTTP_STATUS.BAD_REQUEST, { error: "prompt required" })
+  if (!haciendaId) return e.json(HTTP_STATUS.BAD_REQUEST, { error: "haciendaId required" })
+
+  const caller = info.authRecord
+  if (!caller) return e.json(HTTP_STATUS.UNAUTHORIZED, { error: "Auth required" })
+
+  // ── Resolver API key: BYOK (hacienda) > key global ──
+  let openRouterKey = null
+  let isGlobalKey = false
+
+  try {
+    const haciendaCol = $app.dao().findCollectionByNameOrId("Haciendas")
+    const hacienda = $app.dao().findFirstRecordByFilter(
+      haciendaCol,
+      $app.dao().filter("id = {:id}", { id: haciendaId })
+    )
+    openRouterKey = hacienda ? hacienda.get("openrouter_key") : null
+  } catch (_) {}
+
+  if (!openRouterKey) {
+    const settings = getSettings()
+    openRouterKey = settings.get("GLOBAL_OPENROUTER_KEY")
+    isGlobalKey = true
+  }
+
+  if (!openRouterKey) {
+    return e.json(HTTP_STATUS.BAD_REQUEST, {
+      error: "No hay API key de IA configurada. Ingresa tu propia key en configuración de hacienda."
+    })
+  }
+
+  // ── Rate limiting para key global: max 20 requests/día por hacienda ──
+  if (isGlobalKey) {
+    const today = new Date().toISOString().split('T')[0]
+    const rateLimitKey = "ai_usage_" + haciendaId + "_" + today
+
+    // Leer uso del día desde system_config (campo temporal en params)
+    let usageToday = 0
+    try {
+      const paramRecord = $app.dao().findFirstRecordByFilter(
+        $app.dao().findCollectionByNameOrId("_params"),
+        $app.dao().filter("key = {:key}", { key: rateLimitKey })
+      )
+      usageToday = paramRecord ? parseInt(paramRecord.get("value") || "0") : 0
+    } catch (_) {}
+
+    const dailyLimit = 20
+    if (usageToday >= dailyLimit) {
+      return e.json(429, {
+        error: "Límite diario de IA alcanzado (" + dailyLimit + " consultas/día). Ingresa tu propia API key para uso ilimitado.",
+        limit: dailyLimit,
+        used: usageToday
+      })
+    }
+
+    // Incrementar contador (fire-and-forget)
+    setTimeout(() => {
+      try {
+        const paramsCol = $app.dao().findCollectionByNameOrId("_params")
+        try {
+          const existing = $app.dao().findFirstRecordByFilter(
+            paramsCol,
+            $app.dao().filter("key = {:key}", { key: rateLimitKey })
+          )
+          existing.set("value", String(usageToday + 1))
+          $app.dao().saveRecord(existing)
+        } catch (_) {
+          $app.dao().createRecord(paramsCol, { key: rateLimitKey, value: "1" })
+        }
+      } catch (err) {
+        console.error("[AI rate limit] Error updating counter:", err.message)
+      }
+    }, 0)
+  }
+
+  // ── Llamada a OpenRouter ──
+  try {
+    const systemPrompt = `Eres un asistente agrícola experto para ConAgri.
+Analizas datos reales de siembras, actividades y zonas para dar recomendaciones concretas y accionables.
+Responde SIEMPRE con este JSON exacto, sin texto adicional fuera del JSON:
+
+{
+  "diagnostico": "Texto de análisis en 2-4 oraciones. Menciona el estado actual y los problemas detectados.",
+  "acciones": [
+    {
+      "id": "accion_1",
+      "tipo": "create_recordatorio | create_programacion | create_actividad | update_actividad | info",
+      "titulo": "Título corto de la acción (max 8 palabras)",
+      "descripcion": "Qué hará exactamente esta acción",
+      "prioridad": "alta | media | baja",
+      "data": {
+        // campos necesarios para ejecutar la acción en el store correspondiente
+        // para create_recordatorio: { titulo, descripcion, fecha, prioridad }
+        // para create_programacion: { nombre, descripcion, fecha_programada, tipo_actividad }
+        // para create_actividad: { nombre, tipo_actividad, fecha_programada, descripcion }
+        // para info: {} (solo informativa, sin acción ejecutable)
+      }
+    }
+  ]
+}
+
+Máximo 4 acciones. Responde en español. Si no hay acciones concretas que tomar, usa tipo "info".
+CRÍTICO: responde SOLO el JSON, sin markdown, sin bloques de código, sin texto adicional.`;
+
+    const userMessage = context
+      ? "Contexto actual:\n" + JSON.stringify(context, null, 2) + "\n\nConsulta: " + prompt
+      : prompt
+
+    const response = $http.send({
+      url: "https://openrouter.ai/api/v1/chat/completions",
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + openRouterKey,
+        "HTTP-Referer": "https://conagri.app",
+        "X-Title": "ConAgri"
+      },
+      body: JSON.stringify({
+        model: isGlobalKey ? "openai/gpt-4o-mini" : "openai/gpt-4o",
+        max_tokens: 800,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userMessage }
+        ]
+      }),
+      timeout: 30000
+    })
+
+    if (response.statusCode !== 200) {
+      console.error("[AI proxy] OpenRouter error:", response.body)
+      return e.json(HTTP_STATUS.SERVER_ERROR, {
+        error: "Error en servicio de IA",
+        details: response.statusCode
+      })
+    }
+
+    const data = response.json || {}
+    const text = data.choices?.[0]?.message?.content || "Sin respuesta"
+    const tokensUsed = data.usage?.total_tokens || 0
+
+    return e.json(HTTP_STATUS.OK, {
+      success: true,
+      response: text,
+      tokens_used: tokensUsed,
+      model: data.model || "unknown",
+      is_global_key: isGlobalKey
+    })
+
+  } catch (err) {
+    console.error("[AI proxy] Error:", err.message)
+    return e.json(HTTP_STATUS.SERVER_ERROR, { error: "Error conectando con IA", details: err.message })
+  }
+}, $apis.requireAuth())

@@ -1,57 +1,50 @@
 {
-  "identity": {
-    "name": "Sistema Integral de Gestión Agrícola",
-    "type": "SaaS Modular Offline-first",
-    "vision": "Gestión data-driven bajo estándares BPA",
-    "version": "6.0",
-    "status": "PRODUCTION READY (2026-04-15)"
+  "stack": {
+    "frontend": "Vue 3, Pinia, Vuetify 3, Tailwind CSS",
+    "backend": "PocketBase (Go + JSVM Hooks)",
+    "database": "SQLite (PocketBase internal)",
+    "offline_storage": "IndexedDB (sync store) + LocalStorage"
   },
-
-  "business_model": {
-    "monetization": "Mensual base + Usuarios + Módulos Plus (Finanzas, AI, GIS, Programación)",
-    "ai_strategy": "Sugerencias técnicas contextuales (riego/fertilización) vía botón"
+  "data_flows": {
+    "sync": "Action-based Queue (src/stores/sync/queueProcessor.js) -> IndexedDB -> PocketBase REST. Atomicity per-item.",
+    "rbac": "Backend enforcement for SuperAdmin role on critical hooks (modules). Frontend route guards.",
+    "gis": "Stores load GeoJSON -> GisMapComponent parses manually (imperative Leaflet) -> DrawnItems",
+    "signatures": "Bitacora data -> digitalSignature.js (WebCrypto RSA-PSS) -> base64 stored in PocketBase",
+    "ia_assistant": "Frontend UI -> Backend Proxy (/api/ai/chat) -> OpenRouter. Structured JSON response allows action execution (Human-in-the-loop).",
+    "bitacora_execution": "UI Modo A -> Bitacora POST -> Finalize Programacion PATCH -> Recalculate 'proxima_ejecucion' locally then sync."
   },
-
-  "core_modules": {
-    "users": "Safeguard RBAC (SuperAdmin, Admin, Auditor, Operador)",
-    "siembras": "Dashboard paginado + Mapas GIS + Catálogos",
-    "bitacora": "Formularios adaptativos + BPA scoring + Fotos + Offline Sync",
-    "programaciones": "Recurrencia + Batch operations + Compliance Checker",
-    "admin": "Analytics global + Gestión suscripciones + Logs + Minería de datos"
-  },
-
-  "architecture": {
-    "frontend": "Vue 3.5 + Vuetify 3.8 + Pinia (Modular)",
-    "backend": "PocketBase 0.21 (SQLite WAL)",
-    "patterns": ["Container/Presenter", "Composition API", "Service Layer", "N+1 Prevention"],
-    "offline_sync": "SyncQueue + Conflict resolution (409) + IndexedDB roadmap"
-  },
-
-  "scalability": {
-    "limit": "200 concurrent users (SQLite write lock bottleneck)",
-    "roadmap": [
-      "Fase 1: IndexedDB + Paginación API (Actual)",
-      "Fase 2: Híbrido PostgreSQL (Auth + Data)",
-      "Fase 3: Node.js + PostgreSQL (10k+ users)"
+  "security_audit": {
+    "authentication": "PocketBase JWT. Secure.",
+    "authorization": "Verified. Backend hooks enforce roles. Proxy endpoints protect 3P keys. Missing some deep filters for tenant isolation in Analytics/Users.",
+    "vulnerabilities": [
+      {
+         "id": "V1",
+         "issue": "Plan bypass",
+         "risk": "High",
+         "description": "Operators can potentially perform actions ignoring quotas if UI doesn't reactively block them (Plan Store P6)."
+      }
+    ],
+    "remediations": [
+      {
+        "id": "B1",
+        "issue": "Exposed Resend API Key",
+        "fix": "Moved to Backend Proxy /api/alerts/send. Frontend keys removed.",
+        "status": "✅ VERIFIED (100% Cleanup)"
+      },
+      {
+        "id": "B3",
+        "issue": "Module Activation Bypass",
+        "fix": "Enforced superadmin role check in pb_hooks/main.js.",
+        "status": "✅ VERIFIED"
+      }
     ]
   },
-
-  "workflows": {
-    "execution": "Programación → Alarma → Bitácora (hereda métricas)",
-    "batch": "v-dialog → Selección fechas → Inserción directa bitacoraStore",
-    "bpa": "Métricas actividad → Scoring automático → Alertas cumplimiento"
-  },
-
-  "optimizations": {
-    "concurrency": "Promise.all en App.vue y cargado de datos",
-    "error_handling": "handleEndpointError centralizado (87% DRY en hooks)",
-    "bundle": "304 KB gzipped (Lodash removed, tree-shaking)"
-  },
-
-  "next_roadmap": {
-    "phase_7": "Testing & Calidad (Vitest/Playwright) - PRIORIDAD P0",
-    "phase_9": "Refactor monolíticos (SiembraWorkspace, ProgramacionPanel)",
-    "phase_10": "Accesibilidad WCAG + CI/CD",
-    "v3_future": ["Predictive Analytics", "IoT Sensors", "Native App", "Blockchain"]
+  "critical_flows_status": {
+    "checkout_suscripciones": "🟡 Parcial. Enforced at backend level, but misses proper Stripe/payment gateway transaction rollback (financial atomicity).",
+    "sincronizacion_offline": "✅ Listo Producción. Robust. Race conditions fixed with isProcessing lock and atomic persistence.",
+    "asistente_ia": "✅ Listo Producción. End-to-end functionality complete with secure proxy and structured actions.",
+    "auditoria_bpa": "✅ Listo Producción. Checklists and Modos A/B functioning perfectly with RSA digital signatures.",
+    "alertas_y_recordatorios": "❌ No Implementado (Completamente). Backend exists for saving rules, but chronjobs or external push API (APNs/FCM/Email triggers) missing actual linkage.",
+    "finanzas": "🟡 Parcial. CRUD available but SRI invoicing compliance, taxation formats, and linkages with crops harvest exist as stubs."
   }
 }

@@ -67,420 +67,214 @@
           </div>
         </div>
       </section>
+      <!-- Sección: Pilares Tecnológicos de ConAgri (Unificados) -->
       <section class="w-full py-12 md:py-24 lg:py-32">
         <div class="container px-4 md:px-6">
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div class="flex flex-col items-center text-center space-y-4">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                class="h-8 w-8 text-green-500"
-              >
-                <path d="M8 2v4"></path>
-                <path d="M16 2v4"></path>
-                <rect width="18" height="18" x="3" y="4" rx="2"></rect>
-                <path d="M3 10h18"></path>
-              </svg>
-              <h3 class="text-xl font-bold text-green-700">Planificación de cultivos</h3>
-              <p class="text-muted-foreground">
-                Simplifica la planificación de tus cultivos con nuestras herramientas intuitivas,
-                ayudándote a tomar decisiones informadas para obtener rendimientos óptimos.ultivos
-                con nuestras
+          <div class="flex flex-col items-center justify-center space-y-4 text-center mb-12">
+            <div class="space-y-2">
+              <h2 class="text-3xl font-bold tracking-tighter sm:text-5xl text-green-900">
+                Tres pilares diseñados para el campo
+              </h2>
+              <p class="max-w-[900px] text-muted-foreground md:text-xl">
+                Unificamos la tecnología de encriptación legal, geolocalización avanzada y persistencia offline para que tu operación esté siempre lista para auditorías de certificación.
               </p>
             </div>
-            <div class="flex flex-col items-center text-center space-y-4">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                class="h-8 w-8 text-green-500"
-              >
-                <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
-              </svg>
-              <h3 class="text-xl font-bold text-green-700">Monitoreo del clima</h3>
-              <p class="text-muted-foreground">
-                Mantente al tanto del clima con datos y pronósticos en tiempo real, lo que te
-                permitirá planificar tus operaciones en consecuencia.
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Pilar 1: Firma Digital RSA -->
+            <div class="flex flex-col items-center text-center space-y-3 p-6 border rounded-xl shadow-sm bg-white hover:shadow-md transition-shadow">
+              <div class="p-3 bg-green-50 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-8 w-8 text-green-600">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                  <path d="m9 11 2 2 4-4"/>
+                </svg>
+              </div>
+              <h3 class="text-xl font-bold text-green-800">Firma Criptográfica RSA</h3>
+              <p class="text-sm text-muted-foreground">
+                Garantice la inmutabilidad de su bitácora digital. Cada actividad realizada es sellada criptográficamente en el dispositivo del operario, ofreciendo plena validez legal ante auditores de GlobalG.A.P.
               </p>
             </div>
-            <div class="flex flex-col items-center text-center space-y-4">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                class="h-8 w-8 text-green-500"
-              >
-                <line x1="12" x2="12" y1="20" y2="10"></line>
-                <line x1="18" x2="18" y1="20" y2="4"></line>
-                <line x1="6" x2="6" y1="20" y2="16"></line>
-              </svg>
-              <h3 class="text-xl font-bold text-green-700">Análisis de mercado</h3>
-              <p class="text-muted-foreground">
-                Obtén valiosos insights sobre las tendencias y los precios del mercado para tomar
-                decisiones informadas sobre tus cultivos y ventas.
+
+            <!-- Pilar 2: Mapeo GIS Leaflet -->
+            <div class="flex flex-col items-center text-center space-y-3 p-6 border rounded-xl shadow-sm bg-white hover:shadow-md transition-shadow">
+              <div class="p-3 bg-green-50 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-8 w-8 text-green-600">
+                  <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
+                  <line x1="9" y1="3" x2="9" y2="18"/>
+                  <line x1="15" y1="6" x2="15" y2="21"/>
+                </svg>
+              </div>
+              <h3 class="text-xl font-bold text-green-800">Zonas GIS Interactivas</h3>
+              <p class="text-sm text-muted-foreground">
+                Visualice y delimite con precisión absoluta sus áreas de cultivo, lotes y zonas de impacto ecológico mediante mapas Leaflet inteligentes. Ideal para el control espacial y ambiental.
+              </p>
+            </div>
+
+            <!-- Pilar 3: Operación Offline-First -->
+            <div class="flex flex-col items-center text-center space-y-3 p-6 border rounded-xl shadow-sm bg-white hover:shadow-md transition-shadow">
+              <div class="p-3 bg-green-50 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-8 w-8 text-green-600">
+                  <path d="M1 1v22h22"/>
+                  <path d="M16.7 8a3 3 0 0 0-2.7-2 3 3 0 0 0-2.9 2.5 4.5 4.5 0 0 0-4.1 4.5 4.5 4.5 0 0 0 4.1 4.5h6a3.5 3.5 0 0 0 2.5-6h-.9"/>
+                </svg>
+              </div>
+              <h3 class="text-xl font-bold text-green-800">Resiliencia Offline</h3>
+              <p class="text-sm text-muted-foreground">
+                El campo no siempre tiene señal. Trabaje con absoluta normalidad en zonas remotas gracias a nuestra persistencia local con IndexedDB; la sincronización es automatizada al reconectarse.
               </p>
             </div>
           </div>
         </div>
       </section>
+
+      <!-- Sección: Nuestro Propósito (Integración de Quiénes Somos) -->
+      <section class="w-full py-12 md:py-24 lg:py-32 bg-[#f9fafb] border-y">
+        <div class="container px-4 md:px-6">
+          <div class="grid items-center gap-6 lg:grid-cols-2 lg:gap-12">
+            <div class="space-y-4">
+              <div class="inline-block bg-green-100 text-green-800 px-3 py-1 text-sm font-semibold rounded-full">
+                Nuestra Misión
+              </div>
+              <h2 class="text-3xl font-bold tracking-tighter sm:text-4xl text-green-900">
+                Democratizando la confianza y trazabilidad en el sector agrícola
+              </h2>
+              <p class="text-muted-foreground md:text-lg">
+                ConAgri nace del firme compromiso de facilitar la transición digital en el campo. Nos enfocamos en dotar a pequeños y grandes productores de las herramientas necesarias para cumplir rigurosamente con las Buenas Prácticas Agrícolas (BPA).
+              </p>
+              <p class="text-muted-foreground md:text-lg">
+                Eliminamos la ineficiencia y vulnerabilidad de las bitácoras físicas a través de un ecosistema seguro, auditable y descentralizado, respaldando el trabajo diario de agricultores, auditores y operadores con integridad legal y técnica.
+              </p>
+            </div>
+            <img
+              src="https://images.pexels.com/photos/2255866/pexels-photo-2255866.jpeg"
+              width="550"
+              height="350"
+              alt="Misión del Campo"
+              class="mx-auto aspect-video overflow-hidden rounded-xl object-cover object-center sm:w-full"
+            />
+          </div>
+        </div>
+      </section>
+      <!-- Sección: Beneficios de la Digitalización (Cualitativos) -->
       <section class="w-full py-12 md:py-24 lg:py-32 bg-muted">
         <div class="container px-4 md:px-6">
           <div class="flex flex-col items-center justify-center space-y-4 text-center">
             <div class="space-y-2">
-              <h2 class="text-3xl font-bold tracking-tighter sm:text-5xl">
-                Confiado por las principales agroempresas
+              <h2 class="text-3xl font-bold tracking-tighter sm:text-5xl text-green-900">
+                Beneficios de la Digitalización Real
               </h2>
-              <p
-                class="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed"
-              >
-                Nuestro equipo de expertos agrícolas cuenta con décadas de experiencia en la
-                industria, ayudando a agricultores y agroempresas a optimizar sus operaciones e
-                impulsar un crecimiento sostenible.
+              <p class="max-w-[900px] text-muted-foreground md:text-xl">
+                Nuestra plataforma elimina los cuellos de botella administrativos y asegura que su producción esté siempre lista para auditorías de certificación.
               </p>
             </div>
-            <div
-              class="grid w-full grid-cols-2 lg:grid-cols-5 items-center justify-center gap-8 lg:gap-12 [&amp;>img]:mx-auto"
-            >
-              <img
-                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQmVq-OmHL5H_5P8b1k306pFddOe3049-il2A&s"
-                width="140"
-                height="70"
-                alt="Logo"
-                style=""
-                class="aspect-[2/1] overflow-hidden  object-contain object-center"
-              />
-              <img
-                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQmVq-OmHL5H_5P8b1k306pFddOe3049-il2A&s"
-                width="140"
-                height="70"
-                alt="Logo"
-                style=""
-                class="aspect-[2/1] overflow-hidden  object-contain object-center"
-              />
-              <img
-                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQmVq-OmHL5H_5P8b1k306pFddOe3049-il2A&s"
-                width="140"
-                height="70"
-                alt="Logo"
-                class="aspect-[2/1] overflow-hidden  object-contain object-center"
-              />
-              <img
-                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQmVq-OmHL5H_5P8b1k306pFddOe3049-il2A&s"
-                width="140"
-                height="70"
-                alt="Logo"
-                class="aspect-[2/1] overflow-hidden  object-contain object-center"
-              />
-              <img
-                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQmVq-OmHL5H_5P8b1k306pFddOe3049-il2A&s"
-                width="140"
-                height="70"
-                style=""
-                alt="Logo"
-                class="aspect-[2/1] overflow-hidden  object-contain object-center"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-      <section class="w-full py-12 md:py-24 lg:py-32">
-        <div class="container px-4 md:px-6">
-          <div class="flex flex-col items-center justify-center space-y-4 text-center">
-            <div class="space-y-2">
-              <h2 class="text-3xl font-bold tracking-tighter sm:text-5xl">
-                Supera los desafíos de la agricultura moderna
-              </h2>
-              <p
-                class="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed"
-              >
-                Los agricultores y las agroempresas se enfrentan a una miríada de desafíos
-                complejos, desde la optimización de la asignación de recursos y la mejora de los
-                rendimientos hasta el cumplimiento normativo y la mejora de la sostenibilidad.
-                Nuestra plataforma está diseñada para abordar estos problemas y desbloquear nuevos
-                niveles de eficiencia y rentabilidad.
-              </p>
-            </div>
-            <div class="mx-auto grid max-w-5xl items-center gap-6 py-12 lg:grid-cols-2 lg:gap-12">
-              <img
-                src="https://images.pexels.com/photos/1595108/pexels-photo-1595108.jpeg"
-                width="550"
-                height="310"
-                alt="Problema"
-                style=""
-                class="mx-auto aspect-video overflow-hidden rounded-xl object-cover object-center sm:w-full lg:order-last"
-              />
-              <div class="flex flex-col justify-center space-y-4">
-                <ul class="grid gap-6">
-                  <li>
-                    <div class="grid gap-1">
-                      <h3 class="text-xl font-bold">Optimizar la asignación de recursos</h3>
-                      <p class="text-muted-foreground">
-                        Aproveche los insights basados en datos para tomar decisiones informadas
-                        sobre la asignación de recursos, maximizando la productividad y la
-                        rentabilidad.
-                      </p>
-                    </div>
-                  </li>
-                  <li>
-                    <div class="grid gap-1">
-                      <h3 class="text-xl font-bold">Mejorar el rendimiento y la calidad</h3>
-                      <p class="text-muted-foreground">
-                        Utilice análisis avanzados y técnicas de agricultura de precisión para
-                        mejorar los rendimientos de los cultivos, la calidad de los productos y
-                        minimizar los desperdicios.
-                      </p>
-                    </div>
-                  </li>
-                  <li>
-                    <div class="grid gap-1">
-                      <h3 class="text-xl font-bold">Garantizar el cumplimiento normativo</h3>
-                      <p class="text-muted-foreground">
-                        Manténgase al día con las regulaciones y directrices de la industria en
-                        evolución con nuestras herramientas integrales de gestión del cumplimiento.
-                      </p>
-                    </div>
-                  </li>
-                </ul>
+            <div class="grid max-w-5xl grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3 w-full mt-8">
+              <div class="flex flex-col items-center justify-center space-y-2 p-6 border rounded-xl bg-white shadow-sm">
+                <h3 class="text-4xl font-bold text-green-700">100%</h3>
+                <p class="font-semibold text-gray-700">Trazabilidad Inmutable</p>
+                <p class="text-xs text-muted-foreground text-center">Registro seguro desde la siembra hasta la cosecha</p>
+              </div>
+              <div class="flex flex-col items-center justify-center space-y-2 p-6 border rounded-xl bg-white shadow-sm">
+                <h3 class="text-4xl font-bold text-green-700">Offline</h3>
+                <p class="font-semibold text-gray-700">Persistencia de Campo</p>
+                <p class="text-xs text-muted-foreground text-center">Sincronización robusta y libre de pérdida de datos</p>
+              </div>
+              <div class="flex flex-col items-center justify-center space-y-2 p-6 border rounded-xl bg-white shadow-sm">
+                <h3 class="text-4xl font-bold text-green-700">RSA</h3>
+                <p class="font-semibold text-gray-700">Seguridad en Firmas</p>
+                <p class="text-xs text-muted-foreground text-center">Integridad legal verificable para sus bitácoras</p>
               </div>
             </div>
           </div>
         </div>
       </section>
-      <section class="w-full py-12 md:py-24 lg:py-32 bg-muted">
-        <div class="container px-4 md:px-6">
-          <div class="flex flex-col items-center justify-center space-y-4 text-center">
-            <div class="space-y-2">
-              <h2 class="text-3xl font-bold tracking-tighter sm:text-5xl">
-                Desbloquea el poder de nuestra plataforma
-              </h2>
-              <p
-                class="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed"
-              >
-                Nuestra completa plataforma SaaS ofrece una suite de funciones y herramientas
-                avanzadas para agilizar tus operaciones agrícolas, mejorar la toma de decisiones e
-                impulsar un crecimiento sostenible.
-              </p>
-            </div>
-            <div
-              class="mx-auto grid max-w-5xl items-start gap-8 sm:max-w-4xl sm:grid-cols-2 md:gap-12 lg:max-w-5xl lg:grid-cols-3"
-            >
-              <div class="grid gap-1">
-                <h3 class="text-lg font-bold">Agricultura de precisión</h3>
-                <p class="text-sm text-muted-foreground">
-                  Aproveche los datos avanzados de sensores, imágenes por satélite y aprendizaje
-                  automático para optimizar la asignación de recursos, mejorar los rendimientos y
-                  aumentar la sostenibilidad.
-                </p>
-              </div>
-              <div class="grid gap-1">
-                <h3 class="text-lg font-bold">Optimización de la cadena de suministro</h3>
-                <p class="text-sm text-muted-foreground">
-                  Agiliza las operaciones de tu cadena de suministro, desde la gestión de
-                  inventarios hasta la logística, para garantizar una entrega oportuna y minimizar
-                  los desperdicios.
-                </p>
-              </div>
-              <div class="grid gap-1">
-                <h3 class="text-lg font-bold">Cumplimiento normativo</h3>
-                <p class="text-sm text-muted-foreground">
-                  Manténte al día con las últimas regulaciones y directrices de la industria, y
-                  automatiza los informes de cumplimiento para evitar costosas sanciones.
-                </p>
-              </div>
-              <div class="grid gap-1">
-                <h3 class="text-lg font-bold">Análisis predictivo</h3>
-                <p class="text-sm text-muted-foreground">
-                  Aproveche los análisis avanzados y el aprendizaje automático para pronosticar
-                  tendencias del mercado, optimizar la producción y tomar decisiones basadas en
-                  datos.
-                </p>
-              </div>
-              <div class="grid gap-1">
-                <h3 class="text-lg font-bold">Seguimiento de la sostenibilidad</h3>
-                <p class="text-sm text-muted-foreground">
-                  Monitorea e informa sobre tu impacto ambiental, ayudándote a cumplir con los
-                  objetivos de sostenibilidad y atraer a consumidores conscientes del medio
-                  ambiente.
-                </p>
-              </div>
-              <div class="grid gap-1">
-                <h3 class="text-lg font-bold">Mercado integrado</h3>
-                <p class="text-sm text-muted-foreground">
-                  Conéctate con una red de proveedores, compradores y proveedores de servicios de
-                  confianza para agilizar tus operaciones y acceder a nuevas fuentes de ingresos.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-      <section class="w-full py-12 md:py-24 lg:py-32">
-        <div class="container px-4 md:px-6">
-          <div class="flex flex-col items-center justify-center space-y-4 text-center">
-            <div class="space-y-2">
-              <h2 class="text-3xl font-bold tracking-tighter sm:text-5xl">
-                Resultados medibles para tu negocio
-              </h2>
-              <p
-                class="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed"
-              >
-                Nuestra plataforma ha ayudado a nuestros clientes a lograr mejoras significativas en
-                métricas clave de desempeño, impulsando un crecimiento y una rentabilidad
-                sostenibles.
-              </p>
-            </div>
-            <div class="grid max-w-5xl grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3">
-              <div class="flex flex-col items-center justify-center space-y-2">
-                <h3 class="text-4xl font-bold text-green">25%</h3>
-                <p class="text-muted-foreground">Aumento en los rendimientos de los cultivos</p>
-              </div>
-              <div class="flex flex-col items-center justify-center space-y-2">
-                <h3 class="text-4xl font-bold text-green">18%</h3>
-                <p class="text-muted-foreground">Reducción de desperdicios de recursos</p>
-              </div>
-              <div class="flex flex-col items-center justify-center space-y-2">
-                <h3 class="text-4xl font-bold text-green">32%</h3>
-                <p class="text-muted-foreground">Mejora en la eficiencia operativa</p>
-              </div>
-              <div class="flex flex-col items-center justify-center space-y-2">
-                <h3 class="text-4xl font-bold text-green">$1.2M</h3>
-                <p class="text-muted-foreground">Ahorro de costos anuales</p>
-              </div>
-              <div class="flex flex-col items-center justify-center space-y-2">
-                <h3 class="text-4xl font-bold text-green">95%</h3>
-                <p class="text-muted-foreground">Tasa de satisfacción del cliente</p>
-              </div>
-              <div class="flex flex-col items-center justify-center space-y-2">
-                <h3 class="text-4xl font-bold text-green">15%</h3>
-                <p class="text-muted-foreground">Aumento de los ingresos</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+
+      <!-- Sección: Planes y Suscripción -->
       <section class="w-full py-12 md:py-24 lg:py-32">
         <div class="container px-6 md:px-8">
           <div class="flex flex-col items-center justify-center space-y-4 text-center">
             <div class="space-y-2">
-              <h2 class="text-3xl font-bold tracking-tighter sm:text-5xl">Nuestros Planes</h2>
-              <p
-                class="text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed"
-              >
-                Elige el plan que mejor se adapte a tus necesidades.
+              <h2 class="text-3xl font-bold tracking-tighter sm:text-5xl text-green-900">Nuestros Planes</h2>
+              <p class="text-muted-foreground md:text-xl">
+                Elige el plan que mejor se adapte a tus necesidades de roles y equipo.
               </p>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-12">
-              <div
-                class="border text-card-foreground bg-white shadow-lg "
-                data-v0-t="card"
-              >
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-12 w-full max-w-5xl mt-8">
+              <!-- Plan Gratis -->
+              <div class="border text-card-foreground bg-white shadow-lg rounded-xl flex flex-col justify-between" data-v0-t="card">
                 <div class="flex flex-col space-y-1.5 p-6">
-                  <h3
-                    class="whitespace-nowrap text-2xl font-semibold leading-none tracking-tight text-green-700"
-                  >
+                  <h3 class="whitespace-nowrap text-2xl font-semibold leading-none tracking-tight text-green-700">
                     Gratis
                   </h3>
-                  <p class="text-xs text-muted-foreground">1 usuario con limitaciones</p>
+                  <p class="text-xs text-muted-foreground">1 usuario administrador para control básico</p>
                 </div>
                 <div class="p-6">
                   <div class="flex flex-col gap-4">
-                    <div class="flex items-left justify-between">
+                    <div class="flex items-center justify-between border-b pb-2">
                       <span>Usuarios:</span>
-                      <span class="text-xs">1</span>
+                      <span class="text-sm font-semibold">1</span>
                     </div>
-                    <div class="flex items-right justify-between">
-                      <span>Roles:</span>
-                      <span class="text-xs">Admin</span>
+                    <div class="flex items-center justify-between border-b pb-2">
+                      <span>Roles admitidos:</span>
+                      <span class="text-sm font-semibold">Administrador</span>
                     </div>
                   </div>
                 </div>
-                <div class="flex items-center p-6">
-                  <button
-                    class="inline-flex h-10 items-center justify-center rounded-md bg-success px-8 text-xs text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
-                  >
+                <div class="flex items-center p-6 mt-auto">
+                  <button class="inline-flex h-10 w-full items-center justify-center rounded-md bg-success text-white px-8 text-xs font-semibold shadow hover:bg-success/90 transition-colors">
                     Registrarse
                   </button>
                 </div>
               </div>
-              <div
-                class="border text-card-foreground bg-white shadow-lg "
-                data-v0-t="card"
-              >
+
+              <!-- Plan Básico -->
+              <div class="border text-card-foreground bg-white shadow-lg rounded-xl flex flex-col justify-between" data-v0-t="card">
                 <div class="flex flex-col space-y-1.5 p-6">
-                  <h3
-                    class="whitespace-nowrap text-2xl font-semibold leading-none tracking-tight text-green-700"
-                  >
+                  <h3 class="whitespace-nowrap text-2xl font-semibold leading-none tracking-tight text-green-700">
                     Básico
                   </h3>
-                  <p class="text-xs text-muted-foreground">Roles: admin, auditor, operador</p>
+                  <p class="text-xs text-muted-foreground">Roles colaborativos para equipos pequeños</p>
                 </div>
                 <div class="p-6">
                   <div class="flex flex-col gap-4">
-                    <div class="flex items-center justify-between">
+                    <div class="flex items-center justify-between border-b pb-2">
                       <span>Usuarios:</span>
-                      <span class="text-xs">3</span>
+                      <span class="text-sm font-semibold">3</span>
                     </div>
-                    <div class="flex items-center justify-between">
-                      <span>Roles:</span>
-                      <span class="text-xs">Admin, Supervisor, Operador</span>
+                    <div class="flex items-center justify-between border-b pb-2">
+                      <span>Roles admitidos:</span>
+                      <span class="text-sm font-semibold text-right">Admin(1), Auditor(1), Operador(1)</span>
                     </div>
                   </div>
                 </div>
-                <div class="flex items-center p-6">
-                  <button
-                    class="inline-flex h-10 items-center justify-center rounded-md bg-success px-8 text-xs text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
-                  >
+                <div class="flex items-center p-6 mt-auto">
+                  <button class="inline-flex h-10 w-full items-center justify-center rounded-md bg-success text-white px-8 text-xs font-semibold shadow hover:bg-success/90 transition-colors">
                     Registrarse
                   </button>
                 </div>
               </div>
-              <div
-                class="border text-card-foreground bg-white shadow-lg "
-                data-v0-t="card"
-              >
+
+              <!-- Plan Premium -->
+              <div class="border text-card-foreground bg-white shadow-lg rounded-xl flex flex-col justify-between" data-v0-t="card">
                 <div class="flex flex-col space-y-1.5 p-6">
-                  <h3
-                    class="whitespace-nowrap text-2xl font-semibold leading-none tracking-tight text-green-700"
-                  >
+                  <h3 class="whitespace-nowrap text-2xl font-semibold leading-none tracking-tight text-green-700">
                     Premium
                   </h3>
-                  <p class="text-xs text-muted-foreground">Roles: admin, auditor, operador</p>
+                  <p class="text-xs text-muted-foreground">Completa trazabilidad para agroempresas consolidadas</p>
                 </div>
                 <div class="p-6">
                   <div class="flex flex-col gap-4">
-                    <div class="flex items-center justify-between">
+                    <div class="flex items-center justify-between border-b pb-2">
                       <span>Usuarios:</span>
-                      <span class="text-xs">10</span>
+                      <span class="text-sm font-semibold">9</span>
                     </div>
-                    <div class="flex items-center justify-between">
-                      <span>Roles:</span>
-                      <span class="text-xs">Admin, Supervisor(3), Operador(6)</span>
+                    <div class="flex items-center justify-between border-b pb-2">
+                      <span>Roles admitidos:</span>
+                      <span class="text-sm font-semibold text-right">Admin(1), Auditor(2), Operador(6)</span>
                     </div>
                   </div>
                 </div>
-                <div class="flex items-center p-6">
-                  <button
-                    class="inline-flex h-10 items-center justify-center rounded-md bg-success px-8 text-xs text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
-                  >
+                <div class="flex items-center p-6 mt-auto">
+                  <button class="inline-flex h-10 w-full items-center justify-center rounded-md bg-success text-white px-8 text-xs font-semibold shadow hover:bg-success/90 transition-colors">
                     Registrarse
                   </button>
                 </div>
@@ -489,6 +283,7 @@
           </div>
         </div>
       </section>
+
 
       <footer
         class="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t"

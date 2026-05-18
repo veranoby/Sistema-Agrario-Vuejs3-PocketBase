@@ -3,7 +3,18 @@
     <v-toolbar :color="isEditMode ? 'warning' : 'success'" dark flat height="70">
       <v-icon size="28" class="ml-4 mr-3">{{ isEditMode ? 'mdi-pencil' : 'mdi-plus-circle' }}</v-icon>
       <div class="flex flex-col">
-        <v-toolbar-title class="font-weight-bold text-h6 leading-none">{{ formTitle }}</v-toolbar-title>
+        <div class="d-flex align-center">
+          <v-toolbar-title class="font-weight-bold text-h6 leading-none mr-3">{{ formTitle }}</v-toolbar-title>
+          <v-chip
+            v-if="!isEditMode"
+            :color="modoOrdenTrabajo ? 'white' : 'blue-darken-1'"
+            :variant="modoOrdenTrabajo ? 'outlined' : 'flat'"
+            size="small"
+          >
+            <v-icon start size="small">{{ modoOrdenTrabajo ? 'mdi-clipboard-check' : 'mdi-pencil-plus' }}</v-icon>
+            {{ modoOrdenTrabajo ? 'Orden de Trabajo' : 'Entrada Libre' }}
+          </v-chip>
+        </div>
         <div v-if="contextSubtitle" class="text-caption opacity-80 leading-none mt-1">
           {{ contextSubtitle }}
         </div>
@@ -58,9 +69,13 @@
                 prepend-inner-icon="mdi-hammer-wrench"
                 class="rounded-lg md:col-span-2"
                 @update:modelValue="onActividadChange"
-                :disabled="isEditMode && !!props.actividadIdContext"
+                :disabled="isEditMode || modoOrdenTrabajo"
                 clearable
-              ></v-autocomplete>
+              >
+                <template v-slot:append-inner v-if="modoOrdenTrabajo">
+                  <v-icon color="success">mdi-lock</v-icon>
+                </template>
+              </v-autocomplete>
             </div>
           </div>
 
@@ -81,6 +96,14 @@
               v-model:observaciones="formData.notas"
               v-model:metricasSeleccionadas="metricasSeleccionadas"
               class="ml-2"
+            />
+          </div>
+
+          <!-- SECCIÓN 4: Checklist BPA -->
+          <div v-if="preguntasBpa.length > 0" class="mt-2">
+            <BpaChecklist
+              :preguntas="preguntasBpa"
+              v-model="formData.bpa_respuestas"
             />
           </div>
         </div>
@@ -108,7 +131,7 @@
         class="px-8 font-weight-bold"
         prepend-icon="mdi-check"
       >
-        {{ isEditMode ? 'GUARDAR CAMBIOS' : 'GUARDAR ENTRADA' }}
+        {{ isEditMode ? 'GUARDAR CAMBIOS' : 'FIRMAR Y GUARDAR' }}
       </v-btn>
     </v-card-actions>
   </v-card>
@@ -124,6 +147,8 @@ import { useUiFeedbackStore } from '@/stores/uiFeedbackStore';
 import { handleError } from '@/utils/errorHandler';
 import SiembraSelectorList from './SiembraSelectorList.vue';
 import BatchGeneralDataForm from './BatchGeneralDataForm.vue';
+import BpaChecklist from '../bitacora/BpaChecklist.vue';
+import { digitalSignature } from '@/services/digitalSignature';
 
 const props = defineProps({
   entryToEdit: {
@@ -135,6 +160,10 @@ const props = defineProps({
     default: null,
   },
   actividadIdContext: { // To pre-select activity
+    type: String,
+    default: null,
+  },
+  programacionId: { // To distinguish Modo A/B
     type: String,
     default: null,
   },
@@ -164,6 +193,8 @@ const defaultFormData = () => ({
   siembras_ids: props.siembraIdContext ? [props.siembraIdContext] : [], // Multiple siembras support
   metricas_values: {}, // Holds values for dynamic metric fields
   programacion_origen_id: null, // Added for prefill
+  bpa_respuestas: {},
+  firma_digital: null,
 });
 
 const formData = reactive(defaultFormData());
@@ -173,7 +204,8 @@ const rules = {
 };
 
 const isEditMode = computed(() => !!props.entryToEdit);
-const formTitle = computed(() => isEditMode.value ? t('bitacora.edit_entry') : t('bitacora.new_entry'));
+const modoOrdenTrabajo = computed(() => !!props.programacionId);
+const formTitle = computed(() => isEditMode.value ? 'Editar Entrada' : 'Nueva Entrada');
 
 const contextSubtitle = computed(() => {
   if (isEditMode.value && props.entryToEdit?.expand?.siembras) {
@@ -193,12 +225,11 @@ const relevantSiembraIds = computed(() => {
   return null;
 });
 
-const metricasSeleccionadas = ref([]);
-
-const observacionesAutomaticas = computed(() => {
-  // Logic removed as per instruction - redundancy removal
-  return '';
+const preguntasBpa = computed(() => {
+  return selectedActividadDetalles.value?.expand?.tipo_actividades?.preguntas_bpa || [];
 });
+
+const metricasSeleccionadas = ref([]);
 
 
 onMounted(async () => {
@@ -226,15 +257,17 @@ onMounted(async () => {
 
     if (isEditMode.value && props.entryToEdit) {
       populateFormForEdit();
-    } else if (programacionesStore.pendingBitacoraFromProgramacionData) {
+    } else if (modoOrdenTrabajo.value && programacionesStore.pendingBitacoraFromProgramacionData) {
       const pendingData = programacionesStore.pendingBitacoraFromProgramacionData;
       formData.actividad_realizada_id = pendingData.actividadRealizadaId;
       const dt = new Date(pendingData.fechaEjecucion);
       formData.fecha_ejecucion = `${pendingData.fechaEjecucion}T${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
       formData.notas = pendingData.observacionesPreload;
-      formData.programacion_origen_id = pendingData.programacionOrigenId;
+      formData.programacion_origen_id = props.programacionId;
       formData.siembras_ids = pendingData.siembraAsociadaId ? [pendingData.siembraAsociadaId] : [];
       isPrefillingMetrics.value = true;
+    } else {
+      programacionesStore.clearPendingBitacoraData();
     }
   } catch (error) {
     handleError(error, 'Error inicializando formulario');
@@ -410,34 +443,7 @@ function populateFormForEdit() {
   }
 }
 
-const metricasParaFormulario = computed(() => {
-  if (!selectedActividadDetalles.value) return [];
-
-  const activityMetrics = selectedActividadDetalles.value.metricas || {}; // Customized metrics for the activity
-  const tipoActividadFormato = selectedActividadDetalles.value.expand?.tipo_actividades?.formato_reporte?.columnas || [];
-  
-  // Use formato_reporte from tipo_actividad to determine which metrics to show and their order/labels
-  return tipoActividadFormato.map(col => {
-    const metricaKey = col.metrica;
-    if (metricaKey && activityMetrics[metricaKey]) { // Ensure the metric key from format is in activity's defined metrics
-      return {
-        key: metricaKey,
-        descripcion: col.nombre, // Use nombre from formato_reporte as label
-        tipo: activityMetrics[metricaKey].tipo,
-        opciones: activityMetrics[metricaKey].opciones || [],
-        requerido: activityMetrics[metricaKey].requerido || false, // Assuming 'requerido' field in metric definition
-      };
-    } else if (col.tipo === 'text' && !col.metrica) { // For direct fields like "Observaciones" in formato_reporte
-        return {
-            key: col.nombre.toLowerCase().replace(/\s+/g, '_'), // Generate a key
-            descripcion: col.nombre,
-            tipo: 'textarea', // Or 'string'
-            requerido: false
-        };
-    }
-    return null;
-  }).filter(m => m !== null);
-});
+// metricasParaFormulario removed as it is handled by BatchGeneralDataForm > FormularioMetricas
 
 async function submitForm() {
   const { valid } = await bitacoraFormRef.value.validate();
@@ -463,18 +469,36 @@ async function submitForm() {
       notas: formData.notas.trim(),
       siembras: formData.siembras_ids,
       metricas: filteredMetricas,
+      bpa_respuestas: formData.bpa_respuestas,
     };
+
+    if (!isEditMode.value) {
+      try {
+        let signatureObj;
+        try {
+          signatureObj = await digitalSignature.sign(dataToSubmit);
+        } catch (e) {
+          // Si no hay claves, generarlas e intentar de nuevo
+          await digitalSignature.generateKeyPair();
+          signatureObj = await digitalSignature.sign(dataToSubmit);
+        }
+        dataToSubmit.firma_digital = signatureObj.signature;
+      } catch (e) {
+        console.warn("[BitacoraForm] Error generando firma digital:", e);
+      }
+    }
 
     if (isEditMode.value) {
       await bitacoraStore.updateBitacoraEntry(props.entryToEdit.id, dataToSubmit);
       uiFeedbackStore.showSnackbar('Entrada de bitácora actualizada con éxito.', 'success');
     } else {
+      console.log('[BitacoraForm] Modo:', modoOrdenTrabajo.value ? 'A (Orden de Trabajo)' : 'B (Entrada Libre)');
       // Include programacion_origen_id if present for new entries
       if (formData.programacion_origen_id) {
         dataToSubmit.programacion_origen = formData.programacion_origen_id;
       }
       await bitacoraStore.crearBitacoraEntry(dataToSubmit);
-      uiFeedbackStore.showSnackbar(t('bitacora.new_entry_success'), 'success');
+      uiFeedbackStore.showSnackbar('Nueva entrada de bitácora guardada con éxito.', 'success');
 
       // After successful bitacora entry creation, finalize programacion execution if applicable
       if (formData.programacion_origen_id) {
@@ -509,6 +533,7 @@ function clearActivitySelection() {
   formData.actividad_realizada_id = null;
   selectedActividadDetalles.value = null;
   formData.metricas_values = {};
+  formData.bpa_respuestas = {};
   formData.notas = '';
 }
 

@@ -1,0 +1,119 @@
+{
+  "system_interfaces": {
+    "User": {
+      "id": "string",
+      "username": "string",
+      "email": "string",
+      "role": "enum (administrador, auditor, operador, superadmin)",
+      "hacienda": "id (relation)",
+      "name": "string",
+      "lastname": "string",
+      "status": "enum (active, suspended)"
+    },
+    "Hacienda": {
+      "id": "string",
+      "name": "string",
+      "location": "string",
+      "gps": "json (coordinates)",
+      "plan": "id (relation)",
+      "status": "enum (active, suspended, inactive)",
+      "active_modules": "json (array of codes)",
+      "subscription_end": "ISOString",
+      "notification_preferences": "json (digestWeekly: bool, emergencyAlerts: bool)"
+    },
+    "Siembra": {
+      "id": "string",
+      "nombre": "string",
+      "tipo": "string",
+      "hacienda": "id (relation)",
+      "fecha_inicio": "ISOString",
+      "fecha_fin": "ISOString",
+      "estado": "enum (planificada, en_crecimiento, cosechada, finalizada)",
+      "area_total": "number"
+    },
+    "Zona": {
+      "id": "string",
+      "nombre": "string",
+      "hacienda": "id (relation)",
+      "geometria": "json (GeoJSON)",
+      "tipo_zona": "id (relation)",
+      "bpa_estado": "number (0-100)"
+    },
+    "Actividad": {
+      "id": "string",
+      "nombre": "string",
+      "tipo_actividades": "id (relation)",
+      "descripcion": "string (html)",
+      "siembras": "array<id>",
+      "zonas": "array<id>",
+      "metricas": "json (definitions)",
+      "datos_bpa": "json (questions/logic)",
+      "activa": "boolean"
+    },
+    "Bitacora": {
+      "id": "string",
+      "fecha": "ISOString",
+      "hacienda": "id (relation)",
+      "actividades": "id (relation)",
+      "siembras": "array<id>",
+      "zonas": "array<id>",
+      "estado": "enum (planificada, activa, completada, cancelada)",
+      "metricas": "json (values)",
+      "notas": "string (html)",
+      "firma_digital": "string (base64)",
+      "user_created": "id (relation)"
+    },
+    "Programacion": {
+      "id": "string",
+      "descripcion": "string",
+      "actividades": "array<id>",
+      "frecuencia": "enum (diaria, semanal, quincenal, mensual, personalizada, fecha_especifica)",
+      "ultima_ejecucion": "ISOString",
+      "proxima_ejecucion": "ISOString",
+      "estado": "enum (activo, pausado, finalizado)",
+      "hacienda": "id (relation)"
+    },
+    "Recordatorio": {
+      "id": "string",
+      "titulo": "string",
+      "descripcion": "string (html)",
+      "fecha_recordatorio": "ISOString",
+      "prioridad": "enum (baja, media, alta)",
+      "estado": "enum (pendiente, en_progreso, completado)",
+      "hacienda": "id (relation)"
+    },
+    "Plan": {
+      "id": "string",
+      "nombre": "string",
+      "precio": "number",
+      "auditores": "number (limit)",
+      "operadores": "number (limit)"
+    },
+    "Modulo": {
+      "id": "string",
+      "name": "string",
+      "code": "string",
+      "category": "array<enum>",
+      "is_active": "boolean",
+      "price_monthly": "number"
+    },
+    "Finanza": {
+      "id": "string",
+      "hacienda": "id (relation)",
+      "tipo": "enum (ingreso, egreso)",
+      "monto": "number",
+      "fecha": "ISOString",
+      "categoria": "string",
+      "comprobante_sri": "string (nullable)",
+      "bitacora_relacionada": "id (relation, nullable)"
+    },
+    "Notificacion_Regla": {
+      "id": "string",
+      "hacienda": "id (relation)",
+      "evento": "string",
+      "condicion": "json",
+      "destinatarios": "array<string>",
+      "activa": "boolean"
+    }
+  }
+}

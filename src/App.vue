@@ -1,5 +1,27 @@
 <template>
   <v-app :theme="themeStore.currentTheme">
+    <v-system-bar
+      v-if="isLoggedIn && !authStore.isAsesor && haciendaStore.daysUntilExpiration !== null && haciendaStore.daysUntilExpiration <= 3"
+      :color="haciendaStore.daysUntilExpiration <= 0 ? 'error' : 'warning'"
+      class="text-white font-weight-bold justify-center"
+      height="32"
+    >
+      <v-icon start size="small">{{ haciendaStore.daysUntilExpiration <= 0 ? 'mdi-alert-circle' : 'mdi-clock-outline' }}</v-icon>
+      <span class="text-caption text-sm-body-2">
+        {{ haciendaStore.daysUntilExpiration <= 0 ? 'Suscripción expirada. Acceso limitado.' : `Tu suscripción expira en ${haciendaStore.daysUntilExpiration} días.` }}
+      </span>
+      <v-btn 
+        v-if="authStore.user?.role === 'administrador'" 
+        size="x-small" 
+        variant="flat" 
+        color="white" 
+        class="ml-4 text-black font-weight-black" 
+        @click="router.push('/profile')"
+      >
+        RENOVAR AHORA
+      </v-btn>
+    </v-system-bar>
+
     <Header
       v-if="showHeader"
       :PaginaActual="currentPage"
@@ -55,6 +77,7 @@ const GlobalConfirmDialog = defineAsyncComponent(() => import('./components/dial
 import SnackbarComponent from '@/components/SnackbarComponent.vue'
 import { useSyncStore } from '@/stores/sync'
 import { useSchedulerStore } from '@/stores/schedulerStore'
+import { useHaciendaStore } from '@/stores/haciendaStore'
 
 const route = useRoute()
 const router = useRouter()
@@ -62,6 +85,7 @@ const authStore = useAuthStore()
 const themeStore = useThemeStore()
 const syncStore = useSyncStore()
 const schedulerStore = useSchedulerStore()
+const haciendaStore = useHaciendaStore()
 const { t } = useI18n()
 
 const drawer = ref(true)
@@ -91,6 +115,14 @@ const navigationLinks = computed(() => {
     ]
   }
 
+  if (role === USER_ROLES.ASESOR) {
+    return [
+      { id: 'a1', to: '/asesor/dashboard', icon: 'mdi-view-dashboard', label: 'Dashboard' },
+      { id: 'a2', to: '/asesor/haciendas', icon: 'mdi-barn', label: 'Mis Haciendas' },
+      { id: 'a3', to: '/asesor/perfil', icon: 'mdi-account-circle', label: 'Mi Perfil' }
+    ]
+  }
+
   const links = [
     { id: 1, to: '/dashboard', icon: 'mdi-view-dashboard', label: t('sidebar.dashboard') },
     { id: 2, to: '/siembras', icon: 'mdi-sprout', label: t('sidebar.sowings') },
@@ -104,6 +136,7 @@ const navigationLinks = computed(() => {
     links.push({ id: 7, to: '/metricas', icon: 'mdi-chart-areaspline', label: t('sidebar.metrics') })
     links.push({ id: 8, to: '/finanzas', icon: 'mdi-cash-multiple', label: t('sidebar.finances') })
     links.push({ id: 9, to: '/recordatorios', icon: 'mdi-alarm-light-outline', label: t('sidebar.reminders') })
+    links.push({ id: 10, to: '/hacienda/directorio-asesores', icon: 'mdi-account-search', label: 'Asesores' })
   }
 
   return links
@@ -157,6 +190,7 @@ onMounted(async () => {
 
   const CHECK_INTERVAL = 3600000
   checkInterval = setInterval(async () => {
+    if (authStore.isAsesor) return
     const haciendaActual = authStore.haciendaActual
     if (haciendaActual) {
        // console.log('[App] Verificando alertas para', haciendaActual.nombre)
@@ -168,6 +202,7 @@ onMounted(async () => {
   }, CHECK_INTERVAL)
 
   setTimeout(async () => {
+    if (authStore.isAsesor) return
     const haciendaActual = authStore.haciendaActual
     if (haciendaActual) {
       await Promise.all([

@@ -45,6 +45,13 @@ export const useAuthStore = defineStore('auth', {
     isAdministrador: (state) => state.user?.role === 'administrador',
     isAuditor: (state) => state.user?.role === 'auditor',
     isOperador: (state) => state.user?.role === 'operador',
+    isAsesor: (state) => state.user?.role === 'asesor',
+
+    // Perfil público del asesor (campo info como JSON)
+    asesorInfo: (state) => {
+      if (state.user?.role !== 'asesor') return null
+      try { return JSON.parse(state.user?.info || '{}') } catch { return {} }
+    },
 
     canEdit: (state) => {
       return ['superadmin', 'administrador', 'auditor'].includes(state.user?.role)
@@ -349,6 +356,26 @@ export const useAuthStore = defineStore('auth', {
         }
       }
 
+      // Asesor: redirigir a su panel sin cargar hacienda ni stores de campo
+      if (authData.record.role === 'asesor') {
+        this.setSession(authData.record)
+        const authDataToStore = { token: authProvider.authStore.token, model: authProvider.authStore.model }
+        localStorage.setItem('pocketbase_auth', JSON.stringify(authDataToStore))
+        localStorage.setItem('last_auth_success', Date.now().toString())
+        if (rememberMe) {
+          localStorage.setItem('rememberMe_active', 'true')
+          this.startRefreshTimer()
+          const rememberedCredentials = { username: authData.record.username, email: authData.record.email }
+          localStorage.setItem('rememberedUser', JSON.stringify(rememberedCredentials))
+        } else {
+          localStorage.removeItem('rememberMe_active')
+          localStorage.removeItem('rememberedUser')
+        }
+        await this.setUser(authData.record)
+        router.push('/asesor/dashboard')
+        return
+      }
+
       this.setSession(authData.record)
 
 
@@ -449,6 +476,64 @@ export const useAuthStore = defineStore('auth', {
       this.user = record
     },
 
+    async registerAsesor(formData) {
+      const uiFeedbackStore = useUiFeedbackStore()
+      uiFeedbackStore.showLoading()
+
+      try {
+        const infoJson = JSON.stringify({
+          numero_colegiatura: formData.numero_colegiatura,
+          especialidades: formData.especialidades,
+          zonas_cobertura: formData.zonas_cobertura,
+          bio_corta: formData.bio_corta
+        })
+
+        const userData = this.createUserData(
+          formData.username,
+          formData.email,
+          formData.firstname,
+          formData.lastname,
+          formData.password,
+          'asesor',
+          null, // No hacienda for asesor
+          false,
+          infoJson
+        )
+
+        const newUser = await authProvider.register(userData)
+
+        // TODO: Get ASESOR_PLAN modulo ID from PB and create subscription request
+        // For now, we simulate this as the PB structure might need to be queried by code
+        try {
+          const moduloPlan = await pb.collection('modulos').getFirstListItem(`code="asesor_plan"`)
+          if (moduloPlan) {
+            await pb.collection('solicitudes_suscripcion').create({
+              solicitante: newUser.id,
+              tipo: 'modulo',
+              modulo_solicitado: moduloPlan.id,
+              estado: 'pendiente',
+              notas_admin: 'Registro nuevo asesor — pendiente verificación de pago.'
+            })
+          }
+        } catch (e) {
+          console.warn('Could not create subscription request automatically:', e)
+        }
+
+        await this.sendVerificationEmail(formData.email)
+
+        uiFeedbackStore.showSnackbar(
+          'Registrado con éxito. Tu cuenta está pendiente de activación.',
+          'success'
+        )
+        this.registrationSuccess = true
+      } catch (error) {
+        this.registrationSuccess = false
+        handleError(error, 'Error en el registro del asesor')
+      } finally {
+        uiFeedbackStore.hideLoading()
+      }
+    },
+
     async register(formData, new_role) {
       const uiFeedbackStore = useUiFeedbackStore()
       const haciendaStore = useHaciendaStore()
@@ -503,7 +588,8 @@ export const useAuthStore = defineStore('auth', {
       password,
       new_role,
       new_hacienda,
-      verified
+      verified,
+      infoJson = null
     ) {
       return {
         username,
@@ -514,7 +600,7 @@ export const useAuthStore = defineStore('auth', {
         name: firstname,
         lastname,
         role: new_role,
-        info: 'Usuario de hacienda',
+        info: infoJson || 'Usuario de hacienda',
         hacienda: new_hacienda,
         verified: verified
       }

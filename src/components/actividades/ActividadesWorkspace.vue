@@ -117,6 +117,12 @@
         @save="handleBitacoraSaveActividad"
       />
     </v-dialog>
+    <!-- AI Assistant -->
+    <AiAssistant
+      v-if="!isLoading"
+      :actividad="actividadInfo"
+      :siembra="siembras?.[0]"
+    />
   </v-container>
 </template>
 
@@ -144,6 +150,7 @@ import ActividadesEditDialog from './ActividadesEditDialog.vue'
 import ActividadesSiembrasZonasDialog from './ActividadesSiembrasZonasDialog.vue'
 import ProgramacionForm from '@/components/forms/ProgramacionForm.vue'
 import BitacoraEntryForm from '@/components/forms/BitacoraEntryForm.vue'
+import AiAssistant from '@/components/AiAssistant.vue'
 
 const route = useRoute()
 const router = useRouter()

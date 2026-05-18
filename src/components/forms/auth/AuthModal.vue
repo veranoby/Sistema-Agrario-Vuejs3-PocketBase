@@ -122,6 +122,23 @@
                 <v-form @submit.prevent="register">
                   <v-row justify="center" v-if="!authStore.registrationSuccess">
                     <v-col cols="12"> {{ t('auth.please_register') }} </v-col>
+                    
+                    <v-col cols="12" class="text-center mb-4">
+                      <v-btn-toggle v-model="accountType" color="primary" mandatory variant="outlined" class="w-100 d-flex">
+                        <v-btn value="hacienda" class="flex-grow-1">
+                          <v-icon start>mdi-home-silo</v-icon> Administro una Hacienda
+                        </v-btn>
+                        <v-btn value="asesor" class="flex-grow-1">
+                          <v-icon start>mdi-account-hard-hat</v-icon> Soy Asesor Técnico
+                        </v-btn>
+                      </v-btn-toggle>
+                      
+                      <v-alert v-if="accountType === 'asesor'" type="warning" variant="tonal" class="mt-4 text-left" density="compact" icon="mdi-cash">
+                        El perfil de Asesor Técnico es un servicio pagado con un costo de $5.00/mes.
+                        Podrás completar tu registro y luego enviar tu comprobante de pago para activación.
+                      </v-alert>
+                    </v-col>
+                    
                     <v-col cols="6">
                       <v-text-field
                         v-model="registerForm.username"
@@ -197,7 +214,7 @@
                         @input="handleNameInput('lastname')"
                       ></v-text-field>
                     </v-col>
-                    <v-col cols="12">
+                    <v-col cols="12" v-if="accountType === 'hacienda'">
                       <v-text-field
                         v-model="registerForm.hacienda"
                         class="p-0"
@@ -218,6 +235,67 @@
                         </template>
                       </v-text-field>
                     </v-col>
+
+                    <!-- Campos del Asesor Técnico -->
+                    <template v-if="accountType === 'asesor'">
+                      <v-col cols="12">
+                        <v-text-field
+                          v-model="registerForm.numero_colegiatura"
+                          class="p-0"
+                          label="Nro. de Colegiatura SENESCYT"
+                          variant="outlined"
+                          required
+                          :error-messages="v$.numero_colegiatura.$errors.map((e) => e.$message)"
+                          color="primary"
+                          density="compact"
+                          prepend-inner-icon="mdi-badge-account-horizontal-outline"
+                        ></v-text-field>
+                      </v-col>
+                      <v-col cols="12">
+                        <v-select
+                          v-model="registerForm.especialidades"
+                          :items="ESPECIALIDADES_ASESOR"
+                          label="Especialidades"
+                          multiple
+                          chips
+                          variant="outlined"
+                          required
+                          :error-messages="v$.especialidades.$errors.map((e) => e.$message)"
+                          color="primary"
+                          density="compact"
+                          prepend-inner-icon="mdi-sprout-outline"
+                        ></v-select>
+                      </v-col>
+                      <v-col cols="12">
+                        <v-select
+                          v-model="registerForm.zonas_cobertura"
+                          :items="PROVINCIAS_ECUADOR"
+                          label="Provincias de Cobertura"
+                          multiple
+                          chips
+                          variant="outlined"
+                          required
+                          :error-messages="v$.zonas_cobertura.$errors.map((e) => e.$message)"
+                          color="primary"
+                          density="compact"
+                          prepend-inner-icon="mdi-map-marker-outline"
+                        ></v-select>
+                      </v-col>
+                      <v-col cols="12">
+                        <v-textarea
+                          v-model="registerForm.bio_corta"
+                          label="Biografía Corta (Opcional)"
+                          variant="outlined"
+                          rows="3"
+                          maxlength="280"
+                          counter
+                          color="primary"
+                          density="compact"
+                          prepend-inner-icon="mdi-text-box-outline"
+                        ></v-textarea>
+                      </v-col>
+                    </template>
+
                     <v-col cols="6">
                       <v-text-field
                         v-model="registerForm.password"
@@ -406,6 +484,10 @@ let debouncedUsernameCheck = null
 let debouncedEmailCheck = null
 let debouncedHaciendaCheck = null
 
+const accountType = ref('hacienda') // 'hacienda' | 'asesor'
+const PROVINCIAS_ECUADOR = ["Azuay", "Bolívar", "Cañar", "Carchi", "Chimborazo", "Cotopaxi", "El Oro", "Esmeraldas", "Galápagos", "Guayas", "Imbabura", "Loja", "Los Ríos", "Manabí", "Morona Santiago", "Napo", "Orellana", "Pastaza", "Pichincha", "Santa Elena", "Santo Domingo de los Tsáchilas", "Sucumbíos", "Tungurahua", "Zamora Chinchipe"]
+const ESPECIALIDADES_ASESOR = ["Banano", "Cacao", "Suelos", "Flores", "Frutales", "Cítricos", "Hortalizas", "Ganadería", "Otro"]
+
 const dialogModel = computed({
   get: () => props.isOpen,
   set: (value) => emit('update:isOpen', value)
@@ -459,7 +541,11 @@ const registerForm = ref({
   lastname: '',
   password: '',
   passwordConfirm: '',
-  hacienda: ''
+  hacienda: '',
+  numero_colegiatura: '',
+  especialidades: [],
+  zonas_cobertura: [],
+  bio_corta: ''
 })
 
 const rules = computed(() => ({
@@ -496,11 +582,20 @@ const rules = computed(() => ({
     sameAsPassword: sameAs(computed(() => registerForm.value.password))
   },
   hacienda: {
-    required: helpers.withMessage(t('auth.required_field', { field: t('auth.hacienda') }), required),
+    required: helpers.withMessage(t('auth.required_field', { field: t('auth.hacienda') }), (val) => accountType.value === 'asesor' || !!val),
     noSpecialChars: helpers.withMessage(
       t('auth.no_special_chars'),
-      (value) => !/["'`!@#$%^&*()+=<>?\/\\{}[\]|~:;]/.test(value)
+      (value) => accountType.value === 'asesor' || !/["'`!@#$%^&*()+=<>?\/\\{}[\]|~:;]/.test(value)
     )
+  },
+  numero_colegiatura: {
+    required: helpers.withMessage(t('auth.required_field', { field: 'Nro. Colegiatura' }), (val) => accountType.value === 'hacienda' || !!val)
+  },
+  especialidades: {
+    required: helpers.withMessage(t('auth.required_field', { field: 'Especialidades' }), (val) => accountType.value === 'hacienda' || val.length > 0)
+  },
+  zonas_cobertura: {
+    required: helpers.withMessage(t('auth.required_field', { field: 'Zonas de cobertura' }), (val) => accountType.value === 'hacienda' || val.length > 0)
   }
 }));
 
@@ -650,7 +745,7 @@ const register = async () => {
 
   try {
     // Verificar disponibilidad de campos solo al submit
-    const fieldsAvailable = await checkFieldsTaken([
+    const fieldsToCheck = [
       {
         collection: 'users',
         field: 'username',
@@ -660,13 +755,18 @@ const register = async () => {
         collection: 'users',
         field: 'email',
         value: registerForm.value.email
-      },
-      {
+      }
+    ]
+    
+    if (accountType.value === 'hacienda') {
+      fieldsToCheck.push({
         collection: 'Haciendas',
         field: 'name',
         value: registerForm.value.hacienda.toUpperCase()
-      }
-    ])
+      })
+    }
+
+    const fieldsAvailable = await checkFieldsTaken(fieldsToCheck)
 
     // Mostrar errores específicos
     if (!fieldsAvailable.username) {
@@ -677,7 +777,7 @@ const register = async () => {
       uiFeedbackStore.showSnackbar(t('auth.email_in_use'), 'error')
       return
     }
-    if (!fieldsAvailable.name) {
+    if (accountType.value === 'hacienda' && !fieldsAvailable.name) {
       uiFeedbackStore.showSnackbar(t('auth.hacienda_in_use'), 'error')
       return
     }
@@ -688,10 +788,18 @@ const register = async () => {
       firstname: registerForm.value.firstname,
       lastname: registerForm.value.lastname,
       password: registerForm.value.password,
-      hacienda: registerForm.value.hacienda
+      hacienda: registerForm.value.hacienda,
+      numero_colegiatura: registerForm.value.numero_colegiatura,
+      especialidades: registerForm.value.especialidades,
+      zonas_cobertura: registerForm.value.zonas_cobertura,
+      bio_corta: registerForm.value.bio_corta
     }
 
-    await authStore.register(registrationData, 'administrador')
+    if (accountType.value === 'asesor') {
+      await authStore.registerAsesor(registrationData)
+    } else {
+      await authStore.register(registrationData, 'administrador')
+    }
   } catch (error) {
     console.log('Registration error from Authmodal:', error.message)
     uiFeedbackStore.showSnackbar(t('auth.registration_error', { message: error.message }), 'error')

@@ -1,38 +1,98 @@
 <template>
-  <v-container class="fill-height">
-    <v-row align="center" justify="center">
-      <v-col cols="12" sm="8" md="6">
-        <v-card class="elevation-12 rounded-xl">
-          <v-toolbar color="primary" dark>
-            <v-toolbar-title class="font-weight-bold">Contáctenos</v-toolbar-title>
+  <v-container class="py-12 fill-height">
+    <v-row align="center" justify="center" class="w-full">
+      <!-- Columna Izquierda: Información de Compromiso y Soporte -->
+      <v-col cols="12" md="6" class="pr-md-8 mb-8 mb-md-0">
+        <div class="space-y-6">
+          <div class="inline-block bg-green-100 text-green-800 px-3 py-1 text-sm font-semibold rounded-full mb-4">
+            Soporte y Compromiso
+          </div>
+          <h1 class="text-4xl font-bold text-green-950 tracking-tight leading-tight mb-4">
+            Estamos aquí para impulsar su certificación
+          </h1>
+          <p class="text-lg text-grey-darken-2 leading-relaxed">
+            En ConAgri nos apasiona el éxito de su hacienda. No solo proporcionamos una plataforma de software; ofrecemos un compromiso real para simplificar y agilizar sus auditorías de Buenas Prácticas Agrícolas (BPA).
+          </p>
+
+          <v-divider class="my-6"></v-divider>
+
+          <!-- Bloques de contacto y valor -->
+          <div class="space-y-6 mt-6">
+            <div class="d-flex align-start mb-4">
+              <v-icon color="success" size="36" class="mr-4 mt-1">mdi-headset</v-icon>
+              <div>
+                <h3 class="text-h6 font-weight-bold text-grey-darken-3">Soporte Técnico de Primera Clase</h3>
+                <p class="text-body-2 text-grey-darken-1">
+                  Nuestro equipo técnico y de asesores agrónomos está disponible para resolver sus dudas de integración, firma RSA y sincronización offline en menos de 24 horas hábiles.
+                </p>
+              </div>
+            </div>
+
+            <div class="d-flex align-start mb-4">
+              <v-icon color="success" size="36" class="mr-4 mt-1">mdi-shield-check</v-icon>
+              <div>
+                <h3 class="text-h6 font-weight-bold text-grey-darken-3">Compromiso de Trazabilidad e Integridad</h3>
+                <p class="text-body-2 text-grey-darken-1">
+                  Garantizamos que todos sus datos locales y en la nube permanecen resguardados bajo los más altos estándares de seguridad y protección de datos.
+                </p>
+              </div>
+            </div>
+
+            <div class="d-flex align-start mb-4">
+              <v-icon color="success" size="36" class="mr-4 mt-1">mdi-email-outline</v-icon>
+              <div>
+                <h3 class="text-h6 font-weight-bold text-grey-darken-3">Contacto Directo</h3>
+                <p class="text-body-2 text-grey-darken-1">
+                  ¿Prefiere enviarnos un correo electrónico directo? Escríbanos a:
+                  <span class="font-weight-bold text-green-700 block mt-1">soporte@conagri.com</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </v-col>
+
+      <!-- Columna Derecha: Formulario de Contacto -->
+      <v-col cols="12" md="6">
+        <v-card class="elevation-12 rounded-xl border">
+          <v-toolbar color="success" dark class="px-2">
+            <v-toolbar-title class="font-weight-bold text-white">Contáctenos</v-toolbar-title>
             <v-spacer></v-spacer>
-            <v-btn icon to="/" exact><v-icon>mdi-home</v-icon></v-btn>
+            <v-btn icon to="/" exact color="white"><v-icon>mdi-home</v-icon></v-btn>
           </v-toolbar>
           <v-card-text class="pa-6">
-            <p class="mb-4 text-body-1 text-grey-darken-1">
+            <p class="mb-6 text-body-1 text-grey-darken-1">
               ¿Tiene dudas sobre el sistema ConAgri? Envíenos un mensaje y nuestro equipo de soporte se pondrá en contacto pronto.
             </p>
             <v-form ref="form" v-model="valid">
               <v-text-field
                 v-model="nombre"
                 label="Nombre"
-                prepend-icon="mdi-account"
+                prepend-inner-icon="mdi-account"
+                variant="outlined"
+                color="success"
                 :rules="[v => !!v || 'Requerido']"
                 required
+                class="mb-3"
               ></v-text-field>
 
               <v-text-field
                 v-model="email"
                 label="Correo Electrónico"
-                prepend-icon="mdi-email"
+                prepend-inner-icon="mdi-email"
+                variant="outlined"
+                color="success"
                 :rules="emailRules"
                 required
+                class="mb-3"
               ></v-text-field>
 
               <v-textarea
                 v-model="mensaje"
                 label="Mensaje"
-                prepend-icon="mdi-message"
+                prepend-inner-icon="mdi-message"
+                variant="outlined"
+                color="success"
                 :rules="[v => !!v || 'Requerido']"
                 required
                 rows="4"
@@ -40,14 +100,15 @@
             </v-form>
           </v-card-text>
           <v-card-actions class="pa-6 pt-0">
-            <v-spacer></v-spacer>
             <v-btn
               color="success"
               variant="elevated"
               size="large"
+              block
               :disabled="!valid"
               :loading="loading"
               @click="submitForm"
+              class="text-capitalize font-weight-bold"
             >
               Enviar Mensaje
             </v-btn>
@@ -60,6 +121,7 @@
     </v-snackbar>
   </v-container>
 </template>
+
 
 <script setup>
 import { ref, onMounted } from 'vue'

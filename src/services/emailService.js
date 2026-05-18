@@ -13,11 +13,6 @@
 
 import { pb } from '@/utils/pocketbase'
 
-// Resend API configuration
-const RESEND_API_KEY = import.meta.env.VITE_RESEND_API_KEY || ''
-const RESEND_API_URL = 'https://api.resend.com/emails'
-const FROM_EMAIL = import.meta.env.VITE_RESEND_FROM_EMAIL || 'onboarding@resend.dev'
-
 // Email logging collection
 const LOG_COLLECTION = 'log_comunicaciones'
 
@@ -89,59 +84,47 @@ export const emailService = {
     pdfFilename = 'documento.pdf',
     metadata = {}
   }) {
-    // Validate API key
-    if (!RESEND_API_KEY) {
-      console.warn('[EmailService] RESEND_API_KEY not configured. Using mock mode.')
-      return this.logEmail({ to, subject, status: 'mock', metadata })
+    // Determinar tipo de alerta desde metadata
+    const alertType = metadata.emailType || metadata.reportType || 'recordatorio'
+    const hacienda = metadata.haciendaName || metadata.hacienda || 'Sistema'
+
+    // Mapeo al formato que espera /api/alerts/send
+    const alertTypeMap = {
+      'verification': 'recordatorio',
+      'password_reset': 'recordatorio',
+      'report': 'recordatorio',
     }
 
-    // Prepare attachments
-    const attachments = []
-    if (pdfBase64) {
-      attachments.push({
-        filename: pdfFilename,
-        content: pdfBase64,
-        type: 'application/pdf'
-      })
-    }
-
-    // Prepare email payload
     const payload = {
-      from: FROM_EMAIL,
-      to: Array.isArray(to) ? to : [to],
-      subject,
-      html,
-      attachments: attachments.length > 0 ? attachments : undefined
+      type: alertTypeMap[alertType] || 'recordatorio',
+      recipients: Array.isArray(to) ? to : [to],
+      hacienda: hacienda,
+      data: {
+        titulo: subject,
+        descripcion: metadata.description || subject,
+        html_override: html, // el hook lo usará si está presente
+        ...metadata
+      }
     }
 
-    // Send via Resend API
-    const response = await fetch(RESEND_API_URL, {
+    const { pb } = await import('@/utils/pocketbase')
+    const response = await fetch('/api/alerts/send', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${RESEND_API_KEY}`
+        'Authorization': `Bearer ${pb.authStore.token}`
       },
       body: JSON.stringify(payload)
     })
 
     if (!response.ok) {
       const error = await response.json()
-      throw new Error(error.message || 'Failed to send email')
+      throw new Error(error.error || 'Failed to send email')
     }
 
     const result = await response.json()
-
-    // Log successful send
-    await this.logEmail({
-      to,
-      subject,
-      status: 'sent',
-      resendId: result.id,
-      metadata
-    })
-
-    console.log('[EmailService] Email sent successfully:', result.id)
-    return { success: true, id: result.id }
+    await this.logEmail({ to, subject, status: 'sent', resendId: result.resend_id, metadata })
+    return { success: true, id: result.resend_id }
   },
 
   /**
