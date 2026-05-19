@@ -126,8 +126,6 @@ function compileAlertData(hacienda, type) {
  */
 function sendEmailViaHook(type, recipients, haciendaName, data) {
     const settings = $app.settings();
-    const resendApiKey = settings.get("RESEND_API_KEY");
-    if (!resendApiKey) return;
 
     // Nota: Aquí reutilizaríamos la lógica de templates de main.js si estuviera exportada,
     // pero en PocketBase JSVM los archivos son independientes a menos que se use un pattern de cargado.
