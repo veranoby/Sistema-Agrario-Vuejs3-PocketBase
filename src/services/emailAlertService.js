@@ -1,5 +1,6 @@
 import { emailService } from '@/services/emailService'
 import { logger } from '@/utils/logger'
+import { pb } from '@/utils/pocketbase'
 
 /**
  * Tipos de alertas disponibles en el sistema
@@ -78,29 +79,12 @@ function buildAlertTemplate(type, data) {
   `
 }
 
-/**
- * Configura las preferencias de alertas para una hacienda
- * @param {string} haciendaId - ID de la hacienda
- * @param {Object} preferences - Preferencias de configuración
- * @param {string[]} preferences.enabledTypes - Tipos de alerta habilitados
- * @param {string[]} preferences.recipients - Lista de emails destinatarios
- * @param {string} preferences.frequency - Frecuencia de envío
- * @returns {Promise<Object>} Resultado de la configuración
- */
 export async function configureAlertPreferences(haciendaId, preferences) {
-  const { enabledTypes, recipients, frequency } = preferences
-
   try {
-    const response = await fetch(`/api/haciendas/${haciendaId}/alerts`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      },
-      body: JSON.stringify({ enabledTypes, recipients, frequency })
+    const record = await pb.collection('Haciendas').update(haciendaId, {
+      alertConfig: preferences
     })
-
-    return await response.json()
+    return record.alertConfig || {}
   } catch (error) {
     logger.error('[ALERT] Error configurando preferencias', error)
     throw error
@@ -114,18 +98,8 @@ export async function configureAlertPreferences(haciendaId, preferences) {
  */
 export async function getAlertPreferences(haciendaId) {
   try {
-    const response = await fetch(`/api/haciendas/${haciendaId}/alerts`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
-    })
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-    }
-
-    return await response.json()
+    const record = await pb.collection('Haciendas').getOne(haciendaId)
+    return record.alertConfig || { enabledTypes: [], recipients: [], frequency: 'immediate' }
   } catch (error) {
     logger.error('[ALERT] Error obteniendo preferencias', error)
     throw error

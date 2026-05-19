@@ -5,6 +5,7 @@
  */
 
 import { ref } from 'vue'
+import { pb } from '@/utils/pocketbase'
 
 /**
  * Inicializa el monitor de red
@@ -38,6 +39,7 @@ export function initNetworkMonitor(onStatusChange) {
     // Si el navegador dice que estamos offline, no intentamos ping
     if (!navigator.onLine) {
       updateStatus(false)
+      startHeartbeat() // REAGENDAR incondicionalmente
       return
     }
 
@@ -45,27 +47,56 @@ export function initNetworkMonitor(onStatusChange) {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 5000) // Timeout de 5s
 
+    let hasConnectivity = false
+
     try {
-      // Intentar una petición HEAD ligera para verificar internet real
-      // Añadimos un timestamp para evitar cache de Service Workers
-      await fetch(`/favicon.ico?t=${Date.now()}`, { 
+      // 1. Intentar conectividad real con Google (CORS transparente/no-cors)
+      await fetch('https://clients3.google.com/generate_204', { 
         method: 'HEAD', 
         mode: 'no-cors',
         cache: 'no-store',
         signal: controller.signal
       })
-      clearTimeout(timeoutId)
-      updateStatus(true)
+      hasConnectivity = true
     } catch (e) {
-      clearTimeout(timeoutId)
-      // Si falla el fetch y ya estamos en offline, incrementamos backoff
-      if (!isOnline.value) {
-        backoffMs = Math.min(backoffMs * 1.5, MAX_BACKOFF)
-        startHeartbeat() // Programar siguiente intento con nuevo backoff
+      // 2. Si falla el internet general, comprobar si nuestro servidor PocketBase es accesible (ej. LAN o local)
+      try {
+        await fetch(`${pb.baseUrl}/api/health`, {
+          method: 'GET',
+          cache: 'no-store',
+          signal: controller.signal
+        })
+        hasConnectivity = true
+      } catch (pbErr) {
+        // 3. Fallback final local por si acaso
+        try {
+          await fetch(`/favicon.ico?t=${Date.now()}`, { 
+            method: 'HEAD', 
+            mode: 'no-cors',
+            cache: 'no-store',
+            signal: controller.signal
+          })
+          hasConnectivity = true
+        } catch (localErr) {
+          hasConnectivity = false
+        }
       }
-      console.warn('[NetworkMonitor] Conectividad real no disponible, reintentando en:', Math.round(backoffMs/1000), 's')
     } finally {
+      clearTimeout(timeoutId)
       isChecking = false
+    }
+
+    if (hasConnectivity) {
+      updateStatus(true)
+    } else {
+      // Forzar transición de estado si el ping falló pero el navegador no se enteró
+      updateStatus(false)
+      
+      // Si falla el fetch y estamos en offline, incrementamos backoff y reagendamos
+      backoffMs = Math.min(backoffMs * 1.5, MAX_BACKOFF)
+      startHeartbeat() // Programar siguiente intento con nuevo backoff
+      
+      console.warn('[NetworkMonitor] Conectividad real no disponible, reintentando en:', Math.round(backoffMs/1000), 's')
     }
   }
 

@@ -176,12 +176,15 @@ class LocationCoordinator {
     try {
       this.mapInstance = L.map(mapContainer, {
         center: options.center || [4.5709, -74.2973], // Colombia por defecto.
-        zoom: options.zoom || 10
+        zoom: options.zoom || 10,
+        maxZoom: 22
       })
 
-      // Añadir capa base (OpenStreetMap).
+      // Añadir capa base (OpenStreetMap) con soporte para zoom extendido estirado
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 22,
+        maxNativeZoom: 19
       }).addTo(this.mapInstance)
 
       // Inicializar capa de dibujo.

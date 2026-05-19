@@ -246,8 +246,10 @@ export default defineComponent({
     const initMap = () => {
       if (!mapContainer.value) return
 
-      // Create map
-      map = L.map(mapContainer.value)
+      // Create map - Configurar maxZoom de la instancia a 22
+      map = L.map(mapContainer.value, {
+        maxZoom: 22
+      })
       
       // Establecer vista inicial basada en props
       if (props.center && props.center.length === 2) {
@@ -270,19 +272,22 @@ export default defineComponent({
       // Define tile layers for different map types
       const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 19
+        maxZoom: 22,
+        maxNativeZoom: 19
       })
 
       // Satélite (Esri World Imagery - ideal para visualizar cultivos)
       const esriSatellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
         attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
-        maxZoom: 19
+        maxZoom: 22,
+        maxNativeZoom: 18
       })
 
       // Relieve (OpenTopoMap)
       const openTopoMap = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://opentopomap.org">OpenTopoMap</a> contributors',
-        maxZoom: 17
+        maxZoom: 22,
+        maxNativeZoom: 17
       })
 
       // Add default satellite layer (mejor para cultivos)
