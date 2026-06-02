@@ -608,6 +608,47 @@ export const useFinanzaStore = defineStore('finanzas', {
       }
     },
 
+    async importarCostosNomina(semanaInicio, semanaFin) {
+      const uiFeedbackStore = useUiFeedbackStore()
+      uiFeedbackStore.showLoading()
+
+      try {
+        const { useNominaStore } = await import('./nominaStore')
+        const nominaStore = useNominaStore()
+        await nominaStore.cargarHistoricoNomina()
+
+        const nominasAImportar = nominaStore.nominas.filter(n => {
+          const fin = n.semana_fin ? n.semana_fin.split('T')[0] : ''
+          return fin >= semanaInicio && fin <= semanaFin
+        })
+
+        let creados = 0
+        for (const nomina of nominasAImportar) {
+          const facturaRef = `NOM-${nomina.id}`
+          const existe = this.registros.some(r => r.factura === facturaRef)
+          if (!existe) {
+            await this.crearRegistro({
+              fecha: nomina.semana_fin,
+              detalle: `Costo Mano de Obra: Nómina del ${nomina.semana_inicio} al ${nomina.semana_fin}`,
+              razon_social: 'Planilla de Operarios',
+              factura: facturaRef,
+              costo: 'HONORARIOS',
+              monto: Number(nomina.total_pagado) || 0
+            })
+            creados++
+          }
+        }
+
+        uiFeedbackStore.showSnackbar(`Se importaron ${creados} nóminas a finanzas`, 'success')
+        return creados
+      } catch (error) {
+        handleError(error, 'Error al importar costos de nómina')
+        throw error
+      } finally {
+        uiFeedbackStore.hideLoading()
+      }
+    },
+
     updateLocalItem(tempId, newItem) {
       return useSyncStore().updateLocalItem('finanzas', tempId, newItem, this.registros)
     },

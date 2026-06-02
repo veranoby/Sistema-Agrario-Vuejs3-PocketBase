@@ -74,22 +74,44 @@
 
     </v-card-text>
     <v-divider v-if="entry.id"></v-divider>
-      <v-card-actions v-if="entry.id">
-        <BitacoraSignature :bitacoraId="entry.id" :existingSignature="entry.signature" />
-        <v-spacer></v-spacer>
-        <v-btn v-if="canEdit" icon="mdi-pencil" size="small" variant="text" @click="$emit('edit', entry)" />
-        <v-btn v-if="canDelete" icon="mdi-delete" size="small" variant="text" color="error" @click="$emit('delete', entry)" />
-        <v-chip variant="outlined" size="small" pill>ID: {{ entry.id }}</v-chip>
+    <v-card-actions v-if="entry.id">
+      <BitacoraSignature
+        :bitacoraId="entry.id"
+        :existingSignature="entry.signature"
+        @signed="onSigned"
+      />
+      <v-spacer></v-spacer>
+      <v-btn
+        v-if="isBpaActive"
+        color="success"
+        variant="tonal"
+        size="small"
+        prepend-icon="mdi-file-pdf-box"
+        :loading="pdfLoading"
+        @click="handleDownloadPdf"
+        class="mr-2"
+      >
+        Certificado BPA
+      </v-btn>
+      <v-btn v-if="canEdit" icon="mdi-pencil" size="small" variant="text" @click="$emit('edit', entry)" />
+      <v-btn v-if="canDelete" icon="mdi-delete" size="small" variant="text" color="error" @click="$emit('delete', entry)" />
+      <v-chip variant="outlined" size="small" pill>ID: {{ entry.id }}</v-chip>
     </v-card-actions>
   </v-card>
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useAuthStore } from '@/stores/authStore'
+import { useHaciendaStore } from '@/stores/haciendaStore'
+import { useBitacoraStore } from '@/stores/bitacoraStore'
+import { generateBpaReport } from '@/services/pdfGenerator'
 import BitacoraSignature from './BitacoraSignature.vue';
 
 const authStore = useAuthStore()
+const haciendaStore = useHaciendaStore()
+const bitacoraStore = useBitacoraStore()
+
 const canEdit = computed(() => authStore.canEdit)
 const canDelete = computed(() => authStore.canDelete)
 
@@ -99,6 +121,31 @@ const props = defineProps({
     required: true,
   },
 });
+
+const pdfLoading = ref(false)
+
+const isBpaActive = computed(() => {
+  return haciendaStore.isModuleActive('pdf_bpa') && props.entry.signature?.hash
+})
+
+async function handleDownloadPdf() {
+  pdfLoading.value = true
+  try {
+    await generateBpaReport(props.entry, haciendaStore.mi_hacienda)
+  } catch (err) {
+    console.error('[BitacoraEntryCard] Error generating PDF:', err)
+  } finally {
+    pdfLoading.value = false
+  }
+}
+
+async function onSigned(payload) {
+  try {
+    await bitacoraStore.updateBitacoraEntry(props.entry.id, { signature: payload })
+  } catch (err) {
+    console.error('[BitacoraEntryCard] Error updating signature:', err)
+  }
+}
 
 // Helper to safely access nested properties
 const getSafe = (fn, defaultValue = '') => {
@@ -155,11 +202,9 @@ function formatDate(dateString) {
     return 'Fecha inválida';
   }
 }
-
 </script>
 
 <style scoped>
-/* Tailwind classes can be used here if needed, e.g., for margin/padding adjustments */
 .v-card-title span {
   word-break: break-word; /* Ensure long activity names wrap */
 }

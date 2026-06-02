@@ -186,7 +186,8 @@ const saveHacienda = async () => {
       metricas: editedHacienda.value.metricas || {},
       contacto_email: editedHacienda.value.contacto_email,
       contacto_telefono: editedHacienda.value.contacto_telefono,
-      openrouter_key: editedHacienda.value.openrouter_key
+      openrouter_key: editedHacienda.value.openrouter_key,
+      config_tarifas_venta: editedHacienda.value.config_tarifas_venta
     }
     await haciendaStore.updateHacienda(dataToUpdate)
     closeEditDialog()

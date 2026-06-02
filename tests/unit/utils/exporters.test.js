@@ -12,8 +12,31 @@ import {
 } from '@/utils/exporters'
 
 // --- Mocks Centralizados ---
-// Se ejecuta antes de cada test en este archivo.
+const mockBook = {}
+const mockSheet = {}
+const mockXLSX = {
+  utils: {
+    book_new: vi.fn().mockReturnValue(mockBook),
+    json_to_sheet: vi.fn().mockReturnValue(mockSheet),
+    book_append_sheet: vi.fn()
+  },
+  writeFile: vi.fn()
+}
+
+vi.mock('xlsx', () => ({
+  default: mockXLSX,
+  utils: {
+    book_new: (...args) => mockXLSX.utils.book_new(...args),
+    json_to_sheet: (...args) => mockXLSX.utils.json_to_sheet(...args),
+    book_append_sheet: (...args) => mockXLSX.utils.book_append_sheet(...args)
+  },
+  writeFile: (...args) => mockXLSX.writeFile(...args)
+}))
+
 beforeEach(() => {
+  // Clear mock history before each test
+  vi.clearAllMocks()
+
   // Mock para la creación de elementos 'a' y la simulación de clicks para descarga
   vi.spyOn(document, 'createElement').mockReturnValue({
     href: '',
@@ -21,6 +44,10 @@ beforeEach(() => {
     click: vi.fn(),
     dispatchEvent: vi.fn()
   })
+
+  // Mock body.appendChild y removeChild para aceptar objetos mock
+  vi.spyOn(document.body, 'appendChild').mockImplementation((el) => el)
+  vi.spyOn(document.body, 'removeChild').mockImplementation((el) => el)
 
   // Mock para APIs de navegador que no existen en el entorno de prueba JSDOM
   vi.stubGlobal('URL', {
@@ -133,20 +160,6 @@ describe('exportToJSON', () => {
 })
 
 describe('exportToExcel', () => {
-  let mockXLSX;
-
-  beforeEach(() => {
-    mockXLSX = {
-      utils: {
-        book_new: vi.fn().mockReturnValue({}),
-        json_to_sheet: vi.fn().mockReturnValue({}),
-        book_append_sheet: vi.fn()
-      },
-      writeFile: vi.fn()
-    }
-    vi.mock('xlsx', () => ({ default: mockXLSX, ...mockXLSX }))
-  })
-
   it('debe exportar array de objetos a Excel', async () => {
     const data = [{ id: 1, name: 'Test 1' }]
     const result = await exportToExcel(data, 'test.xlsx')
@@ -162,20 +175,6 @@ describe('exportToExcel', () => {
 })
 
 describe('exportMultipleSheets', () => {
-  let mockXLSX;
-
-  beforeEach(() => {
-    mockXLSX = {
-      utils: {
-        book_new: vi.fn().mockReturnValue({}),
-        json_to_sheet: vi.fn().mockReturnValue({}),
-        book_append_sheet: vi.fn()
-      },
-      writeFile: vi.fn()
-    }
-    vi.mock('xlsx', () => ({ default: mockXLSX, ...mockXLSX }))
-  })
-
   it('debe exportar múltiples hojas', async () => {
     const sheets = {
       'Hoja1': [{ id: 1, name: 'Test 1' }],

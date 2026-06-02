@@ -1,37 +1,65 @@
 <template>
-  <v-container fluid>
-    <v-row>
-      <v-col cols="12">
-        <v-card>
-          <v-card-title class="d-flex align-center">
-            <span class="headline">{{ $t('bitacora.general_title') }}</span>
-            <v-spacer />
-            <v-btn
-              v-if="!isLoading && displayedEntries.length > 0"
-              prepend-icon="mdi-file-pdf"
-              color="error"
-              variant="tonal"
-              @click="exportToPDF"
-              :loading="exportingPDF"
-              class="mr-2"
-            >
-              {{ $t('bitacora.export_pdf') }}
-            </v-btn>
-            <v-btn
-              v-if="!isLoading && displayedEntries.length > 0"
-              prepend-icon="mdi-file-excel"
-              color="success"
-              variant="tonal"
-              @click="exportToExcel"
-              :loading="exportingExcel"
-            >
-              {{ $t('bitacora.export_excel') }}
-            </v-btn>
-          </v-card-title>
-          <v-card-subtitle>Todas las entradas registradas para la hacienda actual.</v-card-subtitle>
-        </v-card>
-      </v-col>
-    </v-row>
+  <v-container fluid class="pa-2">
+    <div class="d-flex flex-column gap-4 w-100">
+      <header class="w-100 bg-background shadow-sm p-0 mb-4">
+        <div class="profile-container mt-0 ml-0">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div class="w-full sm:flex-grow">
+              <h3 class="profile-title text-sm sm:text-lg mb-2 sm:mb-0 text-uppercase">
+                {{ t('bitacora.general_title') }}
+                <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
+                  <v-avatar start> <v-img :src="avatarUrl" alt="Avatar del usuario"></v-img> </v-avatar>
+                  {{ t('roles.' + userRole) }}
+                </v-chip>
+                <v-chip variant="flat" size="small" color="green-lighten-3" class="mx-1" pill>
+                  <v-avatar start> <v-img :src="avatarHaciendaUrl" alt="Avatar de hacienda"></v-img> </v-avatar>
+                  {{ t('dashboard.hacienda') }}: {{ mi_hacienda?.name }}
+                </v-chip>
+              </h3>
+              <p class="text-caption text-grey-darken-1 mt-1">
+                Todas las entradas registradas para la hacienda actual.
+              </p>
+            </div>
+
+            <div class="w-full sm:w-auto z-10 d-flex gap-2">
+              <v-btn
+                prepend-icon="mdi-plus-circle"
+                color="success"
+                variant="flat"
+                class="font-weight-bold text-white elevation-2 rounded-lg"
+                @click="showNewEntryDialog = true"
+              >
+                Nueva Entrada
+              </v-btn>
+              <v-btn
+                v-if="!isLoading && displayedEntries.length > 0"
+                prepend-icon="mdi-file-pdf"
+                color="red-darken-3"
+                variant="flat"
+                class="font-weight-bold text-white elevation-2 rounded-lg"
+                @click="exportToPDF"
+                :loading="exportingPDF"
+              >
+                {{ $t('bitacora.export_pdf') }}
+              </v-btn>
+              <v-btn
+                v-if="!isLoading && displayedEntries.length > 0"
+                prepend-icon="mdi-file-excel"
+                color="green-darken-3"
+                variant="flat"
+                class="font-weight-bold text-white elevation-2 rounded-lg"
+                @click="exportToExcel"
+                :loading="exportingExcel"
+              >
+                {{ $t('bitacora.export_excel') }}
+              </v-btn>
+            </div>
+          </div>
+          <div class="avatar-container">
+            <img :src="avatarHaciendaUrl" alt="Avatar de hacienda" class="avatar-image" />
+          </div>
+        </div>
+      </header>
 
     <v-row>
       <v-col cols="12">
@@ -124,13 +152,28 @@
             <v-btn @click="loadMore" color="primary">Cargar Más</v-btn>
         </v-col>
     </v-row>
+    </div>
 
+    <v-dialog
+      v-model="showNewEntryDialog"
+      max-width="800px"
+      persistent
+      scrollable
+      @keydown.esc="showNewEntryDialog = false"
+    >
+      <BitacoraEntryForm
+        v-if="showNewEntryDialog"
+        @close="showNewEntryDialog = false"
+        @save="handleBitacoraCreated"
+      />
+    </v-dialog>
   </v-container>
 </template>
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import { useBitacoraStore } from '@/stores/bitacoraStore';
+import BitacoraEntryForm from '@/components/forms/BitacoraEntryForm.vue';
 import { useHaciendaStore } from '@/stores/haciendaStore';
 import { useSiembrasStore } from '@/stores/siembrasStore'; // For filter
 import { useActividadesStore } from '@/stores/actividadesStore'; // For filter
@@ -139,15 +182,23 @@ import BitacoraEntryCard from './BitacoraEntryCard.vue'; // Import the new card 
 import { pdfExporter } from '@/utils/exporters/pdfExporter';
 import { excelExporter } from '@/utils/exporters/excelExporter';
 import { useUiFeedbackStore } from '@/stores/uiFeedbackStore';
+import { storeToRefs } from 'pinia';
+import { useAuthStore } from '@/stores/authStore';
+import { useI18n } from 'vue-i18n';
 
 const bitacoraStore = useBitacoraStore();
 const haciendaStore = useHaciendaStore();
 const siembrasStore = useSiembrasStore();
 const actividadesStore = useActividadesStore();
 const uiFeedbackStore = useUiFeedbackStore();
+const authStore = useAuthStore();
+const { t } = useI18n();
+const { userRole, avatarUrl } = storeToRefs(authStore);
+const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore);
 
 const exportingPDF = ref(false);
 const exportingExcel = ref(false);
+const showNewEntryDialog = ref(false);
 
 const isLoading = ref(false);
 const error = ref(null);
@@ -233,6 +284,11 @@ watch([filterSiembraId, filterActividadId, filterDate], () => {
 
 function loadMore() {
     currentPage.value += 1;
+}
+
+async function handleBitacoraCreated() {
+  showNewEntryDialog.value = false;
+  await bitacoraStore.refreshPage();
 }
 
 // Export functions

@@ -227,8 +227,10 @@ const executed  = ref(new Set())
 const usageDisplay = ref('...')
 
 // Computed
-const isModuleActive = computed(() => planStore.isModuleActive('ia'))
-const hasBYOK        = computed(() => !!haciendaStore.mi_hacienda?.openrouter_key)
+const hasBYOK        = computed(() => !!haciendaStore.mi_hacienda?.ai_config?.auth_token)
+const isModuleActive = computed(() => {
+  return haciendaStore.isModuleActive('ai_assistant_premium');
+})
 
 const keyInfo = computed(() => hasBYOK.value
   ? { label: 'Tu API Key', color: 'purple', icon: 'mdi-key' }

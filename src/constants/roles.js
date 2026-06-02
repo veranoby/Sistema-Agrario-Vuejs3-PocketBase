@@ -58,7 +58,8 @@ export const ROLE_OPTIONS = [
  */
 export const USER_STATUS = {
   ACTIVE: 'active',
-  INACTIVE: 'inactive'
+  INACTIVE: 'inactive',
+  SUSPENDED: 'suspended'
 }
 
 /**
@@ -67,7 +68,8 @@ export const USER_STATUS = {
  */
 export const STATUS_LABELS = {
   [USER_STATUS.ACTIVE]: 'Activo',
-  [USER_STATUS.INACTIVE]: 'Inactivo'
+  [USER_STATUS.INACTIVE]: 'Inactivo',
+  [USER_STATUS.SUSPENDED]: 'Suspendido'
 }
 
 /**
@@ -76,5 +78,6 @@ export const STATUS_LABELS = {
  */
 export const STATUS_COLORS = {
   [USER_STATUS.ACTIVE]: 'success',
-  [USER_STATUS.INACTIVE]: 'grey'
+  [USER_STATUS.INACTIVE]: 'error',
+  [USER_STATUS.SUSPENDED]: 'error'
 }

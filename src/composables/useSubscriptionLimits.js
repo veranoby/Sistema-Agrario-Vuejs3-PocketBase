@@ -24,35 +24,46 @@ export function useSubscriptionLimits() {
     error.value = null
 
     try {
-      // 1. Obtener suscripción activa de la hacienda
-      let subscription
+      // 1. Obtener suscripción activa de la hacienda o el plan de la hacienda
+      let subscription = null
+      let plan = null
       try {
         subscription = await pb.collection('subscriptions').getFirstListItem(
-          `hacienda = "${haciendaId}" && is_active = true`
+          `hacienda = "${haciendaId}" && is_active = true`,
+          { expand: 'plan' }
         )
+        plan = subscription.expand?.plan || {}
       } catch (e) {
-        // Sin suscripción activa, usar límites por defecto o permitir sin límite
-        logger.warn('[SUBSCRIPTION_LIMITS] No hay suscripción activa para hacienda:', haciendaId)
+        try {
+          const hacienda = await pb.collection('Haciendas').getOne(haciendaId, { expand: 'plan' })
+          plan = hacienda.expand?.plan || null
+        } catch(err) {
+          plan = null
+        }
+      }
+
+      if (!plan) {
+        logger.warn('[SUBSCRIPTION_LIMITS] No hay suscripción ni plan base activo para hacienda:', haciendaId)
         return { limited: false, limit: Infinity, current: 0 }
       }
 
       // 2. Obtener el límite de usuarios del plan
-      const userLimit = subscription.user_limit || subscription.users_limit
+      const userLimit = (plan.auditores || 0) + (plan.operadores || 0) + (subscription?.users_limit || 0)
 
-      if (!userLimit) {
+      if (userLimit === 0 && (!plan.auditores && !plan.operadores)) {
         logger.info('[SUBSCRIPTION_LIMITS] Suscripción sin límite de usuarios definido')
         return { limited: false, limit: Infinity, current: 0 }
       }
 
-      // 3. Contar usuarios activos en la hacienda
-      const filterParts = [`hacienda = "${haciendaId}"`, `status = "active"`]
-      if (excludeUserId) {
-        filterParts.push(`id != "${excludeUserId}"`)
-      }
+      const users = await pb.collection('users').getFullList({
+        filter: `hacienda = "${haciendaId}"`,
+        fields: 'id,status,role' // Solo traer IDs, status y role
+      })
 
-      const activeUsers = await pb.collection('users').getFullList({
-        filter: filterParts.join(' && '),
-        fields: 'id' // Solo traer IDs para eficiencia
+      const activeUsers = users.filter(u => {
+        const isActive = Array.isArray(u.status) ? u.status.includes('active') : u.status === 'active'
+        const isAuditorOrOperador = u.role === 'auditor' || u.role === 'operador'
+        return isActive && isAuditorOrOperador && (!excludeUserId || u.id !== excludeUserId)
       })
 
       const currentCount = activeUsers.length
@@ -101,38 +112,57 @@ export function useSubscriptionLimits() {
 
     try {
       // Obtener suscripción con plan expandido
-      let subscription
+      // Obtener suscripción con plan expandido o fallback al plan de la hacienda
+      let subscription = null
+      let plan = null
       try {
         subscription = await pb.collection('subscriptions').getFirstListItem(
           `hacienda = "${haciendaId}" && is_active = true`,
           { expand: 'plan' }
         )
+        plan = subscription.expand?.plan || {}
       } catch (e) {
-        return {
-          hasSubscription: false,
-          userLimit: 0,
-          currentUsers: 0,
-          auditoresLimit: 0,
-          operadoresLimit: 0
+        // Fallback: Si no hay suscripción, intentar leer el plan directo de la hacienda
+        try {
+          const hacienda = await pb.collection('Haciendas').getOne(haciendaId, { expand: 'plan' })
+          plan = hacienda.expand?.plan || null
+        } catch(err) {
+          plan = null
+        }
+        
+        if (!plan) {
+          return {
+            hasSubscription: false,
+            userLimit: 0,
+            currentUsers: 0,
+            auditoresLimit: 0,
+            operadoresLimit: 0
+          }
         }
       }
 
-      const plan = subscription.expand?.plan || {}
-
       // Contar usuarios por rol
       const users = await pb.collection('users').getFullList({
-        filter: `hacienda = "${haciendaId}" && status = "active"`,
-        fields: 'id,role'
+        filter: `hacienda = "${haciendaId}"`,
+        fields: 'id,role,status'
       })
 
-      const auditores = users.filter(u => u.role === 'auditor').length
-      const operadores = users.filter(u => u.role === 'operador').length
+      const activeUsers = users.filter(u => {
+        const isActive = Array.isArray(u.status) ? u.status.includes('active') : u.status === 'active'
+        return isActive
+      })
+
+      const auditores = activeUsers.filter(u => u.role === 'auditor').length
+      const operadores = activeUsers.filter(u => u.role === 'operador').length
+      
+      const totalUserLimit = (plan.auditores || 0) + (plan.operadores || 0)
+      const totalCurrentUsers = auditores + operadores
 
       return {
         hasSubscription: true,
-        userLimit: plan.user_limit || subscription.user_limit || 0,
-        currentUsers: users.length,
-        remainingUsers: (plan.user_limit || subscription.user_limit || 0) - users.length,
+        userLimit: totalUserLimit,
+        currentUsers: totalCurrentUsers,
+        remainingUsers: totalUserLimit - totalCurrentUsers,
         auditoresLimit: plan.auditores || 0,
         currentAuditores: auditores,
         remainingAuditores: (plan.auditores || 0) - auditores,

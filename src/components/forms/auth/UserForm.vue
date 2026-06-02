@@ -46,8 +46,16 @@
           @click:append-inner="showPassword = !showPassword"
           :rules="[rules.required, rules.minLength(8)]"
         />
+        <v-text-field
+          v-if="showRoleSelect && availableRoles.length === 1"
+          :model-value="availableRoles[0]"
+          label="Rol"
+          variant="outlined"
+          density="compact"
+          readonly
+        />
         <v-select
-          v-if="showRoleSelect"
+          v-else-if="showRoleSelect"
           v-model="formData.role"
           :items="availableRoles"
           label="Rol"

@@ -65,6 +65,12 @@ export function handleError(error, customMessage = null, options = { silent: fal
     if (!options.silent) showErrorMessage(msg)
   }
 
+  // Ignorar errores por cancelación automática de peticiones (ej: unmounted components, multi-fetches)
+  if (error?.isAbort) {
+    if (import.meta.env.DEV) console.debug('[AgriError] Petición cancelada automáticamente (abort)', error)
+    return null
+  }
+
   // Si ya es un AgriError, usar su mensaje
   if (error instanceof AgriError) {
     showMsg(error.message)

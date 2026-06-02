@@ -226,6 +226,56 @@ export class ExcelExporter {
   }
 }
 
+/**
+ * Exporta un array de objetos a un archivo Excel
+ * @param {Array<Object>} data - Datos a exportar
+ * @param {string} filename - Nombre del archivo
+ * @returns {Promise<boolean>} True si se exportó con éxito
+ */
+export async function exportToExcel(data, filename = 'export.xlsx') {
+  if (!data || data.length === 0) return false
+  try {
+    const XLSX = await import('xlsx')
+    const worksheet = XLSX.utils.json_to_sheet(data)
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1')
+    XLSX.writeFile(workbook, filename)
+    return true
+  } catch (error) {
+    console.error('[exportToExcel] Error:', error)
+    return false
+  }
+}
+
+/**
+ * Exporta múltiples hojas de datos a un único archivo Excel
+ * @param {Object.<string, Array<Object>>} sheets - Objeto con clave como nombre de hoja y valor como array de datos
+ * @param {string} filename - Nombre del archivo
+ * @returns {Promise<boolean>} True si se exportó con éxito
+ */
+export async function exportMultipleSheets(sheets, filename = 'export.xlsx') {
+  if (!sheets || Object.keys(sheets).length === 0) return false
+  try {
+    const XLSX = await import('xlsx')
+    const workbook = XLSX.utils.book_new()
+    let addedSheet = false
+    for (const [sheetName, data] of Object.entries(sheets)) {
+      if (data && data.length > 0) {
+        const worksheet = XLSX.utils.json_to_sheet(data)
+        XLSX.utils.book_append_sheet(workbook, worksheet, sheetName)
+        addedSheet = true
+      }
+    }
+    if (!addedSheet) return false
+    XLSX.writeFile(workbook, filename)
+    return true
+  } catch (error) {
+    console.error('[exportMultipleSheets] Error:', error)
+    return false
+  }
+}
+
 // Singleton instance
 export const excelExporter = new ExcelExporter()
 export default excelExporter
+

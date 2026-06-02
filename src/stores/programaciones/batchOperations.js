@@ -135,7 +135,7 @@ export function validateSiembraContext(programacionId, siembraId, programaciones
  * @returns {Promise<Object>} Execution result
  */
 export async function ejecutarProgramacionesBatch(payload, stores) {
-  const { programacionId, fechasEjecucion, observacionesAdicionales = '', siembraId = null, metricasSeleccionadas = [] } = payload
+  const { programacionId, fechasEjecucion, observacionesAdicionales = '', siembraId = null, metricasSeleccionadas = [], signature = null, bpa_respuestas = {} } = payload
   const { actividadesStore, bitacoraStore, uiFeedbackStore, programaciones } = stores
 
   try {
@@ -225,6 +225,11 @@ export async function ejecutarProgramacionesBatch(payload, stores) {
       .filter(obs => obs && obs.trim())
       .join('\n\n')
 
+    const batchId = 'batch_' + Date.now()
+    const finalObservacionesConBatch = [finalObservaciones, `[Lote de Ejecución: ${batchId}]` ]
+      .filter(obs => obs && obs.trim())
+      .join('\n\n')
+
     let successfulExecutions = 0
     let latestSuccessfullyExecutedDate = null
 
@@ -242,7 +247,9 @@ export async function ejecutarProgramacionesBatch(payload, stores) {
         // Ensure siembras array includes the specific siembra context
         siembras: siembraId ? [siembraId] : (programacion.siembras || []),
         metricas: { ...metricasToSubmit },
-        notas: finalObservaciones,
+        notas: finalObservacionesConBatch,
+        bpa_respuestas: bpa_respuestas,
+        signature: signature
       }
 
       try {

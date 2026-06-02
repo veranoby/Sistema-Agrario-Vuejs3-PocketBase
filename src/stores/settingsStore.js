@@ -28,7 +28,6 @@ export const useSettingsStore = defineStore('settings', {
         if (records.length > 0) {
           this.system_config = records[0]
         } else {
-          console.warn("No se encontró configuración en system_config. Creando registro por defecto...")
           try {
             const defaultRecord = await pb.collection('system_config').create({
               bank_account_info: 'Banco Pichincha, Cuenta de Ahorros #2208574932',
@@ -41,7 +40,7 @@ export const useSettingsStore = defineStore('settings', {
             })
             this.system_config = defaultRecord
           } catch (createErr) {
-            console.error('No se pudo auto-crear la configuración de system_config:', createErr)
+            // Silenciado: Es normal que falle si el usuario no es superadmin
           }
         }
       } catch (error) {

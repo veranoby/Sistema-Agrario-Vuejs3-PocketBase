@@ -241,7 +241,7 @@ async function loadData() {
     ] = await Promise.all([
       pb.collection('users').getFullList(),
       pb.collection('Haciendas').getFullList(),
-      pb.collection('tipos_actividades').getFullList(),
+      pb.collection('tipo_actividades').getFullList(),
       pb.collection('tipos_zonas').getFullList(),
       pb.collection('siembras').getFullList(),
       pb.collection('actividades').getFullList(),

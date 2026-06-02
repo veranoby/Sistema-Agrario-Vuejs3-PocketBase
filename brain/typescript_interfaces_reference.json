@@ -4,11 +4,12 @@
       "id": "string",
       "username": "string",
       "email": "string",
-      "role": "enum (administrador, auditor, operador, superadmin)",
-      "hacienda": "id (relation)",
+      "role": "enum (administrador, auditor, operador, superadmin, asesor)",
+      "hacienda": "id (relation, nullable)",
       "name": "string",
       "lastname": "string",
-      "status": "enum (active, suspended)"
+      "status": "enum (active, suspended)",
+      "info": "json (nullable - stores professional/advisor profile details)"
     },
     "Hacienda": {
       "id": "string",
@@ -19,7 +20,7 @@
       "status": "enum (active, suspended, inactive)",
       "active_modules": "json (array of codes)",
       "subscription_end": "ISOString",
-      "notification_preferences": "json (digestWeekly: bool, emergencyAlerts: bool)"
+      "alertConfig": "json (digestWeekly: bool, emergencyAlerts: bool, recipients: array<string>, enabled_types: array<string>)"
     },
     "Siembra": {
       "id": "string",
@@ -60,7 +61,8 @@
       "estado": "enum (planificada, activa, completada, cancelada)",
       "metricas": "json (values)",
       "notas": "string (html)",
-      "firma_digital": "string (base64)",
+      "signature": "json (signature object with hash and canvas strokes)",
+      "bpa_respuestas": "json (compliance responses)",
       "user_created": "id (relation)"
     },
     "Programacion": {
@@ -114,6 +116,37 @@
       "condicion": "json",
       "destinatarios": "array<string>",
       "activa": "boolean"
+    },
+    "PaqueteEvaluacion": {
+      "id": "string",
+      "hacienda_id": "id (relation)",
+      "asesor_id": "id (relation)",
+      "vinculacion_id": "id (relation)",
+      "siembra_id": "id (relation)",
+      "zonas_ids": "json (array of strings)",
+      "bitacora_ids": "json (array of strings)",
+      "notas_hacienda": "string",
+      "estado": "enum (enviado, visto, cerrado)"
+    },
+    "Receta": {
+      "id": "string",
+      "asesor_id": "id (relation)",
+      "hacienda_id": "id (relation)",
+      "paquete_id": "id (relation)",
+      "titulo": "string",
+      "siembra_id": "id (relation)",
+      "zona_id": "json (array of zone_ids strings)",
+      "blanco_biologico": "string",
+      "producto_recomendado": "string",
+      "ingrediente_activo": "string",
+      "dosis": "number",
+      "unidad_dosis": "enum (cc/L, g/L, kg/ha, L/ha)",
+      "phi_dias": "number",
+      "rei_horas": "number",
+      "metodo_aplicacion": "string",
+      "observaciones_tecnicas": "string",
+      "estado": "enum (borrador, enviada, vista, ejecutada, rechazada)",
+      "programacion_id": "json (activity configuration details)"
     }
   }
 }

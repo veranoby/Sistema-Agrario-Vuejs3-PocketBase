@@ -140,6 +140,10 @@
     "no_operators": "NO OPERATORS REGISTERED.",
     "add_operator": "ADD OPERATOR",
     "operator_limit_reached": "OPERATOR LIMIT REACHED",
+    "auditors_limit_info": "Auditors Quotas: {current} of {limit} occupied",
+    "operators_limit_info": "Operators Quotas: {current} of {limit} occupied",
+    "plan_limit_reached_banner": "Plan limit reached. Upgrade your plan to add more staff",
+    "go_to_subscriptions": "Upgrade Plan",
     "create_new_user": "CREATE NEW USER",
     "name": "NAME",
     "lastname": "LAST NAME",
@@ -155,6 +159,17 @@
     "error_creating_user": "ERROR CREATING USER",
     "confirm_delete": "ARE YOU SURE YOU WANT TO DELETE THIS USER?",
     "error_deleting_user": "ERROR DELETING USER"
+  },
+  "notifications": {
+    "title": "Notification Settings",
+    "subtitle": "Configure how you want to receive digests and critical alerts for your farm.",
+    "weekly_digest_title": "Weekly Managerial Digest",
+    "weekly_digest_desc": "Receive a report every Monday detailing last week's accomplishments and this week's scheduled tasks.",
+    "emergency_alerts_title": "Emergency Alerts",
+    "emergency_alerts_desc": "Immediate notifications regarding subscription expiration or critical BPA risks.",
+    "save_preferences": "Save Preferences",
+    "preferences_saved_success": "Notification preferences updated successfully",
+    "preferences_saved_error": "Error saving preferences"
   },
   "dashboard": {
     "welcome_back": "WELCOME BACK, {fullName}!",

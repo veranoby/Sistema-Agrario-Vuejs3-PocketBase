@@ -80,6 +80,17 @@ export class Scheduler {
       return
     }
 
+    try {
+      const { useAuthStore } = await import('@/stores/authStore')
+      const authStore = useAuthStore()
+      if (authStore.isSuperAdmin || authStore.isAsesor) {
+        logger.debug('[Scheduler] Usuario sin contexto operativo de hacienda, omitiendo verificación')
+        return
+      }
+    } catch(e) {
+      // Ignorar si no se puede cargar el store temporalmente
+    }
+
     // Usar optimizador para reducir llamadas a PocketBase
     const optimizer = getSchedulerOptimizer()
 

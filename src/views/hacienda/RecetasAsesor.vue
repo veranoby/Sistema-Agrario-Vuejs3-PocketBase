@@ -66,7 +66,7 @@
                 <!-- Recipe Header -->
                 <div :class="['py-3 px-4 text-white d-flex align-center justify-space-between', getRecipeHeaderBg(receta.estado)]">
                   <div>
-                    <h3 class="text-subtitle-1 font-weight-bold mb-0">{{ receta.nombre_receta || receta.nombre || 'Receta Agrícola' }}</h3>
+                    <h3 class="text-subtitle-1 font-weight-bold mb-0">{{ receta.titulo || 'Receta Agrícola' }}</h3>
                     <span class="text-caption opacity-90">
                       Fecha: {{ formatDate(receta.created) }}
                     </span>
@@ -82,13 +82,13 @@
                     <v-col cols="6" class="py-1">
                       <span class="text-caption text-grey d-block">Siembra Relacionada</span>
                       <span class="text-body-2 font-weight-medium text-teal-darken-4">
-                        {{ getSiembraName(receta.siembra_id || receta.siembra) }}
+                        {{ getSiembraName(receta.siembra_id) }}
                       </span>
                     </v-col>
                     <v-col cols="6" class="py-1">
-                      <span class="text-caption text-grey d-block">Actividad Sugerida</span>
+                      <span class="text-caption text-grey d-block">Blanco Biológico</span>
                       <span class="text-body-2 font-weight-medium">
-                        {{ getActividadName(receta.actividad_id || receta.actividad) }}
+                        {{ receta.blanco_biologico || 'N/A' }}
                       </span>
                     </v-col>
                   </v-row>
@@ -97,14 +97,14 @@
 
                   <div class="mb-3">
                     <span class="text-caption text-grey d-block">Prescripción Técnica</span>
-                    <p class="text-body-2 mb-1"><strong>Producto:</strong> {{ receta.producto || 'N/A' }}</p>
-                    <p class="text-body-2"><strong>Dosis / Aplicación:</strong> {{ receta.dosis || receta.dosis_aplicacion || 'N/A' }}</p>
+                    <p class="text-body-2 mb-1"><strong>Producto:</strong> {{ receta.producto_recomendado || 'N/A' }}</p>
+                    <p class="text-body-2"><strong>Dosis:</strong> {{ receta.dosis }} {{ receta.unidad_dosis }}<span v-if="receta.phi_dias"> | <strong>PHI:</strong> {{ receta.phi_dias }}d</span><span v-if="receta.rei_horas"> | <strong>REI:</strong> {{ receta.rei_horas }}h</span></p>
                   </div>
 
                   <div class="mb-3">
-                    <span class="text-caption text-grey d-block">Instrucciones de Uso</span>
+                    <span class="text-caption text-grey d-block">Instrucciones Técnicas</span>
                     <p class="text-body-2 bg-grey-lighten-4 pa-3 rounded text-grey-darken-3 whitespace-pre-line italic">
-                      "{{ receta.instrucciones || 'Sin instrucciones adicionales' }}"
+                      "{{ receta.observaciones_tecnicas || 'Sin instrucciones adicionales' }}"
                     </p>
                   </div>
 
@@ -116,7 +116,7 @@
 
                 <!-- Actions -->
                 <v-divider></v-divider>
-                <v-card-actions class="px-4 py-3 bg-grey-lighten-5" v-if="receta.estado === 'pendiente' || receta.estado === 'enviada'">
+                <v-card-actions class="px-4 py-3 bg-grey-lighten-5" v-if="receta.estado === 'enviada' || receta.estado === 'vista'">
                   <v-btn
                     color="red-darken-1"
                     variant="text"
@@ -164,8 +164,8 @@
                     <span class="text-subtitle-2 font-weight-bold text-teal-darken-3">
                       Paquete de Evaluación
                     </span>
-                    <v-chip size="small" :color="paquete.estado === 'pendiente' ? 'orange' : 'teal'" variant="flat" class="text-white">
-                      {{ paquete.estado === 'pendiente' ? 'Pendiente Revisión' : 'Revisado' }}
+                    <v-chip size="small" :color="paquete.estado === 'enviado' ? 'orange' : 'teal'" variant="flat" class="text-white">
+                      {{ paquete.estado === 'enviado' ? 'Nuevo' : 'Revisado' }}
                     </v-chip>
                   </div>
 
@@ -175,13 +175,13 @@
                     <span class="text-caption text-grey d-block">Resumen de Contenido</span>
                     <div class="d-flex flex-wrap gap-2 mt-1">
                       <v-chip size="x-small" color="teal-lighten-4" class="text-teal-darken-4">
-                        Siembras: {{ paquete.siembras_compartidas?.length || 1 }}
+                        Siembra: {{ paquete.siembra_id ? '1' : '0' }}
                       </v-chip>
                       <v-chip size="x-small" color="blue-lighten-4" class="text-blue-darken-4">
-                        Zonas Compartidas: {{ paquete.zonas_compartidas?.length || 0 }}
+                        Zonas: {{ Array.isArray(paquete.zonas_ids) ? paquete.zonas_ids.length : 0 }}
                       </v-chip>
                       <v-chip size="x-small" color="grey-lighten-3" class="text-grey-darken-4">
-                        Bitácoras: {{ paquete.bitacoras_compartidas?.length || 0 }}
+                        Bitácoras: {{ Array.isArray(paquete.bitacora_ids) ? paquete.bitacora_ids.length : 0 }}
                       </v-chip>
                     </div>
                   </div>
@@ -482,26 +482,27 @@ const confirmApprove = async () => {
   try {
     const recipe = selectedRecipe.value
     
-    // Create new programacion activity based on recipe
+    // Create new programacion. Field 'actividades' is array, use siembra_id from real schema
     const progData = {
-      actividad: recipe.actividad_id || recipe.actividad,
-      siembras: [recipe.siembra_id || recipe.siembra],
+      actividades: recipe.siembra_id ? [] : [],  // actividades is activity IDs, recipe doesn't store one
+      siembras: [recipe.siembra_id].filter(Boolean),
       frecuencia: programacionFrecuencia.value,
       proxima_ejecucion: new Date(programacionDate.value).toISOString(),
-      estado: 'activa',
+      estado: 'activo',
       frecuencia_personalizada: {
         intervalo: 1,
         unidad: 'dias',
         diasSemana: []
       },
-      observaciones: `Receta técnica aprobada: ${recipe.nombre_receta || recipe.nombre}. Producto: ${recipe.producto || 'N/A'}, Dosis: ${recipe.dosis || recipe.dosis_aplicacion || 'N/A'}. Instrucciones: ${recipe.instrucciones || ''}`
+      descripcion: `Receta Técnica: ${recipe.titulo || 'Receta'}. Producto: ${recipe.producto_recomendado || 'N/A'}, Dosis: ${recipe.dosis || ''} ${recipe.unidad_dosis || ''}.`,
+      observaciones: recipe.observaciones_tecnicas || ''
     }
 
     await programacionesStore.crearProgramacion(progData)
 
-    // Update recipe state
-    await pb.collection('recetas').update(recipe.id, { estado: 'aprobada' })
-    recipe.estado = 'aprobada'
+    // Update recipe state to 'ejecutada' (the real valid terminal state for approved recipes)
+    await pb.collection('recetas').update(recipe.id, { estado: 'ejecutada' })
+    recipe.estado = 'ejecutada'
 
     uiFeedback.showSnackbar('Receta aprobada y programada en tu calendario', 'success')
   } catch (error) {

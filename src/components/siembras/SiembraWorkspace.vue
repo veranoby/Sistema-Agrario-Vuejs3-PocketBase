@@ -47,10 +47,27 @@
       <!-- Sidebar -->
       <v-col cols="12" md="4" class="px-0 py-4">
         <SiembraZonas
+          title="ZONAS REGISTRADAS (LOTES)"
+          :esLote="true"
           :siembraInfo="siembraInfo"
           :totalArea="totalArea"
           :areaUnit="areaUnit"
-          :zonasfiltradas="zonasfiltradas"
+          :zonasfiltradas="zonasLotes"
+          :headers="headers"
+          v-model:expanded="expandedZonas"
+          :zonas="zonas"
+          @open-add-zona="handleOpenAddZona"
+          @edit-zona="handleEditZona"
+          @delete-zona="handleDeleteZona"
+        />
+
+        <SiembraZonas
+          title="PUNTOS DE INTERÉS Y OTRAS ZONAS"
+          :esLote="false"
+          :siembraInfo="siembraInfo"
+          :totalArea="totalArea"
+          :areaUnit="areaUnit"
+          :zonasfiltradas="zonasOtras"
           :headers="headers"
           v-model:expanded="expandedZonas"
           :zonas="zonas"
@@ -338,6 +355,8 @@ const {
   avatarUrl,
   totalArea,
   zonasfiltradas,
+  zonasLotes,
+  zonasOtras,
   actividadesfiltradas,
   siembraAvatarUrl,
   mi_hacienda,
@@ -435,17 +454,25 @@ const zonaEditando = ref({
 const tipoZonaActual = ref(null)
 
 // Methods
-const handleOpenAddZona = () => {
+const handleOpenAddZona = (tipo) => {
   modoEdicionZona.value = false
-  const tipoLote = tiposZonas.value.find((tipo) => tipo.nombre === 'Lotes')
-  tipoZonaActual.value = tipoLote
+  let tipoId = null
+  
+  if (tipo === 'lote') {
+    const tipoLote = tiposZonas.value.find((t) => t.nombre === 'Lotes')
+    tipoZonaActual.value = tipoLote
+    tipoId = tipoLote?.id
+  } else {
+    tipoZonaActual.value = null
+  }
+  
   zonaEditando.value = {
     nombre: '',
     area: { area: null, unidad: 'ha' },
     info: '',
-    contabilizable: true,
+    contabilizable: tipo === 'lote',
     gps: '',
-    tipo: tipoLote?.id,
+    tipo: tipoId,
     datos_bpa: [],
     metricas: {},
     siembra: siembraId.value,

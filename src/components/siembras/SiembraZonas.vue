@@ -1,7 +1,7 @@
 <template>
   <v-card class="zonas-section mb-4" elevation="2">
     <v-card-title class="d-flex justify-space-between align-center">
-      {{ t('sowing_workspace.registered_zones') }}
+      {{ title || t('sowing_workspace.registered_zones') }}
       <v-btn
         size="small"
         color="green-lighten-2"
@@ -18,6 +18,7 @@
       </v-btn>
     </v-card-title>
     <v-card-text class="px-2 py-0">
+      <div v-if="esLote" class="mb-2">
       <v-chip
         variant="flat"
         :color="
@@ -39,6 +40,7 @@
       <v-chip variant="flat" size="small" color="green" class="mx-1" pill>
         {{ t('sowing_workspace.target_area') }}: {{ siembraInfo?.area_total || 0 }} ha
       </v-chip>
+      </div>
 
       <v-data-table
         :headers="headers"
@@ -163,6 +165,14 @@ const props = defineProps({
   zonas: {
     type: Array,
     required: true
+  },
+  title: {
+    type: String,
+    default: ''
+  },
+  esLote: {
+    type: Boolean,
+    default: true
   }
 })
 
@@ -173,7 +183,7 @@ const avatarStore = useAvatarStore()
 const { zonas } = storeToRefs(useZonasStore())
 
 const openAddZona = () => {
-  emit('open-add-zona')
+  emit('open-add-zona', props.esLote ? 'lote' : 'otro')
 }
 
 const editZona = (zona) => {

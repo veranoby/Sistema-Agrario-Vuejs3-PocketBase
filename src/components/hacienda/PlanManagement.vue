@@ -13,6 +13,9 @@
           </v-tooltip>
         </v-chip>
 
+        <v-btn color="info" @click="openHistoryModal" icon size="small" variant="tonal" class="mr-2">
+          <v-icon>mdi-history</v-icon>
+        </v-btn>
         <v-btn color="success" @click="openChangePlanModal" icon size="small" variant="tonal">
           <v-icon>mdi-cog</v-icon>
         </v-btn>
@@ -39,7 +42,83 @@
           Tienes una solicitud pendiente de revisión para el plan "{{ pendingRequest.expand?.plan_solicitado?.nombre }}".
         </v-alert>
     </div>
+
+    <v-divider class="my-3"></v-divider>
+
+    <!-- Módulos Activos -->
+    <div class="mb-4">
+      <h3 class="text-sm font-bold text-grey-darken-1 mb-2 uppercase tracking-wide">Módulos Activos</h3>
+      <!-- Skeleton mientras cargan los módulos -->
+      <div v-if="!modulesReady" class="flex flex-wrap gap-2">
+        <v-skeleton-loader type="chip" v-for="n in 3" :key="n" width="100" />
+      </div>
+      <!-- Módulos con nombres resueltos -->
+      <div v-else-if="mi_hacienda?.active_modules?.length > 0" class="flex flex-wrap gap-2">
+        <v-chip
+          v-for="moduleId in mi_hacienda.active_modules"
+          :key="moduleId"
+          color="primary"
+          variant="outlined"
+          size="small"
+        >
+          <v-icon start size="small">mdi-puzzle-check</v-icon>
+          {{ getModuleName(moduleId) }}
+        </v-chip>
+      </div>
+      <!-- Sin módulos -->
+      <div v-else class="text-caption text-grey-darken-1 italic">
+        Sin módulos adicionales activos
+      </div>
+    </div>
   </div>
+
+  <!-- Modal Historial de Solicitudes -->
+  <v-dialog v-model="historyModalOpen" max-width="800px" scrollable>
+    <v-card>
+      <v-toolbar color="info" dark>
+        <v-toolbar-title>Historial de Solicitudes</v-toolbar-title>
+        <v-spacer></v-spacer>
+        <v-btn icon @click="historyModalOpen = false"><v-icon>mdi-close</v-icon></v-btn>
+      </v-toolbar>
+      <v-card-text class="pa-0">
+        <v-data-table
+          :headers="historyHeaders"
+          :items="solicitudesHistory"
+          :loading="loadingHistory"
+          class="elevation-0"
+        >
+          <template v-slot:item.fecha_solicitud="{ item }">
+            {{ new Date(item.created).toLocaleDateString('es-EC', {day:'2-digit', month:'2-digit', year:'numeric'}) }}
+          </template>
+          <template v-slot:item.tipo="{ item }">
+             <v-chip size="x-small" :color="item.tipo === 'plan_upgrade' ? 'primary' : 'secondary'">
+                {{ item.tipo === 'plan_upgrade' ? 'Mejora Plan' : 'Módulo Extra' }}
+              </v-chip>
+          </template>
+          <template v-slot:item.detalle="{ item }">
+             <div v-if="item.tipo === 'plan_upgrade'" class="text-caption">
+              <strong>Plan:</strong> {{ item.expand?.plan_solicitado?.nombre || '?' }}
+            </div>
+            <div v-if="item.modulo_solicitado && item.modulo_solicitado !== '[]'" class="text-caption">
+              <strong>Módulos:</strong> {{ parseModules(item.modulo_solicitado) }}
+            </div>
+          </template>
+          <template v-slot:item.estado="{ item }">
+            <v-chip size="small" :color="item.estado === 'aprobada' ? 'success' : item.estado === 'rechazada' ? 'error' : 'warning'">
+              {{ item.estado.toUpperCase() }}
+            </v-chip>
+          </template>
+          <template v-slot:item.monto_notas="{ item }">
+            <span class="text-caption text-grey-darken-2">{{ item.notas_admin || 'N/A' }}</span>
+          </template>
+        </v-data-table>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn color="grey-darken-1" variant="text" @click="historyModalOpen = false">Cerrar</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 
   <v-dialog
     v-model="changePlanModalOpen"
@@ -257,8 +336,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute, useRouter } from 'vue-router'
 import { usePlanStore } from '@/stores/planStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
@@ -270,6 +350,8 @@ import ModuleCard from '@/components/cliente/ModuleCard.vue'
 import { ModuleCalculator } from '@/utils/moduleCalculator'
 
 const { t } = useI18n()
+const route = useRoute()
+const router = useRouter()
 const planStore = usePlanStore()
 const haciendaStore = useHaciendaStore()
 const uiFeedbackStore = useUiFeedbackStore()
@@ -279,8 +361,12 @@ const settingsStore = useSettingsStore()
 const { currentPlan } = storeToRefs(planStore)
 const { daysUntilExpiration, needsSubscriptionWarning, mi_hacienda } = storeToRefs(haciendaStore)
 
+// Flag para saber si los módulos están listos para mostrar nombres
+const modulesReady = ref(false)
+
 // Modal State
 const changePlanModalOpen = ref(false)
+const historyModalOpen = ref(false)
 const currentStep = ref(1)
 const billingCycle = ref('monthly')
 
@@ -295,6 +381,42 @@ const pendingRequest = ref(null)
 const paymentReceipt = ref(null)
 const receiptError = ref('')
 const isSubmitting = ref(false)
+
+// History State
+const solicitudesHistory = ref([])
+const loadingHistory = ref(false)
+const historyHeaders = [
+  { title: 'Fecha', key: 'fecha_solicitud' },
+  { title: 'Tipo', key: 'tipo' },
+  { title: 'Detalle', key: 'detalle' },
+  { title: 'Estado', key: 'estado' },
+  { title: 'Notas', key: 'monto_notas' }
+]
+
+const getModuleName = (id) => {
+  const mod = allModules.value.find(m => m.id === id)
+  return mod ? (mod.name || mod.nombre) : id
+}
+
+const parseModulesArray = (jsonString) => {
+  if (!jsonString) return []
+  try {
+    let ids = []
+    if (jsonString.startsWith('[')) {
+      ids = JSON.parse(jsonString)
+    } else {
+      ids = [jsonString]
+    }
+    return ids.map(id => getModuleName(id))
+  } catch (e) {
+    return [jsonString]
+  }
+}
+
+const parseModules = (jsonString) => {
+  const names = parseModulesArray(jsonString)
+  return names.join(', ')
+}
 
 const modalTitle = computed(() => {
   switch (currentStep.value) {
@@ -348,9 +470,52 @@ const annualSavings = computed(() => {
   return totalMonthly - totalYearly
 })
 
+const cleanOpenPlansQuery = async () => {
+  if (route.query.openPlans) {
+    try {
+      const query = { ...route.query }
+      delete query.openPlans
+      await router.replace({ query })
+    } catch (e) {
+      console.error('[PLAN_MANAGEMENT] Error cleaning query:', e)
+    }
+  }
+}
+
 onMounted(async () => {
+    // Cargar módulos disponibles para poder resolver nombres
+    allModules.value = await planStore.fetchModules()
+    modulesReady.value = true
+
+    // CRÍTICO: Forzar refresh desde servidor para reflejar cambios post-aprobación
+    // sin esto, active_modules sigue mostrando el caché desactualizado
+    const haciendaId = authStore.user?.hacienda
+    if (haciendaId) {
+      try {
+        await haciendaStore.fetchHacienda(haciendaId, true)
+      } catch (e) {
+        console.warn('[PlanManagement] No se pudo refrescar hacienda:', e)
+      }
+    }
+
     await checkPendingRequests()
     await settingsStore.fetchConfig()
+    
+    if (route.query.openPlans === 'true') {
+      await openChangePlanModal()
+    }
+})
+
+watch(() => route.query.openPlans, async (newVal) => {
+  if (newVal === 'true' && !changePlanModalOpen.value) {
+    await openChangePlanModal()
+  }
+})
+
+watch(changePlanModalOpen, async (newVal) => {
+  if (!newVal) {
+    await cleanOpenPlansQuery()
+  }
 })
 
 const checkPendingRequests = async () => {
@@ -366,12 +531,30 @@ const checkPendingRequests = async () => {
     }
 }
 
+const openHistoryModal = async () => {
+  historyModalOpen.value = true
+  loadingHistory.value = true
+  try {
+    const res = await pb.collection('solicitudes_suscripcion').getFullList({
+      filter: `hacienda = "${mi_hacienda.value?.id}"`,
+      expand: 'plan_solicitado',
+      sort: '-fecha_solicitud'
+    })
+    solicitudesHistory.value = res
+  } catch (error) {
+    uiFeedbackStore.showSnackbar('Error cargando el historial', 'error')
+    console.error(error)
+  } finally {
+    loadingHistory.value = false
+  }
+}
+
 const openChangePlanModal = async () => {
   try {
     uiFeedbackStore.showLoading()
     await checkPendingRequests()
     availablePlans.value = await planStore.fetchAvailablePlans()
-    allModules.value = await planStore.fetchModules()
+    // allModules is loaded on mounted
     
     // Initial selection from current state
     selectedPlan.value = mi_hacienda.value.plan
@@ -380,6 +563,9 @@ const openChangePlanModal = async () => {
     paymentReceipt.value = null
     currentStep.value = 1
     changePlanModalOpen.value = true
+    
+    // Limpiar query param de forma segura al abrir
+    await cleanOpenPlansQuery()
   } catch (error) {
     uiFeedbackStore.showSnackbar(t('plan_management.error_loading_plans'), 'error')
   } finally {
@@ -422,13 +608,22 @@ const submitUnifiedRequest = async () => {
       const formData = new FormData()
       formData.append('hacienda', mi_hacienda.value.id)
       formData.append('solicitante', authStore.user.id)
-      formData.append('tipo', 'suscripcion_unificada')
-      formData.append('plan_solicitado', selectedPlan.value)
-      formData.append('modulos_solicitados', JSON.stringify(selectedModuleIds.value))
+      // El esquema de DB solo acepta 'plan_upgrade' o 'modulo_addon' en 'tipo'
+      formData.append('tipo', selectedPlan.value ? 'plan_upgrade' : 'modulo_addon')
+      
+      if (selectedPlan.value) {
+        formData.append('plan_solicitado', selectedPlan.value)
+      }
+      
+      // El esquema de DB tiene 'modulo_solicitado' (en singular y tipo texto)
+      formData.append('modulo_solicitado', JSON.stringify(selectedModuleIds.value))
       formData.append('estado', 'pendiente')
       formData.append('comprobante', receiptFile)
-      formData.append('monto_total', totalAmount.value)
-      formData.append('ciclo_facturacion', billingCycle.value)
+      
+      // Monto, ciclo y tipo en notas_admin (no hay columnas separadas en schema)
+      const metadatos = `Monto Total: ${totalAmount.value} | Ciclo: ${billingCycle.value} | Unificada`
+      formData.append('notas_admin', metadatos)
+      formData.append('fecha_solicitud', new Date().toISOString())
 
       await pb.collection('solicitudes_suscripcion').create(formData)
 

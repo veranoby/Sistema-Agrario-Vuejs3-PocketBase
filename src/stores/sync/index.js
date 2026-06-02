@@ -19,6 +19,9 @@ import { useActividadesStore } from '@/stores/actividadesStore'
 import { useRecordatoriosStore } from '@/stores/recordatoriosStore'
 import { useProgramacionesStore } from '@/stores/programaciones/programacionesStore'
 import { useBitacoraStore } from '@/stores/bitacoraStore'
+import { useBodegaStore } from '@/stores/bodegaStore'
+import { useBodegaMovimientosStore } from '@/stores/bodegaMovimientosStore'
+import { useTarjasStore } from '@/stores/tarjasStore'
 import { IndexedDBStorage } from '@/utils/indexedDBStorage'
 
 // Nueva instancia de almacenamiento IndexedDB para syncCache (Hito 2)
@@ -31,7 +34,10 @@ const STORE_MAP = {
   actividades: () => useActividadesStore(),
   recordatorios: () => useRecordatoriosStore(),
   programaciones: () => useProgramacionesStore(),
-  bitacora: () => useBitacoraStore()
+  bitacora: () => useBitacoraStore(),
+  bodega_items: () => useBodegaStore(),
+  bodega_movimientos: () => useBodegaMovimientosStore(),
+  tarjas: () => useTarjasStore()
 }
 
 const ALL_STORES = [
@@ -40,7 +46,10 @@ const ALL_STORES = [
   useActividadesStore,
   useRecordatoriosStore,
   useProgramacionesStore,
-  useBitacoraStore
+  useBitacoraStore,
+  useBodegaStore,
+  useBodegaMovimientosStore,
+  useTarjasStore
 ]
 
 // Namespace aislado para sincronización utilizando IndexedDB (Migración Hito 2)
@@ -136,7 +145,10 @@ export const useSyncStore = defineStore('sync', {
         bitacora: () => import('@/stores/bitacoraStore'),
         finanzas: () => import('@/stores/finanzaStore'),
         Haciendas: () => import('@/stores/haciendaStore'),
-        users: () => import('@/stores/userStore')
+        users: () => import('@/stores/userStore'),
+        bodega_items: () => import('@/stores/bodegaStore'),
+        bodega_movimientos: () => import('@/stores/bodegaMovimientosStore'),
+        tarjas: () => import('@/stores/tarjasStore')
       }
       if (!map[name]) return null
       const module = await map[name]()
@@ -167,7 +179,10 @@ export const useSyncStore = defineStore('sync', {
           import('@/stores/actividadesStore'),
           import('@/stores/recordatoriosStore'),
           import('@/stores/programaciones/programacionesStore'),
-          import('@/stores/bitacoraStore')
+          import('@/stores/bitacoraStore'),
+          import('@/stores/bodegaStore'),
+          import('@/stores/bodegaMovimientosStore'),
+          import('@/stores/tarjasStore')
         ])
         stores = storeModules.map(m => m[Object.keys(m).find(k => k.startsWith('use'))]())
       } catch (loadError) {

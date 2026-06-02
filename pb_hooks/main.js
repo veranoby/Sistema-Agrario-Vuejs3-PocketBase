@@ -215,139 +215,6 @@ const EMAIL_TEMPLATES = {
   }
 }
 
-routerAdd("POST", "/api/alerts/send", (e) => {
-  const info = e.requestInfo()
-  const body = info.json
-  const { type, recipients, hacienda, data } = body
-
-  // Validation
-  if (!type) {
-    return e.json(HTTP_STATUS.BAD_REQUEST, { error: "Missing 'type' field" })
-  }
-
-  if (!recipients || !Array.isArray(recipients) || recipients.length === 0) {
-    return e.json(HTTP_STATUS.BAD_REQUEST, { error: "'recipients' must be a non-empty array" })
-  }
-
-  if (!hacienda) {
-    return e.json(HTTP_STATUS.BAD_REQUEST, { error: "Missing 'hacienda' field" })
-  }
-
-  if (!VALID_ALERT_TYPES.includes(type)) {
-    return e.json(HTTP_STATUS.BAD_REQUEST, {
-      error: "Invalid type. Must be one of: " + VALID_ALERT_TYPES.join(", ")
-    })
-  }
-
-  // Short-circuit email validation (fail fast on first invalid)
-  const firstInvalid = recipients.find(email => !EMAIL_REGEX.test(email))
-  if (firstInvalid) {
-    return e.json(HTTP_STATUS.BAD_REQUEST, {
-      error: "Invalid email format: " + firstInvalid
-    })
-  }
-
-  // Settings (cached)
-  const settings = getSettings()
-  const resendApiKey = settings.get("RESEND_API_KEY")
-  const resendFromEmail = settings.get("RESEND_FROM_EMAIL") || "noreply@conagri.com"
-  const frontendUrl = settings.get("FRONTEND_URL") || "http://localhost:5173"
-
-  if (!resendApiKey) {
-    return e.json(HTTP_STATUS.SERVER_ERROR, {
-      error: "RESEND_API_KEY not configured in Settings UI"
-    })
-  }
-
-  // Generate email
-  const template = EMAIL_TEMPLATES[type]
-  if (!template) {
-    return e.json(HTTP_STATUS.BAD_REQUEST, { error: "Unknown alert type: " + type })
-  }
-
-  const subject = template.subject(hacienda)
-  const html = EMAIL_TEMPLATE_BASE(frontendUrl, hacienda) +
-    `<div style="background: ${template.gradient}; ${CSS.headerPadding}; text-align: center; border-radius: 10px 10px 0 0;">
-      <h1 style="color: white; margin: 0; ${CSS.baseFontSize};">${template.icon} ${template.title}</h1>
-      <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0;">${hacienda}</p>
-    </div>` +
-    template.content({ ...data, hacienda }, frontendUrl) +
-    EMAIL_TEMPLATE_FOOTER
-
-  // Send to Resend
-  try {
-    const resendResponse = $http.send({
-      url: RESEND_API_URL,
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer " + resendApiKey
-      },
-      body: JSON.stringify({
-        from: resendFromEmail,
-        to: recipients,
-        subject: subject,
-        html: html
-      }),
-      timeout: 10000 // 10 seconds
-    })
-
-    if (resendResponse.statusCode !== HTTP_STATUS.OK) {
-      console.error("Resend API error:", resendResponse.body)
-      return e.json(HTTP_STATUS.SERVER_ERROR, {
-        error: "Failed to send email via Resend API",
-        details: resendResponse.body
-      })
-    }
-
-    const responseData = resendResponse.json || {}
-    const now = new Date().toISOString()
-
-    // Return response immediately (logging happens after)
-    const response = e.json(HTTP_STATUS.OK, {
-      success: true,
-      message: "Email sent successfully",
-      recipients: recipients,
-      type: type,
-      hacienda: hacienda,
-      resend_id: responseData.id || null
-    })
-
-    // Fire-and-forget logging (non-blocking)
-    setTimeout(() => {
-      try {
-        $app.dao().createRecord("log_comunicaciones", {
-          tipo: "alerta",
-          destinatario: recipients.join(", "),
-          asunto: subject,
-          hacienda: hacienda,
-          estado: "sent",
-          resend_id: responseData.id || null,
-          user_id: $apis.authInfo().record.id,
-          metadata: JSON.stringify({
-            tipo_alerta: type,
-            hacienda: hacienda,
-            resend_id: responseData.id || null,
-            fecha_envio: now
-          }),
-          created: now
-        })
-      } catch (logErr) {
-        console.error("Failed to log:", logErr.message)
-      }
-    }, 0)
-
-    return response
-
-  } catch (err) {
-    console.error("Error sending email:", err.message)
-    return e.json(HTTP_STATUS.SERVER_ERROR, {
-      error: "Failed to send email",
-      details: err.message
-    })
-  }
-}, $apis.requireAuth())
-
 // ============================================
 // GET /api/haciendas/:id/alerts
 // ============================================
@@ -1860,7 +1727,7 @@ routerAdd("POST", "/api/ai/chat", (e) => {
   if (!caller) return e.json(HTTP_STATUS.UNAUTHORIZED, { error: "Auth required" })
 
   // ── Resolver API key: BYOK (hacienda) > key global ──
-  let openRouterKey = null
+  let aiConfig = null
   let isGlobalKey = false
 
   try {
@@ -1869,18 +1736,18 @@ routerAdd("POST", "/api/ai/chat", (e) => {
       haciendaCol,
       $app.dao().filter("id = {:id}", { id: haciendaId })
     )
-    openRouterKey = hacienda ? hacienda.get("openrouter_key") : null
+    aiConfig = hacienda ? hacienda.get("ai_config") : null
   } catch (_) {}
 
-  if (!openRouterKey) {
+  if (!aiConfig || !aiConfig.auth_token) {
     const settings = getSettings()
-    openRouterKey = settings.get("GLOBAL_OPENROUTER_KEY")
+    aiConfig = settings.get("global_ai_config") || {}
     isGlobalKey = true
   }
 
-  if (!openRouterKey) {
+  if (!aiConfig || !aiConfig.auth_token) {
     return e.json(HTTP_STATUS.BAD_REQUEST, {
-      error: "No hay API key de IA configurada. Ingresa tu propia key en configuración de hacienda."
+      error: "No hay configuración de IA disponible. Ingresa tu propia key en configuración de hacienda."
     })
   }
 
@@ -1961,17 +1828,20 @@ CRÍTICO: responde SOLO el JSON, sin markdown, sin bloques de código, sin texto
       ? "Contexto actual:\n" + JSON.stringify(context, null, 2) + "\n\nConsulta: " + prompt
       : prompt
 
+    const url = aiConfig.provider === 'openrouter' ? "https://openrouter.ai/api/v1/chat/completions" : (aiConfig.base_url || "https://api.openai.com/v1/chat/completions")
+    const model = aiConfig.model || (isGlobalKey ? "openai/gpt-4o-mini" : "openai/gpt-4o")
+
     const response = $http.send({
-      url: "https://openrouter.ai/api/v1/chat/completions",
+      url: url,
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer " + openRouterKey,
+        "Authorization": "Bearer " + aiConfig.auth_token,
         "HTTP-Referer": "https://conagri.app",
         "X-Title": "ConAgri"
       },
       body: JSON.stringify({
-        model: isGlobalKey ? "openai/gpt-4o-mini" : "openai/gpt-4o",
+        model: model,
         max_tokens: 800,
         messages: [
           { role: "system", content: systemPrompt },
@@ -2006,3 +1876,41 @@ CRÍTICO: responde SOLO el JSON, sin markdown, sin bloques de código, sin texto
     return e.json(HTTP_STATUS.SERVER_ERROR, { error: "Error conectando con IA", details: err.message })
   }
 }, $apis.requireAuth())
+
+// ============================================
+// POST /api/ai/test-connection
+// ============================================
+routerAdd("POST", "/api/ai/test-connection", (e) => {
+  const info = e.requestInfo()
+  const { provider, base_url, model, auth_token } = info.json || {}
+
+  if (!auth_token) return e.json(HTTP_STATUS.BAD_REQUEST, { error: "auth_token required" })
+
+  const url = provider === 'openrouter' ? "https://openrouter.ai/api/v1/chat/completions" : (base_url || "https://api.openai.com/v1/chat/completions")
+  const testModel = model || "openai/gpt-4o-mini"
+
+  try {
+    const response = $http.send({
+      url: url,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + auth_token
+      },
+      body: JSON.stringify({
+        model: testModel,
+        messages: [{ role: "user", content: "Test ping. Responde solo OK." }]
+      }),
+      timeout: 10000
+    })
+
+    if (response.statusCode === 200) {
+      return e.json(200, { success: true })
+    } else {
+      return e.json(400, { error: "Failed", details: response.body })
+    }
+  } catch (err) {
+    return e.json(500, { error: "Error de conexión", details: err.message })
+  }
+}, $apis.requireAuth())
+

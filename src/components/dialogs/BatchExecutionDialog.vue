@@ -91,6 +91,29 @@
               v-model:metricasSeleccionadas="metricasSeleccionadas"
               class="ml-2"
             />
+
+            <!-- SECCIÓN Checklist BPA -->
+            <div v-if="preguntasBpa.length > 0" class="mt-6">
+              <div class="flex items-center mb-4">
+                <v-icon color="success" class="mr-2">mdi-clipboard-list-outline</v-icon>
+                <h4 class="">Checklist de Buenas Prácticas Agrícolas (BPA)</h4>
+              </div>
+              <BpaChecklist
+                :preguntas="preguntasBpa"
+                v-model="bpa_respuestas"
+                class="ml-2"
+              />
+            </div>
+
+            <!-- SECCIÓN Firma Digital -->
+            <div class="mt-6 border-t pt-4">
+              <BitacoraSignature
+                :data-to-sign="computedDataToSign"
+                @signed="onSignatureCaptured"
+                :require-drawing="true"
+                class="ml-2"
+              />
+            </div>
           </div>
         </div>
         
@@ -174,6 +197,9 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useProgramacionesStore } from '@/stores/programaciones';
 import { useActividadesStore } from '@/stores/actividadesStore';
 import BatchGeneralDataForm from '@/components/forms/BatchGeneralDataForm.vue';
+import BpaChecklist from '@/components/bitacora/BpaChecklist.vue';
+import BitacoraSignature from '@/components/bitacora/BitacoraSignature.vue';
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore';
 
 const props = defineProps({
   modelValue: Boolean,
@@ -196,6 +222,28 @@ const actividadDetalle = ref(null);
 const observacionesAdicionales = ref('');
 const metricasSeleccionadas = ref([]);
 const showWarningDialog = ref(false);
+
+const bpa_respuestas = ref({});
+const signature = ref(null);
+const uiFeedbackStore = useUiFeedbackStore();
+
+const preguntasBpa = computed(() => {
+  return actividadDetalle.value?.expand?.tipo_actividades?.preguntas_bpa || [];
+});
+
+const computedDataToSign = computed(() => {
+  return {
+    batch: true,
+    programacionId: props.programacionId,
+    fechasEjecucion: selectedFechas.value,
+    observacionesAdicionales: observacionesAdicionales.value,
+    bpa_respuestas: bpa_respuestas.value
+  };
+});
+
+function onSignatureCaptured(signaturePayload) {
+  signature.value = signaturePayload;
+}
 
 const programacion = computed(() =>
   programacionesStore.programaciones.find(p => p.id === props.programacionId)
@@ -228,6 +276,8 @@ const dialog = computed({
 const loadPendingDates = async () => {
   if (!programacion.value) return;
   loading.value = true;
+  bpa_respuestas.value = {};
+  signature.value = null;
   try {
     const siembraId = programacion.value.siembras && programacion.value.siembras.length > 0
       ? programacion.value.siembras[0]
@@ -262,6 +312,9 @@ onMounted(() => {
 
 const closeDialog = () => {
   if (executing.value) return;
+  bpa_respuestas.value = {};
+  signature.value = null;
+  observacionesAdicionales.value = '';
   dialog.value = false;
 };
 
@@ -276,6 +329,11 @@ const handleExecuteClick = () => {
 const executeBatch = async (cleanup = false) => {
   if (selectedFechas.value.length === 0) return;
 
+  if (!signature.value) {
+    uiFeedbackStore.showSnackbar('Es obligatorio firmar el lote antes de registrar los cumplimientos.', 'error');
+    return;
+  }
+
   executing.value = true;
   showWarningDialog.value = false;
   try {
@@ -289,6 +347,8 @@ const executeBatch = async (cleanup = false) => {
       observacionesAdicionales: observacionesAdicionales.value,
       siembraId: siembraId,
       metricasSeleccionadas: metricasSeleccionadas.value,
+      signature: signature.value,
+      bpa_respuestas: bpa_respuestas.value,
       cleanup: cleanup
     });
   } catch (error) {

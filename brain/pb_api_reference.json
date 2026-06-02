@@ -1,5 +1,6 @@
 {
   "api_type": "PocketBase JSVM / REST",
+  "last_audit": "2026-05-20",
   "base_collections": [
     "users",
     "Haciendas",
@@ -7,12 +8,19 @@
     "Siembras",
     "bitacora",
     "actividades",
-    "tipos_zonas",
     "tipo_actividades",
+    "tipos_zonas",
     "recordatorios",
     "programaciones",
+    "finanzas",
+    "modulos",
+    "planes",
     "subscriptions",
-    "scheduled_reports"
+    "solicitudes_suscripcion",
+    "paquetes_evaluacion",
+    "recetas",
+    "vinculaciones_asesor",
+    "system_config"
   ],
   "custom_hooks": [
     {
@@ -29,17 +37,16 @@
       "method": "POST",
       "handler": "pb_hooks/main.js",
       "audit_status": "✅ 100%",
-      "validation": "Validates required fields in request.",
-      "error_handling": "Generic 500.",
-      "security": "RequireAuth check. Proxy masks Resend API."
+      "validation": "Validates type, recipients (non-empty array), hacienda fields.",
+      "error_handling": "Returns 400 for invalid fields, 500 for Resend proxy failure.",
+      "security": "RequireAuth check. Proxy masks Resend API key. VALID_ALERT_TYPES whitelist enforced."
     },
     {
-      "path": "/api/reports/check-pending",
+      "path": "OBSOLETE: /api/reports/check-pending",
       "method": "POST",
       "handler": "pb_hooks/reports.pb.js",
-      "audit_status": "❌ 0%",
-      "simulation_result": "OBSOLETE. Ghost Logs mechanism replaced by UI-driven Work Orders.",
-      "note": "Route returns { executed: 0 } as a no-op."
+      "audit_status": "❌ OBSOLETE",
+      "simulation_result": "Ghost Logs mechanism replaced by UI-driven Work Orders (BatchExecutionDialog). No longer needed."
     },
     {
       "path": "/api/modulos/:id/activate",
@@ -64,9 +71,9 @@
       "method": "GET/POST",
       "handler": "pb_hooks/main.js",
       "audit_status": "🟡 80%",
-      "validation": "Basic CRUD.",
-      "error_handling": "Basic.",
-      "security": "SuperAdmin role check enforced. Missing deep search filters."
+      "validation": "Basic CRUD. Missing pagination on large datasets.",
+      "error_handling": "Basic 500 catch.",
+      "security": "SuperAdmin role check enforced. Missing deep tenant filter for asesor users."
     },
     {
       "path": "/api/admin/users/:id",
@@ -101,7 +108,7 @@
       "method": "GET/POST",
       "handler": "pb_hooks/main.js",
       "audit_status": "🟡 80%",
-      "security": "SuperAdmin role check enforced."
+      "security": "SuperAdmin role check enforced. Missing alertConfig field on schema (must be added manually)."
     },
     {
       "path": "/api/admin/haciendas/:id",
@@ -122,7 +129,7 @@
       "method": "POST",
       "handler": "pb_hooks/main.js",
       "audit_status": "🟡 80%",
-      "security": "SuperAdmin role check enforced. Missing financial trigger (invoicing)."
+      "security": "SuperAdmin role check enforced. Missing financial trigger (invoicing/payment confirmation)."
     },
     {
       "path": "/api/admin/haciendas/:id/reactivate",
@@ -174,11 +181,18 @@
       "security": "Auth required (owner check)."
     },
     {
-      "path": "Cron: Every Monday 08:00",
+      "path": "Cron: Mondays 08:00",
       "method": "CRON",
       "handler": "pb_hooks/cron.alerts.pb.js",
-      "audit_status": "PLANNED",
-      "simulation_result": "Targets: Weekly Digest (Past/Future) + Critical Emergencies"
+      "audit_status": "🟡 60% - PLANNED/Partial",
+      "note": "Needs alertConfig field in Haciendas collection. Cron logic exists but alertConfig JSON field missing from PB schema."
+    },
+    {
+      "path": "MISSING: pb_hooks/asesores.pb.js",
+      "method": "HOOK",
+      "handler": "DOES NOT EXIST",
+      "audit_status": "❌ 0% NOT IMPLEMENTED",
+      "note": "Defined in asesor_tecnico_implementacion.md but file was never created. No automated state transition (fecha_envio, fecha_vista) is happening."
     }
   ]
 }

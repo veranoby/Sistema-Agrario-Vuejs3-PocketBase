@@ -81,7 +81,7 @@ export const useHaciendaManagementStore = defineStore('haciendaManagement', {
           {
             filter: filterString,
             sort: '-created',
-            expand: 'users,plan'
+            expand: filters.expand || 'plan'
           }
         )
 

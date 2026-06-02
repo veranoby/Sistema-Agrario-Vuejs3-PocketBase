@@ -14,11 +14,6 @@
         GUARDAR Offline
       </v-btn>
     </div>
-
-    <!-- Nota: Funcionalidad de dibujo requiere leaflet-draw -->
-    <v-alert v-if="readonly" type="info" density="compact" class="mt-2">
-      Mapa en modo solo lectura
-    </v-alert>
   </div>
 </template>
 
@@ -100,6 +95,18 @@ export default defineComponent({
     noFill: {
       type: Boolean,
       default: false
+    },
+    referenceGeometries: {
+      type: Array,
+      default: () => []
+    },
+    haciendaGeometry: {
+      type: Object,
+      default: null
+    },
+    activeColor: {
+      type: String,
+      default: null
     }
   },
 
@@ -118,6 +125,7 @@ export default defineComponent({
     let map = null
     let drawnItems = null
     let centerCircleMarker = null // Referencia persistente al círculo de la hacienda
+    let referenceLayerGroup = null
 
     const updateCenterCircle = (latlng) => {
       if (!map || !latlng) return;
@@ -215,6 +223,82 @@ export default defineComponent({
         loadPolygon(newVal)
       }
     }, { deep: true, immediate: true })    
+
+    const renderReferenceGeometries = () => {
+      if (!map || !referenceLayerGroup) return
+      referenceLayerGroup.clearLayers()
+      
+      // Contorno de hacienda
+      if (props.haciendaGeometry && props.haciendaGeometry.type === 'Polygon') {
+        const rings = props.haciendaGeometry.coordinates.map(ring =>
+          ring.map(c => [c[1], c[0]])
+        )
+        L.polygon(rings, {
+          pane: 'referencePane',
+          color: '#1565C0',
+          weight: 2,
+          dashArray: '8, 4',
+          fillOpacity: 0,
+          interactive: false
+        })
+        .bindTooltip('Contorno Hacienda', { sticky: true })
+        .addTo(referenceLayerGroup)
+      }
+
+      // Zonas existentes
+      if (props.referenceGeometries) {
+        for (const feature of props.referenceGeometries) {
+          const geom = feature.geometry || feature
+          const props2 = feature.properties || {}
+          const color = (props2.color && /^#([0-9A-F]{3,6})$/i.test(props2.color))
+            ? props2.color
+            : '#9E9E9E'
+          
+          if (geom.type === 'Polygon') {
+            const rings = geom.coordinates.map(ring => ring.map(c => [c[1], c[0]]))
+            L.polygon(rings, {
+              pane: 'referencePane',
+              color,
+              weight: 1.5,
+              fillColor: color,
+              fillOpacity: 0.15,
+              interactive: false
+            })
+            .bindTooltip(props2.nombre || 'Zona', { sticky: true })
+            .addTo(referenceLayerGroup)
+          } else if (geom.type === 'Point') {
+            L.circleMarker([geom.coordinates[1], geom.coordinates[0]], {
+              pane: 'referencePane',
+              radius: 5,
+              color,
+              fillColor: color,
+              fillOpacity: 0.6,
+              interactive: false
+            })
+            .bindTooltip(props2.nombre || 'Zona', { sticky: true })
+            .addTo(referenceLayerGroup)
+          }
+        }
+      }
+    }
+
+    watch(() => props.referenceGeometries, renderReferenceGeometries, { deep: true })
+    watch(() => props.haciendaGeometry, renderReferenceGeometries, { deep: true })
+
+    watch(() => props.activeColor, (newColor) => {
+      if (drawnItems && drawnItems.getLayers().length > 0) {
+        const layer = drawnItems.getLayers()[0]
+        if (layer instanceof L.Polygon) {
+          const isNoFill = props.noFill === true;
+          const polyColor = newColor || '#2196f3';
+          layer.setStyle({
+             color: isNoFill ? '#4CAF50' : polyColor,
+             fillColor: isNoFill ? 'transparent' : polyColor
+          })
+        }
+      }
+    })
+
     const polygonGeoJSON = computed(() => {
       if (!drawnItems || drawnItems.getLayers().length === 0) return null
       
@@ -227,7 +311,7 @@ export default defineComponent({
       }
       return null
     })
-    
+
     const calculatedArea = computed(() => {
       if (!polygonGeoJSON.value) return 0
       
@@ -268,6 +352,13 @@ export default defineComponent({
           updateCenterCircle([Number(gpsData.lat), Number(gpsData.lng)])
         }
       }
+
+      if (!map.getPane('referencePane')) {
+        map.createPane('referencePane')
+        map.getPane('referencePane').style.zIndex = '200'
+        map.getPane('referencePane').style.pointerEvents = 'none'
+      }
+      referenceLayerGroup = L.featureGroup([], { pane: 'referencePane' }).addTo(map)
 
       // Define tile layers for different map types
       const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -386,6 +477,8 @@ export default defineComponent({
       if (props.initialGeoJSON) {
         loadPolygon(props.initialGeoJSON)
       }
+
+      renderReferenceGeometries()
     }
 
     const notifyChange = (layer) => {
@@ -448,16 +541,17 @@ export default defineComponent({
             );
             
             const isNoFill = properties.noFill === true || props.noFill === true;
+            const polyColor = properties.color || props.activeColor || '#2196f3';
             
             const poly = L.polygon(rings, {
-              color: properties.color || (isNoFill ? '#4CAF50' : '#2196f3'),
-              fillColor: isNoFill ? 'transparent' : (properties.color || '#2196f3'),
+              color: isNoFill ? '#4CAF50' : polyColor,
+              fillColor: isNoFill ? 'transparent' : polyColor,
               fillOpacity: isNoFill ? 0 : 0.4,
               weight: isNoFill ? 3 : 2,
               dashArray: isNoFill ? '5, 5' : null
             });
             
-            setupLayer(poly, properties);
+            setupLayer(poly, { ...properties, color: polyColor });
             drawnItems.addLayer(poly);
 
           } else if (geom.type === 'Point') {

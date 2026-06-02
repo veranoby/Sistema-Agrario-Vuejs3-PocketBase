@@ -1,8 +1,8 @@
 <template>
   <v-sheet v-if="isLoggedIn" class="d-flex flex-column" style="height: 90vh">
-    <v-list v-if="filteredNavigationLinks && filteredNavigationLinks.length > 0" lines="two">
+    <v-list v-if="navigationLinks && navigationLinks.length > 0" density="compact" nav>
       <v-list-item
-        v-for="link in filteredNavigationLinks"
+        v-for="link in navigationLinks"
         :key="link.id"
         :to="link.to"
         link
@@ -24,9 +24,9 @@
     <v-divider></v-divider>
 
     <div class="flex flex-col">
-      <v-list>
+      <v-list density="compact" nav>
         <v-list-item
-          v-if="isLoggedIn && authStore.user?.role !== 'superadmin'"
+          v-if="isLoggedIn && ['administrador', 'operador', 'auditor'].includes(authStore.user?.role)"
           @click="$router.push('/profile')"
           link
           :class="{ 'active-link': isActive('/profile'), 'vivid-hover': true }"
@@ -53,14 +53,7 @@
 <script>
 import { computed, watch } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
-import { useHaciendaStore } from '@/stores/haciendaStore'
 import { useRoute } from 'vue-router'
-
-// Module mapping for navigation links
-const MODULE_MAP = {
-  'Finanzas': 'finanzas',
-  'Recordatorios': 'recordatorios'
-}
 
 export default {
   name: 'AppSidebar',
@@ -69,29 +62,12 @@ export default {
   },
   setup(props, { emit }) {
     const authStore = useAuthStore()
-    const haciendaStore = useHaciendaStore()
     const route = useRoute()
     const isLoggedIn = computed(() => authStore.isLoggedIn)
 
     const isActive = (linkPath) => {
       return route.path.startsWith(linkPath)
     }
-
-    // Filter navigation links based on module access
-    const filteredNavigationLinks = computed(() => {
-      if (!props.navigationLinks) return []
-      
-      return props.navigationLinks.filter(link => {
-        // Check if link has associated module
-        const moduleName = MODULE_MAP[link.label]
-        
-        // If no module mapping, show link (core feature)
-        if (!moduleName) return true
-        
-        // Check if module is active for current hacienda
-        return haciendaStore.isModuleActive(moduleName)
-      })
-    })
 
     watch(isLoggedIn, (newValue) => {
       if (!newValue) {
@@ -108,7 +84,6 @@ export default {
       isLoggedIn, 
       handleLogout, 
       isActive,
-      filteredNavigationLinks,
       authStore
     }
   }

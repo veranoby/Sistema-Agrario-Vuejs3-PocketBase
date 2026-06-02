@@ -405,6 +405,8 @@ const siembrasGeoJSON = computed(() => {
 
         lotesAsociados.forEach(lote => {
           let loteGeom = parseGeometry(lote.geometria)
+          const isValidHex = /^#([0-9A-F]{3}){1,2}$/i.test(lote.color)
+          const finalColor = isValidHex ? lote.color : siembraColor
           
           // Fallback: Si no hay geometría, intentar usar el campo gps como Point
           if (!loteGeom && lote.gps) {
@@ -430,7 +432,7 @@ const siembrasGeoJSON = computed(() => {
                 estado: s.estado,
                 area: lote.area?.area,
                 source: 'zone',
-                color: siembraColor
+                color: finalColor
               },
               geometry: loteGeom
             })

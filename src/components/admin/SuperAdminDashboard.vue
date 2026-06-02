@@ -32,7 +32,7 @@
           variant="elevated"
           elevation="2"
           class="hover-card cursor-pointer"
-          @click="$router.push('/admin/metrics')"
+          @click="$router.push('/admin/analytics?tab=operations')"
         >
           <v-card-text class="text-center py-6">
             <v-icon size="64" color="success" class="mb-4">mdi-chart-pie</v-icon>

@@ -5,13 +5,18 @@
     "descripcion": "<p>Actividades operativas relacionadas con la distribución del riego, lecturas volumétricas de caudalímetros y toma de muestras hídricas para inocuidad.</p>",
     "icon": "mdi-water-pump",
     "created": "2024-09-21 16:13:48.110Z",
-    "updated": "2026-05-16 12:00:00.000Z",
+    "updated": "2026-05-18 12:00:00.000Z",
     "datos_bpa": {
       "preguntas_bpa": [
         {
           "pregunta": "¿El volumen de agua aplicado está calculado basándose en las necesidades reales del cultivo y las variables meteorológicas actuales?",
           "opciones": ["No implementado", "En proceso", "Cumplido"],
           "descripcion": "Art. 13. Maximiza la eficiencia del recurso hídrico y previene asfixia radicular o lavado de nutrientes."
+        },
+        {
+          "pregunta": "¿Se dispone de un análisis de calidad microbiológica del agua de riego vigente (últimos 6 meses) de laboratorio autorizado?",
+          "opciones": ["No realizado", "En trámite", "Realizado conforme"],
+          "descripcion": "Art. 13. Garantiza la inocuidad hídrica para evitar contaminación microbiológica directa de los cultivos."
         }
       ]
     },
@@ -47,7 +52,7 @@
         },
         "analisis_calidad_agua_fecha": {
           "tipo": "date",
-          "descripcion": "Fecha del último análisis de calidad de agua (Art. 13)"
+          "descripcion": "Fecha del último análisis microbiológico del agua de riego (Art. 13). Obligatorio para auditoría."
         },
         "responsable_actividad": {
           "tipo": "string",
@@ -63,7 +68,7 @@
         {"nombre": "Unidad de Tiempo", "metrica": "unidad_tiempo_riego"},
         {"nombre": "Consumo Volumétrico", "metrica": "volumen_agua_utilizada"},
         {"nombre": "Unidad Volumen", "metrica": "unidad_volumen_agua"},
-        {"nombre": "Análisis Agua", "metrica": "analisis_calidad_agua_fecha"},
+        {"nombre": "Fecha Análisis Agua", "metrica": "analisis_calidad_agua_fecha"},
         {"nombre": "Operario a Cargo", "metrica": "responsable_actividad"},
         {"nombre": "Observaciones Técnicas", "tipo": "text"}
       ]
@@ -75,7 +80,7 @@
     "descripcion": "<p>Estrategias fitosanitarias químicas o biológicas aplicadas al lote para mitigar el ataque de plagas, documentando plazos de carencia obligatorios.</p>",
     "icon": "mdi-bug-check-outline",
     "created": "2024-09-21 16:14:00.970Z",
-    "updated": "2026-05-16 12:00:00.000Z",
+    "updated": "2026-05-18 12:00:00.000Z",
     "datos_bpa": {
       "preguntas_bpa": [
         {
@@ -86,12 +91,22 @@
         {
           "pregunta": "¿El plaguicida aplicado se encuentra oficialmente registrado y aprobado por AGROCALIDAD para el rubro específico del cultivo?",
           "opciones": ["No registrado", "Registrado aprobado"],
-          "descripcion": "Art. 15. Queda terminantemente prohibido aplicar plaguicidas prohibidos, vencidos o de contrabando en el territorio ecuatoriano."
+          "descripcion": "Art. 15. Queda terminantemente prohibido aplicar plaguicidas prohibidos, vencidos o de contrabando."
         },
         {
           "pregunta": "¿Se respeta el Periodo de Carencia (PHI) antes de autorizar la recolección del lote tratado?",
           "opciones": ["No", "Sí, estrictamente"],
-          "descripcion": "Art. 16. Tiempo indispensable para asegurar que los residuos químicos caigan por debajo de los Límites Máximos de Residuos (LMR) permitidos."
+          "descripcion": "Art. 16. Tiempo indispensable para asegurar que los residuos caigan por debajo de los LMR permitidos."
+        },
+        {
+          "pregunta": "¿Se realizó el triple lavado e inutilización física (perforación) del envase vacío del plaguicida?",
+          "opciones": ["No ejecutado", "Sí, ejecutado conforme"],
+          "descripcion": "Art. 19. Procedimiento ineludible de descontaminación del envase antes de su disposición final. Punto NCM en auditoría."
+        },
+        {
+          "pregunta": "¿El equipo de aplicación fue calibrado antes del inicio del ciclo de aspersiones?",
+          "opciones": ["No calibrado", "Calibración verificada conforme"],
+          "descripcion": "Art. 18. Garantiza la descarga volumétrica exacta del ingrediente activo, evitando subdosificación o deriva."
         }
       ]
     },
@@ -118,11 +133,6 @@
           "tipo": "string",
           "descripcion": "Principio activo químico concentrado"
         },
-        "equipo_aplicacion": {
-          "tipo": "select",
-          "opciones": ["Mochila manual", "Bomba motorizada", "Aérea"],
-          "descripcion": "Equipo de aplicación utilizado (Art. 18)"
-        },
         "dosis_aplicada": {
           "tipo": "number",
           "descripcion": "Concentración de dosis por volumen/hectárea"
@@ -131,6 +141,11 @@
           "tipo": "select",
           "opciones": ["L/ha", "kg/ha", "ml/L", "g/L"],
           "descripcion": "Unidad técnica de la dosificación"
+        },
+        "equipo_aplicacion": {
+          "tipo": "select",
+          "opciones": ["Mochila manual", "Bomba motorizada de espalda", "Aguilón tractor acoplado", "Aplicación aérea", "Drench localizado"],
+          "descripcion": "Equipo de aspersión utilizado en la aplicación (Art. 18). Requerido para verificar calibración."
         },
         "periodo_carencia_dias": {
           "tipo": "number",
@@ -142,11 +157,7 @@
         },
         "id_receta_referencia": {
           "tipo": "string",
-          "descripcion": "Número o referencia de la receta agronómica"
-        },
-        "triple_lavado_envase": {
-          "tipo": "boolean",
-          "descripcion": "Se realizó triple lavado de envases vacíos (Art. 19)"
+          "descripcion": "Folio, número o ID de la receta agronómica que respalda esta aplicación (Art. 15). Texto libre si es receta física; ID de receta si se generó desde la plataforma."
         },
         "responsable_aplicacion": {
           "tipo": "string",
@@ -161,11 +172,12 @@
         {"nombre": "Producto Insumo", "metrica": "producto_fitosanitario"},
         {"nombre": "Registro Oficial", "metrica": "registro_oficial_agrocalidad"},
         {"nombre": "Ingrediente Activo", "metrica": "ingrediente_activo"},
-        {"nombre": "Equipo", "metrica": "equipo_aplicacion"},
         {"nombre": "Dosis Real", "metrica": "dosis_aplicada"},
         {"nombre": "Unidad Dosis", "metrica": "unidad_dosis"},
+        {"nombre": "Equipo Aplicación", "metrica": "equipo_aplicacion"},
         {"nombre": "Días Carencia (PHI)", "metrica": "periodo_carencia_dias"},
         {"nombre": "Horas Reingreso (REI)", "metrica": "periodo_reingreso_horas"},
+        {"nombre": "Ref. Receta Agronómica", "metrica": "id_receta_referencia"},
         {"nombre": "Aplicador Técnico", "metrica": "responsable_aplicacion"},
         {"nombre": "Observaciones", "tipo": "text"}
       ]
@@ -177,7 +189,7 @@
     "descripcion": "<p>Aplicaciones nutricionales al suelo o follaje programadas bajo prescripción agronómica técnica.</p>",
     "icon": "mdi-leaf-circle",
     "created": "2024-09-21 16:14:21.209Z",
-    "updated": "2026-05-16 12:00:00.000Z",
+    "updated": "2026-05-18 12:00:00.000Z",
     "datos_bpa": {
       "preguntas_bpa": [
         {
@@ -186,7 +198,7 @@
           "descripcion": "Art. 12. Valida la recomendación basada en necesidades fenológicas y balances químicos reales."
         },
         {
-          "pregunta": "¿Los fertilizantes químicos sintéticos o abonos orgánicos empleados cuentan con registro oficial vigente de la autoridad competente (Agrocalidad/MAGAP)?",
+          "pregunta": "¿Los fertilizantes empleados cuentan con registro oficial vigente de la autoridad competente (Agrocalidad/MAGAP)?",
           "opciones": ["No", "Sí, verificados"],
           "descripcion": "Art. 12. Evita la aplicación de metales pesados o contaminantes biológicos presentes en productos ilegales."
         }
@@ -207,7 +219,11 @@
           "tipo": "string",
           "descripcion": "Código de lote del fabricante para trazabilidad y retiro sanitario"
         },
-        "dosis_applied": {
+        "analisis_suelo_referencia": {
+          "tipo": "string",
+          "descripcion": "Número o referencia del análisis de suelo que justifica esta fertilización (Art. 12). Texto libre: ej. 'Lab. Iniap Nro. 2024-0456'."
+        },
+        "dosis_aplicada": {
           "tipo": "number",
           "descripcion": "Volumen o peso aplicado de insumo"
         },
@@ -221,10 +237,6 @@
           "opciones": ["Localizado al suelo (Drench)", "Inyección fertirriego", "Aspersión foliar", "Al voleo manual"],
           "descripcion": "Vía técnica de incorporación de nutrientes"
         },
-        "analisis_suelo_referencia": {
-          "tipo": "string",
-          "descripcion": "Referencia o número del análisis de suelo (Art. 12)"
-        },
         "responsable_aplicacion": {
           "tipo": "string",
           "descripcion": "Responsable operativo de la fertilización"
@@ -236,10 +248,10 @@
         {"nombre": "Tipo Fertilizante", "metrica": "tipo_fertilizante"},
         {"nombre": "Nombre Comercial", "metrica": "producto_fertilizante"},
         {"nombre": "Lote Fabricante", "metrica": "lote_fabricacion"},
-        {"nombre": "Dosis Real", "metrica": "dosis_applied"},
+        {"nombre": "Ref. Análisis de Suelo", "metrica": "analisis_suelo_referencia"},
+        {"nombre": "Dosis Real", "metrica": "dosis_aplicada"},
         {"nombre": "Unidad Dosis", "metrica": "unidad_dosis"},
         {"nombre": "Método Aplicación", "metrica": "metodo_aplicacion"},
-        {"nombre": "Ref. Análisis Suelo", "metrica": "analisis_suelo_referencia"},
         {"nombre": "Responsable Técnico", "metrica": "responsable_aplicacion"},
         {"nombre": "Observaciones", "tipo": "text"}
       ]
@@ -251,7 +263,7 @@
     "descripcion": "<p>Actividades críticas de triple lavado de envases químicos, perforación física e incorporación a centros de recolección selectiva oficiales.</p>",
     "icon": "mdi-recycle",
     "created": "2024-09-24 12:47:17.004Z",
-    "updated": "2026-05-16 12:00:00.000Z",
+    "updated": "2026-05-18 12:00:00.000Z",
     "datos_bpa": {
       "preguntas_bpa": [
         {
@@ -305,7 +317,7 @@
     "descripcion": "<p>Sesiones formativas al personal en BPA e inducción en la revisión física de salud ocupacional de los aplicadores.</p>",
     "icon": "mdi-book-open",
     "created": "2024-09-24 12:47:32.217Z",
-    "updated": "2025-03-03 11:34:50.285Z",
+    "updated": "2026-05-18 12:00:00.000Z",
     "datos_bpa": {
       "preguntas_bpa": [
         {
@@ -340,7 +352,7 @@
     "formato_reporte": {
       "columnas": [
         {"nombre": "Eje Temático", "metrica": "tipo_capacitacion"},
-        {"nombre": "Asistentes Fincados", "metrica": "participantes_conteo"},
+        {"nombre": "Asistentes Firmados", "metrica": "participantes_conteo"},
         {"nombre": "EPP Inspeccionado", "metrica": "epp_verificado"},
         {"nombre": "Instructor / Líder", "metrica": "responsable_capacitacion"},
         {"nombre": "Observaciones", "tipo": "text"}
@@ -353,7 +365,7 @@
     "descripcion": "<p>Despacho y logística vehicular de cargamentos vegetales garantizando sanidad ambiental.</p>",
     "icon": "mdi-truck-flatbed",
     "created": "2024-09-24 12:49:23.105Z",
-    "updated": "2025-03-03 11:19:45.637Z",
+    "updated": "2026-05-18 12:00:00.000Z",
     "datos_bpa": {
       "preguntas_bpa": [
         {
@@ -401,13 +413,13 @@
     "descripcion": "<p>Labores físicas de corte, selección por calibre y empaque preliminar en cajas sanitizadas.</p>",
     "icon": "mdi-file-tree",
     "created": "2024-09-24 12:49:29.989Z",
-    "updated": "2025-03-03 11:15:59.996Z",
+    "updated": "2026-05-18 12:00:00.000Z",
     "datos_bpa": {
       "preguntas_bpa": [
         {
-          "pregunta": "¿Las herramientas de corte (cuchillos, tijeras) y bandejas plásticas de recolección son sumergidas en solución desinfectante al inicio y cierre del turno?",
+          "pregunta": "¿Las herramientas de corte y bandejas de recolección son sumergidas en solución desinfectante al inicio y cierre del turno?",
           "opciones": ["No sanitizado", "Sanitizado verificado"],
-          "descripcion": "Art. 21/28. Control microbiano estricto para mitigar pudriciones bacterianas o fúngicas poscosecha en el fruto."
+          "descripcion": "Art. 21/28. Control microbiano estricto para mitigar pudriciones bacterianas o fúngicas poscosecha."
         }
       ]
     },
@@ -421,6 +433,10 @@
         "lote_origen": {
           "tipo": "string",
           "descripcion": "Código o nombre del lote exacto de recolección para trazabilidad"
+        },
+        "codigo_trazabilidad_lote": {
+          "tipo": "string",
+          "descripcion": "Código de identificación del lote de salida de producto hacia el mercado (Art. 21/34). Distinto al lote de producción: permite trazar el producto desde campo hasta el comprador."
         },
         "cantidad_cosechada": {
           "tipo": "number",
@@ -436,10 +452,6 @@
           "opciones": ["Primera / Exportación", "Segunda / Mercado local", "Descarte industrial / Rechazo"],
           "descripcion": "Calidad aparente obtenida"
         },
-        "codigo_trazabilidad_lote": {
-          "tipo": "string",
-          "descripcion": "Código de lote de salida para trazabilidad comercial (Art. 21 y 34)"
-        },
         "responsable_actividad": {
           "tipo": "string",
           "descripcion": "Capataz encargado de la cuadrilla de corte"
@@ -449,11 +461,11 @@
     "formato_reporte": {
       "columnas": [
         {"nombre": "Rubro Cosechado", "metrica": "cultivo_cosechado"},
-        {"nombre": "Lote Origen", "metrica": "lote_origen"},
+        {"nombre": "Lote Producción", "metrica": "lote_origen"},
+        {"nombre": "Código Trazabilidad Salida", "metrica": "codigo_trazabilidad_lote"},
         {"nombre": "Cantidad Bruta", "metrica": "cantidad_cosechada"},
         {"nombre": "Métrica", "metrica": "unidad_cosecha"},
         {"nombre": "Calidad Comercial", "metrica": "clasificacion_producto"},
-        {"nombre": "Cód. Trazabilidad", "metrica": "codigo_trazabilidad_lote"},
         {"nombre": "Capataz de Campo", "metrica": "responsable_actividad"},
         {"nombre": "Observaciones", "tipo": "text"}
       ]
@@ -465,7 +477,7 @@
     "descripcion": "<p>Evaluaciones técnicas normativas para comprobar la idoneidad documental y operativa de la bitácora frente a inspectores gubernamentales.</p>",
     "icon": "mdi-tree-outline",
     "created": "2024-09-30 17:23:31.394Z",
-    "updated": "2025-03-03 11:38:39.070Z",
+    "updated": "2026-05-18 12:00:00.000Z",
     "datos_bpa": {
       "preguntas_bpa": [
         {
@@ -513,13 +525,13 @@
     "descripcion": "<p>Labores de fiscalización de semillas y material vegetativo ingresado a las naves de siembra.</p>",
     "icon": "mdi-seed",
     "created": "2024-09-30 17:30:02.911Z",
-    "updated": "2025-03-03 11:03:39.883Z",
+    "updated": "2026-05-18 12:00:00.000Z",
     "datos_bpa": {
       "preguntas_bpa": [
         {
-          "pregunta": "I. Material Vegetal. ¿El material vegetal adquirido procede de viveros oficialmente registrados y autorizados por AGROCALIDAD?",
+          "pregunta": "¿El material vegetal adquirido procede de viveros oficialmente registrados y autorizados por AGROCALIDAD?",
           "opciones": ["No autorizado", "Autorizado verificado"],
-          "descripcion": "Art. 3. Control fitosanitario estricto para mitigar el ingreso latente de nematodos o virosis exóticas a la hacienda."
+          "descripcion": "Art. 3. Control fitosanitario estricto para mitigar el ingreso de nematodos o virosis exóticas a la hacienda."
         }
       ]
     },
@@ -537,6 +549,10 @@
         "procedencia_material": {
           "tipo": "string",
           "descripcion": "Nombre o número de registro comercial del vivero de origen"
+        },
+        "certificacion_origen_agrocalidad": {
+          "tipo": "string",
+          "descripcion": "Número de certificado o guía de movilización de Agrocalidad que acompaña el material (Art. 3)."
         },
         "cantidad_material": {
           "tipo": "number",
@@ -558,6 +574,7 @@
         {"nombre": "Material Propagado", "metrica": "tipo_material"},
         {"nombre": "Variedad/Cultivar", "metrica": "variedad_material"},
         {"nombre": "Origen Comercial", "metrica": "procedencia_material"},
+        {"nombre": "Certificado Agrocalidad", "metrica": "certificacion_origen_agrocalidad"},
         {"nombre": "Volumen Ingreso", "metrica": "cantidad_material"},
         {"nombre": "Métrica", "metrica": "unidad_material"},
         {"nombre": "Encargado Recepción", "metrica": "responsable_actividad"},
@@ -571,7 +588,7 @@
     "descripcion": "<p>Registro operativo del trasplante inicial de lotes y labores mecánicas de aporque o podas fitosanitarias de copa.</p>",
     "icon": "mdi-seed-outline",
     "created": "2024-09-30 17:35:22.273Z",
-    "updated": "2025-03-07 22:19:05.390Z",
+    "updated": "2026-05-18 12:00:00.000Z",
     "datos_bpa": {
       "preguntas_bpa": [
         {
@@ -625,13 +642,13 @@
     "descripcion": "<p>Actividades pesadas de mecanización agrícola encaminadas a descompactar el suelo protegiendo su estructura.</p>",
     "icon": "mdi-grass",
     "created": "2024-09-30 17:38:20.450Z",
-    "updated": "2025-03-03 03:25:42.864Z",
+    "updated": "2026-05-18 12:00:00.000Z",
     "datos_bpa": {
       "preguntas_bpa": [
         {
-          "pregunta": "¿Se prescinde del uso de terrenos que tengan un historial conocido de contaminación por metales pesados o actividades industriales químicas?",
+          "pregunta": "¿Se prescinde del uso de terrenos con historial conocido de contaminación por metales pesados o actividades industriales químicas?",
           "opciones": ["No verificado", "Historial libre conforme"],
-          "descripcion": "Art. 4. Exigencia crítica de inocuidad alimentaria inicial para descartar absorción radicular de contaminantes persistentes."
+          "descripcion": "Art. 4. Exigencia crítica de inocuidad para descartar absorción radicular de contaminantes persistentes."
         }
       ]
     },
@@ -673,13 +690,13 @@
     "descripcion": "<p>Labores mecánicas de lavado, desinfección preventiva y calibraciones volumétricas de boquillas hidráulicas.</p>",
     "icon": "mdi-tools",
     "created": "2024-09-30 21:05:58.971Z",
-    "updated": "2025-03-03 03:23:39.445Z",
+    "updated": "2026-05-18 12:00:00.000Z",
     "datos_bpa": {
       "preguntas_bpa": [
         {
           "pregunta": "¿Las bombas de aspersión e implementos acoplados al tractor son calibrados formalmente antes de comenzar el ciclo de aplicaciones?",
           "opciones": ["No calibrados", "Calibración verificada conforme"],
-          "descripcion": "Art. 18. Vital para asegurar la descarga volumétrica homogénea exacta del ingrediente activo, evitando subdosificación."
+          "descripcion": "Art. 18. Vital para asegurar la descarga volumétrica homogénea exacta del ingrediente activo."
         }
       ]
     },
@@ -697,12 +714,7 @@
         },
         "proxima_calibracion_fecha": {
           "tipo": "date",
-          "descripcion": "Fecha programada para la próxima calibración (Art. 9 y 18)"
-        },
-        "estado_calibracion": {
-          "tipo": "select",
-          "opciones": ["Calibrado", "Requiere calibración", "No aplica"],
-          "descripcion": "Estado actual de calibración del equipo"
+          "descripcion": "Fecha programada para la próxima calibración del equipo (Art. 9/18). Permite seguimiento de cumplimiento del plan de mantenimiento preventivo."
         },
         "operario_responsable": {
           "tipo": "string",
@@ -714,8 +726,7 @@
       "columnas": [
         {"nombre": "Equipo Maquinaria", "metrica": "equipo_mantenido"},
         {"nombre": "Tipo de Intervención", "metrica": "tipo_mantenimiento"},
-        {"nombre": "Próx. Calibración", "metrica": "proxima_calibracion_fecha"},
-        {"nombre": "Estado Calibración", "metrica": "estado_calibracion"},
+        {"nombre": "Próxima Calibración", "metrica": "proxima_calibracion_fecha"},
         {"nombre": "Mecánico Responsable", "metrica": "operario_responsable"},
         {"nombre": "Observaciones", "tipo": "text"}
       ]

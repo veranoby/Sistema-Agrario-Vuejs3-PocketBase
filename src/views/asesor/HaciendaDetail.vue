@@ -67,8 +67,8 @@
                       >
                         <template v-slot:prepend>
                           <v-icon
-                            :icon="pkg.estado === 'pendiente' ? 'mdi-package-variant' : 'mdi-package-variant-closed'"
-                            :color="pkg.estado === 'pendiente' ? 'orange' : 'grey-darken-1'"
+                            :icon="pkg.estado === 'enviado' ? 'mdi-package-variant' : 'mdi-package-variant-closed'"
+                            :color="pkg.estado === 'enviado' ? 'orange' : 'grey-darken-1'"
                             class="mr-2"
                           ></v-icon>
                         </template>
@@ -83,11 +83,11 @@
                         <template v-slot:append>
                           <v-chip
                             size="x-small"
-                            :color="pkg.estado === 'pendiente' ? 'orange' : 'teal'"
+                            :color="pkg.estado === 'enviado' ? 'orange' : 'teal'"
                             variant="flat"
                             class="text-white"
                           >
-                            {{ pkg.estado === 'pendiente' ? 'Pendiente' : 'Revisado' }}
+                            {{ pkg.estado === 'enviado' ? 'Nuevo' : 'Revisado' }}
                           </v-chip>
                         </template>
                       </v-list-item>
@@ -237,7 +237,7 @@
               <v-card class="elevation-3 rounded-lg overflow-hidden border border-grey-lighten-3">
                 <div :class="['py-3 px-4 text-white d-flex align-center justify-space-between', getRecipeHeaderBg(receta.estado)]">
                   <div>
-                    <h3 class="text-subtitle-1 font-weight-bold mb-0">{{ receta.nombre_receta || 'Receta Agrícola' }}</h3>
+                    <h3 class="text-subtitle-1 font-weight-bold mb-0">{{ receta.titulo || 'Receta Agrícola' }}</h3>
                     <span class="text-caption opacity-90">Emitida: {{ formatDate(receta.created) }}</span>
                   </div>
                   <v-chip size="small" :color="getRecipeStatusColor(receta.estado)" variant="flat" class="text-white font-weight-bold">
@@ -254,9 +254,9 @@
                       </span>
                     </v-col>
                     <v-col cols="6" class="py-1">
-                      <span class="text-caption text-grey d-block">Actividad</span>
+                      <span class="text-caption text-grey d-block">Blanco Biológico</span>
                       <span class="text-body-2 font-weight-medium">
-                        {{ getActividadName(receta.actividad_id) }}
+                        {{ receta.blanco_biologico || 'N/A' }}
                       </span>
                     </v-col>
                   </v-row>
@@ -264,14 +264,15 @@
                   <v-divider class="my-2"></v-divider>
 
                   <div class="mb-3">
-                    <p class="text-body-2 mb-1"><strong>Producto:</strong> {{ receta.producto }}</p>
-                    <p class="text-body-2"><strong>Dosis:</strong> {{ receta.dosis }} | <strong>Frecuencia:</strong> {{ getFrecuenciaLabel(receta.frecuencia) }}</p>
+                    <p class="text-body-2 mb-1"><strong>Producto:</strong> {{ receta.producto_recomendado || 'N/A' }}</p>
+                    <p class="text-body-2"><strong>Ingrediente Activo:</strong> {{ receta.ingrediente_activo || 'N/A' }}</p>
+                    <p class="text-body-2"><strong>Dosis:</strong> {{ receta.dosis }} {{ receta.unidad_dosis }}<span v-if="receta.phi_dias"> | <strong>PHI:</strong> {{ receta.phi_dias }}d</span><span v-if="receta.rei_horas"> | <strong>REI:</strong> {{ receta.rei_horas }}h</span></p>
                   </div>
 
                   <div>
-                    <span class="text-caption text-grey d-block">Instrucciones:</span>
+                    <span class="text-caption text-grey d-block">Instrucciones Técnicas:</span>
                     <p class="text-body-2 bg-grey-lighten-4 pa-3 rounded text-grey-darken-3 whitespace-pre-line italic">
-                      "{{ receta.instrucciones }}"
+                      "{{ receta.observaciones_tecnicas || 'Sin instrucciones adicionales' }}"
                     </p>
                   </div>
 
@@ -387,8 +388,8 @@ const loadPackagesAndRecipes = async () => {
   paquetes.value = pkgs
   recetas.value = recipes
 
-  // Extract shared siembras from packages
-  const siembraIds = [...new Set(pkgs.flatMap(p => p.siembras_compartidas || []))]
+  // Extract siembras from packages using real schema field 'siembra_id'
+  const siembraIds = [...new Set(pkgs.map(p => p.siembra_id).filter(Boolean))]
   sharedSiembras.value = await Promise.all(siembraIds.map(async (id) => {
     try {
       const s = await pb.collection('Siembras').getOne(id)
@@ -405,8 +406,8 @@ const selectPackage = async (pkg) => {
   packageZonas.value = []
   packageBitacoras.value = []
 
-  // Auto-mark package as read if pending
-  if (pkg.estado === 'pendiente') {
+  // Auto-mark package as read if 'enviado' (real schema state)
+  if (pkg.estado === 'enviado') {
     try {
       await pb.collection('paquetes_evaluacion').update(pkg.id, { estado: 'visto' })
       pkg.estado = 'visto'
@@ -415,20 +416,22 @@ const selectPackage = async (pkg) => {
     }
   }
 
-  // Load package details
+  // Load package details using real schema field names: siembra_id, zonas_ids, bitacora_ids
   try {
-    const siembraId = pkg.siembras_compartidas?.[0]
+    const siembraId = pkg.siembra_id
     if (siembraId) {
       packageSiembra.value = await pb.collection('Siembras').getOne(siembraId)
     }
 
-    if (pkg.zonas_compartidas?.length > 0) {
-      const filterZonas = pkg.zonas_compartidas.map(id => `id="${id}"`).join(' || ')
+    const zonasIds = Array.isArray(pkg.zonas_ids) ? pkg.zonas_ids : []
+    if (zonasIds.length > 0) {
+      const filterZonas = zonasIds.map(id => `id="${id}"`).join(' || ')
       packageZonas.value = await pb.collection('zonas').getFullList({ filter: filterZonas })
     }
 
-    if (pkg.bitacoras_compartidas?.length > 0) {
-      const filterBitacoras = pkg.bitacoras_compartidas.map(id => `id="${id}"`).join(' || ')
+    const bitacoraIds = Array.isArray(pkg.bitacora_ids) ? pkg.bitacora_ids : []
+    if (bitacoraIds.length > 0) {
+      const filterBitacoras = bitacoraIds.map(id => `id="${id}"`).join(' || ')
       packageBitacoras.value = await pb.collection('bitacora').getFullList({
         filter: filterBitacoras,
         expand: 'actividad_realizada'
@@ -469,7 +472,8 @@ const getRecipeHeaderBg = (state) => {
   switch (state) {
     case 'borrador': return 'bg-gradient-blue'
     case 'enviada': return 'bg-gradient-orange'
-    case 'aprobada': return 'bg-gradient-green'
+    case 'vista': return 'bg-gradient-teal'
+    case 'ejecutada': return 'bg-gradient-green'
     case 'rechazada': return 'bg-gradient-red'
     default: return 'bg-gradient-teal'
   }
@@ -479,7 +483,8 @@ const getRecipeStatusColor = (state) => {
   switch (state) {
     case 'borrador': return 'blue'
     case 'enviada': return 'orange'
-    case 'aprobada': return 'green'
+    case 'vista': return 'teal'
+    case 'ejecutada': return 'green'
     case 'rechazada': return 'red'
     default: return 'grey'
   }
@@ -489,7 +494,8 @@ const getRecipeStatusLabel = (state) => {
   switch (state) {
     case 'borrador': return 'Borrador'
     case 'enviada': return 'Enviada'
-    case 'aprobada': return 'Aprobada'
+    case 'vista': return 'Vista'
+    case 'ejecutada': return 'Aprobada y Ejecutada'
     case 'rechazada': return 'Rechazada'
     default: return state
   }

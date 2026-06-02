@@ -182,8 +182,8 @@ export const useUserStore = defineStore('user', {
       
       try {
         if (soft) {
-          // Soft delete: cambiar status a inactive
-          const record = await pb.collection('users').update(userId, { status: 'inactive' })
+          // Soft delete: cambiar status a suspended
+          const record = await pb.collection('users').update(userId, { status: 'suspended' })
           const index = this.users.findIndex(u => u.id === userId)
           if (index !== -1) {
             this.users[index] = record

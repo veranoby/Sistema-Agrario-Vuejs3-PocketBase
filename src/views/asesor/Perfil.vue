@@ -105,20 +105,55 @@
                   ></v-select>
                 </v-col>
 
+                <v-col cols="12" sm="6">
+                  <v-text-field
+                    v-model="cedula"
+                    label="Cédula o RUC (Opcional)"
+                    variant="outlined"
+                    density="compact"
+                    color="teal"
+                  ></v-text-field>
+                </v-col>
+                <v-col cols="12" sm="6">
+                  <v-text-field
+                    v-model="direccion"
+                    label="Dirección Física"
+                    variant="outlined"
+                    density="compact"
+                    color="teal"
+                  ></v-text-field>
+                </v-col>
+                <v-col cols="12" sm="6">
+                  <v-text-field
+                    v-model="ciudad"
+                    label="Ciudad"
+                    variant="outlined"
+                    density="compact"
+                    color="teal"
+                  ></v-text-field>
+                </v-col>
+                <v-col cols="12" sm="6">
+                  <v-text-field
+                    v-model="pais"
+                    label="País"
+                    variant="outlined"
+                    density="compact"
+                    color="teal"
+                  ></v-text-field>
+                </v-col>
+
                 <!-- Professional Bio -->
                 <v-col cols="12">
-                  <v-textarea
-                    v-model="bioCorta"
-                    label="Breve Resumen Profesional / Biografía"
-                    placeholder="Ingeniero agrónomo con más de 10 años de experiencia en control de fitosanitarios de banano orgánico y cacao..."
-                    variant="outlined"
-                    rows="4"
-                    maxlength="500"
-                    counter
-                    color="teal"
-                    :rules="[v => !!v || 'La biografía profesional es requerida']"
-                    required
-                  ></v-textarea>
+                  <p class="text-caption mb-2 text-grey-darken-1">Breve Resumen Profesional / Biografía</p>
+                  <div class="border rounded" style="min-height: 200px">
+                    <QuillEditor
+                      v-model:content="bioCorta"
+                      contentType="html"
+                      theme="snow"
+                      toolbar="essential"
+                      placeholder="Ingeniero agrónomo con más de 10 años de experiencia..."
+                    />
+                  </div>
                 </v-col>
               </v-row>
 
@@ -231,10 +266,135 @@
                 </div>
               </v-card-text>
             </v-card>
+            
+            <!-- Suscripcion de Asesor -->
+            <v-card class="mt-6 elevation-2 rounded-lg border" :color="subscriptionActive ? 'green-lighten-5' : 'orange-lighten-5'">
+              <v-card-text>
+                <div class="d-flex align-center mb-2">
+                  <v-icon :color="subscriptionActive ? 'green' : 'orange'" class="mr-2">
+                    {{ subscriptionActive ? 'mdi-check-decagram' : 'mdi-alert-circle-outline' }}
+                  </v-icon>
+                  <h3 class="text-subtitle-1 font-weight-bold" :class="subscriptionActive ? 'text-green-darken-3' : 'text-orange-darken-3'">
+                    Estado de Suscripción
+                  </h3>
+                </div>
+                
+                <p v-if="subscriptionActive" class="text-caption text-green-darken-2 mb-0">
+                  Tu entorno profesional está activo. Las haciendas pueden vincularte a sus proyectos.
+                </p>
+                <div v-else>
+                  <p class="text-caption text-orange-darken-2 mb-3">
+                    Tu entorno está en modo restringido. Para habilitar tu portafolio y ser visible para todas las haciendas, requieres activar tu plan profesional.
+                  </p>
+                  
+                  <v-btn
+                    v-if="!pendingRequest"
+                    color="orange-darken-2"
+                    variant="flat"
+                    size="small"
+                    prepend-icon="mdi-credit-card-outline"
+                    @click="openSubscriptionDialog"
+                    class="text-none"
+                  >
+                    Suscribirse ($5/mes)
+                  </v-btn>
+                  
+                  <v-alert v-else type="info" density="compact" variant="tonal" class="text-caption mt-2">
+                    Tienes una solicitud de pago pendiente de revisión.
+                  </v-alert>
+                </div>
+              </v-card-text>
+            </v-card>
           </v-card>
         </v-col>
       </v-row>
     </div>
+    
+    <!-- Modal Suscripción -->
+    <v-dialog v-model="subscriptionDialog" max-width="600">
+      <v-card class="rounded-xl">
+        <v-card-title class="bg-teal-darken-3 text-white px-4 py-3 d-flex align-center">
+          <v-icon start>mdi-account-hard-hat</v-icon>
+          Activar Entorno Profesional
+          <v-spacer></v-spacer>
+          <v-btn icon="mdi-close" variant="text" size="small" color="white" @click="subscriptionDialog = false"></v-btn>
+        </v-card-title>
+        
+        <v-card-text class="pt-6">
+          <v-row>
+            <v-col cols="12" sm="6">
+              <div class="bg-grey-lighten-4 pa-3 rounded-lg border h-100">
+                <div class="text-caption text-grey-darken-1 font-weight-bold mb-1">Estado Actual</div>
+                <div class="d-flex align-center">
+                  <v-icon :color="subscriptionActive ? 'green' : 'orange'" size="small" class="mr-1">
+                    {{ subscriptionActive ? 'mdi-check-circle' : 'mdi-alert-circle' }}
+                  </v-icon>
+                  <span class="font-weight-bold" :class="subscriptionActive ? 'text-green-darken-3' : 'text-orange-darken-3'">
+                    {{ subscriptionActive ? 'Suscripción Activa' : 'Suscripción Inactiva' }}
+                  </span>
+                </div>
+              </div>
+            </v-col>
+            <v-col cols="12" sm="6">
+              <div class="bg-teal-lighten-5 pa-3 rounded-lg border border-teal-lighten-3 h-100">
+                <div class="text-caption text-teal-darken-2 font-weight-bold mb-1">Período de Activación (Estimado)</div>
+                <div class="text-body-2 text-teal-darken-4 font-weight-medium">
+                  {{ new Date().toLocaleDateString() }} - {{ new Date(Date.now() + 30*24*60*60*1000).toLocaleDateString() }}
+                </div>
+              </div>
+            </v-col>
+          </v-row>
+
+          <v-divider class="my-4"></v-divider>
+
+          <h3 class="text-subtitle-1 font-weight-bold text-teal-darken-4 mb-2">Instrucciones Bancarias</h3>
+          <p class="text-body-2 text-grey-darken-2 mb-4">
+            Para desbloquear tu portafolio y aparecer en el directorio de búsqueda, realiza el pago mensual de $5 USD y sube el comprobante.
+          </p>
+          
+          <v-card variant="outlined" class="rounded-lg border-teal pa-4 bg-teal-lighten-5 mb-6 text-teal-darken-4">
+            <v-row dense>
+              <v-col cols="12" sm="6" class="py-1">
+                <strong>Banco:</strong> Banco Pichincha
+              </v-col>
+              <v-col cols="12" sm="6" class="py-1">
+                <strong>Tipo de Cuenta:</strong> Ahorros
+              </v-col>
+              <v-col cols="12" sm="6" class="py-1">
+                <strong>Número de Cuenta:</strong> 2208574932
+              </v-col>
+              <v-col cols="12" sm="6" class="py-1">
+                <strong>Razón Social:</strong> Soluciones Agrícolas ConAgri S.A.
+              </v-col>
+              <v-col cols="12" sm="6" class="py-1">
+                <strong>RUC:</strong> 1792837492001
+              </v-col>
+              <v-col cols="12" sm="6" class="py-1">
+                <strong>Monto a Transferir:</strong> $5.00 USD
+              </v-col>
+            </v-row>
+          </v-card>
+          
+          <v-file-input
+            v-model="comprobanteFile"
+            label="Comprobante de Pago"
+            accept="image/*,.pdf"
+            variant="outlined"
+            density="comfortable"
+            prepend-inner-icon="mdi-receipt"
+            prepend-icon=""
+            color="teal"
+            :rules="[v => !!v || 'Debe adjuntar un comprobante']"
+          ></v-file-input>
+        </v-card-text>
+        
+        <v-card-actions class="px-6 pb-6 bg-grey-lighten-5">
+          <v-spacer></v-spacer>
+          <v-btn variant="text" color="grey-darken-1" @click="subscriptionDialog = false">Cancelar</v-btn>
+          <v-btn variant="flat" color="teal" :loading="submittingSub" @click="submitSubscription" :disabled="!comprobanteFile">Enviar Comprobante</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -250,11 +410,21 @@ const uiFeedback = useUiFeedbackStore()
 
 const formValid = ref(false)
 const loading = ref(false)
+const subscriptionDialog = ref(false)
+const submittingSub = ref(false)
+const comprobanteFile = ref(null)
+const subscriptionActive = ref(false)
+const pendingRequest = ref(false)
+const asesorPlanId = ref(null)
 
 const name = ref('')
 const lastname = ref('')
 const email = ref('')
 const numeroColegiatura = ref('')
+const cedula = ref('')
+const direccion = ref('')
+const ciudad = ref('')
+const pais = ref('')
 const selectedEspecialidades = ref([])
 const selectedProvincias = ref([])
 const bioCorta = ref('')
@@ -268,25 +438,86 @@ const initials = computed(() => {
   return (first + last).toUpperCase()
 })
 
-onMounted(() => {
+onMounted(async () => {
   name.value = authStore.user?.name || ''
   lastname.value = authStore.user?.lastname || ''
   email.value = authStore.user?.email || ''
   
   const parsed = authStore.asesorInfo || {}
   numeroColegiatura.value = parsed.numero_colegiatura || ''
+  cedula.value = parsed.cedula || ''
+  direccion.value = parsed.direccion || ''
+  ciudad.value = parsed.ciudad || ''
+  pais.value = parsed.pais || ''
   selectedEspecialidades.value = parsed.especialidades || []
   selectedProvincias.value = parsed.zonas_cobertura || []
   bioCorta.value = parsed.bio_corta || ''
+  
+  // Check subscription status
+  try {
+    const asesorPlan = await pb.collection('modulos').getFirstListItem(`code="asesor_plan"`)
+    asesorPlanId.value = asesorPlan.id
+    
+    // Check if there is an active subscription
+    const activeSubs = await pb.collection('subscriptions').getList(1, 1, {
+      filter: `modulo="${asesorPlan.id}" && is_active=true && user="${authStore.user.id}"`
+    })
+    
+    if (activeSubs.items.length > 0) {
+      subscriptionActive.value = true
+    } else {
+      // Check if there's a pending request
+      const pendingReqs = await pb.collection('solicitudes_suscripcion').getList(1, 1, {
+        filter: `solicitante="${authStore.user.id}" && estado="pendiente" && modulo_solicitado~"${asesorPlan.id}"`
+      })
+      if (pendingReqs.items.length > 0) {
+        pendingRequest.value = true
+      }
+    }
+  } catch (e) {
+    console.warn("Could not load subscription status", e)
+  }
 })
+
+const openSubscriptionDialog = () => {
+  comprobanteFile.value = null
+  subscriptionDialog.value = true
+}
+
+const submitSubscription = async () => {
+  if (!comprobanteFile.value || !asesorPlanId.value) return
+  submittingSub.value = true
+  try {
+    const formData = new FormData()
+    formData.append('solicitante', authStore.user.id)
+    formData.append('tipo', 'modulo_addon')
+    formData.append('modulo_solicitado', JSON.stringify([asesorPlanId.value]))
+    formData.append('estado', 'pendiente')
+    formData.append('comprobante', Array.isArray(comprobanteFile.value) ? comprobanteFile.value[0] : comprobanteFile.value)
+    formData.append('notas_admin', 'Pago subido desde el perfil del asesor')
+    formData.append('fecha_solicitud', new Date().toISOString())
+
+    await pb.collection('solicitudes_suscripcion').create(formData)
+    
+    uiFeedback.showSnackbar('Comprobante enviado exitosamente', 'success')
+    pendingRequest.value = true
+    subscriptionDialog.value = false
+  } catch (error) {
+    handleError(error, 'Error al enviar la solicitud')
+  } finally {
+    submittingSub.value = false
+  }
+}
 
 const limitItems = (arr, limit) => {
   return arr ? arr.slice(0, limit) : []
 }
 
+// Ensure html text truncation ignores tags roughly
 const truncateText = (text, len) => {
   if (!text) return 'Sin descripción profesional registrada.'
-  return text.length > len ? text.substring(0, len) + '...' : text
+  const stripped = text.replace(/(<([^>]+)>)/gi, "")
+  return stripped.length > len ? stripped.substring(0, len) + '...' : stripped
 }
 
 const saveProfile = async () => {
@@ -295,6 +526,10 @@ const saveProfile = async () => {
   try {
     const updatedInfo = {
       numero_colegiatura: numeroColegiatura.value,
+      cedula: cedula.value,
+      direccion: direccion.value,
+      ciudad: ciudad.value,
+      pais: pais.value,
       especialidades: selectedEspecialidades.value,
       zonas_cobertura: selectedProvincias.value,
       bio_corta: bioCorta.value

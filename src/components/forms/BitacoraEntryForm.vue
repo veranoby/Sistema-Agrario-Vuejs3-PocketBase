@@ -76,6 +76,21 @@
                   <v-icon color="success">mdi-lock</v-icon>
                 </template>
               </v-autocomplete>
+              <v-autocomplete
+                v-if="haciendaStore.isModuleActive('nomina_express')"
+                v-model="formData.trabajadores_involucrados"
+                :items="plantillaNomina"
+                item-title="nombre"
+                item-value="id"
+                label="Trabajadores Involucrados (Nómina)"
+                multiple
+                chips
+                closable-chips
+                variant="outlined"
+                density="compact"
+                prepend-inner-icon="mdi-account-group"
+                class="rounded-lg md:col-span-2 mt-2"
+              ></v-autocomplete>
             </div>
           </div>
 
@@ -104,6 +119,109 @@
             <BpaChecklist
               :preguntas="preguntasBpa"
               v-model="formData.bpa_respuestas"
+            />
+          </div>
+
+          <!-- SECCIÓN BODEGA: Consumo de Insumos -->
+          <div v-if="showBodegaSection" class="bg-dinamico p-4 rounded-xl border border-teal-lighten-4">
+            <div class="flex items-center mb-4">
+              <v-icon color="teal" class="mr-2">mdi-warehouse</v-icon>
+              <h4 class="font-weight-bold text-teal-darken-3">Consumo de Insumos de Bodega</h4>
+            </div>
+            
+            <div class="ml-8">
+              <!-- Lista de insumos agregados -->
+              <div v-if="insumosConsumidos.length > 0" class="mb-4 flex flex-col gap-2">
+                <div 
+                  v-for="(insumo, idx) in insumosConsumidos" 
+                  :key="idx"
+                  class="d-flex align-center justify-space-between p-3 rounded-lg border border-teal-lighten-4 bg-teal-lighten-5"
+                >
+                  <div class="d-flex align-center gap-2">
+                    <v-chip color="teal" size="small" variant="flat" class="text-white">
+                      {{ getNombreInsumo(insumo.item) }}
+                    </v-chip>
+                    <span class="text-subtitle-2 font-weight-medium text-teal-darken-4">
+                      Cantidad: {{ insumo.cantidad }} {{ getUnidadInsumo(insumo.item) }}
+                    </span>
+                  </div>
+                  <v-btn 
+                    icon="mdi-delete" 
+                    variant="text" 
+                    color="red-lighten-1" 
+                    size="small"
+                    @click="removerInsumoConsumido(idx)"
+                  ></v-btn>
+                </div>
+              </div>
+
+              <!-- Formulario de selección y cantidad -->
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                <v-autocomplete
+                  v-model="nuevoInsumo.item"
+                  :items="insumosDisponibles"
+                  item-title="nombre"
+                  item-value="id"
+                  label="Insumo disponible"
+                  variant="outlined"
+                  density="compact"
+                  hide-details
+                  class="rounded-lg md:col-span-2"
+                  color="teal"
+                >
+                  <template v-slot:item="{ props: itemProps, item }">
+                    <v-list-item v-bind="itemProps" :subtitle="'Stock: ' + item.raw.stock_actual + ' ' + item.raw.unidad">
+                    </v-list-item>
+                  </template>
+                </v-autocomplete>
+
+                <div class="d-flex align-center gap-2">
+                  <v-text-field
+                    v-model.number="nuevoInsumo.cantidad"
+                    type="number"
+                    label="Cantidad"
+                    min="0.01"
+                    step="any"
+                    variant="outlined"
+                    density="compact"
+                    hide-details
+                    class="rounded-lg"
+                    color="teal"
+                    @keyup.enter="agregarInsumo"
+                  ></v-text-field>
+
+                  <v-btn
+                    color="teal"
+                    icon="mdi-plus"
+                    variant="flat"
+                    class="text-white"
+                    @click="agregarInsumo"
+                    :disabled="!nuevoInsumo.item || !nuevoInsumo.cantidad || nuevoInsumo.cantidad <= 0"
+                  ></v-btn>
+                </div>
+              </div>
+              <div v-if="insumosConsumidos.length === 0" class="text-caption text-grey-darken-1 mt-2">
+                * Opcional: Agregue insumos de bodega consumidos en esta labor.
+              </div>
+            </div>
+          </div>
+
+          <!-- SECCIÓN 5: Firma Digital -->
+          <div v-if="formData.estado_ejecucion === 'completado'" class="mt-2 border-t pt-4">
+            <v-alert
+              v-if="haciendaStore.isModuleActive('pdf_bpa') && !formData.signature"
+              type="info"
+              variant="tonal"
+              color="teal-darken-2"
+              class="mb-4"
+            >
+              El módulo PDF BPA requiere firma del operador. Por favor firme antes de guardar para generar el certificado.
+            </v-alert>
+            <BitacoraSignature
+              :existing-signature="formData.signature"
+              :data-to-sign="computedDataToSign"
+              @signed="onSignatureCaptured"
+              :require-drawing="!isEditMode"
             />
           </div>
         </div>
@@ -145,10 +263,14 @@ import { useBitacoraStore } from '@/stores/bitacoraStore';
 import { useProgramacionesStore } from '@/stores/programaciones';
 import { useUiFeedbackStore } from '@/stores/uiFeedbackStore';
 import { handleError } from '@/utils/errorHandler';
+import { useHaciendaStore } from '@/stores/haciendaStore';
+import { useBodegaStore } from '@/stores/bodegaStore';
+import { useNominaStore } from '@/stores/nominaStore';
+import { useBodegaMovimientosStore } from '@/stores/bodegaMovimientosStore';
 import SiembraSelectorList from './SiembraSelectorList.vue';
 import BatchGeneralDataForm from './BatchGeneralDataForm.vue';
 import BpaChecklist from '../bitacora/BpaChecklist.vue';
-import { digitalSignature } from '@/services/digitalSignature';
+import BitacoraSignature from '../bitacora/BitacoraSignature.vue';
 
 const props = defineProps({
   entryToEdit: {
@@ -174,27 +296,34 @@ const emit = defineEmits(['close', 'save']);
 const actividadesStore = useActividadesStore();
 const siembrasStore = useSiembrasStore();
 const bitacoraStore = useBitacoraStore();
-const programacionesStore = useProgramacionesStore(); // Added
+const programacionesStore = useProgramacionesStore();
 const uiFeedbackStore = useUiFeedbackStore();
+const haciendaStore = useHaciendaStore();
+const bodegaStore = useBodegaStore();
+const nominaStore = useNominaStore();
+const bodegaMovimientosStore = useBodegaMovimientosStore();
+
+const plantillaNomina = computed(() => nominaStore.plantilla || []);
 
 const bitacoraFormRef = ref(null);
 const isSubmitting = ref(false);
-const isPrefillingMetrics = ref(false); // Flag to manage metric prefilling
+const isPrefillingMetrics = ref(false);
 
 const actividadesDisponibles = ref([]);
-const siembrasDisponibles = ref([]); // For optional siembra_asociada selection
-const selectedActividadDetalles = ref(null); // To store full details of selected actividad
+const siembrasDisponibles = ref([]);
+const selectedActividadDetalles = ref(null);
 
 const defaultFormData = () => ({
-  fecha_ejecucion: new Date().toISOString().substring(0, 16), // YYYY-MM-DDTHH:mm
+  fecha_ejecucion: new Date().toISOString().substring(0, 16),
   actividad_realizada_id: props.actividadIdContext || null,
   estado_ejecucion: 'completado',
   notas: '',
-  siembras_ids: props.siembraIdContext ? [props.siembraIdContext] : [], // Multiple siembras support
-  metricas_values: {}, // Holds values for dynamic metric fields
-  programacion_origen_id: null, // Added for prefill
+  siembras_ids: props.siembraIdContext ? [props.siembraIdContext] : [],
+  metricas_values: {},
+  programacion_origen_id: null,
   bpa_respuestas: {},
-  firma_digital: null,
+  trabajadores_involucrados: [],
+  signature: null,
 });
 
 const formData = reactive(defaultFormData());
@@ -206,18 +335,6 @@ const rules = {
 const isEditMode = computed(() => !!props.entryToEdit);
 const modoOrdenTrabajo = computed(() => !!props.programacionId);
 const formTitle = computed(() => isEditMode.value ? 'Editar Entrada' : 'Nueva Entrada');
-
-const contextSubtitle = computed(() => {
-  if (isEditMode.value && props.entryToEdit?.expand?.siembras) {
-    const s = props.entryToEdit.expand.siembras;
-    return Array.isArray(s) ? s.map(si => si.nombre).join(', ') : s.nombre;
-  }
-  if (props.siembraIdContext) {
-    const s = siembrasStore.siembras.find(si => si.id === props.siembraIdContext);
-    return s ? `${s.nombre} | ${s.tipo}` : '';
-  }
-  return '';
-});
 
 const relevantSiembraIds = computed(() => {
   if (props.siembraIdContext) return [props.siembraIdContext];
@@ -231,9 +348,91 @@ const preguntasBpa = computed(() => {
 
 const metricasSeleccionadas = ref([]);
 
+const computedDataToSign = computed(() => {
+  const filteredMetricas = {};
+  if (formData.metricas_values) {
+    metricasSeleccionadas.value.forEach(key => {
+      if (formData.metricas_values[key] !== undefined) {
+        filteredMetricas[key] = formData.metricas_values[key];
+      }
+    });
+  }
+  return {
+    fecha_ejecucion: formData.fecha_ejecucion,
+    actividad_realizada: formData.actividad_realizada_id,
+    siembras: formData.siembras_ids,
+    metricas: filteredMetricas,
+    bpa_respuestas: formData.bpa_respuestas,
+    trabajadores_involucrados: formData.trabajadores_involucrados
+  };
+});
+
+function onSignatureCaptured(signaturePayload) {
+  formData.signature = signaturePayload;
+}
+
+const insumosConsumidos = ref([]);
+const nuevoInsumo = reactive({
+  item: null,
+  cantidad: null
+});
+
+const showBodegaSection = computed(() => {
+  return haciendaStore.isModuleActive('kardex_bodega') && !isEditMode.value;
+});
+
+const insumosDisponibles = computed(() => {
+  return bodegaStore.items.filter(item => {
+    const yaAgregado = insumosConsumidos.value.some(ic => ic.item === item.id);
+    return item.stock_actual > 0 && !yaAgregado;
+  });
+});
+
+function getNombreInsumo(itemId) {
+  const item = bodegaStore.getItemById(itemId);
+  return item ? item.nombre : 'Insumo desconocido';
+}
+
+function getUnidadInsumo(itemId) {
+  const item = bodegaStore.getItemById(itemId);
+  return item ? item.unidad : '';
+}
+
+function agregarInsumo() {
+  if (!nuevoInsumo.item || !nuevoInsumo.cantidad || nuevoInsumo.cantidad <= 0) return;
+  
+  const item = bodegaStore.getItemById(nuevoInsumo.item);
+  if (item && nuevoInsumo.cantidad > item.stock_actual) {
+    uiFeedbackStore.showSnackbar(`La cantidad solicitada supera el stock disponible (${item.stock_actual} ${item.unidad})`, 'warning');
+    return;
+  }
+
+  insumosConsumidos.value.push({
+    item: nuevoInsumo.item,
+    cantidad: nuevoInsumo.cantidad
+  });
+
+  nuevoInsumo.item = null;
+  nuevoInsumo.cantidad = null;
+}
+
+function removerInsumoConsumido(index) {
+  insumosConsumidos.value.splice(index, 1);
+}
+
 
 onMounted(async () => {
   try {
+    if (haciendaStore.isModuleActive('kardex_bodega')) {
+      if (bodegaStore.items.length === 0) {
+        await bodegaStore.cargarItems().catch(err => console.error(err));
+      }
+    }
+    
+    if (haciendaStore.isModuleActive('nomina_express') && plantillaNomina.value.length === 0) {
+      await nominaStore.cargarPlantilla().catch(e => console.warn(e));
+    }
+
     if (actividadesStore.actividades.length === 0) {
       await actividadesStore.cargarActividades();
     }
@@ -284,7 +483,7 @@ watch(() => props.entryToEdit, (newVal) => {
 }, { immediate: true });
 
 watch(() => props.actividadIdContext, async (newVal) => {
-    if (newVal && !isEditMode.value) { // Only auto-select on create if context changes
+    if (newVal && !isEditMode.value) {
         formData.actividad_realizada_id = newVal;
         await loadActividadDetails(newVal);
     }
@@ -292,7 +491,6 @@ watch(() => props.actividadIdContext, async (newVal) => {
 watch(() => props.siembraIdContext, (newVal) => {
     if (newVal && !isEditMode.value) {
         formData.siembras_ids = [newVal];
-         // Optionally re-filter actividadesDisponibles if not already done by onMounted logic
     }
 });
 
@@ -328,10 +526,8 @@ function initializeMetricasValues() {
 
     const actividadMetricas = JSON.parse(JSON.stringify(selectedActividadDetalles.value.metricas));
 
-    // Objective 1 Critical Requirement: Handle mapping inconsistencies
     if (actividadMetricas.producto_fertilizante && actividadMetricas.producto_fertilizante.valor) {
       if (actividadMetricas.producto_fertilizante_1 && (actividadMetricas.producto_fertilizante_1.valor === null || actividadMetricas.producto_fertilizante_1.valor === undefined || actividadMetricas.producto_fertilizante_1.valor === '')) {
-        console.log('[BitacoraEntryForm] Applying metric mapping: producto_fertilizante -> producto_fertilizante_1');
         actividadMetricas.producto_fertilizante_1.valor = actividadMetricas.producto_fertilizante.valor;
       }
     }
@@ -341,7 +537,6 @@ function initializeMetricasValues() {
         const metricaDef = actividadMetricas[key];
 
         if (!metricaDef || typeof metricaDef !== 'object') {
-          console.warn(`[BitacoraEntryForm] Invalid metric definition for key: ${key}. Skipping.`);
           continue;
         }
 
@@ -355,7 +550,6 @@ function initializeMetricasValues() {
 
           if (tipoMetricaDef?.defaultValue !== undefined) {
             newMetricasValues[key] = tipoMetricaDef.defaultValue;
-            console.log(`[BitacoraEntryForm] Metric '${key}' using fallback default value.`);
           } else {
             newMetricasValues[key] = metricaDef.tipo === 'boolean' ? false : null;
           }
@@ -369,44 +563,29 @@ function initializeMetricasValues() {
   formData.metricas_values = newMetricasValues;
 }
 
-// Watch for selectedActividadDetalles to be populated, then prefill metrics if needed
-// This watcher is primarily for the scenario where data is coming from programacionesStore
 watch(selectedActividadDetalles, (newDetails) => {
   if (newDetails && isPrefillingMetrics.value && programacionesStore.pendingBitacoraFromProgramacionData) {
     const pendingMetricas = programacionesStore.pendingBitacoraFromProgramacionData.metricasToPreload;
     if (pendingMetricas) {
       for (const key in pendingMetricas) {
         if (Object.prototype.hasOwnProperty.call(pendingMetricas, key)) {
-          // Check if this metric key exists in the form's metric definitions (derived from selectedActividadDetalles)
-          // This ensures we only try to set values for metrics that are actually part of the form
           if (Object.prototype.hasOwnProperty.call(formData.metricas_values, key) || 
               (selectedActividadDetalles.value?.metricas && Object.prototype.hasOwnProperty.call(selectedActividadDetalles.value.metricas, key)) ) {
             formData.metricas_values[key] = pendingMetricas[key];
-          } else {
-            console.warn(`[BitacoraEntryForm] Metrica key "${key}" from prefill data not found in current activity's metric definitions. Skipping.`);
           }
         }
       }
     }
-    // After attempting to prefill metrics, clear the flag and the store data
     isPrefillingMetrics.value = false;
     programacionesStore.clearPendingBitacoraData();
-    console.log('[BitacoraEntryForm] Prefilled metrics and cleared pending data.');
   }
-}, { deep: true }); // deep watch might be needed if metricas_values structure is complex initially
+}, { deep: true });
 
 async function onActividadChange(actividadId) {
-  // The flag isPrefillingMetrics is true ONLY during onMounted if pendingData from programacion exists.
-  // If user manually changes activity, isPrefillingMetrics will be false.
-  // If activityId is cleared, loadActividadDetails(null) handles reset.
   if (actividadId) {
     await loadActividadDetails(actividadId);
-    // Note: populateObservationsFromActivityDetails is now called within loadActividadDetails
-    // if !isPrefillingMetrics.value. Metric values (defaults) are set by initializeMetricasValues.
-    // Specific prefill from programacion (metricasToPreload) is handled by the watch on selectedActividadDetalles.
   } else {
-    // Activity cleared by user
-    await loadActividadDetails(null); // This will clear metrics and notes
+    await loadActividadDetails(null);
   }
 }
 
@@ -417,8 +596,9 @@ function populateFormForEdit() {
   formData.actividad_realizada_id = typeof entry.actividad_realizada === 'string' ? entry.actividad_realizada : entry.expand?.actividad_realizada?.id;
   formData.estado_ejecucion = entry.estado_ejecucion || 'completado';
   formData.notas = entry.notas || '';
+  formData.signature = entry.signature || null;
+  formData.trabajadores_involucrados = entry.trabajadores_involucrados || [];
   
-  // Handle multiple siembras in edit mode
   if (entry.siembras) {
     formData.siembras_ids = Array.isArray(entry.siembras) ? entry.siembras : [entry.siembras];
   } else if (entry.expand?.siembras) {
@@ -428,22 +608,18 @@ function populateFormForEdit() {
     formData.siembras_ids = [];
   }
   
-  // Load actividad details for edit mode to ensure metric definitions are available
   if (formData.actividad_realizada_id) {
     loadActividadDetails(formData.actividad_realizada_id).then(() => {
-      // Once details (and thus metric definitions) are loaded, populate metricas_values
       if (entry.metricas && typeof entry.metricas === 'object') {
         formData.metricas_values = { ...entry.metricas };
       } else {
-        formData.metricas_values = {}; // Initialize if no metrics were stored
+        formData.metricas_values = {};
       }
     });
   } else {
      formData.metricas_values = {};
   }
 }
-
-// metricasParaFormulario removed as it is handled by BatchGeneralDataForm > FormularioMetricas
 
 async function submitForm() {
   const { valid } = await bitacoraFormRef.value.validate();
@@ -454,7 +630,12 @@ async function submitForm() {
 
   isSubmitting.value = true;
   try {
-    // Only record metrics that were selected in the checklist
+    if (formData.estado_ejecucion === 'completado' && !formData.signature) {
+      uiFeedbackStore.showSnackbar('Es obligatorio firmar la bitácora antes de guardar.', 'error');
+      isSubmitting.value = false;
+      return;
+    }
+
     const filteredMetricas = {};
     metricasSeleccionadas.value.forEach(key => {
         if (formData.metricas_values[key] !== undefined) {
@@ -470,23 +651,9 @@ async function submitForm() {
       siembras: formData.siembras_ids,
       metricas: filteredMetricas,
       bpa_respuestas: formData.bpa_respuestas,
+      signature: formData.signature,
+      trabajadores_involucrados: formData.trabajadores_involucrados
     };
-
-    if (!isEditMode.value) {
-      try {
-        let signatureObj;
-        try {
-          signatureObj = await digitalSignature.sign(dataToSubmit);
-        } catch (e) {
-          // Si no hay claves, generarlas e intentar de nuevo
-          await digitalSignature.generateKeyPair();
-          signatureObj = await digitalSignature.sign(dataToSubmit);
-        }
-        dataToSubmit.firma_digital = signatureObj.signature;
-      } catch (e) {
-        console.warn("[BitacoraForm] Error generando firma digital:", e);
-      }
-    }
 
     if (isEditMode.value) {
       await bitacoraStore.updateBitacoraEntry(props.entryToEdit.id, dataToSubmit);
@@ -497,7 +664,26 @@ async function submitForm() {
       if (formData.programacion_origen_id) {
         dataToSubmit.programacion_origen = formData.programacion_origen_id;
       }
-      await bitacoraStore.crearBitacoraEntry(dataToSubmit);
+      const createdRecord = await bitacoraStore.crearBitacoraEntry(dataToSubmit);
+      
+      if (createdRecord && createdRecord.id && showBodegaSection.value && insumosConsumidos.value.length > 0) {
+        for (const insumo of insumosConsumidos.value) {
+          try {
+            await bodegaMovimientosStore.registrarMovimiento({
+              item: insumo.item,
+              tipo: 'egreso',
+              cantidad: insumo.cantidad,
+              bitacora: createdRecord.id,
+              notas: `Consumo en campo para la actividad: ${selectedActividadDetalles.value?.nombre || 'Bitácora'}`,
+              costo_unitario_aplicado: bodegaStore.getItemById(insumo.item)?.costo_promedio_ponderado
+            });
+          } catch (movError) {
+            console.error('[BitacoraEntryForm] Error registrando movimiento de bodega:', movError);
+            uiFeedbackStore.showSnackbar('Entrada guardada pero falló el descuento de inventario', 'warning');
+          }
+        }
+      }
+      
       uiFeedbackStore.showSnackbar('Nueva entrada de bitácora guardada con éxito.', 'success');
 
       // After successful bitacora entry creation, finalize programacion execution if applicable
@@ -529,16 +715,13 @@ async function submitForm() {
   }
 }
 
-function clearActivitySelection() {
-  formData.actividad_realizada_id = null;
-  selectedActividadDetalles.value = null;
-  formData.metricas_values = {};
-  formData.bpa_respuestas = {};
-  formData.notas = '';
-}
+
 
 function closeDialog() {
   Object.assign(formData, defaultFormData()); // Reset form
+  insumosConsumidos.value = [];
+  nuevoInsumo.item = null;
+  nuevoInsumo.cantidad = null;
   selectedActividadDetalles.value = null;
   bitacoraFormRef.value?.resetValidation();
   emit('close');

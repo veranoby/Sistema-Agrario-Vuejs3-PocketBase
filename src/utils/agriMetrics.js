@@ -15,13 +15,40 @@ export function calculateBpaStatus(datosBpa) {
   if (!datosBpa?.length) return 0
 
   const puntosObtenidos = datosBpa.reduce((acc, pregunta) => {
-    const respuestasPositivas = [
-      'Implementado', 'Implementados', 'Implementadas',
-      'Implementada', 'Disponibles', 'Realizado',
-      'Utilizadas', 'Realizados', 'Cumplido', 'Disponible'
+    let val = pregunta.respuesta
+    if (typeof val === 'string') {
+      val = val.toLowerCase().trim()
+      // Eliminar tildes para facilitar la comparación
+      val = val.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    }
+
+    if (val === true) return acc + 100
+    if (!val || val === false) return acc
+
+    // Si empieza con "no " o "incomplet", es negativo
+    if (val === 'no' || val.startsWith('no ') || val.startsWith('incomplet')) {
+      return acc
+    }
+
+    const palabrasParciales = [
+      'proceso', 'tramite', 'parcial', 'ocasionalmente', 'ordenacion'
     ]
-    if (respuestasPositivas.includes(pregunta.respuesta)) return acc + 100
-    if (pregunta.respuesta === 'En proceso') return acc + 50
+
+    const esParcial = palabrasParciales.some(p => val.includes(p))
+    if (esParcial) return acc + 50
+
+    // Si no es negativo ni parcial, y tiene texto, asumimos positivo por descarte de los negativos estrictos, 
+    // pero para mayor seguridad validamos algunas palabras clave positivas que cubren los JSONs
+    const palabrasPositivas = [
+      'cumplid', 'conforme', 'si', 'aprobado', 'estrictamente',
+      'ejecutado', 'verificad', 'disponible', 'complet', 'operacional',
+      'senalizada', 'regularmente', 'libre', 'cumplen', 'implementad',
+      'instalad', 'mapeada', 'sistematicamente', 'cumple', 'aplica', 'realizad', 'registrado', 'soporte', 'autorizad'
+    ]
+
+    const esPositivo = palabrasPositivas.some(p => val.includes(p))
+    if (esPositivo) return acc + 100
+
     return acc
   }, 0)
 

@@ -416,7 +416,7 @@ export const useAuthStore = defineStore('auth', {
         ? rawHacienda.id 
         : rawHacienda
 
-      if (!haciendaId) {
+      if (!haciendaId && authData.record.role !== 'superadmin') {
         const uiFeedbackStore = useUiFeedbackStore()
         uiFeedbackStore.showSnackbar('No tienes una hacienda asignada. Contacta al administrador.', 'warning')
       }
@@ -428,7 +428,11 @@ export const useAuthStore = defineStore('auth', {
 
       logger.auth('Critical stores loaded, redirecting to dashboard')
 
-      router.push('/dashboard')
+      if (authData.record.role === 'superadmin') {
+        router.push('/admin')
+      } else {
+        router.push('/dashboard')
+      }
 
       warmUpCache(authData.record).then(result => {
         if (result.success) {
@@ -502,17 +506,17 @@ export const useAuthStore = defineStore('auth', {
 
         const newUser = await authProvider.register(userData)
 
-        // TODO: Get ASESOR_PLAN modulo ID from PB and create subscription request
-        // For now, we simulate this as the PB structure might need to be queried by code
+        // Get ASESOR_PLAN modulo ID from PB and create subscription request
         try {
           const moduloPlan = await pb.collection('modulos').getFirstListItem(`code="asesor_plan"`)
           if (moduloPlan) {
             await pb.collection('solicitudes_suscripcion').create({
               solicitante: newUser.id,
-              tipo: 'modulo',
+              tipo: 'modulo_addon',
               modulo_solicitado: moduloPlan.id,
               estado: 'pendiente',
-              notas_admin: 'Registro nuevo asesor — pendiente verificación de pago.'
+              notas_admin: 'Registro nuevo asesor — pendiente verificación de pago del entorno.',
+              fecha_solicitud: new Date().toISOString()
             })
           }
         } catch (e) {
@@ -633,6 +637,11 @@ export const useAuthStore = defineStore('auth', {
 
     async requestPasswordReset(email) {
       const uiFeedbackStore = useUiFeedbackStore()
+      if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        const error = new Error('Formato de correo electrónico inválido')
+        uiFeedbackStore.showSnackbar(error.message, 'error')
+        throw error
+      }
       try {
         await authProvider.requestPasswordReset(email)
         return true

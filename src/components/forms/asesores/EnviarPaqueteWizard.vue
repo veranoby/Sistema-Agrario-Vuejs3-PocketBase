@@ -384,8 +384,10 @@ const enviarPaquete = async () => {
   try {
     // Get the vinculacion record. If not provided, find one for this asesor & hacienda
     let finalVinculacionId = props.vinculacionId
+    let finalAsesorId = props.asesor?.id
+    const authStore = useAuthStore()
+
     if (!finalVinculacionId && props.asesor) {
-      const authStore = useAuthStore()
       const v = await pb.collection('vinculaciones_asesor').getFirstListItem(
         `hacienda_id="${authStore.user.hacienda}" && asesor_id="${props.asesor.id}" && estado="activa"`
       )
@@ -396,13 +398,16 @@ const enviarPaquete = async () => {
       throw new Error('No se encontró una vinculación activa con este asesor.')
     }
 
+    // Field names match paquetes_evaluacion PocketBase schema exactly
     await pb.collection('paquetes_evaluacion').create({
       vinculacion_id: finalVinculacionId,
-      siembras_compartidas: [selectedSiembraId.value],
-      zonas_compartidas: selectedZonas.value,
-      bitacoras_compartidas: selectedBitacoras.value,
+      hacienda_id: authStore.user.hacienda,
+      asesor_id: finalAsesorId,
+      siembra_id: selectedSiembraId.value,
+      zonas_ids: selectedZonas.value,
+      bitacora_ids: selectedBitacoras.value,
       notas_hacienda: notasHacienda.value,
-      estado: 'pendiente'
+      estado: 'enviado'
     })
 
     uiFeedback.showSnackbar('Paquete de evaluación enviado con éxito', 'success')

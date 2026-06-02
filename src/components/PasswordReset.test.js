@@ -2,8 +2,63 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createRouter, createWebHistory } from 'vue-router'
 import { createPinia, setActivePinia } from 'pinia'
-import PasswordReset from '@/components/PasswordReset.vue'
+import PasswordReset from '@/components/forms/auth/PasswordReset.vue'
 import { pb } from '@/utils/pocketbase'
+
+// Mock de vue-i18n
+const translations = {
+  'auth.recover_password_title': 'Restablecer Contraseña',
+  'auth.recover_password_error': 'Error',
+  'auth.new_password': 'NUEVA CONTRASEÑA',
+  'auth.confirm_new_password': 'CONFIRMAR NUEVA CONTRASEÑA',
+  'auth.password_weak': 'Débil',
+  'auth.password_medium': 'Media',
+  'auth.password_strong': 'Fuerte',
+  'auth.invalid_reset_token': 'Token inválido',
+  'auth.expired_reset_token': 'Token expirado',
+  'auth.required_field': 'Campo requerido',
+  'auth.new_password_min_length': 'Mínimo 8 caracteres',
+  'auth.passwords_do_not_match': 'Las contraseñas no coinciden',
+  'auth.password_reset_success': 'Contraseña restablecida con éxito',
+  'auth.back_to_login': 'Volver al login'
+}
+
+vi.mock('vue-i18n', () => ({
+  useI18n: () => ({
+    t: (key, params) => {
+      if (params && params.field) {
+        return `${translations[key] || key}: ${params.field}`
+      }
+      return translations[key] || key
+    }
+  })
+}))
+
+const SlotStub = { template: '<div><slot /></div>' }
+const VFormStub = {
+  template: '<form @submit.prevent><slot /></form>',
+  methods: {
+    validate: vi.fn().mockResolvedValue({ valid: true })
+  }
+}
+
+const defaultStubs = {
+  'v-container': SlotStub,
+  'v-col': SlotStub,
+  'v-card': SlotStub,
+  'v-toolbar': SlotStub,
+  'v-spacer': SlotStub,
+  'v-toolbar-title': SlotStub,
+  'v-card-text': SlotStub,
+  'v-form': VFormStub,
+  'v-text-field': SlotStub,
+  'v-progress-linear': SlotStub,
+  'v-btn': SlotStub,
+  'v-card-actions': SlotStub,
+  'v-alert': SlotStub,
+  'v-icon': SlotStub,
+  'router-link': SlotStub
+}
 
 // Mock de localStorage
 const localStorageMock = (() => {
@@ -77,19 +132,7 @@ describe('PasswordReset.vue', () => {
       wrapper = mount(PasswordReset, {
         global: {
           plugins: [router, createPinia()],
-          stubs: {
-            'v-container': true,
-            'v-col': true,
-            'v-card': true,
-            'v-toolbar': true,
-            'v-card-text': true,
-            'v-form': true,
-            'v-text-field': true,
-            'v-progress-linear': true,
-            'v-btn': true,
-            'v-card-actions': true,
-            'router-link': true
-          }
+          stubs: defaultStubs
         }
       })
 
@@ -105,14 +148,7 @@ describe('PasswordReset.vue', () => {
       wrapper = mount(PasswordReset, {
         global: {
           plugins: [router, createPinia()],
-          stubs: {
-            'v-container': true,
-            'v-col': true,
-            'v-card': true,
-            'v-toolbar': true,
-            'v-alert': true,
-            'v-btn': true
-          }
+          stubs: defaultStubs
         }
       })
 
@@ -125,17 +161,7 @@ describe('PasswordReset.vue', () => {
       wrapper = mount(PasswordReset, {
         global: {
           plugins: [router, createPinia()],
-          stubs: {
-            'v-container': true,
-            'v-col': true,
-            'v-card': true,
-            'v-toolbar': true,
-            'v-card-text': true,
-            'v-form': true,
-            'v-text-field': true,
-            'v-progress-linear': true,
-            'v-btn': true
-          }
+          stubs: defaultStubs
         }
       })
 
@@ -151,17 +177,7 @@ describe('PasswordReset.vue', () => {
       wrapper = mount(PasswordReset, {
         global: {
           plugins: [router, createPinia()],
-          stubs: {
-            'v-container': true,
-            'v-col': true,
-            'v-card': true,
-            'v-toolbar': true,
-            'v-card-text': true,
-            'v-form': true,
-            'v-text-field': true,
-            'v-progress-linear': true,
-            'v-btn': true
-          }
+          stubs: defaultStubs
         }
       })
     })
@@ -237,17 +253,7 @@ describe('PasswordReset.vue', () => {
       wrapper = mount(PasswordReset, {
         global: {
           plugins: [router, createPinia()],
-          stubs: {
-            'v-container': true,
-            'v-col': true,
-            'v-card': true,
-            'v-toolbar': true,
-            'v-card-text': true,
-            'v-form': true,
-            'v-text-field': true,
-            'v-progress-linear': true,
-            'v-btn': true
-          }
+          stubs: defaultStubs
         }
       })
     })
@@ -277,20 +283,10 @@ describe('PasswordReset.vue', () => {
       wrapper = mount(PasswordReset, {
         global: {
           plugins: [router, createPinia()],
-          stubs: {
-            'v-container': true,
-            'v-col': true,
-            'v-card': true,
-            'v-toolbar': true,
-            'v-card-text': true,
-            'v-form': true,
-            'v-text-field': true,
-            'v-progress-linear': true,
-            'v-alert': true,
-            'v-btn': true
-          }
+          stubs: defaultStubs
         }
       })
+      await wrapper.vm.$nextTick()
     })
 
     it('debe manejar error de token inválido', async () => {
@@ -298,6 +294,7 @@ describe('PasswordReset.vue', () => {
 
       wrapper.vm.password = 'ValidPassword123!'
       wrapper.vm.passwordConfirm = 'ValidPassword123!'
+      await wrapper.vm.$nextTick()
 
       await wrapper.vm.handlePasswordReset()
 
@@ -310,6 +307,7 @@ describe('PasswordReset.vue', () => {
 
       wrapper.vm.password = 'ValidPassword123!'
       wrapper.vm.passwordConfirm = 'ValidPassword123!'
+      await wrapper.vm.$nextTick()
 
       await wrapper.vm.handlePasswordReset()
 
@@ -322,6 +320,7 @@ describe('PasswordReset.vue', () => {
 
       wrapper.vm.password = 'ValidPassword123!'
       wrapper.vm.passwordConfirm = 'ValidPassword123!'
+      await wrapper.vm.$nextTick()
 
       await wrapper.vm.handlePasswordReset()
 
@@ -335,19 +334,10 @@ describe('PasswordReset.vue', () => {
       wrapper = mount(PasswordReset, {
         global: {
           plugins: [router, createPinia()],
-          stubs: {
-            'v-container': true,
-            'v-col': true,
-            'v-card': true,
-            'v-toolbar': true,
-            'v-card-text': true,
-            'v-form': true,
-            'v-text-field': true,
-            'v-progress-linear': true,
-            'v-btn': true
-          }
+          stubs: defaultStubs
         }
       })
+      await wrapper.vm.$nextTick()
     })
 
     it('debe llamar a confirmPasswordReset con los parámetros correctos', async () => {
@@ -355,6 +345,7 @@ describe('PasswordReset.vue', () => {
 
       wrapper.vm.password = 'ValidPassword123!'
       wrapper.vm.passwordConfirm = 'ValidPassword123!'
+      await wrapper.vm.$nextTick()
 
       await wrapper.vm.handlePasswordReset()
 
@@ -370,6 +361,7 @@ describe('PasswordReset.vue', () => {
 
       wrapper.vm.password = 'ValidPassword123!'
       wrapper.vm.passwordConfirm = 'ValidPassword123!'
+      await wrapper.vm.$nextTick()
 
       await wrapper.vm.handlePasswordReset()
 
@@ -383,17 +375,7 @@ describe('PasswordReset.vue', () => {
       wrapper = mount(PasswordReset, {
         global: {
           plugins: [router, createPinia()],
-          stubs: {
-            'v-container': true,
-            'v-col': true,
-            'v-card': true,
-            'v-toolbar': true,
-            'v-card-text': true,
-            'v-form': true,
-            'v-text-field': true,
-            'v-progress-linear': true,
-            'v-btn': true
-          }
+          stubs: defaultStubs
         }
       })
     })

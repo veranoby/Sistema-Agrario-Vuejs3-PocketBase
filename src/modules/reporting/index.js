@@ -54,6 +54,8 @@ export const reportingModule = {
         return exporters.exportToJSON(report)
       case 'html':
         return exporters.exportToHTML(report)
+      case 'md':
+        return exporters.exportToMD(report)
       default:
         throw new Error(`Formato no soportado: ${format}`)
     }

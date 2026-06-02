@@ -35,8 +35,8 @@
                 <v-list-item @click="exportReport('csv')">
                   <v-list-item-title>CSV</v-list-item-title>
                 </v-list-item>
-                <v-list-item @click="exportReport('txt')">
-                  <v-list-item-title>Texto</v-list-item-title>
+                <v-list-item @click="exportReport('md')">
+                  <v-list-item-title>Markdown (MD)</v-list-item-title>
                 </v-list-item>
               </v-list>
             </v-menu>
@@ -161,16 +161,6 @@
         <!-- Mapa Total de la Hacienda -->
         <div class="col-span-1 md:col-span-2 mt-4">
           <v-card variant="elevated" elevation="2" class="overflow-hidden border">
-            <v-card-title class="pa-4 d-flex align-center">
-              <v-icon start color="success">mdi-map-legend</v-icon>
-              {{ t('dashboard.hacienda_map') }}
-              <v-spacer />
-
-              <v-chip size="small" variant="tonal" color="success">
-                {{ mi_hacienda.name }}
-              </v-chip>
-            </v-card-title>
-            <v-divider />
             <v-card-text class="pa-0">
               <div style="height: 1000px;">
                 <GisMapComponent
@@ -343,10 +333,10 @@ const haciendaGeoJSON = computed(() => {
       }
 
       if (esLote) {
-         // El color depende del estado de la siembra, o café suave si está vacío
-         const loteColor = siembraVinculada 
+         // El color prioriza el configurado en la zona, o depende del estado de la siembra, o café suave si está vacío
+         const loteColor = (z.color && hexColorRegex.test(z.color)) ? z.color : (siembraVinculada 
            ? (SIEMBRA_COLORS[siembraVinculada.estado] || SIEMBRA_COLORS.finalizada) 
-           : '#8d6e63' // Color tierra para lotes sin siembra
+           : '#8d6e63') // Color tierra para lotes sin siembra
            
          features.push({
            type: 'Feature',

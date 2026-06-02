@@ -13,7 +13,7 @@
     <v-card class="mb-4">
       <v-card-text>
         <v-row>
-          <v-col cols="12" md="4">
+          <v-col cols="12" md="3">
             <v-text-field
               v-model="searchQuery"
               label="Buscar por email o nombre"
@@ -21,9 +21,10 @@
               clearable
               dense
               outlined
+              hide-details
             />
           </v-col>
-          <v-col cols="12" md="3">
+          <v-col cols="12" md="2">
             <v-select
               v-model="filterRole"
               label="Filtrar por rol"
@@ -31,23 +32,38 @@
               clearable
               dense
               outlined
+              hide-details
             />
           </v-col>
-          <v-col cols="12" md="3">
+          <v-col cols="12" md="2">
             <v-select
               v-model="filterStatus"
               label="Estado"
               :items="[
-                { title: 'Activos', value: USER_STATUS.ACTIVE },
-                { title: 'Inactivos', value: USER_STATUS.INACTIVE }
+                { title: 'Activos', value: 'active' },
+                { title: 'Suspendidos', value: 'suspended' }
               ]"
               clearable
               dense
               outlined
+              hide-details
             />
           </v-col>
-          <v-col cols="12" md="2" class="d-flex align-center">
-            <v-btn color="secondary" @click="exportToMarkdown" class="mr-2">
+          <v-col cols="12" md="3">
+            <v-select
+              v-model="filterHacienda"
+              label="Filtrar por hacienda"
+              :items="haciendasList"
+              item-title="title"
+              item-value="value"
+              clearable
+              dense
+              outlined
+              hide-details
+            />
+          </v-col>
+          <v-col cols="12" md="2" class="d-flex align-center justify-end">
+            <v-btn color="secondary" @click="exportToMarkdown" class="w-100">
               <v-icon start>mdi-language-markdown</v-icon>
               Exportar MD
             </v-btn>
@@ -66,41 +82,39 @@
         show-select
         @update:model-value="onSelectionChange"
       >
+        <!-- Name -->
+        <template v-slot:item.name="{ item }">
+          {{ item.name || item.firstname }} {{ item.lastname }}
+        </template>
+
         <!-- Role Badge -->
-        <template v-slot:item_role="{ item }">
+        <template v-slot:item.role="{ item }">
           <v-chip :color="getRoleColor(item.role)" size="small" label>
             {{ formatRole(item.role) }}
           </v-chip>
         </template>
 
+        <!-- Verified Badge -->
+        <template v-slot:item.verified="{ item }">
+          <v-chip :color="item.verified ? 'success' : 'warning'" size="small">
+            {{ item.verified ? 'Sí' : 'No' }}
+          </v-chip>
+        </template>
+
         <!-- Status Badge -->
-        <template v-slot:item_status="{ item }">
+        <template v-slot:item.status="{ item }">
           <v-chip :color="getUserStatusColor(item.status)" size="small">
-            {{ formatUserStatus(item.status) }}
+            {{ formatUserStatus(item.status) || 'Activo' }}
           </v-chip>
         </template>
 
         <!-- Haciendas -->
-        <template v-slot:item_haciendas="{ item }">
-          <v-chip-group v-if="item.haciendas?.length" column>
-            <v-chip
-              v-for="hacienda in item.haciendas.slice(0, 2)"
-              :key="hacienda.id"
-              size="small"
-              color="primary"
-              variant="outlined"
-            >
-              {{ hacienda.name }}
-            </v-chip>
-            <v-chip v-if="item.haciendas.length > 2" size="small">
-              +{{ item.haciendas.length - 2 }} más
-            </v-chip>
-          </v-chip-group>
-          <span v-else class="text-grey">Sin haciendas</span>
+        <template v-slot:item.haciendas="{ item }">
+          {{ item.expand?.hacienda?.nombre || item.expand?.hacienda?.name || 'Sin Hacienda' }}
         </template>
 
         <!-- Actions -->
-        <template v-slot:item_actions="{ item }">
+        <template v-slot:item.actions="{ item }">
           <v-btn icon="mdi-eye" size="small" variant="text" @click="viewUser(item)" />
           <v-btn v-role="'USERS_MANAGE'" icon="mdi-pencil" size="small" variant="text" @click="editUser(item)" />
           <v-btn
@@ -126,86 +140,93 @@
     </v-card>
 
     <!-- Dialog: Crear/Editar Usuario -->
-    <v-dialog v-model="userDialog" max-width="600" persistent>
-      <v-card>
-        <v-card-title>
-          {{ editingUser ? 'Editar Usuario' : 'Nuevo Usuario' }}
-        </v-card-title>
-        <UserForm
-          :is-editing="!!editingUser"
-          :loading="loading"
-          :show-role-select="true"
-          :show-hacienda-select="true"
-          :available-roles="roles"
-          :haciendas-list="haciendasList"
-          :initial-data="formData"
-          @submit="saveUser"
-          @cancel="closeDialog"
-        />
-      </v-card>
-    </v-dialog>
+    <UserAdminDialog v-model="userDialog" :editing-user="editingUser" @saved="fetchUsers" />
 
     <!-- Dialog: Ver Usuario -->
-    <v-dialog v-model="viewDialog" max-width="700">
+    <v-dialog v-model="viewDialog" max-width="800">
       <v-card>
-        <v-card-title>Detalles del Usuario</v-card-title>
-        <v-card-text>
-          <v-list>
-            <v-list-item>
-              <v-list-item-title>Email</v-list-item-title>
-              <v-list-item-subtitle>{{ selectedUser?.email }}</v-list-item-subtitle>
-            </v-list-item>
-            <v-list-item>
-              <v-list-item-title>Nombre de usuario</v-list-item-title>
-              <v-list-item-subtitle>{{ selectedUser?.username }}</v-list-item-subtitle>
-            </v-list-item>
-            <v-list-item>
-              <v-list-item-title>Nombre completo</v-list-item-title>
-              <v-list-item-subtitle>{{ selectedUser?.firstname }} {{ selectedUser?.lastname }}</v-list-item-subtitle>
-            </v-list-item>
-            <v-list-item>
-              <v-list-item-title>Rol</v-list-item-title>
-              <v-list-item-subtitle>
-                <v-chip :color="getRoleColor(selectedUser?.role)" size="small">
-                  {{ formatRole(selectedUser?.role) }}
-                </v-chip>
-              </v-list-item-subtitle>
-            </v-list-item>
-            <v-list-item>
-              <v-list-item-title>Estado</v-list-item-title>
-              <v-list-item-subtitle>
-                <v-chip :color="getUserStatusColor(selectedUser?.status)" size="small">
-                  {{ formatUserStatus(selectedUser?.status) }}
-                </v-chip>
-              </v-list-item-subtitle>
-            </v-list-item>
-            <v-list-item v-if="selectedUser?.haciendas?.length">
-              <v-list-item-title>Haciendas asignadas</v-list-item-title>
-              <v-list-item-subtitle>
-                <v-chip-group>
-                  <v-chip
-                    v-for="hacienda in selectedUser.haciendas"
-                    :key="hacienda.id"
-                    color="primary"
-                    size="small"
-                  >
-                    {{ hacienda.name }}
+        <v-card-title class="bg-primary text-white">Detalles del Usuario</v-card-title>
+        <v-card-text class="pt-4">
+          <v-row>
+            <v-col cols="12" md="6">
+              <v-list-item>
+                <v-list-item-title class="font-weight-bold">Email</v-list-item-title>
+                <v-list-item-subtitle>{{ selectedUser?.email }}</v-list-item-subtitle>
+              </v-list-item>
+              <v-list-item>
+                <v-list-item-title class="font-weight-bold">Nombre de usuario</v-list-item-title>
+                <v-list-item-subtitle>{{ selectedUser?.username }}</v-list-item-subtitle>
+              </v-list-item>
+              <v-list-item>
+                <v-list-item-title class="font-weight-bold">Nombre completo</v-list-item-title>
+                <v-list-item-subtitle>{{ selectedUser?.name || selectedUser?.firstname }} {{ selectedUser?.lastname }}</v-list-item-subtitle>
+              </v-list-item>
+              <v-list-item>
+                <v-list-item-title class="font-weight-bold">Cédula</v-list-item-title>
+                <v-list-item-subtitle>{{ selectedUser?.cedula || 'N/A' }}</v-list-item-subtitle>
+              </v-list-item>
+              <v-list-item>
+                <v-list-item-title class="font-weight-bold">Dirección</v-list-item-title>
+                <v-list-item-subtitle>{{ selectedUser?.direccion || 'N/A' }}</v-list-item-subtitle>
+              </v-list-item>
+              <v-list-item>
+                <v-list-item-title class="font-weight-bold">Información adicional</v-list-item-title>
+                <v-list-item-subtitle>{{ selectedUser?.info || 'N/A' }}</v-list-item-subtitle>
+              </v-list-item>
+            </v-col>
+            <v-col cols="12" md="6">
+              <v-list-item>
+                <v-list-item-title class="font-weight-bold">Rol</v-list-item-title>
+                <v-list-item-subtitle>
+                  <v-chip :color="getRoleColor(selectedUser?.role)" size="small">
+                    {{ formatRole(selectedUser?.role) }}
                   </v-chip>
-                </v-chip-group>
-              </v-list-item-subtitle>
-            </v-list-item>
-            <v-list-item>
-              <v-list-item-title>Fecha de creación</v-list-item-title>
-              <v-list-item-subtitle>{{ formatDate(selectedUser?.created) }}</v-list-item-subtitle>
-            </v-list-item>
-          </v-list>
+                </v-list-item-subtitle>
+              </v-list-item>
+              <v-list-item>
+                <v-list-item-title class="font-weight-bold">Estado</v-list-item-title>
+                <v-list-item-subtitle>
+                  <v-chip :color="getUserStatusColor(selectedUser?.status)" size="small">
+                    {{ formatUserStatus(selectedUser?.status) }}
+                  </v-chip>
+                </v-list-item-subtitle>
+              </v-list-item>
+              <v-list-item>
+                <v-list-item-title class="font-weight-bold">Email Verificado</v-list-item-title>
+                <v-list-item-subtitle>
+                  <v-chip :color="selectedUser?.verified ? 'success' : 'warning'" size="small">
+                    {{ selectedUser?.verified ? 'Sí' : 'No' }}
+                  </v-chip>
+                </v-list-item-subtitle>
+              </v-list-item>
+              <v-list-item>
+                <v-list-item-title class="font-weight-bold">Fecha de creación</v-list-item-title>
+                <v-list-item-subtitle>{{ formatDate(selectedUser?.created) }}</v-list-item-subtitle>
+              </v-list-item>
+              <v-list-item v-if="selectedUser?.haciendas?.length">
+                <v-list-item-title class="font-weight-bold">Haciendas asignadas</v-list-item-title>
+                <v-list-item-subtitle>
+                  <v-chip-group>
+                    <v-chip
+                      v-for="hacienda in selectedUser.haciendas"
+                      :key="hacienda.id"
+                      color="primary"
+                      size="small"
+                    >
+                      {{ hacienda.name || hacienda.nombre }}
+                    </v-chip>
+                  </v-chip-group>
+                </v-list-item-subtitle>
+              </v-list-item>
+            </v-col>
+          </v-row>
         </v-card-text>
-        <v-card-actions>
+        <v-card-actions class="pb-4 pr-4">
           <v-btn color="primary" variant="text" @click="exportUserToMarkdown(selectedUser)">
             Exportar a MD
           </v-btn>
           <v-spacer />
-          <v-btn color="grey" @click="viewDialog = false">Cerrar</v-btn>
+          <v-btn color="grey" variant="elevated" @click="viewDialog = false">Cerrar</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -217,7 +238,7 @@
         <v-card-text>
           ¿Está seguro de eliminar al usuario <strong>{{ selectedUser?.email }}</strong>?
           <v-alert type="warning" class="mt-2" density="compact">
-            Esta acción no se puede deshacer.
+            Esta acción eliminará también la hacienda vinculada, así como a los usuarios operadores y auditores, y las recetas entregadas a la hacienda. No se eliminarán los asesores.
           </v-alert>
         </v-card-text>
         <v-card-actions>
@@ -228,10 +249,6 @@
       </v-card>
     </v-dialog>
 
-    <!-- Snackbar -->
-    <v-snackbar v-model="snackbar" :color="snackbarColor" :timeout="3000">
-      {{ snackbarMessage }}
-    </v-snackbar>
   </v-container>
 </template>
 
@@ -243,9 +260,11 @@ import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import { useUserStore } from '@/stores/userStore'
 import { useEvents } from '@/composables/useEvents'
 import { EVENTS } from '@/utils/eventBus'
-import UserForm from '@/components/forms/auth/UserForm.vue'
+import UserAdminDialog from '@/components/admin/dialogs/UserAdminDialog.vue'
 import { USER_ROLES, USER_STATUS, ROLE_OPTIONS } from '@/constants/roles'
 import { formatRole, getRoleColor, formatDate, downloadMarkdown, getUserStatusColor, formatUserStatus } from '@/utils/formatters'
+
+const localUserStatus = USER_STATUS;
 
 const uiFeedbackStore = useUiFeedbackStore()
 const userStore = useUserStore()
@@ -258,6 +277,7 @@ const haciendas = ref([])
 const searchQuery = ref('')
 const filterRole = ref(null)
 const filterStatus = ref(null)
+const filterHacienda = ref(null)
 const userDialog = ref(false)
 const viewDialog = ref(false)
 const deleteDialog = ref(false)
@@ -270,7 +290,7 @@ const userForm = ref(null)
 const formData = ref({
   email: '',
   username: '',
-  firstname: '',
+  name: '',
   lastname: '',
   password: '',
   role: USER_ROLES.OPERADOR,
@@ -285,8 +305,9 @@ const roles = ROLE_OPTIONS
 const headers = [
   { title: 'Email', key: 'email', sortable: true },
   { title: 'Usuario', key: 'username', sortable: true },
-  { title: 'Nombre', key: 'firstname', sortable: true },
+  { title: 'Nombre', key: 'name', sortable: true },
   { title: 'Rol', key: 'role', sortable: true },
+  { title: 'Email Verificado', key: 'verified', sortable: true },
   { title: 'Haciendas', key: 'haciendas', sortable: false },
   { title: 'Estado', key: 'status', sortable: true },
   { title: 'Acciones', key: 'actions', sortable: false, align: 'end' }
@@ -302,6 +323,7 @@ const filteredUsers = computed(() => {
     result = result.filter(u =>
       u.email?.toLowerCase().includes(query) ||
       u.username?.toLowerCase().includes(query) ||
+      u.name?.toLowerCase().includes(query) ||
       u.firstname?.toLowerCase().includes(query) ||
       u.lastname?.toLowerCase().includes(query)
     )
@@ -314,7 +336,15 @@ const filteredUsers = computed(() => {
 
   // Filtro por estado
   if (filterStatus.value) {
-    result = result.filter(u => u.status === filterStatus.value)
+    result = result.filter(u => {
+      const s = Array.isArray(u.status) ? u.status[0] : u.status
+      return s === filterStatus.value || (s === undefined && filterStatus.value === 'active')
+    })
+  }
+
+  // Filtro por hacienda
+  if (filterHacienda.value) {
+    result = result.filter(u => u.hacienda === filterHacienda.value || (u.haciendas && u.haciendas.some(h => h.id === filterHacienda.value)))
   }
 
   return result
@@ -322,7 +352,7 @@ const filteredUsers = computed(() => {
 
 // Lista de haciendas para UserForm (formato: title/value)
 const haciendasList = computed(() => {
-  return haciendas.value.map(h => ({ title: h.name, value: h.id }))
+  return haciendas.value.map(h => ({ title: h.nombre || h.name || 'Sin nombre', value: h.id }))
 })
 
 // Cargar datos iniciales
@@ -363,7 +393,7 @@ function openCreateDialog() {
   formData.value = {
     email: '',
     username: '',
-    firstname: '',
+    name: '',
     lastname: '',
     password: '',
     role: USER_ROLES.OPERADOR,
@@ -380,7 +410,7 @@ function editUser(user) {
   formData.value = {
     email: user.email,
     username: user.username,
-    firstname: user.firstname,
+    name: user.name || user.firstname,
     lastname: user.lastname,
     password: '',
     role: user.role,

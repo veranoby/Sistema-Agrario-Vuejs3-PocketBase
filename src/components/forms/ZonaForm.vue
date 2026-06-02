@@ -65,6 +65,20 @@
                 ></v-text-field>
 
                 <v-select
+                  v-if="!tipoZonaActual && !modoEdicion"
+                  v-model="zonaLocal.tipos_zonas"
+                  :items="tiposZonasOtras"
+                  prepend-inner-icon="mdi-tag"
+                  label="Tipo de Zona"
+                  item-title="nombre"
+                  item-value="id"
+                  density="compact"
+                  variant="outlined"
+                  class="mb-2"
+                  :rules="[(v) => !!v || 'Seleccione un tipo de zona']"
+                ></v-select>
+
+                <v-select
                   v-if="!fromSiembraWorkspace"
                   v-model="zonaLocal.siembra"
                   :items="props.siembrasActivas"
@@ -125,6 +139,24 @@
                     ></v-checkbox>
                   </template>
                 </v-tooltip>
+              </div>
+              
+              <!-- Color de Zona -->
+              <div class="col-span-12 mt-2">
+                <div class="text-caption font-weight-bold mb-1 d-flex align-center">
+                  <v-icon start color="success" size="small">mdi-palette</v-icon>
+                  Color en Mapa
+                </div>
+                <div class="d-flex align-center gap-3">
+                  <input
+                    type="color"
+                    v-model="zonaLocal.color"
+                    style="width: 48px; height: 36px; border: none; border-radius: 4px; cursor: pointer;"
+                  />
+                  <v-chip :color="zonaLocal.color" size="small" variant="flat" class="text-white font-weight-bold">
+                    {{ zonaLocal.color }}
+                  </v-chip>
+                </div>
               </div>
             </div>
 
@@ -394,6 +426,9 @@
                   :zoom="mapZoom"
                   :initialGeoJSON="zonaLocal.geometria"
                   :hacienda-gps="mi_hacienda?.gps"
+                  :reference-geometries="referenceGeometries"
+                  :hacienda-geometry="haciendaGeometry"
+                  :active-color="zonaLocal.color"
                   @geometry-updated="handleGeometryUpdated"
                   @first-point-placed="handleFirstPointPlaced"
                   style="height: 600px; width: 100%;"
@@ -561,7 +596,7 @@ const props = defineProps({
   },
   tipoZonaActual: {
     type: Object,
-    required: true
+    default: null
   },
   siembraContext: {
     type: Object,
@@ -617,6 +652,7 @@ const initialMapZoom = ref(13)
 // Estado inicial
 const initialState = {
   nombre: '',
+  color: '#4CAF50',
   area: { area: null, unidad: 'ha' },
   info: '',
   tipos_zonas: props.tipoZonaActual?.id,
@@ -642,9 +678,31 @@ const showOpcionesField = ref(false)
 import placeholderZonas from '@/assets/placeholder-zonas.png'
 
 // Estado local usando reactive en lugar de ref para mejor manejo de objetos anidados
-const zonaLocal = reactive({ ...initialState, ...props.zonaInicial })
+const zonaLocal = reactive({ 
+  ...initialState, 
+  ...props.zonaInicial,
+  color: props.zonaInicial.color || initialState.color
+})
 
 // Computed properties
+const referenceGeometries = computed(() => {
+  return zonas.value
+    .filter(z => z.geometria && z.id !== zonaLocal.id)
+    .map(z => ({
+      type: 'Feature',
+      geometry: typeof z.geometria === 'string' ? JSON.parse(z.geometria) : z.geometria,
+      properties: { nombre: z.nombre, color: z.color || '#9E9E9E' }
+    }))
+})
+
+const haciendaGeometry = computed(() => {
+  const geom = mi_hacienda.value?.geometria
+  if (!geom) return null
+  try {
+    return typeof geom === 'string' ? JSON.parse(geom) : JSON.parse(JSON.stringify(geom))
+  } catch { return null }
+})
+
 const getBpaPreguntas = computed(() => {
   const tipoZona = tiposZonas.value.find((t) => t.id === zonaLocal.tipos_zonas)
   return tipoZona?.datos_bpa?.preguntas_bpa || []
@@ -653,6 +711,10 @@ const getBpaPreguntas = computed(() => {
 const drawMode = computed(() => {
   const tipo = tiposZonas.value.find(t => t.id === zonaLocal.tipos_zonas)
   return tipo?.nombre?.toLowerCase().includes('lote') ? 'polygon' : 'marker'
+})
+
+const tiposZonasOtras = computed(() => {
+  return tiposZonas.value?.filter(t => !t.nombre?.toLowerCase().includes('lote')) || []
 })
 
 const handleGeometryUpdated = ({ geojson, areaHa }) => {
@@ -1108,6 +1170,20 @@ watch(
     }
   },
   { immediate: true }
+)
+
+// Watch para cuando cambia el tipo de zona en el dropdown de Otras Zonas
+watch(
+  () => zonaLocal.tipos_zonas,
+  (newTipoId, oldTipoId) => {
+    if (newTipoId && newTipoId !== oldTipoId && !props.modoEdicion) {
+      const tipoSel = tiposZonas.value.find(t => t.id === newTipoId)
+      if (tipoSel && !props.tipoZonaActual) {
+        zonaLocal.datos_bpa = initializeDatosBpa(tipoSel)
+        zonaLocal.metricas = initializeMetricas(tipoSel)
+      }
+    }
+  }
 )
 
 // Watch para recentrar mapa automáticamente al editar coordenadas GPS

@@ -125,9 +125,10 @@ export function useActividadesData(actividadId) {
     dialogSiembrasZonas.value = false
     try {
       await actividadesStore.updateActividad(actividadId.value, {
-        siembras: actividadInfo.value.siembras,
-        zonas: actividadInfo.value.zonas
+        siembras: Array.from(selectedSiembras.value || []),
+        zonas: Array.from(selectedZonas.value || [])
       })
+      await loadActividadInfo()
       console.log('Actividad actualizada correctamente')
     } catch (error) {
       console.error('Error al actualizar la actividad:', error)

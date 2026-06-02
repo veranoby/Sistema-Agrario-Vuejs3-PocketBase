@@ -8,6 +8,7 @@
  */
 
 import { format } from 'date-fns'
+import { downloadMarkdown } from '@/utils/fileDownload'
 
 /**
  * Exporta lista de usuarios a Markdown
@@ -317,4 +318,16 @@ function formatDate(date) {
   } catch {
     return 'N/A'
   }
+}
+
+/**
+ * Exporta el reporte directamente a un archivo Markdown
+ * @param {Object} report - Objeto de reporte generado
+ * @param {string} filename - Nombre del archivo
+ * @returns {boolean}
+ */
+export function exportToMD(report, filename = 'bpa_compliance_report.md') {
+  const md = exportKnowledgeHubToMarkdown(report.data)
+  downloadMarkdown(md, filename)
+  return true
 }

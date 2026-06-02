@@ -170,7 +170,7 @@ onMounted(async () => {
           filter: `vinculacion_id="${v.id}"`
         })
         hDetails.totalPackages = pkgs.length
-        hDetails.pendingCount = pkgs.filter(p => p.estado === 'pendiente').length
+        hDetails.pendingCount = pkgs.filter(p => p.estado === 'enviado').length
       } catch (err) {
         console.warn('Could not fetch packages count:', err)
       }

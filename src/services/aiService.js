@@ -105,9 +105,37 @@ export async function suggestActivityCalendar(crop, conditions) {
   }
 }
 
+/**
+ * Prueba la conexión con el proveedor de IA utilizando la configuración especificada.
+ */
+export async function testConnection(auth_token, provider, base_url, model) {
+  try {
+    const { pb } = await import('@/utils/pocketbase')
+    const res = await fetch('/api/ai/test-connection', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${pb.authStore.token}`
+      },
+      body: JSON.stringify({ auth_token, provider, base_url, model })
+    })
+
+    if (!res.ok) {
+      const err = await res.json()
+      throw new Error(err.error || 'Error en la prueba de conexión')
+    }
+
+    return { success: true }
+  } catch (error) {
+    logger.error('[AIService] Error en testConnection', error)
+    throw error
+  }
+}
+
 // Export object for backwards compatibility with components that import aiService
 export const aiService = {
   generateAIResponse,
   autocompleteBitacora,
-  suggestActivityCalendar
+  suggestActivityCalendar,
+  testConnection
 }

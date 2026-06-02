@@ -38,9 +38,11 @@ export const usePlanStore = defineStore('plan', {
     async fetchModules() {
       this.loading = true
       try {
-        this.availableModules = await pb.collection('modulos').getFullList({
+        const modules = await pb.collection('modulos').getFullList({
           sort: 'category, name'
         })
+        // Ocultar 'asesor_plan' de la lista general para que la Hacienda no lo vea
+        this.availableModules = modules.filter(m => m.code !== 'asesor_plan')
         return this.availableModules
       } catch (error) {
         handleError(error, 'Error al cargar módulos')

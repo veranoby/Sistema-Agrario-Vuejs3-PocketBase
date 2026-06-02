@@ -23,13 +23,9 @@
           <v-icon class="mr-2" icon="mdi-book"></v-icon>
           <span class="hidden sm:inline">{{ $t('header.documentation') }}</span>
         </v-btn>
-        <v-btn text size="small" @click="$router.push('/contact')" class="flex items-center">
+        <v-btn text size="small" @click="scrollToContact" class="flex items-center">
           <v-icon class="mr-2" icon="mdi-email"></v-icon>
           <span class="hidden sm:inline">{{ $t('header.contact_us') }}</span>
-        </v-btn>
-        <v-btn text size="small" @click="$router.push('/faq')" class="flex items-center">
-          <v-icon class="mr-2" icon="mdi-help-circle"></v-icon>
-          <span class="hidden sm:inline">{{ $t('header.faq') }}</span>
         </v-btn>
       </div>
 
@@ -182,6 +178,20 @@ export default {
       this.$emit('updateSidebarVisibility', false)
     }
 
+    const scrollToContact = () => {
+      if (router.currentRoute.value.path !== '/') {
+        router.push('/').then(() => {
+          setTimeout(() => {
+            const el = document.getElementById('contact-section')
+            if (el) el.scrollIntoView({ behavior: 'smooth' })
+          }, 300)
+        })
+      } else {
+        const el = document.getElementById('contact-section')
+        if (el) el.scrollIntoView({ behavior: 'smooth' })
+      }
+    }
+
     const connectionStatus = computed(() => ({
       color: syncStore.isOnline ? 'success' : 'error',
       icon: syncStore.isOnline ? 'mdi-wifi' : 'mdi-wifi-off',
@@ -209,7 +219,8 @@ export default {
       languages,
       pendingOperations,
       pendingTasksCount,
-      isSyncing
+      isSyncing,
+      scrollToContact
     }
   }
 }

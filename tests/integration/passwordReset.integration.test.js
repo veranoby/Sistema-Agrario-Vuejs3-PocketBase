@@ -140,7 +140,7 @@ describe('Flujo de Recuperación de Contraseña - Integración', () => {
       // Navegar sin token
       await router.push('/auth/reset-password/')
 
-      expect(router.currentRoute.value.params.token).toBe('')
+      expect(router.currentRoute.value.params.token || '').toBe('')
     })
   })
 

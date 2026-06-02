@@ -319,19 +319,24 @@ export const useBitacoraStore = defineStore('bitacora', {
       }
 
       let signatureData = null
-      try {
-        signatureData = await digitalSignature.sign({
-          collection: 'bitacora',
-          data: fullEntryData,
-          timestamp: new Date().toISOString()
-        })
-      } catch (error) {
-        logger.warn('[BITACORA_STORE] No se pudo firmar, continuando sin firma:', error)
+      if (entryData.signature && entryData.signature.signature) {
+        logger.info('[BITACORA_STORE] Bypass de firma automática: usando firma provista por UI')
+        signatureData = entryData.signature
+      } else {
+        try {
+          signatureData = await digitalSignature.sign({
+            collection: 'bitacora',
+            data: fullEntryData,
+            timestamp: new Date().toISOString()
+          })
+        } catch (error) {
+          logger.warn('[BITACORA_STORE] No se pudo firmar, continuando sin firma:', error)
+        }
       }
 
       fullEntryData.signature = signatureData;
 
-      if (!fullEntryData.hacienda || !fullEntryData.programacion_origen || !fullEntryData.actividad_realizada || !fullEntryData.fecha_ejecucion) {
+      if (!fullEntryData.hacienda || !fullEntryData.actividad_realizada || !fullEntryData.fecha_ejecucion) {
           handleError(new Error('Datos incompletos para la entrada de bitácora.'), 'Error creando entrada de bitácora');
           return null;
       }

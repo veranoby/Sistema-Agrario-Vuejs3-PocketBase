@@ -48,6 +48,20 @@ export function useSiembraData(siembraId) {
     return zonas.value?.filter((zona) => zona.siembra === siembraId.value) || []
   })
 
+  const zonasLotes = computed(() => {
+    return zonasfiltradas.value.filter((zona) => {
+      const tipo = tiposZonas.value?.find(t => t.id === zona.tipos_zonas)
+      return tipo?.nombre?.toLowerCase().includes('lote') || zona.nombre?.toLowerCase().includes('lote')
+    })
+  })
+
+  const zonasOtras = computed(() => {
+    return zonasfiltradas.value.filter((zona) => {
+      const tipo = tiposZonas.value?.find(t => t.id === zona.tipos_zonas)
+      return !(tipo?.nombre?.toLowerCase().includes('lote') || zona.nombre?.toLowerCase().includes('lote'))
+    })
+  })
+
   const actividadesfiltradas = computed(() => {
     if (!actividades.value || !siembraId.value) return []
     return actividades.value.filter((actividad) => {
@@ -191,6 +205,8 @@ export function useSiembraData(siembraId) {
     avatarUrl,
     totalArea,
     zonasfiltradas,
+    zonasLotes,
+    zonasOtras,
     actividadesfiltradas,
     siembraAvatarUrl,
     mi_hacienda,

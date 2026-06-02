@@ -52,11 +52,31 @@
             Configuración IA y APIS
           </v-card-title>
           <v-card-text>
+            <v-select
+              v-model="localConfig.global_ai_config.provider"
+              :items="['custom', 'openrouter']"
+              label="AI Provider"
+              variant="outlined"
+              density="compact"
+            />
             <v-text-field
-              v-model="localConfig.global_openrouter_key"
-              label="OpenRouter Global Key"
-              hint="Llave de respaldo para haciendas sin llave propia"
-              persistent-hint
+              v-model="localConfig.global_ai_config.model"
+              label="AI Model"
+              variant="outlined"
+              density="compact"
+            />
+            <v-text-field
+              v-model="localConfig.global_ai_config.base_url"
+              label="AI Base URL"
+              variant="outlined"
+              density="compact"
+            />
+            <v-text-field
+              v-model="localConfig.global_ai_config.auth_token"
+              label="AI Auth Token"
+              type="password"
+              variant="outlined"
+              density="compact"
             />
             <v-text-field
               v-model="localConfig.resend_api_key"
@@ -109,6 +129,53 @@
       </v-col>
     </v-row>
 
+    <!-- Planes y Módulos -->
+    <v-row v-if="!settingsStore.loading">
+      <!-- Gestión de Planes -->
+      <v-col cols="12" md="6">
+        <v-card>
+          <v-card-title>
+            <v-icon start color="blue">mdi-card-account-details</v-icon>
+            Gestión de Planes
+          </v-card-title>
+          <v-card-text>
+            <v-expansion-panels>
+              <v-expansion-panel v-for="plan in planesList" :key="plan.id">
+                <v-expansion-panel-title>{{ plan.nombre || plan.name }}</v-expansion-panel-title>
+                <v-expansion-panel-text>
+                  <v-text-field v-model.number="plan.precio" label="Precio" type="number" density="compact" />
+                  <v-text-field v-model.number="plan.operadores" label="Límite Operadores" type="number" density="compact" />
+                  <v-text-field v-model.number="plan.auditores" label="Límite Auditores" type="number" density="compact" />
+                  <v-btn color="primary" size="small" @click="updatePlan(plan)">Guardar Plan</v-btn>
+                </v-expansion-panel-text>
+              </v-expansion-panel>
+            </v-expansion-panels>
+          </v-card-text>
+        </v-card>
+      </v-col>
+
+      <!-- Gestión de Módulos -->
+      <v-col cols="12" md="6">
+        <v-card>
+          <v-card-title>
+            <v-icon start color="purple">mdi-view-module</v-icon>
+            Gestión de Módulos
+          </v-card-title>
+          <v-card-text>
+             <v-list>
+               <v-list-item v-for="modulo in modulosList" :key="modulo.id">
+                 <v-list-item-title>{{ modulo.nombre || modulo.name }}</v-list-item-title>
+                 <v-list-item-subtitle>{{ modulo.descripcion }}</v-list-item-subtitle>
+                 <template v-slot:append>
+                   <v-switch v-model="modulo.is_active" color="success" hide-details @change="updateModulo(modulo)"></v-switch>
+                 </template>
+               </v-list-item>
+             </v-list>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+
     <!-- Botón de Guardar General -->
     <v-row v-if="!settingsStore.loading">
       <v-col cols="12" class="text-right">
@@ -125,10 +192,6 @@
       </v-col>
     </v-row>
 
-    <!-- Snackbar -->
-    <v-snackbar v-model="snackbar" :color="snackbarColor" :timeout="3000">
-      {{ snackbarMessage }}
-    </v-snackbar>
   </v-container>
 </template>
 
@@ -136,13 +199,14 @@
 import { ref, onMounted, watch } from 'vue'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { handleError } from '@/utils/errorHandler'
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
+import { pb } from '@/utils/pocketbase'
 
 const settingsStore = useSettingsStore()
+const uiFeedbackStore = useUiFeedbackStore()
 
-// Estado UI
-const snackbar = ref(false)
-const snackbarColor = ref('success')
-const snackbarMessage = ref('')
+const planesList = ref([])
+const modulosList = ref([])
 
 const localConfig = ref({
   system_name: '',
@@ -151,7 +215,7 @@ const localConfig = ref({
   allow_registration: true,
   bank_account_info: '',
   resend_api_key: '',
-  global_openrouter_key: '',
+  global_ai_config: { provider: 'custom', base_url: '', model: '', auth_token: '' },
   ai_rate_limit: 5,
   ai_rate_window: 3600000
 })
@@ -159,9 +223,50 @@ const localConfig = ref({
 onMounted(async () => {
   await settingsStore.fetchConfig()
   if (settingsStore.system_config) {
-    localConfig.value = { ...settingsStore.system_config }
+    localConfig.value = { 
+      ...settingsStore.system_config,
+      global_ai_config: settingsStore.system_config.global_ai_config || { provider: 'custom', base_url: '', model: '', auth_token: '' }
+    }
   }
+  await fetchPlanesAndModulos()
 })
+
+async function fetchPlanesAndModulos() {
+  try {
+    const [planes, modulos] = await Promise.all([
+      pb.collection('planes').getFullList(),
+      pb.collection('modulos').getFullList()
+    ])
+    planesList.value = planes
+    modulosList.value = modulos
+  } catch (err) {
+    console.error('Error fetching planes/modulos', err)
+  }
+}
+
+async function updatePlan(plan) {
+  try {
+    await pb.collection('planes').update(plan.id, {
+      precio: plan.precio,
+      operadores: plan.operadores,
+      auditores: plan.auditores
+    })
+    showSnackbar('Plan actualizado', 'success')
+  } catch (err) {
+    handleError(err, 'Error al actualizar plan')
+  }
+}
+
+async function updateModulo(modulo) {
+  try {
+    await pb.collection('modulos').update(modulo.id, {
+      is_active: modulo.is_active
+    })
+    showSnackbar('Módulo actualizado', 'success')
+  } catch (err) {
+    handleError(err, 'Error al actualizar módulo')
+  }
+}
 
 async function saveSettings() {
   const success = await settingsStore.updateConfig(localConfig.value)

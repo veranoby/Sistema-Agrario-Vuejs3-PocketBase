@@ -50,9 +50,18 @@
             <span class="text-subtitle-2 font-weight-bold text-grey-darken-3 d-block mb-1">
               ¿Ya realizaste tu transferencia?
             </span>
-            <p class="text-body-2 text-grey-darken-2">
-              Envía el comprobante digital de pago a <strong>pagos@conagri.com</strong> adjuntando tu número de colegiatura y correo registrado. El equipo administrativo validará tu transacción y activará tu cuenta en un lapso menor a 2 horas.
+            <p class="text-body-2 text-grey-darken-2 mb-3">
+              Envía el comprobante digital de pago a <strong>pagos@conagri.com</strong> o súbelo directamente en tu perfil para agilizar el proceso. El equipo administrativo validará tu transacción y activará tu cuenta en un lapso menor a 2 horas.
             </p>
+            <v-btn
+              color="teal-darken-2"
+              variant="flat"
+              class="font-weight-bold text-white rounded-lg px-6"
+              prepend-icon="mdi-account-circle"
+              @click="router.push('/asesor/perfil')"
+            >
+              Ir a Mi Perfil a Enviar Comprobante
+            </v-btn>
           </div>
         </v-card-text>
 
@@ -163,8 +172,8 @@
                     </v-list-item-subtitle>
                     <template v-slot:append>
                       <div class="text-right">
-                        <v-chip size="x-small" :color="pkg.estado === 'pendiente' ? 'orange' : 'teal'" class="text-white font-weight-bold mb-1">
-                          {{ pkg.estado === 'pendiente' ? 'Nuevo' : 'Revisado' }}
+                        <v-chip size="x-small" :color="pkg.estado === 'enviado' ? 'orange' : 'teal'" class="text-white font-weight-bold mb-1">
+                          {{ pkg.estado === 'enviado' ? 'Nuevo' : 'Revisado' }}
                         </v-chip>
                         <span class="text-caption text-grey d-block">{{ formatDate(pkg.created) }}</span>
                       </div>
@@ -197,10 +206,10 @@
                       </v-avatar>
                     </template>
                     <v-list-item-title class="font-weight-bold text-grey-darken-4 text-subtitle-1">
-                      {{ receta.nombre_receta || receta.nombre || 'Receta Agrícola' }}
+                      {{ receta.titulo || 'Receta Agrícola' }}
                     </v-list-item-title>
                     <v-list-item-subtitle class="text-body-2 mt-1">
-                      {{ receta.producto }} - {{ receta.dosis || receta.dosis_aplicacion }}
+                      {{ receta.producto_recomendado || 'N/A' }} — Dosis: {{ receta.dosis }} {{ receta.unidad_dosis }}
                     </v-list-item-subtitle>
                     <template v-slot:append>
                       <div class="text-right">
@@ -282,7 +291,7 @@ onMounted(async () => {
         sort: '-created'
       })
       
-      pendingPackagesCount.value = pkgs.filter(p => p.estado === 'pendiente').length
+      pendingPackagesCount.value = pkgs.filter(p => p.estado === 'enviado').length
       
       // Enriquecer paquetes con nombre de hacienda
       recentPackages.value = await Promise.all(pkgs.slice(0, 5).map(async (p) => {

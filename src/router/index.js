@@ -14,13 +14,13 @@ const ROLES = {
 // Route access matrix by role
 const ROUTE_ROLE_MATRIX = {
   // Public routes - no auth required
-  public: ['/', '/plans', '/documentation', '/contact', '/faq'],
+  public: ['/', '/plans', '/documentation', '/validar-firma'],
   
   // Admin-only routes
   admin: ['/admin'], // Future: Super admin panel
   
   // Hacienda management - administrador + auditor
-  hacienda: ['/siembras', '/zonas', '/actividades', '/programaciones', '/recordatorios', '/metricas'],
+  hacienda: ['/siembras', '/zonas', '/actividades', '/programaciones', '/recordatorios', '/metricas', '/hacienda/bodega', '/hacienda/dashboard', '/hacienda/rentabilidad'],
   
   // Financial management - administrador only
   finanzas: ['/finanzas'],
@@ -41,8 +41,12 @@ const routes = [
   { path: '/', component: () => import('@/components/LandingPage.vue') },
   { path: '/plans', component: () => import('@/components/hacienda/OurPlans.vue') },
   { path: '/documentation', component: () => import('@/components/public/Documentation.vue') },
-  { path: '/contact', component: () => import('@/components/public/ContactUs.vue') },
-  { path: '/faq', component: () => import('@/components/public/FAQ.vue') },
+  { path: '/manuales/:id', component: () => import('@/components/public/ManualViewer.vue') },
+  {
+    path: '/validar-firma',
+    component: () => import('@/views/ValidarFirma.vue'),
+    name: 'ValidarFirma'
+  },
   {
     path: '/profile',
     component: () => import('@/components/UserProfile.vue'),
@@ -50,6 +54,12 @@ const routes = [
     meta: {
       requiresAuth: true,
       roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR, ROLES.OPERADOR]
+    }
+  },
+  {
+    path: '/hacienda/suscripciones',
+    redirect: to => {
+      return { path: '/profile', query: { openPlans: 'true' } }
     }
   },
   {
@@ -159,8 +169,7 @@ const routes = [
     name: 'Gestion rapida financiera',
     meta: {
       requiresAuth: true,
-      roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR], // Operador NO puede ver finanzas
-      module: 'finanzas' // For module-based access control
+      roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR] // Operador NO puede ver finanzas
     }
   },
   {
@@ -184,12 +193,63 @@ const routes = [
     }
   },
   {
+    path: '/hacienda/bodega',
+    component: () => import('@/views/hacienda/Bodega.vue'),
+    name: 'Bodega Especializada',
+    meta: {
+      requiresAuth: true,
+      roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR],
+      module: 'kardex_bodega'
+    }
+  },
+  {
+    path: '/hacienda/nomina',
+    component: () => import('@/views/hacienda/Nomina.vue'),
+    name: 'Nómina Express',
+    meta: {
+      requiresAuth: true,
+      roles: [ROLES.ADMINISTRADOR],
+      module: 'nomina_express'
+    }
+  },
+  {
+    path: '/hacienda/tarjas',
+    component: () => import('@/views/hacienda/Tarjas.vue'),
+    name: 'Registro de Cosechas',
+    meta: {
+      requiresAuth: true,
+      roles: [ROLES.ADMINISTRADOR, ROLES.OPERADOR],
+      module: 'tarjas_campo'
+    }
+  },
+  {
     path: '/hacienda/mis-asesores/:asesor_user_id/recetas',
     component: () => import('@/views/hacienda/RecetasAsesor.vue'),
     name: 'Recetas de Asesor',
     meta: {
       requiresAuth: true,
       roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR]
+    }
+  },
+
+  {
+    path: '/hacienda/dashboard',
+    component: () => import('@/views/hacienda/DashboardGerencial.vue'),
+    name: 'Dashboard Gerencial',
+    meta: {
+      requiresAuth: true,
+      roles: [ROLES.ADMINISTRADOR],
+      module: 'costo_por_hectarea'
+    }
+  },
+  {
+    path: '/hacienda/rentabilidad',
+    component: () => import('@/views/hacienda/RentabilidadSiembras.vue'),
+    name: 'Rentabilidad Siembras',
+    meta: {
+      requiresAuth: true,
+      roles: [ROLES.ADMINISTRADOR],
+      module: 'costo_por_hectarea'
     }
   },
 
@@ -258,6 +318,7 @@ const adminRoute = {
 // Add admin analytics route for superadmin
 const adminAnalyticsRoute = {
   path: '/admin/analytics',
+  alias: '/admin/metrics',
   component: () => import('@/components/admin/SuperAdminAnalytics.vue'),
   name: 'Super Admin Analytics',
   meta: {
@@ -303,8 +364,19 @@ const adminHaciendasRoute = {
   }
 }
 
+const adminAsesoresRoute = {
+  path: '/admin/asesores',
+  component: () => import('@/components/admin/AsesoresManagement.vue'),
+  name: 'Gestión de Asesores',
+  meta: {
+    requiresAuth: true,
+    requiresSuperAdmin: true,
+    roles: [ROLES.SUPERADMIN]
+  }
+}
+
 const adminSubscriptionsRoute = {
-  path: '/admin/subscriptions',
+  path: '/admin/suscripciones',
   component: () => import('@/components/admin/SuperAdminSuscripciones.vue'),
   name: 'Gestión de Suscripciones',
   meta: {
@@ -313,8 +385,6 @@ const adminSubscriptionsRoute = {
     roles: [ROLES.SUPERADMIN]
   }
 }
-
-routes.push(adminSubscriptionsRoute)
 
 const adminSettingsRoute = {
   path: '/admin/settings',
@@ -355,9 +425,11 @@ routes.push(adminAnalyticsRoute)
 routes.push(adminDataMiningRoute)
 routes.push(adminUsersRoute)
 routes.push(adminHaciendasRoute)
+routes.push(adminAsesoresRoute)
 routes.push(adminSettingsRoute)
 routes.push(adminLogsRoute)
 routes.push(adminExportsRoute)
+routes.push(adminSubscriptionsRoute)
 
 // Rutas Knowledge Hub
 const knowledgeSearchRoute = {
@@ -546,7 +618,12 @@ router.beforeEach(async (to, from, next) => {
         setCachedValidation(to.path, userRole, { allowed: false })
         
         // Redirección inteligente
-        const fallbackPath = userRole === ROLES.ASESOR ? '/asesor/dashboard' : '/dashboard'
+        let fallbackPath = '/dashboard';
+        if (userRole === ROLES.ASESOR) {
+          fallbackPath = '/asesor/dashboard';
+        } else if (userRole === ROLES.SUPERADMIN) {
+          fallbackPath = '/admin';
+        }
         
         next({
           path: fallbackPath,

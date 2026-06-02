@@ -67,8 +67,23 @@ export const useHaciendaStore = defineStore('hacienda', {
       const planName = this.mi_hacienda.expand?.plan?.nombre?.toLowerCase() || ''
       if (planName.includes('enterprise')) return true
 
-      if (this.mi_hacienda.active_modules && Array.isArray(this.mi_hacienda.active_modules)) {
-        return this.mi_hacienda.active_modules.includes(moduleName)
+      // active_modules is a JSON array of module IDs (from PocketBase relation IDs)
+      // Map module codes to their PocketBase record IDs
+      const MODULE_CODE_TO_ID = {
+        'kardex_bodega':     'u7dfd1bxrytzkuq',
+        'nomina_express':    '7jvb0vitecz5zof',
+        'tarjas_campo':      'gti8qtvxrgk3tvj',
+        'costo_por_hectarea':'5lgx4nm5mbvwrqm',
+        'pdf_bpa':           'fzhmoemsr2j8ats',
+        'ai_assistant_premium': 'ai8m6cipbyklaiq'
+      }
+
+      const moduleId = MODULE_CODE_TO_ID[moduleName]
+      if (!moduleId) return false
+
+      const activeModules = this.mi_hacienda.active_modules
+      if (Array.isArray(activeModules)) {
+        return activeModules.includes(moduleId)
       }
 
       return false
@@ -104,7 +119,7 @@ export const useHaciendaStore = defineStore('hacienda', {
       }
 
       const dataToUpdate = {}
-      const fields = ['name', 'location', 'gps', 'geometria', 'info', 'metricas', 'contacto_email', 'contacto_telefono', 'openrouter_key']
+      const fields = ['name', 'location', 'gps', 'geometria', 'info', 'metricas', 'contacto_email', 'contacto_telefono', 'ai_config']
       fields.forEach(field => {
 
         if (haciendaData[field] !== undefined) {
@@ -162,14 +177,9 @@ export const useHaciendaStore = defineStore('hacienda', {
       }
     },
 
-    async fetchHacienda(haciendaId) {
+    async fetchHacienda(haciendaId, forceRefresh = false) {
       if (!haciendaId) {
         throw new Error('ID de hacienda no proporcionado')
-      }
-
-      // Idempotencia: si ya está cargado con el mismo ID, no re-fetch
-      if (this.mi_hacienda?.id === haciendaId && !this.loading) {
-        return this.mi_hacienda
       }
 
       // Evitar peticiones concurrentes (loading en curso)
@@ -177,15 +187,23 @@ export const useHaciendaStore = defineStore('hacienda', {
         return this.mi_hacienda
       }
 
+      // Idempotencia: si ya está cargado con el mismo ID y no se fuerza refresco, no re-fetch
+      if (this.mi_hacienda?.id === haciendaId && !this.loading && !forceRefresh) {
+        return this.mi_hacienda
+      }
+
       const syncStore = useSyncStore()
       this.loading = true
 
-      const mi_haciendaLocal = await syncStore.loadFromLocalStorage('mi_hacienda')
-      if (mi_haciendaLocal) {
-        this.mi_hacienda = mi_haciendaLocal
-        this.baseImageUrl = await syncStore.loadFromLocalStorage('baseImageUrl') || ''
-        this.loading = false
-        return this.mi_hacienda
+      // Solo usar caché local si NO se fuerza refresh y NO hay datos en memoria
+      if (!forceRefresh && !this.mi_hacienda) {
+        const mi_haciendaLocal = await syncStore.loadFromLocalStorage('mi_hacienda')
+        if (mi_haciendaLocal) {
+          this.mi_hacienda = mi_haciendaLocal
+          this.baseImageUrl = await syncStore.loadFromLocalStorage('baseImageUrl') || ''
+          this.loading = false
+          return this.mi_hacienda
+        }
       }
 
       try {

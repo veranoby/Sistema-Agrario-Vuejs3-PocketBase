@@ -1,7 +1,7 @@
 <template>
   <v-app :theme="themeStore.currentTheme">
     <v-system-bar
-      v-if="isLoggedIn && !authStore.isAsesor && haciendaStore.daysUntilExpiration !== null && haciendaStore.daysUntilExpiration <= 3"
+      v-if="isLoggedIn && !authStore.isAsesor && !authStore.isSuperAdmin && haciendaStore.daysUntilExpiration !== null && haciendaStore.daysUntilExpiration <= 3"
       :color="haciendaStore.daysUntilExpiration <= 0 ? 'error' : 'warning'"
       class="text-white font-weight-bold justify-center"
       height="32"
@@ -105,11 +105,12 @@ const navigationLinks = computed(() => {
       { id: 'sa1', to: '/admin', icon: 'mdi-shield-crown', label: 'Admin Dashboard' },
       { id: 'sa2', to: '/admin/users', icon: 'mdi-account-group', label: 'Gestión de Usuarios' },
       { id: 'sa3', to: '/admin/haciendas', icon: 'mdi-home-group', label: 'Gestión de Haciendas' },
+      { id: 'sa11', to: '/admin/asesores', icon: 'mdi-account-tie-hat', label: 'Gestión de Asesores' },
+      { id: 'sa12', to: '/admin/suscripciones', icon: 'mdi-cash-register', label: 'Solicitudes y Pagos' },
       { id: 'sa4', to: '/admin/settings', icon: 'mdi-cog', label: 'Configuración del Sistema' },
       { id: 'sa5', to: '/admin/logs', icon: 'mdi-text-box-search', label: 'Visor de Logs' },
       { id: 'sa6', to: '/admin/exports', icon: 'mdi-export', label: 'Exportaciones' },
       { id: 'sa7', to: '/admin/analytics', icon: 'mdi-chart-bar', label: 'Super Admin Analytics' },
-      { id: 'sa8', to: '/admin/metrics', icon: 'mdi-chart-line', label: 'Usage Metrics' },
       { id: 'sa9', to: '/admin/data-mining', icon: 'mdi-database-search', label: 'Data Mining Tools' },
       { id: 'sa10', to: '/knowledge/search', icon: 'mdi-magnify', label: 'Búsqueda Unificada' },
     ]
@@ -132,11 +133,25 @@ const navigationLinks = computed(() => {
     { id: 6, to: '/zonas', icon: 'mdi-map', label: t('sidebar.zones') }
   ]
 
+  if (haciendaStore.isModuleActive('tarjas_campo')) {
+    links.push({ id: 12, to: '/hacienda/tarjas', icon: 'mdi-dolly', label: 'Cosechas (Tarjas)' })
+  }
+
   if (role !== USER_ROLES.OPERADOR) {
     links.push({ id: 7, to: '/metricas', icon: 'mdi-chart-areaspline', label: t('sidebar.metrics') })
     links.push({ id: 8, to: '/finanzas', icon: 'mdi-cash-multiple', label: t('sidebar.finances') })
     links.push({ id: 9, to: '/recordatorios', icon: 'mdi-alarm-light-outline', label: t('sidebar.reminders') })
     links.push({ id: 10, to: '/hacienda/directorio-asesores', icon: 'mdi-account-search', label: 'Asesores' })
+    if (haciendaStore.isModuleActive('kardex_bodega')) {
+      links.push({ id: 11, to: '/hacienda/bodega', icon: 'mdi-warehouse', label: 'Bodega' })
+    }
+    if (haciendaStore.isModuleActive('nomina_express')) {
+      links.push({ id: 13, to: '/hacienda/nomina', icon: 'mdi-file-percent', label: 'Nómina Express' })
+    }
+    if (role === USER_ROLES.ADMINISTRADOR && haciendaStore.isModuleActive('costo_por_hectarea')) {
+      links.push({ id: 14, to: '/hacienda/dashboard', icon: 'mdi-chart-bar', label: 'Dashboard Gerencial' })
+      links.push({ id: 15, to: '/hacienda/rentabilidad', icon: 'mdi-matrix', label: 'Rentabilidad Siembras' })
+    }
   }
 
   return links
@@ -177,6 +192,10 @@ watch(
 )
 
 onMounted(async () => {
+  window.addEventListener('openAuthModal', () => {
+    showAuthModal.value = true
+  })
+
   if (!authStore.initialized) {
     await authStore.init()
   }

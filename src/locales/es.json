@@ -140,6 +140,10 @@
     "no_operators": "NO HAY OPERADORES REGISTRADOS.",
     "add_operator": "AGREGAR OPERADOR",
     "operator_limit_reached": "LÍMITE DE OPERADORES ALCANZADO",
+    "auditors_limit_info": "Cupos de Auditores: {current} de {limit} ocupados",
+    "operators_limit_info": "Cupos de Operadores: {current} de {limit} ocupados",
+    "plan_limit_reached_banner": "Límite de su plan alcanzado. Mejore su plan para agregar más personal",
+    "go_to_subscriptions": "Mejorar Plan",
     "create_new_user": "CREAR NUEVO USUARIO",
     "name": "NOMBRE",
     "lastname": "APELLIDO",
@@ -155,6 +159,17 @@
     "error_creating_user": "ERROR AL CREAR EL USUARIO",
     "confirm_delete": "¿ESTÁ SEGURO DE QUE DESEA ELIMINAR ESTE USUARIO?",
     "error_deleting_user": "ERROR AL ELIMINAR EL USUARIO"
+  },
+  "notifications": {
+    "title": "Configuración de Notificaciones",
+    "subtitle": "Configure cómo desea recibir los resúmenes y alertas críticas de su hacienda.",
+    "weekly_digest_title": "Resumen Gerencial Semanal",
+    "weekly_digest_desc": "Reciba un reporte todos los lunes con lo logrado la semana pasada y lo programado para la actual.",
+    "emergency_alerts_title": "Alertas de Emergencia",
+    "emergency_alerts_desc": "Notificaciones inmediatas sobre vencimiento de suscripción o riesgos críticos de BPA.",
+    "save_preferences": "Guardar Preferencias",
+    "preferences_saved_success": "Preferencias de notificación actualizadas",
+    "preferences_saved_error": "Error al guardar preferencias"
   },
   "dashboard": {
     "welcome_back": "¡BIENVENIDO DE NUEVO, {fullName}!",

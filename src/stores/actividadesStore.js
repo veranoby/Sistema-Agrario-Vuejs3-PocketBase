@@ -42,7 +42,9 @@ export const useActividadesStore = defineStore('actividades', {
         this.buildActivityLookup()
       },
       onDelete: function (id) {
-        this.activityLookupMap.delete(id)
+        if (this.activityLookupMap instanceof Map) {
+          this.activityLookupMap.delete(id)
+        }
       }
     }
   },
@@ -191,6 +193,7 @@ export const useActividadesStore = defineStore('actividades', {
         }
 
         this.actividades.unshift(tempActividad)
+        if (!(this.activityLookupMap instanceof Map)) this.buildActivityLookup()
         this.activityLookupMap.set(tempId, tempActividad)
         // CORRECTO: Sanitizar para IndexedDB
         syncStore.saveToLocalStorage('actividades', JSON.parse(JSON.stringify(this.actividades)));
@@ -209,6 +212,7 @@ export const useActividadesStore = defineStore('actividades', {
       try {
         const record = await pb.collection('actividades').create(enrichedData)
         this.actividades.push(record)
+        if (!(this.activityLookupMap instanceof Map)) this.buildActivityLookup()
         this.activityLookupMap.set(record.id, record)
         // CORRECTO: Sanitizar para IndexedDB
         syncStore.saveToLocalStorage('actividades', JSON.parse(JSON.stringify(this.actividades)));
@@ -241,6 +245,7 @@ export const useActividadesStore = defineStore('actividades', {
         throw new Error('ID de actividad no proporcionado para actualización')
       }
 
+      if (!(this.activityLookupMap instanceof Map)) this.buildActivityLookup()
       const actividad = this.activityLookupMap.get(id)
       if (!actividad) {
         uiFeedbackStore.hideLoading()
@@ -277,6 +282,7 @@ export const useActividadesStore = defineStore('actividades', {
           data: enrichedData
         })
 
+        if (!(this.activityLookupMap instanceof Map)) this.buildActivityLookup()
         this.activityLookupMap.set(id, this.actividades[index])
         // CORRECTO: Sanitizar para IndexedDB
         syncStore.saveToLocalStorage('actividades', JSON.parse(JSON.stringify(this.actividades)));
@@ -286,12 +292,14 @@ export const useActividadesStore = defineStore('actividades', {
 
       try {
         const record = await pb.collection('actividades').update(id, enrichedData, {
-          expand: 'tipo_actividades'
+          expand: 'tipo_actividades,zonas.tipos_zonas,siembras'
         })
         const index = this.actividades.findIndex((a) => a.id === id)
         if (index !== -1) {
           this.actividades[index] = record
         }
+        if (!(this.activityLookupMap instanceof Map)) this.buildActivityLookup()
+        this.activityLookupMap.set(id, record)
         // CORRECTO: Sanitizar para IndexedDB
         syncStore.saveToLocalStorage('actividades', JSON.parse(JSON.stringify(this.actividades)));
         return record
@@ -314,6 +322,7 @@ export const useActividadesStore = defineStore('actividades', {
       }
 
       if (!syncStore.isOnline) {
+        if (!(this.activityLookupMap instanceof Map)) this.buildActivityLookup()
         const actividadExiste = this.activityLookupMap.has(id)
         if (!actividadExiste) {
           uiFeedbackStore.hideLoading()
@@ -321,7 +330,7 @@ export const useActividadesStore = defineStore('actividades', {
         }
 
         this.actividades = this.actividades.filter((a) => a.id !== id)
-        this.activityLookupMap.delete(id)
+        if (this.activityLookupMap instanceof Map) this.activityLookupMap.delete(id)
 
         await syncStore.queueOperation({
           type: 'delete',
@@ -338,7 +347,7 @@ export const useActividadesStore = defineStore('actividades', {
       try {
         await pb.collection('actividades').delete(id)
         this.actividades = this.actividades.filter((a) => a.id !== id)
-        this.activityLookupMap.delete(id)
+        if (this.activityLookupMap instanceof Map) this.activityLookupMap.delete(id)
         // CORRECTO: Sanitizar para IndexedDB
         syncStore.saveToLocalStorage('actividades', JSON.parse(JSON.stringify(this.actividades)));
         return true

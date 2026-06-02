@@ -71,11 +71,41 @@
             <v-icon color="info" class="mr-2">mdi-robot</v-icon>
             <h4 class="font-bold">Inteligencia Artificial (BYOK)</h4>
           </div>
-          
+          <div class="grid grid-cols-1 gap-2 mb-2">
+            <v-select
+              v-model="formData.ai_config.provider"
+              :items="['OpenRouter', 'Ollama', 'Custom']"
+              label="Proveedor"
+              density="compact"
+              variant="outlined"
+              hide-details
+              class="bg-white"
+            ></v-select>
+
+            <v-text-field
+              v-if="formData.ai_config.provider !== 'OpenRouter'"
+              v-model="formData.ai_config.base_url"
+              label="URL Base (Ej: http://localhost:11434/v1)"
+              density="compact"
+              variant="outlined"
+              hide-details
+              class="bg-white"
+            ></v-text-field>
+
+            <v-text-field
+              v-model="formData.ai_config.model"
+              label="Modelo Base (Ej: gpt-4o-mini, llama3.1)"
+              density="compact"
+              variant="outlined"
+              hide-details
+              class="bg-white"
+            ></v-text-field>
+          </div>
+
           <div class="flex items-center gap-2">
             <v-text-field
-              v-model="formData.openrouter_key"
-              label="API Key (OpenRouter)"
+              v-model="formData.ai_config.auth_token"
+              label="Token de Autenticación (API Key)"
               density="compact"
               variant="outlined"
               prepend-inner-icon="mdi-key"
@@ -93,6 +123,53 @@
             >
               Test
             </v-btn>
+          </div>
+        </v-card>
+
+        <!-- Section: Tarifas de Venta -->
+        <v-card variant="flat" class="border pa-4 rounded-xl bg-grey-lighten-5">
+          <div class="flex items-center mb-4">
+            <v-icon color="success" class="mr-2">mdi-cash-multiple</v-icon>
+            <h4 class="font-bold">Tarifas de Venta Estimada (Rentabilidad)</h4>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-3 mb-2">
+            <v-text-field
+              v-model.number="formData.config_tarifas_venta.cajas"
+              label="Precio Caja ($)"
+              type="number"
+              density="compact"
+              variant="outlined"
+              hide-details
+              class="bg-white"
+            ></v-text-field>
+            <v-text-field
+              v-model.number="formData.config_tarifas_venta.racimos"
+              label="Precio Racimo ($)"
+              type="number"
+              density="compact"
+              variant="outlined"
+              hide-details
+              class="bg-white"
+            ></v-text-field>
+            <v-text-field
+              v-model.number="formData.config_tarifas_venta.kilos"
+              label="Precio Kilo ($)"
+              type="number"
+              density="compact"
+              variant="outlined"
+              hide-details
+              class="bg-white"
+            ></v-text-field>
+            <v-text-field
+              v-model.number="formData.config_tarifas_venta.unidades"
+              label="Precio Unidad ($)"
+              type="number"
+              density="compact"
+              variant="outlined"
+              hide-details
+              class="bg-white"
+            ></v-text-field>
           </div>
         </v-card>
 
@@ -376,6 +453,22 @@ if (!formData.value.gps || typeof formData.value.gps !== 'object') {
 if (!formData.value.geometria) {
   formData.value.geometria = null
 }
+if (!formData.value.ai_config || typeof formData.value.ai_config !== 'object') {
+  formData.value.ai_config = {
+    provider: 'OpenRouter',
+    base_url: '',
+    model: '',
+    auth_token: ''
+  }
+}
+if (!formData.value.config_tarifas_venta || typeof formData.value.config_tarifas_venta !== 'object') {
+  formData.value.config_tarifas_venta = {
+    cajas: 12.50,
+    racimos: 5.00,
+    kilos: 1.80,
+    unidades: 0.50
+  }
+}
 
 // GPS State
 const loadingGPS = ref(false)
@@ -497,18 +590,19 @@ async function autoLocate() {
 }
 
 const testAIConnection = async () => {
-  if (!formData.value.openrouter_key) {
+  if (!formData.value.ai_config?.auth_token) {
     uiFeedback.showToast('Debes ingresar una clave primero', 'warning')
     return
   }
   
   testingAI.value = true
   try {
-    const isOk = await aiService.testConnection(formData.value.openrouter_key)
+    const { auth_token, provider, base_url, model } = formData.value.ai_config
+    const isOk = await aiService.testConnection(auth_token, provider, base_url, model)
     if (isOk) {
-      uiFeedback.showToast('Conexión con OpenRouter exitosa', 'success')
+      uiFeedback.showToast('Conexión exitosa con IA', 'success')
     } else {
-      uiFeedback.showToast('No se pudo validar la clave de OpenRouter', 'error')
+      uiFeedback.showToast('No se pudo validar la clave de IA', 'error')
     }
   } catch (error) {
     uiFeedback.showToast('Error probando conexión: ' + error.message, 'error')

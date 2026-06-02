@@ -3,71 +3,67 @@
     <h2 class="text-h5 mb-4">Gestión de Suscripciones</h2>
 
     <v-card class="mb-4">
-      <v-tabs v-model="tab" bg-color="primary">
-        <v-tab value="pendientes">Pendientes</v-tab>
-        <v-tab value="historial">Historial</v-tab>
-      </v-tabs>
+      <v-toolbar color="transparent" density="compact">
+        <v-btn icon="mdi-chevron-left" variant="text" @click="prevMonth"></v-btn>
+        <v-toolbar-title class="text-subtitle-1 font-weight-bold text-center">
+          {{ monthName }} {{ currentYear }}
+        </v-toolbar-title>
+        <v-btn icon="mdi-chevron-right" variant="text" @click="nextMonth"></v-btn>
+        <v-spacer></v-spacer>
+        <div class="mr-4 text-subtitle-2 font-weight-bold text-success">
+          Ingreso Mensual: ${{ totalMensual.toFixed(2) }}
+        </div>
+        <v-btn color="primary" variant="outlined" size="small" class="mr-2" @click="exportToExcel">
+          <v-icon left>mdi-file-excel</v-icon> Exportar Excel
+        </v-btn>
+      </v-toolbar>
 
       <v-card-text>
-        <v-window v-model="tab">
-          <!-- PENDIENTES -->
-          <v-window-item value="pendientes">
-            <v-data-table
-              :headers="headers"
-              :items="pendientes"
-              :loading="loading"
-              class="elevation-1"
-            >
-              <template v-slot:item.hacienda="{ item }">
-                {{ item.expand?.hacienda?.name || 'Desconocida' }}
-              </template>
-              <template v-slot:item.solicitante="{ item }">
-                {{ item.expand?.solicitante?.email || 'Desconocido' }}
-              </template>
-              <template v-slot:item.tipo="{ item }">
-                <v-chip size="small" :color="item.tipo === 'plan_upgrade' ? 'primary' : 'secondary'">
-                  {{ item.tipo === 'plan_upgrade' ? 'Mejora Plan' : 'Módulo Extra' }}
-                </v-chip>
-              </template>
-              <template v-slot:item.detalle="{ item }">
-                <span v-if="item.tipo === 'plan_upgrade'">
-                  Plan: {{ item.expand?.plan_solicitado?.nombre || '?' }}
-                </span>
-                <span v-else>
-                  Módulo: {{ item.modulo_solicitado }}
-                </span>
-              </template>
-              <template v-slot:item.comprobante="{ item }">
-                <v-btn size="small" color="info" variant="text" @click="viewReceipt(item)">
-                  Ver Comprobante
-                </v-btn>
-              </template>
-              <template v-slot:item.actions="{ item }">
+        <v-data-table
+          :headers="headers"
+          :items="transacciones"
+          :loading="loading"
+          class="elevation-1"
+        >
+          <template v-slot:item.hacienda_solicitante="{ item }">
+            <div class="font-weight-bold">{{ item.expand?.hacienda?.name || 'Desconocida' }}</div>
+            <div class="text-caption text-grey-darken-1">{{ item.expand?.solicitante?.email || 'Desconocido' }}</div>
+          </template>
+          <template v-slot:item.solicitud="{ item }">
+            <div class="mb-1">
+              <v-chip size="x-small" :color="item.tipo === 'plan_upgrade' ? 'primary' : 'secondary'">
+                {{ item.tipo === 'plan_upgrade' ? 'Mejora Plan' : 'Módulo Extra' }}
+              </v-chip>
+            </div>
+            <div v-if="item.tipo === 'plan_upgrade'" class="text-caption">
+              <strong>Plan:</strong> {{ item.expand?.plan_solicitado?.nombre || '?' }}
+            </div>
+            <div v-if="item.modulo_solicitado && item.modulo_solicitado !== '[]'" class="text-caption">
+              <strong>Módulos:</strong> {{ parseModules(item.modulo_solicitado) }}
+            </div>
+          </template>
+          <template v-slot:item.estado="{ item }">
+            <v-chip size="small" :color="item.estado === 'aprobada' ? 'success' : item.estado === 'rechazada' ? 'error' : 'warning'">
+              {{ item.estado.toUpperCase() }}
+            </v-chip>
+          </template>
+          <template v-slot:item.monto_notas="{ item }">
+            <span class="text-caption text-grey-darken-2">{{ item.notas_admin || 'N/A' }}</span>
+          </template>
+          <template v-slot:item.actions="{ item }">
+            <div class="d-flex align-center justify-end">
+              <v-tooltip text="Ver Comprobante" location="top">
+                <template v-slot:activator="{ props }">
+                  <v-btn icon="mdi-eye" size="small" color="info" variant="text" class="mr-2" v-bind="props" @click="viewReceipt(item)"></v-btn>
+                </template>
+              </v-tooltip>
+              <template v-if="item.estado === 'pendiente'">
                 <v-btn size="small" color="success" class="mr-2" @click="openApproveModal(item)">Aprobar</v-btn>
                 <v-btn size="small" color="error" @click="openRejectModal(item)">Rechazar</v-btn>
               </template>
-            </v-data-table>
-          </v-window-item>
-
-          <!-- HISTORIAL -->
-          <v-window-item value="historial">
-            <v-data-table
-              :headers="historyHeaders"
-              :items="historial"
-              :loading="loading"
-              class="elevation-1"
-            >
-              <template v-slot:item.hacienda="{ item }">
-                {{ item.expand?.hacienda?.name || 'Desconocida' }}
-              </template>
-              <template v-slot:item.estado="{ item }">
-                <v-chip size="small" :color="item.estado === 'aprobada' ? 'success' : 'error'">
-                  {{ item.estado.toUpperCase() }}
-                </v-chip>
-              </template>
-            </v-data-table>
-          </v-window-item>
-        </v-window>
+            </div>
+          </template>
+        </v-data-table>
       </v-card-text>
     </v-card>
 
@@ -92,23 +88,28 @@
 
     <!-- Modal Aprobar -->
     <v-dialog v-model="approveModal" max-width="500">
-      <v-card>
-        <v-card-title>Confirmar Aprobación</v-card-title>
+      <v-card>  
+        <v-card-title class="bg-green justify-center">Confirmar Aprobación</v-card-title>
         <v-card-text>
           ¿Estás seguro de aprobar esta solicitud?<br><br>
           <div v-if="selectedItem?.tipo === 'plan_upgrade'">
-            Se cambiará el plan de la hacienda a <strong>{{ selectedItem?.expand?.plan_solicitado?.nombre }}</strong>.
+            Se cambiará el plan de la hacienda a <v-chip color="primary" variant="flat">{{ selectedItem?.expand?.plan_solicitado?.nombre }}</v-chip>.
           </div>
-          <div v-else>
-            Se añadirá el módulo <strong>{{ selectedItem?.modulo_solicitado }}</strong> a la hacienda.
+          <br>          <div v-if="selectedItem?.modulo_solicitado && selectedItem?.modulo_solicitado !== '[]'">
+            Se añadirán los módulos:
+            <ul class="ml-6 mt-2 text-left" style="list-style-type: disc;">
+              <li v-for="(modName, idx) in parseModulesArray(selectedItem?.modulo_solicitado)" :key="idx">
+                <strong>{{ modName }}</strong>
+              </li>
+            </ul>
           </div>
           <br>
-          La suscripción se extenderá por 30 días a partir de hoy.
+         <p class="text-grey-darken-1">La suscripción se extenderá por 30 días a partir de hoy.</p>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="grey" variant="text" @click="approveModal = false">Cancelar</v-btn>
-          <v-btn color="success" :loading="processing" @click="processApprove">Aprobar y Aplicar</v-btn>
+          <v-btn color="red" variant="flat" @click="approveModal = false">Cancelar</v-btn>
+          <v-btn variant="flat" color="success" :loading="processing" @click="processApprove">Aprobar y Aplicar</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -143,11 +144,67 @@
 import { ref, computed, onMounted } from 'vue'
 import { pb } from '@/utils/pocketbase'
 
-const tab = ref('pendientes')
+const currentDate = ref(new Date())
 const loading = ref(false)
-const pendientes = ref([])
-const historial = ref([])
+const todasTransacciones = ref([])
 const processing = ref(false)
+const modulesMap = ref({})
+const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+
+const currentYear = computed(() => currentDate.value.getFullYear())
+const monthName = computed(() => monthNames[currentDate.value.getMonth()])
+
+const prevMonth = () => {
+  const prev = new Date(currentDate.value)
+  prev.setMonth(prev.getMonth() - 1)
+  currentDate.value = prev
+  fetchData()
+}
+
+const nextMonth = () => {
+  const nxt = new Date(currentDate.value)
+  nxt.setMonth(nxt.getMonth() + 1)
+  currentDate.value = nxt
+  fetchData()
+}
+
+const extractAmount = (notas) => {
+  if (!notas) return 0
+  const match = notas.match(/Monto Total:\s*(\d+(\.\d+)?)/i)
+  return match ? parseFloat(match[1]) : 0
+}
+
+const showSnackbar = (msg, color = 'success') => {
+  snackbarMsg.value = msg
+  snackbarColor.value = color
+  snackbar.value = true
+}
+
+const exportToExcel = () => {
+  if (transacciones.value.length === 0) {
+    showSnackbar('No hay datos para exportar', 'warning')
+    return
+  }
+  
+  let csv = 'Fecha,Hacienda,Solicitante,Tipo,Estado,Monto\n'
+  transacciones.value.forEach(item => {
+    const hacienda = item.expand?.hacienda?.name || 'N/A'
+    const solicitante = item.expand?.solicitante?.email || 'N/A'
+    const tipo = item.tipo === 'plan_upgrade' ? 'Mejora Plan' : 'Módulo Extra'
+    const estado = item.estado.toUpperCase()
+    const monto = extractAmount(item.notas_admin)
+    csv += `"${item.created}","${hacienda}","${solicitante}","${tipo}","${estado}","${monto}"\n`
+  })
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement("a")
+  link.setAttribute("href", url)
+  link.setAttribute("download", `Suscripciones_${monthName.value}_${currentYear.value}.csv`)
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
 
 const snackbar = ref(false)
 const snackbarMsg = ref('')
@@ -165,21 +222,12 @@ const rejectModal = ref(false)
 const rejectReason = ref('')
 
 const headers = [
-  { title: 'Fecha', key: 'created' },
-  { title: 'Hacienda', key: 'hacienda' },
-  { title: 'Solicitante', key: 'solicitante' },
-  { title: 'Tipo', key: 'tipo' },
-  { title: 'Detalle', key: 'detalle' },
-  { title: 'Comprobante', key: 'comprobante' },
-  { title: 'Acciones', key: 'actions', align: 'end' }
-]
-
-const historyHeaders = [
-  { title: 'Fecha', key: 'created' },
-  { title: 'Hacienda', key: 'hacienda' },
-  { title: 'Tipo', key: 'tipo' },
+  { title: 'Fecha', key: 'fecha_solicitud' },
+  { title: 'Hacienda / Solicitante', key: 'hacienda_solicitante' },
+  { title: 'Solicitud', key: 'solicitud' },
   { title: 'Estado', key: 'estado' },
-  { title: 'Notas Admin', key: 'notas_admin' }
+  { title: 'Monto / Notas', key: 'monto_notas' },
+  { title: 'Acciones', key: 'actions', align: 'end' }
 ]
 
 onMounted(() => {
@@ -189,31 +237,94 @@ onMounted(() => {
 const fetchData = async () => {
   loading.value = true
   try {
-    const resPendientes = await pb.collection('solicitudes_suscripcion').getFullList({
-      filter: 'estado = "pendiente"',
-      expand: 'hacienda,solicitante,plan_solicitado',
-      sort: '-created'
-    })
-    pendientes.value = resPendientes.map(item => {
-        item.created = new Date(item.created).toLocaleDateString()
-        return item
+    const modulosRes = await pb.collection('modulos').getList(1, 200)
+    const map = {}
+    modulosRes.items.forEach(m => { map[m.id] = m.name })
+    modulesMap.value = map
+
+    const res = await pb.collection('solicitudes_suscripcion').getList(1, 500, {
+      sort: '-fecha_solicitud'
     })
 
-    const resHistorial = await pb.collection('solicitudes_suscripcion').getFullList({
-      filter: 'estado != "pendiente"',
-      expand: 'hacienda,plan_solicitado',
-      sort: '-updated'
-    })
-    historial.value = resHistorial.map(item => {
-        item.created = new Date(item.created).toLocaleDateString()
-        return item
-    })
+    const [haciendasRes, planesRes] = await Promise.all([
+      pb.collection('Haciendas').getList(1, 500).catch(() => ({ items: [] })),
+      pb.collection('planes').getList(1, 200).catch(() => ({ items: [] }))
+    ])
+    const haciendasMap = {}
+    haciendasRes.items.forEach(h => { haciendasMap[h.id] = h })
+    const planesMap = {}
+    planesRes.items.forEach(p => { planesMap[p.id] = p })
+
+    todasTransacciones.value = res.items.map(item => ({
+      ...item,
+      expand: {
+        hacienda: haciendasMap[item.hacienda] || null,
+        plan_solicitado: planesMap[item.plan_solicitado] || null
+      }
+    }))
   } catch (error) {
     console.error("Error fetching", error)
     showSnackbar('Error al cargar datos', 'error')
   } finally {
     loading.value = false
   }
+}
+
+const transacciones = computed(() => {
+  const y = currentYear.value
+  const m = currentDate.value.getMonth()
+  
+  return todasTransacciones.value.filter(item => {
+    const itemDateStr = item.fecha_solicitud || item.created || new Date().toISOString()
+    const itemDate = new Date(itemDateStr)
+    const isCurrentMonth = itemDate.getFullYear() === y && itemDate.getMonth() === m
+    
+    return isCurrentMonth
+  }).map(item => {
+    return {
+      ...item,
+      fecha_solicitud: new Date(item.fecha_solicitud || item.created || new Date()).toLocaleDateString()
+    }
+  })
+})
+
+const totalMensual = computed(() => {
+  const y = currentYear.value
+  const m = currentDate.value.getMonth()
+  
+  let tempMensual = 0
+  todasTransacciones.value.forEach(item => {
+    const itemDateStr = item.fecha_solicitud || item.created || new Date().toISOString()
+    const itemDate = new Date(itemDateStr)
+    const isCurrentMonth = itemDate.getFullYear() === y && itemDate.getMonth() === m
+    
+    if (isCurrentMonth && item.estado === 'aprobada') {
+      tempMensual += extractAmount(item.notas_admin)
+    }
+  })
+  
+  return tempMensual
+})
+
+const parseModulesArray = (jsonString) => {
+  if (!jsonString) return []
+  try {
+    // Handle legacy simple string IDs or JSON array
+    let ids = []
+    if (jsonString.startsWith('[')) {
+      ids = JSON.parse(jsonString)
+    } else {
+      ids = [jsonString]
+    }
+    return ids.map(id => modulesMap.value[id] || id)
+  } catch (e) {
+    return [jsonString]
+  }
+}
+
+const parseModules = (jsonString) => {
+  const names = parseModulesArray(jsonString)
+  return names.join(', ')
 }
 
 const viewReceipt = (item) => {
@@ -244,34 +355,92 @@ const processApprove = async () => {
     const haciendaId = selectedItem.value.hacienda
     const itemData = selectedItem.value
 
-    // 1. Calcular nueva fecha de expiración (+30 días desde hoy)
-    const newEndDate = new Date()
-    newEndDate.setDate(newEndDate.getDate() + 30)
-
-    // 2. Preparar payload de hacienda
-    const haciendaPayload = {
-      subscription_end: newEndDate.toISOString()
-    }
+    // Obtenemos la hacienda para evaluar fecha y plan actual
+    const hacienda = await pb.collection('Haciendas').getOne(haciendaId)
+    const haciendaPayload = {}
 
     if (itemData.tipo === 'plan_upgrade') {
       haciendaPayload.plan = itemData.plan_solicitado
-    } else if (itemData.tipo === 'modulo_addon') {
-      // Necesitamos fetchear hacienda para obtener active_modules actual
-      const hacienda = await pb.collection('Haciendas').getOne(haciendaId)
+
+      // 1. Cálculo de Co-Terming / Prorrateo Directo
+      const currentEndStr = hacienda.subscription_end
+      const now = new Date()
+      let baseDate = now
+      if (currentEndStr) {
+          const currentEnd = new Date(currentEndStr)
+          if (currentEnd > now) {
+              baseDate = currentEnd
+          }
+      }
+      const newEndDate = new Date(baseDate)
+      
+      // Detectar si es ciclo anual desde las notas
+      let extraDays = 30
+      if (itemData.notas_admin && itemData.notas_admin.toLowerCase().includes('anual')) {
+          extraDays = 365
+      }
+      newEndDate.setDate(newEndDate.getDate() + extraDays)
+      
+      haciendaPayload.subscription_end = newEndDate.toISOString()
+      
+      // 2. Validación y Ejecución de Downgrade
+      const currentPlanId = hacienda.plan
+      if (currentPlanId) {
+          const currentPlan = await pb.collection('Planes').getOne(currentPlanId)
+          const newPlan = await pb.collection('Planes').getOne(itemData.plan_solicitado)
+          
+          const isDowngrade = (newPlan.operadores < currentPlan.operadores) || (newPlan.auditores < currentPlan.auditores)
+          
+          if (isDowngrade) {
+              // Buscar usuarios de la hacienda que no sean admin ni asesor
+              const usersToSuspend = await pb.collection('users').getFullList({
+                  filter: `hacienda = "${haciendaId}" && role != "administrador" && role != "asesor"`
+              })
+              // Suspenderlos en batch iterativo
+              for (const u of usersToSuspend) {
+                  await pb.collection('users').update(u.id, { status: 'suspended' })
+              }
+              // Anotar en el payload de logs
+              itemData.notas_admin = (itemData.notas_admin || '') + '\n[Downgrade: Se suspendieron todos los operadores]'
+          }
+      }
+      
+    }
+
+    // Actualización de Módulos (tanto en plan_upgrade unificado como modulo_addon)
+    if (itemData.modulo_solicitado !== undefined && itemData.modulo_solicitado !== null) {
       const currentModules = hacienda.active_modules || []
-      if (!currentModules.includes(itemData.modulo_solicitado)) {
-          currentModules.push(itemData.modulo_solicitado)
-          haciendaPayload.active_modules = currentModules
+      let newModules = []
+      try {
+        newModules = itemData.modulo_solicitado.startsWith('[') ? JSON.parse(itemData.modulo_solicitado) : [itemData.modulo_solicitado]
+      } catch (e) {
+        if (itemData.modulo_solicitado.trim() !== '') {
+          newModules = [itemData.modulo_solicitado]
+        }
+      }
+      
+      // Si la solicitud es unificada, newModules contiene exactamente la selección deseada
+      if (itemData.notas_admin && itemData.notas_admin.includes('Unificada')) {
+        haciendaPayload.active_modules = newModules
+      } else {
+        // Modo Legacy (Append-only)
+        newModules.forEach(modId => {
+          if (!currentModules.includes(modId)) {
+              currentModules.push(modId)
+          }
+        })
+        haciendaPayload.active_modules = currentModules
       }
     }
 
     // 3. Patch a Hacienda
     await pb.collection('Haciendas').update(haciendaId, haciendaPayload)
 
-    // 4. Patch a Solicitud
+    // 4. Patch a Solicitud (marcar como aprobada)
     await pb.collection('solicitudes_suscripcion').update(itemData.id, {
       estado: 'aprobada',
-      notas_admin: 'Aprobado automáticamente por SuperAdmin'
+      notas_admin: (itemData.notas_admin || '') + '\n[Aprobado por SuperAdmin]',
+      fecha_resolucion: new Date().toISOString()
     })
 
     showSnackbar('Solicitud aprobada y hacienda actualizada', 'success')
@@ -290,7 +459,8 @@ const processReject = async () => {
   try {
     await pb.collection('solicitudes_suscripcion').update(selectedItem.value.id, {
       estado: 'rechazada',
-      notas_admin: rejectReason.value || 'Rechazado sin motivo'
+      notas_admin: (selectedItem.value.notas_admin || '') + '\n[Rechazado]: ' + (rejectReason.value || 'Sin motivo'),
+      fecha_resolucion: new Date().toISOString()
     })
 
     showSnackbar('Solicitud rechazada', 'success')
@@ -302,12 +472,6 @@ const processReject = async () => {
   } finally {
     processing.value = false
   }
-}
-
-const showSnackbar = (msg, color) => {
-  snackbarMsg.value = msg
-  snackbarColor.value = color
-  snackbar.value = true
 }
 </script>
 

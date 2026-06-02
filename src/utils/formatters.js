@@ -92,7 +92,8 @@ export function formatNumber(num, decimals = 0, locale = 'es-ES') {
 
   return getCachedFormatter(locale, {
     minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals
+    maximumFractionDigits: decimals,
+    useGrouping: true
   }).format(Number(num))
 }
 
@@ -111,7 +112,8 @@ export function formatCurrency(amount, currency = 'EUR', locale = 'es-ES') {
     style: 'currency',
     currency,
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    maximumFractionDigits: 2,
+    useGrouping: true
   }).format(Number(amount))
 }
 
@@ -318,15 +320,17 @@ export function getRoleColor(role) {
  * @returns {string} Etiqueta formateada
  */
 export function formatUserStatus(status) {
-  return STATUS_LABELS[status] || status
+  const s = Array.isArray(status) ? status[0] : status
+  return STATUS_LABELS[s] || s
 }
 
 /**
  * Obtiene el color para un estado
- * @param {string} status - Estado del usuario
+ * @param {string|Array} status - Estado del usuario
  * @returns {string} Color Vuetify
  */
 export function getUserStatusColor(status) {
-  return STATUS_COLORS[status] || 'grey'
+  const s = Array.isArray(status) ? status[0] : status
+  return STATUS_COLORS[s] || 'grey'
 }
 

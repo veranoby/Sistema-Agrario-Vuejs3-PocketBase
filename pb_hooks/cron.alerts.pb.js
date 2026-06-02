@@ -72,11 +72,42 @@ function compileAlertData(hacienda, type) {
             `hacienda = "${hacienda.id}" && created >= "${lastWeek.toISOString()}" && estado = "completada"`,
             "-created", 10
         );
-        data.summary.past = pastLogs.map(log => ({
-            actividad: log.getString("actividades"), // ID o expandir si fuera posible fácilmente
-            fecha: log.getString("fecha"),
-            usuario: log.getString("user_created")
-        }));
+        data.summary.past = pastLogs.map(log => {
+            let nombreActividad = 'Actividad';
+            try {
+                const actId = log.get("actividades");
+                const actIdStr = Array.isArray(actId) ? actId[0] : (actId || log.getString("actividades"));
+                if (actIdStr) {
+                    const actRecord = $app.dao().findRecordById("actividades", actIdStr);
+                    nombreActividad = actRecord.getString("nombre") || 'Actividad';
+                }
+            } catch (e) {
+                // Silenciar y usar fallback
+            }
+
+            let nombreOperador = 'Operador';
+            try {
+                const userId = log.getString("user_created");
+                if (userId) {
+                    const userRecord = $app.dao().findRecordById("users", userId);
+                    const name = userRecord.getString("name") || '';
+                    const lastname = userRecord.getString("lastname") || '';
+                    if (name || lastname) {
+                        nombreOperador = (name + ' ' + lastname).trim();
+                    } else {
+                        nombreOperador = userRecord.getString("username") || 'Operador';
+                    }
+                }
+            } catch (e) {
+                // Silenciar y usar fallback
+            }
+
+            return {
+                actividad: `${nombreActividad} por ${nombreOperador}`,
+                fecha: log.getString("fecha"),
+                usuario: log.getString("user_created")
+            };
+        });
 
         // 2. Proactiva: Programaciones vencidas o por vencer
         const upcoming = $app.dao().findRecordsByFilter(
@@ -84,10 +115,25 @@ function compileAlertData(hacienda, type) {
             `hacienda = "${hacienda.id}" && estado = "activo" && proxima_ejecucion <= "${nextWeek.toISOString()}"`,
             "proxima_ejecucion", 10
         );
-        data.summary.future = upcoming.map(p => ({
-            descripcion: p.getString("descripcion"),
-            vencimiento: p.getString("proxima_ejecucion")
-        }));
+        data.summary.future = upcoming.map(p => {
+            let descripcion = p.getString("descripcion") || '';
+            if (!descripcion.trim()) {
+                try {
+                    const actId = p.get("actividades");
+                    const actIdStr = Array.isArray(actId) ? actId[0] : (actId || p.getString("actividades"));
+                    if (actIdStr) {
+                        const actRecord = $app.dao().findRecordById("actividades", actIdStr);
+                        descripcion = actRecord.getString("nombre") || 'Actividad Programada';
+                    }
+                } catch (e) {
+                    descripcion = 'Actividad Programada';
+                }
+            }
+            return {
+                descripcion: descripcion,
+                vencimiento: p.getString("proxima_ejecucion")
+            };
+        });
 
         return data;
     }
@@ -126,20 +172,16 @@ function compileAlertData(hacienda, type) {
  */
 function sendEmailViaHook(type, recipients, haciendaName, data) {
     const settings = $app.settings();
+    const systemToken = settings.get("SYSTEM_TOKEN") || "sistema-agri-internal-token";
 
-    // Nota: Aquí reutilizaríamos la lógica de templates de main.js si estuviera exportada,
-    // pero en PocketBase JSVM los archivos son independientes a menos que se use un pattern de cargado.
-    // Por simplicidad en este paso, hacemos el post a nuestro propio endpoint interno 
-    // o enviamos el HTTP directamente a Resend.
-    
     // Optamos por llamar al endpoint interno para centralizar logs y templates
     try {
         $http.send({
-            url: (settings.get("FRONTEND_URL") || "http://localhost:5173") + "/api/alerts/send",
+            url: "http://127.0.0.1:8090/api/ext/alerts/send",
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                // Usamos un token de sistema o saltamos el auth si es llamada interna (aquí simulamos llamada externa)
+                "X-System-Token": systemToken
             },
             body: JSON.stringify({
                 type: type,

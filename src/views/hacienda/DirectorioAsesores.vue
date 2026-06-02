@@ -2,24 +2,30 @@
   <v-container fluid class="px-6 py-6 fill-height align-start">
     <div class="w-100">
       <!-- Header -->
-      <v-row class="mb-4">
-        <v-col cols="12">
-          <div class="d-flex align-center justify-between flex-wrap gap-4">
-            <div>
-              <h1 class="text-h4 font-weight-bold text-teal-darken-3 mb-1">
-                <v-icon icon="mdi-account-search" color="teal" size="36" class="mr-2"></v-icon>
-                Directorio de Asesores Técnicos
-              </h1>
-              <p class="text-subtitle-1 text-grey-darken-1">
-                Encuentra ingenieros agrónomos certificados y comparte siembras de forma segura para obtener recetas profesionales.
-              </p>
-            </div>
+
+      <header role="banner" class="bg-background shadow-sm">
+        <div class="profile-container">
+          <h3 class="profile-title" id="dashboard-welcome-title">
+           Directorio de Asesores Técnicos
+            <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
+              <v-avatar start> <v-img :src="avatarUrl" alt="Avatar del usuario"></v-img> </v-avatar>
+              {{ t('roles.' + userRole) }}
+            </v-chip>
+
+            <v-chip variant="flat" size="small" color="green-lighten-3" class="mx-1" pill>
+              <v-avatar start> <v-img :src="avatarHaciendaUrl" alt="Avatar de hacienda"></v-img> </v-avatar>
+              {{ t('dashboard.hacienda') }}: {{ mi_hacienda.name }}
+            </v-chip>
+       
+          </h3>
+          <div class="avatar-container">
+            <img :src="avatarHaciendaUrl" alt="Avatar de hacienda" class="avatar-image" />
           </div>
-        </v-col>
-      </v-row>
+        </div>
+      </header>
 
       <!-- Filtros -->
-      <v-card class="mb-6 elevation-2 rounded-lg border-teal-lighten-4 border">
+      <v-card class="m-4 rounded-xl">
         <v-card-text class="pt-6">
           <v-row>
             <v-col cols="12" md="4" lg="5">
@@ -243,16 +249,24 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { storeToRefs } from 'pinia'
+import { useI18n } from 'vue-i18n'
 import { useAsesoresStore } from '@/stores/asesoresStore'
 import { useAuthStore } from '@/stores/authStore'
+import { useHaciendaStore } from '@/stores/haciendaStore'
 import { useAvatarStore } from '@/stores/avatarStore'
 import { debounce } from '@/utils/debounce'
 import EnviarPaqueteWizard from '@/components/forms/asesores/EnviarPaqueteWizard.vue'
 
 const router = useRouter()
+const { t } = useI18n()
 const asesoresStore = useAsesoresStore()
 const authStore = useAuthStore()
+const haciendaStore = useHaciendaStore()
 const avatarStore = useAvatarStore()
+
+const { userRole, avatarUrl } = storeToRefs(authStore)
+const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
 
 const searchQuery = ref('')
 const selectedEspecialidades = ref([])

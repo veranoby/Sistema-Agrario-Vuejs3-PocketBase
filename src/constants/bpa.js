@@ -106,19 +106,19 @@ export const CACHE_KEYS = {
    * Clave para tipos de actividades
    * @returns {string}
    */
-  TIPOS_ACTIVIDADES: 'tipos:actividades',
+  TIPOS_ACTIVIDADES: () => 'tipos:actividades',
   
   /**
    * Clave para tipos de zonas
    * @returns {string}
    */
-  TIPOS_ZONAS: 'tipos:zonas',
+  TIPOS_ZONAS: () => 'tipos:zonas',
   
   /**
    * Clave para configuración de planes
    * @returns {string}
    */
-  PLANES_CONFIG: 'planes:config'
+  PLANES_CONFIG: () => 'planes:config'
 }
 
 /**

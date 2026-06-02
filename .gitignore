@@ -36,9 +36,13 @@ coverage
 
 *.tsbuildinfo
 
-# sistema brain 
-#brain/*
-
+# sistema brain e IA
+brain/
+conductor/
+.agents/
+.antigravitycli/
+.gemini/
+graphify-out/
 # sistema qwen */
 .qwen/*
 qwen*.*
