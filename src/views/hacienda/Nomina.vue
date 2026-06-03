@@ -474,60 +474,126 @@
       <!-- PESTAÑA 3: ASISTENCIA DIARIA -->
       <v-window-item value="asistencia">
         <v-card class="rounded-xl bg-white shadow-sm border overflow-hidden">
-          <v-toolbar color="transparent" flat class="px-4">
-            <v-toolbar-title class="font-weight-bold text-grey-darken-4">
+          <v-toolbar color="transparent" flat class="px-4" :class="{'flex-wrap': mobile, 'py-2': mobile, 'h-auto': mobile}">
+            <v-toolbar-title class="font-weight-bold text-grey-darken-4" :class="{'w-100 mb-2': mobile}">
               Asistencia Diaria
             </v-toolbar-title>
-            <v-spacer></v-spacer>
+            <v-spacer v-if="!mobile"></v-spacer>
+            <v-btn
+              v-if="mobile"
+              color="primary"
+              variant="tonal"
+              size="small"
+              class="mr-2"
+              @click="marcarTodosPresentes"
+            >
+              Todos Presentes
+            </v-btn>
+            <v-btn
+              v-if="!mobile"
+              color="primary"
+              variant="tonal"
+              class="mr-4"
+              prepend-icon="mdi-check-all"
+              @click="marcarTodosPresentes"
+            >
+              Marcar Todos Presentes
+            </v-btn>
             <v-text-field
               v-model="fechaAsistencia"
               type="date"
               variant="outlined"
               density="compact"
               hide-details
-              class="mr-4 rounded-lg"
-              style="max-width: 200px"
+              class="rounded-lg"
+              :class="{'mr-4': !mobile, 'mr-2': mobile}"
+              :style="mobile ? 'max-width: 140px' : 'max-width: 200px'"
               @change="cargarAsistencia"
             ></v-text-field>
-            <v-btn color="green-darken-3" variant="flat" prepend-icon="mdi-content-save" @click="guardarAsistencia">
-              Guardar Asistencia
+            <v-btn 
+              color="green-darken-3" 
+              variant="flat" 
+              :icon="mobile ? 'mdi-content-save' : undefined"
+              :prepend-icon="!mobile ? 'mdi-content-save' : undefined"
+              @click="guardarAsistencia"
+            >
+              <template v-if="!mobile">Guardar</template>
             </v-btn>
           </v-toolbar>
           <v-divider></v-divider>
 
-          <v-data-table
-            :headers="headersAsistencia"
-            :items="registrosAsistencia"
-            :loading="nominaStore.loading"
-            class="elevation-0"
-            no-data-text="No hay operarios activos para mostrar"
-          >
-            <!-- Operario -->
-            <template #[`item.operario_nombre`]="{ item }">
-              <span class="font-weight-medium">{{ item.operario_nombre }}</span>
-            </template>
-            
-            <!-- Jornada -->
-            <template #[`item.tipo_jornada`]="{ item }">
-              <v-btn-toggle
-                v-model="item.tipo_jornada"
-                color="green-darken-3"
-                mandatory
-                class="rounded-lg border"
-                density="compact"
+          <template v-if="!mobile">
+            <v-data-table
+              :headers="headersAsistencia"
+              :items="registrosAsistencia"
+              :loading="nominaStore.loading"
+              class="elevation-0"
+              no-data-text="No hay operarios activos para mostrar"
+            >
+              <!-- Operario -->
+              <template #[`item.operario_nombre`]="{ item }">
+                <span class="font-weight-medium">{{ item.operario_nombre }}</span>
+              </template>
+              
+              <!-- Jornada -->
+              <template #[`item.tipo_jornada`]="{ item }">
+                <v-btn-toggle
+                  v-model="item.tipo_jornada"
+                  color="green-darken-3"
+                  mandatory
+                  class="rounded-lg border"
+                  density="compact"
+                >
+                  <v-btn value="completa" class="px-4">
+                    <v-icon start size="small">mdi-circle-slice-8</v-icon> Completa
+                  </v-btn>
+                  <v-btn value="media" class="px-4">
+                    <v-icon start size="small">mdi-circle-slice-4</v-icon> Media
+                  </v-btn>
+                  <v-btn value="ausente" class="px-4 text-red-darken-2">
+                    <v-icon start size="small" color="red-darken-2">mdi-close-circle-outline</v-icon> Ausente
+                  </v-btn>
+                </v-btn-toggle>
+              </template>
+            </v-data-table>
+          </template>
+
+          <!-- MOBILE LIST VIEW -->
+          <template v-else>
+            <div v-if="nominaStore.loading" class="pa-4 text-center">
+              <v-progress-circular indeterminate color="green-darken-3"></v-progress-circular>
+            </div>
+            <div v-else-if="registrosAsistencia.length === 0" class="pa-4 text-center text-grey">
+              No hay operarios activos para mostrar
+            </div>
+            <v-list v-else lines="two" class="bg-transparent py-2">
+              <v-list-item
+                v-for="item in registrosAsistencia"
+                :key="item.operario_id"
+                class="mb-3 bg-grey-lighten-4 rounded-xl mx-2 border pb-3 pt-2"
               >
-                <v-btn value="completa" class="px-4">
-                  <v-icon start size="small">mdi-circle-slice-8</v-icon> Completa
-                </v-btn>
-                <v-btn value="media" class="px-4">
-                  <v-icon start size="small">mdi-circle-slice-4</v-icon> Media
-                </v-btn>
-                <v-btn value="ausente" class="px-4 text-red-darken-2">
-                  <v-icon start size="small" color="red-darken-2">mdi-close-circle-outline</v-icon> Ausente
-                </v-btn>
-              </v-btn-toggle>
-            </template>
-          </v-data-table>
+                <div class="font-weight-bold text-subtitle-1 mb-2">{{ item.operario_nombre }}</div>
+                <v-btn-toggle
+                  v-model="item.tipo_jornada"
+                  color="green-darken-3"
+                  mandatory
+                  class="rounded-lg border w-100"
+                  density="comfortable"
+                  style="height: 48px;"
+                >
+                  <v-btn value="completa" class="flex-grow-1 text-none">
+                    <v-icon size="small" class="mr-1">mdi-circle-slice-8</v-icon> Comp.
+                  </v-btn>
+                  <v-btn value="media" class="flex-grow-1 text-none">
+                    <v-icon size="small" class="mr-1">mdi-circle-slice-4</v-icon> Med.
+                  </v-btn>
+                  <v-btn value="ausente" class="flex-grow-1 text-none text-red-darken-2">
+                    <v-icon size="small" color="red-darken-2" class="mr-1">mdi-close-circle-outline</v-icon> Aus.
+                  </v-btn>
+                </v-btn-toggle>
+              </v-list-item>
+            </v-list>
+          </template>
         </v-card>
       </v-window-item>
 
@@ -633,6 +699,7 @@ import { logger } from '@/utils/logger'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/authStore'
+import { useDisplay } from 'vuetify'
 
 // Stores
 const nominaStore = useNominaStore()
@@ -640,6 +707,7 @@ const haciendaStore = useHaciendaStore()
 const uiFeedbackStore = useUiFeedbackStore()
 const authStore = useAuthStore()
 const { t } = useI18n()
+const { mobile } = useDisplay()
 const { userRole, avatarUrl } = storeToRefs(authStore)
 const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
 
@@ -868,6 +936,12 @@ const cargarAsistencia = async () => {
 const guardarAsistencia = async () => {
   if (registrosAsistencia.value.length === 0) return
   await nominaStore.guardarAsistenciaDia(fechaAsistencia.value, registrosAsistencia.value)
+}
+
+const marcarTodosPresentes = () => {
+  registrosAsistencia.value.forEach(registro => {
+    registro.tipo_jornada = 'completa'
+  })
 }
 
 const abrirDialogoTrabajador = (trabajador = null) => {
