@@ -23,15 +23,11 @@
             </div>
             <div class="w-full sm:w-auto z-10" v-if="siembrasStore.siembras.length > 0 && canCreate">
               <v-btn
-                block
-                sm:inline-flex
-                size="small"
+                prepend-icon="mdi-plus-circle"
+                color="success"
                 variant="flat"
-                
-                color="#6380a247"
-                prepend-icon="mdi-plus"
+                class="font-weight-bold text-white elevation-2 rounded-lg"
                 @click="NuevaActividad"
-                class="min-w-[210px]"
               >
                 {{ t('activities.new_activity') }}
               </v-btn>

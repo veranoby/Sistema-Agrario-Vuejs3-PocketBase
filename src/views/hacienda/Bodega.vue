@@ -17,17 +17,17 @@
                   {{ t('dashboard.hacienda') }}: {{ mi_hacienda?.name }}
                 </v-chip>
               </h3>
-              <p class="text-caption text-grey-darken-1 mt-1">
+              <p class="text-caption text-grey-darken-3 mt-1">
                 Control de inventarios, alerta por stock mínimo y registro histórico de movimientos en campo y bodega.
               </p>
             </div>
 
             <div class="w-full sm:w-auto z-10">
               <v-btn
-                color="green-darken-3"
-                prepend-icon="mdi-plus"
-                class="font-weight-bold text-white elevation-2 rounded-lg"
-                @click="abrirModalNuevoItem"
+                prepend-icon="mdi-plus-circle"
+                color="success"
+                variant="flat"
+                class="font-weight-bold text-white elevation-2 rounded-lg"                @click="abrirModalNuevoItem"
               >
                 Nuevo Insumo
               </v-btn>

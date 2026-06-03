@@ -14,7 +14,7 @@
               <v-avatar start> <v-img :src="avatarHaciendaUrl" alt="Avatar de hacienda"></v-img> </v-avatar>
               {{ t('dashboard.hacienda') }}: {{ mi_hacienda.name }}
             </v-chip>
-          <p class="text-caption text-medium-emphasis mt-2 ml-2">
+              <p class="text-caption text-grey-darken-3 mt-1">
             <v-icon size="14" class="mr-1">mdi-information</v-icon>
             Fuente: Bitácoras - gráficos se basan en métricas estándar (cantidad_cosechada, volumen_agua_utilizada, dosis_aplicada, etc).
           </p>

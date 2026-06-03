@@ -16,9 +16,6 @@
                   {{ t('dashboard.hacienda') }}: {{ mi_hacienda?.name }}
                 </v-chip>
               </h3>
-              <p class="text-caption text-grey-darken-1 mt-1">
-                Todas las entradas registradas para la hacienda actual.
-              </p>
             </div>
 
             <div class="w-full sm:w-auto z-10 d-flex gap-2">
@@ -67,7 +64,11 @@
           <v-expansion-panel>
             <v-expansion-panel-title>
               <v-icon start>mdi-filter-variant</v-icon>
-              Filtros
+              Filtros 
+              <span class="text-caption text-grey-darken-1 mt-1">
+                Todas las entradas registradas para la hacienda actual.
+              </span>
+
             </v-expansion-panel-title>
             <v-expansion-panel-text>
               <v-row dense>

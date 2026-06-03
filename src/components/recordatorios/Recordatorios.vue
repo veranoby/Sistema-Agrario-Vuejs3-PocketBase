@@ -30,15 +30,10 @@
             </div>
             <div class="w-full sm:w-auto z-10" v-if="canCreate">
               <v-btn
-                block
-                sm:inline-flex
-                size="small"
+                prepend-icon="mdi-plus-circle"
+                color="success"
                 variant="flat"
-                
-                color="#6380a247"
-                prepend-icon="mdi-plus"
-                @click="recordatoriosStore.abrirNuevoRecordatorio"
-                class="min-w-[210px]"
+                class="font-weight-bold text-white elevation-2 rounded-lg"                @click="recordatoriosStore.abrirNuevoRecordatorio"
               >
                 {{ t('reminders.new_reminder') }}
               </v-btn>

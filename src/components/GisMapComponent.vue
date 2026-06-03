@@ -742,6 +742,7 @@ export default defineComponent({
         centerCircleMarker = null
       }
       if (map) {
+        map.stop()
         map.remove()
         map = null
       }

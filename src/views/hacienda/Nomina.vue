@@ -17,7 +17,7 @@
                   {{ t('dashboard.hacienda') }}: {{ mi_hacienda?.name }}
                 </v-chip>
               </h3>
-              <p class="text-caption text-grey-darken-1 mt-1">
+              <p class="text-caption text-grey-darken-3 mt-1">
                 Conciliación semanal de jornales, cosechas y destajos para el sábado de raya.
               </p>
             </div>
@@ -36,6 +36,10 @@
       <v-tab value="historial" @click="cargarHistorial">
         <v-icon start>mdi-history</v-icon>
         Historial de Cerradas
+      </v-tab>
+      <v-tab value="asistencia" @click="cargarAsistencia">
+        <v-icon start>mdi-calendar-check</v-icon>
+        Asistencia Diaria
       </v-tab>
       <v-tab value="plantilla" @click="cargarPlantilla">
         <v-icon start>mdi-account-group</v-icon>
@@ -467,7 +471,67 @@
         </v-card>
       </v-window-item>
 
-      <!-- PESTAÑA 3: PLANTILLA DE PERSONAL -->
+      <!-- PESTAÑA 3: ASISTENCIA DIARIA -->
+      <v-window-item value="asistencia">
+        <v-card class="rounded-xl bg-white shadow-sm border overflow-hidden">
+          <v-toolbar color="transparent" flat class="px-4">
+            <v-toolbar-title class="font-weight-bold text-grey-darken-4">
+              Asistencia Diaria
+            </v-toolbar-title>
+            <v-spacer></v-spacer>
+            <v-text-field
+              v-model="fechaAsistencia"
+              type="date"
+              variant="outlined"
+              density="compact"
+              hide-details
+              class="mr-4 rounded-lg"
+              style="max-width: 200px"
+              @change="cargarAsistencia"
+            ></v-text-field>
+            <v-btn color="green-darken-3" variant="flat" prepend-icon="mdi-content-save" @click="guardarAsistencia">
+              Guardar Asistencia
+            </v-btn>
+          </v-toolbar>
+          <v-divider></v-divider>
+
+          <v-data-table
+            :headers="headersAsistencia"
+            :items="registrosAsistencia"
+            :loading="nominaStore.loading"
+            class="elevation-0"
+            no-data-text="No hay operarios activos para mostrar"
+          >
+            <!-- Operario -->
+            <template #[`item.operario_nombre`]="{ item }">
+              <span class="font-weight-medium">{{ item.operario_nombre }}</span>
+            </template>
+            
+            <!-- Jornada -->
+            <template #[`item.tipo_jornada`]="{ item }">
+              <v-btn-toggle
+                v-model="item.tipo_jornada"
+                color="green-darken-3"
+                mandatory
+                class="rounded-lg border"
+                density="compact"
+              >
+                <v-btn value="completa" class="px-4">
+                  <v-icon start size="small">mdi-circle-slice-8</v-icon> Completa
+                </v-btn>
+                <v-btn value="media" class="px-4">
+                  <v-icon start size="small">mdi-circle-slice-4</v-icon> Media
+                </v-btn>
+                <v-btn value="ausente" class="px-4 text-red-darken-2">
+                  <v-icon start size="small" color="red-darken-2">mdi-close-circle-outline</v-icon> Ausente
+                </v-btn>
+              </v-btn-toggle>
+            </template>
+          </v-data-table>
+        </v-card>
+      </v-window-item>
+
+      <!-- PESTAÑA 4: PLANTILLA DE PERSONAL -->
       <v-window-item value="plantilla">
         <v-card class="rounded-xl bg-white shadow-sm border overflow-hidden">
           <v-toolbar color="transparent" flat class="px-4">
@@ -623,6 +687,9 @@ const getWeekRanges = () => {
 const rango = ref(getWeekRanges().current)
 const detallesBorrador = ref([])
 
+const fechaAsistencia = ref(new Date().toISOString().split('T')[0])
+const registrosAsistencia = ref([])
+
 // Computed
 const totalNeto = computed(() => {
   return detallesBorrador.value.reduce((sum, row) => sum + row.total_neto, 0)
@@ -653,6 +720,11 @@ const headersPlantilla = [
   { title: 'Jornal ($)', key: 'valor_jornal' },
   { title: 'Activo', key: 'activo' },
   { title: 'Acciones', key: 'acciones', sortable: false, align: 'end' }
+]
+
+const headersAsistencia = [
+  { title: 'Operario', key: 'operario_nombre', sortable: true },
+  { title: 'Jornada Trabajada', key: 'tipo_jornada', sortable: false, align: 'center' }
 ]
 
 // Methods
@@ -782,6 +854,20 @@ const cargarHistorial = async () => {
 
 const cargarPlantilla = async () => {
   await nominaStore.cargarPlantilla()
+}
+
+const cargarAsistencia = async () => {
+  try {
+    const registros = await nominaStore.cargarAsistenciaDia(fechaAsistencia.value)
+    registrosAsistencia.value = registros
+  } catch (e) {
+    logger.error('Error cargando asistencia:', e)
+  }
+}
+
+const guardarAsistencia = async () => {
+  if (registrosAsistencia.value.length === 0) return
+  await nominaStore.guardarAsistenciaDia(fechaAsistencia.value, registrosAsistencia.value)
 }
 
 const abrirDialogoTrabajador = (trabajador = null) => {

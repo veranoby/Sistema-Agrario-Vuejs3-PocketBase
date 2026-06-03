@@ -181,10 +181,12 @@ watch(
         await schedulerStore.init()
       }
     } else {
-      navigationLinks.value = []
-      schedulerStore.reset()
-      if (router.currentRoute.value.meta.requiresAuth) {
-        router.push('/')
+      if (authStore.initialized) {
+        navigationLinks.value = []
+        schedulerStore.reset()
+        if (router.currentRoute.value.meta.requiresAuth) {
+          router.push('/')
+        }
       }
     }
   },

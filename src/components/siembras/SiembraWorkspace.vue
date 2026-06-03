@@ -416,7 +416,8 @@ const siembraFeatureCollection = computed(() => {
           nombre: z.nombre,
           area: z.area?.area,
           unidad: z.area?.unidad,
-          type: esLote ? 'lote' : 'punto-interes'
+          type: esLote ? 'lote' : 'punto-interes',
+          color: z.color || null
         }
       })
     }

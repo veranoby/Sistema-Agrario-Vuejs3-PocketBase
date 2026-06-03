@@ -257,13 +257,15 @@ const recentPrescriptions = ref([])
 
 onMounted(async () => {
   try {
-    // 0. Check subscription status in solicitudes_suscripcion
+    // 0. Check subscription status in subscriptions collection
     try {
-      const sub = await pb.collection('solicitudes_suscripcion').getFirstListItem(
-        `solicitante="${authStore.user.id}"`
-      )
-      subscriptionActive.value = sub.estado === 'activa'
-    } catch {
+      const asesorPlan = await pb.collection('modulos').getFirstListItem(`code="asesor_plan"`)
+      const activeSubs = await pb.collection('subscriptions').getList(1, 1, {
+        filter: `modulo="${asesorPlan.id}" && is_active=true && user="${authStore.user.id}"`
+      })
+      subscriptionActive.value = activeSubs.items.length > 0
+    } catch (e) {
+      console.warn("Could not load subscription status", e)
       subscriptionActive.value = false
     } finally {
       checkingSubscription.value = false

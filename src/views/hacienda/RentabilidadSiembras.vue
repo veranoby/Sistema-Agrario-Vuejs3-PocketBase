@@ -16,7 +16,7 @@
                   {{ t('dashboard.hacienda') }}: {{ mi_hacienda?.name }}
                 </v-chip>
               </h3>
-              <p class="text-caption text-grey-darken-1 mt-1">
+              <p class="text-caption text-grey-darken-3 mt-1">
                 Análisis financiero detallado por lote/cultivo: cruce de costos de insumos, mano de obra y ganancias estimadas.
               </p>
             </div>

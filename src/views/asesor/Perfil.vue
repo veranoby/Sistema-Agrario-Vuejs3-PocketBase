@@ -279,9 +279,33 @@
                   </h3>
                 </div>
                 
-                <p v-if="subscriptionActive" class="text-caption text-green-darken-2 mb-0">
+                <p v-if="subscriptionActive" class="text-caption text-green-darken-2 mb-2">
                   Tu entorno profesional está activo. Las haciendas pueden vincularte a sus proyectos.
                 </p>
+                <v-alert
+                  v-if="subscriptionActive && daysUntilExpiration !== null"
+                  :type="daysUntilExpiration <= 5 ? 'warning' : 'success'"
+                  variant="tonal"
+                  density="compact"
+                  class="mb-3"
+                >
+                  <template v-slot:prepend>
+                    <v-icon>{{ daysUntilExpiration <= 5 ? 'mdi-alert-circle' : 'mdi-clock-outline' }}</v-icon>
+                  </template>
+                  Quedan {{ daysUntilExpiration }} días de suscripción
+                </v-alert>
+                
+                <v-btn
+                  v-if="subscriptionActive"
+                  color="info"
+                  variant="tonal"
+                  size="small"
+                  prepend-icon="mdi-history"
+                  @click="openHistoryModal"
+                  class="text-none w-100"
+                >
+                  Ver Historial de Solicitudes
+                </v-btn>
                 <div v-else>
                   <p class="text-caption text-orange-darken-2 mb-3">
                     Tu entorno está en modo restringido. Para habilitar tu portafolio y ser visible para todas las haciendas, requieres activar tu plan profesional.
@@ -294,9 +318,20 @@
                     size="small"
                     prepend-icon="mdi-credit-card-outline"
                     @click="openSubscriptionDialog"
-                    class="text-none"
+                    class="text-none mb-2"
                   >
                     Suscribirse ($5/mes)
+                  </v-btn>
+                  
+                  <v-btn
+                    color="info"
+                    variant="tonal"
+                    size="small"
+                    prepend-icon="mdi-history"
+                    @click="openHistoryModal"
+                    class="text-none w-100 mb-2"
+                  >
+                    Ver Historial de Solicitudes
                   </v-btn>
                   
                   <v-alert v-else type="info" density="compact" variant="tonal" class="text-caption mt-2">
@@ -395,6 +430,41 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Modal Historial -->
+    <v-dialog v-model="historyModalOpen" max-width="800px" scrollable>
+      <v-card class="rounded-xl">
+        <v-toolbar color="info" dark>
+          <v-toolbar-title>Historial de Solicitudes</v-toolbar-title>
+          <v-spacer></v-spacer>
+          <v-btn icon @click="historyModalOpen = false"><v-icon>mdi-close</v-icon></v-btn>
+        </v-toolbar>
+        <v-card-text class="pa-0">
+          <v-data-table
+            :headers="historyHeaders"
+            :items="solicitudesHistory"
+            :loading="loadingHistory"
+            class="elevation-0"
+          >
+            <template v-slot:item.fecha_solicitud="{ item }">
+              {{ new Date(item.created).toLocaleDateString('es-EC', {day:'2-digit', month:'2-digit', year:'numeric'}) }}
+            </template>
+            <template v-slot:item.estado="{ item }">
+              <v-chip size="small" :color="item.estado === 'aprobada' ? 'success' : item.estado === 'rechazada' ? 'error' : 'warning'">
+                {{ item.estado.toUpperCase() }}
+              </v-chip>
+            </template>
+            <template v-slot:item.monto_notas="{ item }">
+              <span class="text-caption text-grey-darken-2">{{ item.notas_admin || 'N/A' }}</span>
+            </template>
+          </v-data-table>
+        </v-card-text>
+        <v-card-actions class="px-6 pb-6 bg-grey-lighten-5">
+          <v-spacer></v-spacer>
+          <v-btn color="grey-darken-1" variant="text" @click="historyModalOpen = false">Cerrar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -417,6 +487,16 @@ const subscriptionActive = ref(false)
 const pendingRequest = ref(false)
 const asesorPlanId = ref(null)
 
+const historyModalOpen = ref(false)
+const solicitudesHistory = ref([])
+const loadingHistory = ref(false)
+const historyHeaders = [
+  { title: 'Fecha', key: 'fecha_solicitud' },
+  { title: 'Estado', key: 'estado' },
+  { title: 'Notas', key: 'monto_notas' }
+]
+const daysUntilExpiration = ref(null)
+
 const name = ref('')
 const lastname = ref('')
 const email = ref('')
@@ -430,7 +510,7 @@ const selectedProvincias = ref([])
 const bioCorta = ref('')
 
 const PROVINCIAS = ["Azuay", "Bolívar", "Cañar", "Carchi", "Chimborazo", "Cotopaxi", "El Oro", "Esmeraldas", "Galápagos", "Guayas", "Imbabura", "Loja", "Los Ríos", "Manabí", "Morona Santiago", "Napo", "Orellana", "Pastaza", "Pichincha", "Santa Elena", "Santo Domingo de los Tsáchilas", "Sucumbíos", "Tungurahua", "Zamora Chinchipe"]
-const ESPECIALIDADES = ["Banano", "Cacao", "Suelos", "Flores", "Frutales", "Cítricos", "Hortalizas", "Ganadería", "Otro"]
+const ESPECIALIDADES = ["Banano", "Cacao", "Suelos", "Flores", "Frutales","Pitahaya","Riego", "Cítricos", "Hortalizas", "Ganadería", "Otro"]
 
 const initials = computed(() => {
   const first = name.value ? name.value[0] : ''
@@ -465,6 +545,10 @@ onMounted(async () => {
     
     if (activeSubs.items.length > 0) {
       subscriptionActive.value = true
+      const end = new Date(activeSubs.items[0].end_date)
+      const now = new Date()
+      const diffTime = end - now
+      daysUntilExpiration.value = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
     } else {
       // Check if there's a pending request
       const pendingReqs = await pb.collection('solicitudes_suscripcion').getList(1, 1, {
@@ -506,6 +590,23 @@ const submitSubscription = async () => {
     handleError(error, 'Error al enviar la solicitud')
   } finally {
     submittingSub.value = false
+  }
+}
+
+const openHistoryModal = async () => {
+  historyModalOpen.value = true
+  loadingHistory.value = true
+  try {
+    const res = await pb.collection('solicitudes_suscripcion').getFullList({
+      filter: `solicitante = "${authStore.user.id}"`,
+      sort: '-fecha_solicitud'
+    })
+    solicitudesHistory.value = res
+  } catch (error) {
+    uiFeedback.showSnackbar('Error cargando el historial', 'error')
+    console.error(error)
+  } finally {
+    loadingHistory.value = false
   }
 }
 

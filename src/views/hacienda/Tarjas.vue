@@ -21,15 +21,16 @@
                   Alimenta Nómina Express
                 </v-chip>
               </h3>
-              <p class="text-caption text-grey-darken-1 mt-1">
+              <p class="text-caption text-grey-darken-3 mt-1">
                 Registro de volumen cosechado por lote y operario en tiempo real. Soporta funcionamiento offline.
               </p>
             </div>
 
-            <div class="w-full sm:w-auto z-10">
+            <div class="w-full sm:w-auto z-10 d-flex gap-2">
               <v-btn
-                color="green-darken-3"
-                prepend-icon="mdi-plus"
+                prepend-icon="mdi-plus-circle"
+                color="success"
+                variant="flat"
                 class="font-weight-bold text-white elevation-2 rounded-lg"
                 @click="abrirRegistroForm"
               >

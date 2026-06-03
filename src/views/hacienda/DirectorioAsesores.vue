@@ -278,7 +278,7 @@ const selectedAsesor = ref(null)
 const selectedVinculacionId = ref('')
 
 const PROVINCIAS = ["Azuay", "Bolívar", "Cañar", "Carchi", "Chimborazo", "Cotopaxi", "El Oro", "Esmeraldas", "Galápagos", "Guayas", "Imbabura", "Loja", "Los Ríos", "Manabí", "Morona Santiago", "Napo", "Orellana", "Pastaza", "Pichincha", "Santa Elena", "Santo Domingo de los Tsáchilas", "Sucumbíos", "Tungurahua", "Zamora Chinchipe"]
-const ESPECIALIDADES = ["Banano", "Cacao", "Suelos", "Flores", "Frutales", "Cítricos", "Hortalizas", "Ganadería", "Otro"]
+const ESPECIALIDADES = ["Banano", "Cacao", "Suelos", "Flores", "Frutales","Pitahaya","Riego", "Cítricos", "Hortalizas", "Ganadería", "Otro"]
 
 onMounted(async () => {
   await asesoresStore.fetchMisVinculaciones(authStore.user?.hacienda)

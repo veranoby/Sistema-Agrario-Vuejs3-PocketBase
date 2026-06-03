@@ -28,6 +28,7 @@ export const useAuthStore = defineStore('auth', {
     rememberMe: null,
     showLoginDialog: false,
     initialized: false,
+    initPromise: null,
     refreshTimer: null,
     version: 1
   }),
@@ -205,12 +206,17 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async ensureAuthInitialized() {
-      if (!this.initialized) {
-        logger.auth('ensureAuthInitialized: Not initialized, calling init().')
-        await this.init()
-      } else {
-        logger.auth('ensureAuthInitialized: Already attempted initialization.')
+      if (this.initialized) {
+        logger.auth('ensureAuthInitialized: Already initialized.')
+        return authProvider.authStore.isValid
       }
+      if (!this.initPromise) {
+        logger.auth('ensureAuthInitialized: Not initialized, calling init().')
+        this.initPromise = this.init()
+      } else {
+        logger.auth('ensureAuthInitialized: Initialization in progress, awaiting...')
+      }
+      await this.initPromise
       return authProvider.authStore.isValid
     },
 

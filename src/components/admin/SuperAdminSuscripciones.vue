@@ -355,86 +355,113 @@ const processApprove = async () => {
     const haciendaId = selectedItem.value.hacienda
     const itemData = selectedItem.value
 
-    // Obtenemos la hacienda para evaluar fecha y plan actual
-    const hacienda = await pb.collection('Haciendas').getOne(haciendaId)
-    const haciendaPayload = {}
+    if (haciendaId) {
+      // Flujo Normal para Haciendas
+      const hacienda = await pb.collection('Haciendas').getOne(haciendaId)
+      const haciendaPayload = {}
 
-    if (itemData.tipo === 'plan_upgrade') {
-      haciendaPayload.plan = itemData.plan_solicitado
+      if (itemData.tipo === 'plan_upgrade') {
+        haciendaPayload.plan = itemData.plan_solicitado
 
-      // 1. Cálculo de Co-Terming / Prorrateo Directo
-      const currentEndStr = hacienda.subscription_end
-      const now = new Date()
-      let baseDate = now
-      if (currentEndStr) {
-          const currentEnd = new Date(currentEndStr)
-          if (currentEnd > now) {
-              baseDate = currentEnd
-          }
-      }
-      const newEndDate = new Date(baseDate)
-      
-      // Detectar si es ciclo anual desde las notas
-      let extraDays = 30
-      if (itemData.notas_admin && itemData.notas_admin.toLowerCase().includes('anual')) {
-          extraDays = 365
-      }
-      newEndDate.setDate(newEndDate.getDate() + extraDays)
-      
-      haciendaPayload.subscription_end = newEndDate.toISOString()
-      
-      // 2. Validación y Ejecución de Downgrade
-      const currentPlanId = hacienda.plan
-      if (currentPlanId) {
-          const currentPlan = await pb.collection('Planes').getOne(currentPlanId)
-          const newPlan = await pb.collection('Planes').getOne(itemData.plan_solicitado)
-          
-          const isDowngrade = (newPlan.operadores < currentPlan.operadores) || (newPlan.auditores < currentPlan.auditores)
-          
-          if (isDowngrade) {
-              // Buscar usuarios de la hacienda que no sean admin ni asesor
-              const usersToSuspend = await pb.collection('users').getFullList({
-                  filter: `hacienda = "${haciendaId}" && role != "administrador" && role != "asesor"`
-              })
-              // Suspenderlos en batch iterativo
-              for (const u of usersToSuspend) {
-                  await pb.collection('users').update(u.id, { status: 'suspended' })
-              }
-              // Anotar en el payload de logs
-              itemData.notas_admin = (itemData.notas_admin || '') + '\n[Downgrade: Se suspendieron todos los operadores]'
-          }
-      }
-      
-    }
-
-    // Actualización de Módulos (tanto en plan_upgrade unificado como modulo_addon)
-    if (itemData.modulo_solicitado !== undefined && itemData.modulo_solicitado !== null) {
-      const currentModules = hacienda.active_modules || []
-      let newModules = []
-      try {
-        newModules = itemData.modulo_solicitado.startsWith('[') ? JSON.parse(itemData.modulo_solicitado) : [itemData.modulo_solicitado]
-      } catch (e) {
-        if (itemData.modulo_solicitado.trim() !== '') {
-          newModules = [itemData.modulo_solicitado]
+        // 1. Cálculo de Co-Terming / Prorrateo Directo
+        const currentEndStr = hacienda.subscription_end
+        const now = new Date()
+        let baseDate = now
+        if (currentEndStr) {
+            const currentEnd = new Date(currentEndStr)
+            if (currentEnd > now) {
+                baseDate = currentEnd
+            }
+        }
+        const newEndDate = new Date(baseDate)
+        
+        // Detectar si es ciclo anual desde las notas
+        let extraDays = 30
+        if (itemData.notas_admin && itemData.notas_admin.toLowerCase().includes('anual')) {
+            extraDays = 365
+        }
+        newEndDate.setDate(newEndDate.getDate() + extraDays)
+        
+        haciendaPayload.subscription_end = newEndDate.toISOString()
+        
+        // 2. Validación y Ejecución de Downgrade
+        const currentPlanId = hacienda.plan
+        if (currentPlanId) {
+            const currentPlan = await pb.collection('Planes').getOne(currentPlanId)
+            const newPlan = await pb.collection('Planes').getOne(itemData.plan_solicitado)
+            
+            const isDowngrade = (newPlan.operadores < currentPlan.operadores) || (newPlan.auditores < currentPlan.auditores)
+            
+            if (isDowngrade) {
+                const usersToSuspend = await pb.collection('users').getFullList({
+                    filter: `hacienda = "${haciendaId}" && role != "administrador" && role != "asesor"`
+                })
+                for (const u of usersToSuspend) {
+                    await pb.collection('users').update(u.id, { status: 'suspended' })
+                }
+                itemData.notas_admin = (itemData.notas_admin || '') + '\n[Downgrade: Se suspendieron operadores/auditores excedentes]'
+            }
         }
       }
-      
-      // Si la solicitud es unificada, newModules contiene exactamente la selección deseada
-      if (itemData.notas_admin && itemData.notas_admin.includes('Unificada')) {
-        haciendaPayload.active_modules = newModules
-      } else {
-        // Modo Legacy (Append-only)
-        newModules.forEach(modId => {
-          if (!currentModules.includes(modId)) {
-              currentModules.push(modId)
+
+      // Actualización de Módulos (tanto en plan_upgrade unificado como modulo_addon)
+      if (itemData.modulo_solicitado !== undefined && itemData.modulo_solicitado !== null) {
+        const currentModules = hacienda.active_modules || []
+        let newModules = []
+        try {
+          newModules = itemData.modulo_solicitado.startsWith('[') ? JSON.parse(itemData.modulo_solicitado) : [itemData.modulo_solicitado]
+        } catch (e) {
+          if (itemData.modulo_solicitado.trim() !== '') {
+            newModules = [itemData.modulo_solicitado]
           }
-        })
-        haciendaPayload.active_modules = currentModules
+        }
+        
+        if (itemData.notas_admin && itemData.notas_admin.includes('Unificada')) {
+          haciendaPayload.active_modules = newModules
+        } else {
+          newModules.forEach(modId => {
+            if (!currentModules.includes(modId)) {
+                currentModules.push(modId)
+            }
+          })
+          haciendaPayload.active_modules = currentModules
+        }
+      }
+
+      await pb.collection('Haciendas').update(haciendaId, haciendaPayload)
+
+    } else {
+      // Flujo para Asesores o Usuarios SIN Hacienda (Creación en coleccion subscriptions)
+      if (itemData.modulo_solicitado) {
+        let newModules = []
+        try {
+          newModules = itemData.modulo_solicitado.startsWith('[') ? JSON.parse(itemData.modulo_solicitado) : [itemData.modulo_solicitado]
+        } catch (e) {
+          if (itemData.modulo_solicitado.trim() !== '') {
+            newModules = [itemData.modulo_solicitado]
+          }
+        }
+
+        const start = new Date()
+        let extraDays = 30
+        if (itemData.notas_admin && itemData.notas_admin.toLowerCase().includes('anual')) {
+          extraDays = 365
+        }
+        const end = new Date(start)
+        end.setDate(end.getDate() + extraDays)
+
+        for (const modId of newModules) {
+          await pb.collection('subscriptions').create({
+            user: itemData.solicitante,
+            modulo: modId,
+            is_active: true,
+            start_date: start.toISOString(),
+            end_date: end.toISOString(),
+            billing_cycle: extraDays === 365 ? 'yearly' : 'monthly'
+          })
+        }
       }
     }
-
-    // 3. Patch a Hacienda
-    await pb.collection('Haciendas').update(haciendaId, haciendaPayload)
 
     // 4. Patch a Solicitud (marcar como aprobada)
     await pb.collection('solicitudes_suscripcion').update(itemData.id, {
@@ -443,7 +470,7 @@ const processApprove = async () => {
       fecha_resolucion: new Date().toISOString()
     })
 
-    showSnackbar('Solicitud aprobada y hacienda actualizada', 'success')
+    showSnackbar('Solicitud aprobada y procesada correctamente', 'success')
     approveModal.value = false
     fetchData()
   } catch (e) {

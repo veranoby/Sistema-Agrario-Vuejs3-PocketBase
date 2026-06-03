@@ -486,7 +486,7 @@ let debouncedHaciendaCheck = null
 
 const accountType = ref('hacienda') // 'hacienda' | 'asesor'
 const PROVINCIAS_ECUADOR = ["Azuay", "Bolívar", "Cañar", "Carchi", "Chimborazo", "Cotopaxi", "El Oro", "Esmeraldas", "Galápagos", "Guayas", "Imbabura", "Loja", "Los Ríos", "Manabí", "Morona Santiago", "Napo", "Orellana", "Pastaza", "Pichincha", "Santa Elena", "Santo Domingo de los Tsáchilas", "Sucumbíos", "Tungurahua", "Zamora Chinchipe"]
-const ESPECIALIDADES_ASESOR = ["Banano", "Cacao", "Suelos", "Flores", "Frutales", "Cítricos", "Hortalizas", "Ganadería", "Otro"]
+const ESPECIALIDADES_ASESOR = ["Banano", "Cacao", "Suelos", "Flores", "Frutales","Pitahaya","Riego", "Cítricos", "Hortalizas", "Ganadería", "Otro"]
 
 const dialogModel = computed({
   get: () => props.isOpen,
