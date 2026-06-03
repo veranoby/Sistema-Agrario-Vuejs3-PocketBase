@@ -22,7 +22,7 @@
               </h3>
             </div>
 
-            <div class="w-full sm:w-auto z-10">
+            <div class="w-full sm:w-auto z-10 hidden-sm-and-down" v-if="!mobile">
               <v-btn
                 prepend-icon="mdi-plus-circle"
                 color="success"
@@ -126,7 +126,7 @@
           </v-card-text>
         </v-card>
 
-        <v-card class="mb-4">
+        <v-card class="mb-4" v-if="!mobile">
           <v-card-text>
             <v-row>
               <v-col cols="12" sm="6">
@@ -222,7 +222,7 @@
           </v-card-text>
         </v-card>
 
-        <v-card>
+        <v-card v-if="!mobile">
           <v-data-table-virtual
             :headers="headers"
             :items="filteredRegistros"
@@ -340,6 +340,52 @@
             </template>
           </v-data-table-virtual>
         </v-card>
+
+        <div v-else>
+          <v-list class="bg-transparent pa-0" lines="two">
+            <template v-if="filteredRegistros.length === 0">
+              <div class="d-flex flex-column align-center pa-4 text-center">
+                <v-icon size="large" color="grey-lighten-1">mdi-database-off</v-icon>
+                <span class="text-grey-lighten-1 mt-2">{{ t('finance.no_records') }}</span>
+              </div>
+            </template>
+            <template v-for="item in filteredRegistros" :key="item.id">
+              <v-card class="mb-2 rounded-lg elevation-1" @click="openEditarItem(item)">
+                <v-list-item>
+                  <template v-slot:prepend>
+                    <v-avatar :color="item.monto < 0 ? 'red-lighten-4' : 'green-lighten-4'" size="40">
+                      <v-icon :color="item.monto < 0 ? 'red' : 'green'">
+                        {{ item.monto < 0 ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
+                      </v-icon>
+                    </v-avatar>
+                  </template>
+                  <v-list-item-title class="font-weight-bold text-subtitle-2">{{ item.razon_social || item.categoria }}</v-list-item-title>
+                  <v-list-item-subtitle class="text-caption text-grey-darken-1 d-flex flex-column">
+                    <span>{{ formatDate(item.fecha) }} &bull; {{ item.costo }}</span>
+                    <span class="text-truncate">{{ item.detalle }}</span>
+                  </v-list-item-subtitle>
+                  <template v-slot:append>
+                    <div class="text-right">
+                      <div class="font-weight-bold text-subtitle-1" :class="item.monto < 0 ? 'text-red' : 'text-green'">
+                        {{ formatCurrency(item.monto) }}
+                      </div>
+                    </div>
+                  </template>
+                </v-list-item>
+              </v-card>
+            </template>
+          </v-list>
+          <v-btn
+            color="success"
+            icon="mdi-plus"
+            size="x-large"
+            position="fixed"
+            location="bottom right"
+            class="mb-4 mr-4 elevation-8"
+            style="z-index: 100"
+            @click="openNuevoItem"
+          ></v-btn>
+        </div>
       </v-container>
     </main>
 
@@ -379,11 +425,13 @@ import { storeToRefs } from 'pinia'
 import { format, parseISO, getMonth, getYear, setMonth, setYear } from 'date-fns'
 import FinanzasForm from '@/components/forms/FinanzasForm.vue'
 import FinanzasImportExcel from '@/components/forms/FinanzasImportExcel.vue'
+import { useDisplay } from 'vuetify'
 
 const { t } = useI18n()
 const authStore = useAuthStore()
 const haciendaStore = useHaciendaStore()
 const finanzaStore = useFinanzaStore()
+const { mobile } = useDisplay()
 
 const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
 const userRole = computed(() => authStore.user.role)
