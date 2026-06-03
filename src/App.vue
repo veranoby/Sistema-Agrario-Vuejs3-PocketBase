@@ -56,6 +56,23 @@
       :conflicts="syncStore.conflicts"
       @resolve="handleConflictResolution"
     />
+
+    <v-snackbar
+      v-model="pwaStore.installPromptVisible"
+      timeout="-1"
+      color="success"
+      elevation="24"
+      location="bottom"
+    >
+      <div class="d-flex align-center">
+        <v-icon start icon="mdi-cellphone-arrow-down"></v-icon>
+        <span class="font-weight-bold">Instala Sistema Agrario en tu dispositivo para acceso rápido y modo offline.</span>
+      </div>
+      <template v-slot:actions>
+        <v-btn color="white" variant="text" @click="pwaStore.clearPrompt()">Ahora no</v-btn>
+        <v-btn color="white" variant="elevated" class="font-weight-bold text-success ml-2" @click="pwaStore.promptInstall()">Instalar</v-btn>
+      </template>
+    </v-snackbar>
   </v-app>
 </template>
 
@@ -87,6 +104,7 @@ const themeStore = useThemeStore()
 const syncStore = useSyncStore()
 const schedulerStore = useSchedulerStore()
 const haciendaStore = useHaciendaStore()
+const pwaStore = usePwaStore()
 const { t } = useI18n()
 
 const drawer = ref(true)
@@ -178,6 +196,14 @@ watch(
   async (newValue) => {
     if (newValue) {
       handleLoginSuccess()
+      
+      // Mostrar prompt de PWA si está pendiente
+      if (pwaStore.deferredPrompt) {
+        setTimeout(() => {
+          pwaStore.showInstallPrompt()
+        }, 2000)
+      }
+
       if (!schedulerStore.initialized) {
         await schedulerStore.init()
       }
