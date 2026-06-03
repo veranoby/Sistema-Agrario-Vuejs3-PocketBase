@@ -26,7 +26,7 @@
               </p>
             </div>
 
-            <div class="w-full sm:w-auto z-10 d-flex gap-2">
+            <div class="w-full sm:w-auto z-10 d-flex gap-2 hidden-sm-and-down" v-if="!mobile">
               <v-btn
                 prepend-icon="mdi-plus-circle"
                 color="success"
@@ -66,6 +66,7 @@
           <v-divider></v-divider>
 
           <v-data-table
+            v-if="!mobile"
             :headers="headers"
             :items="filteredTarjas"
             :loading="tarjasStore.loading"
@@ -141,7 +142,79 @@
               <span v-else class="text-caption text-grey-darken-1">-</span>
             </template>
           </v-data-table>
+          
+          <div v-else>
+            <v-list class="bg-transparent pa-0" lines="three">
+              <template v-if="filteredTarjas.length === 0">
+                <div class="d-flex flex-column align-center pa-4 text-center">
+                  <v-icon size="large" color="grey-lighten-1">mdi-dolly</v-icon>
+                  <span class="text-grey-lighten-1 mt-2">No hay registros de cosecha</span>
+                </div>
+              </template>
+              <template v-for="item in filteredTarjas" :key="item.id">
+                <v-card class="mb-2 mx-2 rounded-lg elevation-1">
+                  <v-list-item>
+                    <template v-slot:prepend>
+                      <v-avatar color="green-lighten-4" size="40">
+                        <v-icon color="green-darken-3">mdi-basket</v-icon>
+                      </v-avatar>
+                    </template>
+                    <v-list-item-title class="font-weight-bold text-subtitle-2">{{ getOperarioNombre(item) }}</v-list-item-title>
+                    <v-list-item-subtitle class="text-caption text-grey-darken-1 d-flex flex-column">
+                      <span>{{ formatFecha(item.fecha) }} &bull; {{ getSiembraNombre(item) }}</span>
+                      <span class="d-flex align-center gap-1 mt-1">
+                        <v-chip
+                          v-if="item._isTemp"
+                          color="amber-darken-2"
+                          variant="tonal"
+                          size="x-small"
+                          prepend-icon="mdi-cloud-off-outline"
+                        >Local</v-chip>
+                        <v-chip
+                          v-else
+                          color="green-darken-3"
+                          variant="tonal"
+                          size="x-small"
+                          prepend-icon="mdi-cloud-check-outline"
+                        >Sync</v-chip>
+                      </span>
+                    </v-list-item-subtitle>
+                    <template v-slot:append>
+                      <div class="d-flex flex-column align-end">
+                        <div class="font-weight-bold text-subtitle-1 text-green-darken-3">
+                          {{ item.cantidad }} {{ item.tipo_unidad }}
+                        </div>
+                        <div v-if="item.cantidad_merma" class="text-caption text-red-darken-3">
+                          -{{ item.cantidad_merma }} merma
+                        </div>
+                        <v-btn
+                          v-if="puedeEliminar(item)"
+                          icon="mdi-delete"
+                          variant="text"
+                          color="red-darken-3"
+                          size="small"
+                          class="mt-1"
+                          @click.stop="eliminarRegistro(item)"
+                        ></v-btn>
+                      </div>
+                    </template>
+                  </v-list-item>
+                </v-card>
+              </template>
+            </v-list>
+          </div>
         </v-card>
+        <v-btn
+          v-if="mobile"
+          color="success"
+          icon="mdi-plus"
+          size="x-large"
+          position="fixed"
+          location="bottom right"
+          class="mb-4 mr-4 elevation-8"
+          style="z-index: 100"
+          @click="abrirRegistroForm"
+        ></v-btn>
       </v-col>
     </v-row>
 
@@ -165,6 +238,7 @@ import RegistroTarjaForm from '@/components/tarjas/RegistroTarjaForm.vue'
 import { logger } from '@/utils/logger'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
+import { useDisplay } from 'vuetify'
 
 // Stores
 const tarjasStore = useTarjasStore()
@@ -172,6 +246,7 @@ const authStore = useAuthStore()
 const siembrasStore = useSiembrasStore()
 const userStore = useUserStore()
 const haciendaStore = useHaciendaStore()
+const { mobile } = useDisplay()
 const { t } = useI18n()
 const { userRole, avatarUrl } = storeToRefs(authStore)
 const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)

@@ -17,7 +17,7 @@
               </p>
             </div>
             
-            <div class="pl-12 pl-sm-0">
+            <div class="pl-12 pl-sm-0 hidden-sm-and-down" v-if="!mobile">
               <v-btn
                 color="teal"
                 variant="flat"
@@ -286,6 +286,18 @@
       :asesor="asesor"
       :vinculacionId="vinculacion?.id"
     />
+
+    <v-btn
+      v-if="mobile"
+      color="teal"
+      icon="mdi-package-variant"
+      size="x-large"
+      position="fixed"
+      location="bottom right"
+      class="mb-4 mr-4 elevation-8"
+      style="z-index: 100"
+      @click="openShareWizard"
+    ></v-btn>
   </v-container>
 </template>
 
@@ -298,7 +310,8 @@ import { useActividadesStore } from '@/stores/actividadesStore'
 import { useProgramacionesStore } from '@/stores/programaciones/programacionesStore'
 import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import { handleError } from '@/utils/errorHandler'
-import EnviarPaqueteWizard from '@/components/forms/asesores/EnviarPaqueteWizard.vue'
+import EnviarPaqueteWizard from '@/components/asesores/EnviarPaqueteWizard.vue'
+import { useDisplay } from 'vuetify'
 
 const route = useRoute()
 const router = useRouter()
@@ -306,6 +319,7 @@ const siembrasStore = useSiembrasStore()
 const actividadesStore = useActividadesStore()
 const programacionesStore = useProgramacionesStore()
 const uiFeedback = useUiFeedbackStore()
+const { mobile } = useDisplay()
 
 const advisorUserId = route.params.asesor_user_id
 
