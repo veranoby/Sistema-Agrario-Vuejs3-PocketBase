@@ -64,6 +64,7 @@ import { ref, computed, watch, onMounted, onBeforeUnmount, defineAsyncComponent 
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useThemeStore } from './stores/themeStore'
+import { usePwaStore } from '@/stores/pwaStore'
 import { useAuthStore } from '@/stores/authStore'
 import { checkProximoActivities } from '@/stores/programaciones'
 import { checkBPACertificados } from '@/stores/bitacoraStore'
@@ -194,6 +195,13 @@ watch(
 )
 
 onMounted(async () => {
+  const pwaStore = usePwaStore()
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault()
+    pwaStore.setDeferredPrompt(e)
+  })
+
   window.addEventListener('openAuthModal', () => {
     showAuthModal.value = true
   })
