@@ -25,3 +25,16 @@ onRecordCreateRequest((e) => {
     
     return res;
 }, "users");
+
+// Implementación de política de sesión única
+onRecordAuthRequest((e) => {
+    const res = e.next();
+    try {
+        // Regenerar el tokenKey invalida automáticamente los JWT anteriores emitidos para este usuario
+        e.record.setTokenKey($security.randomString(50));
+        $app.dao().saveRecord(e.record);
+    } catch (err) {
+        $app.logger().error("Error rotando tokenKey para sesión única: " + err);
+    }
+    return res;
+}, "users");

@@ -216,6 +216,9 @@ export const useActividadesStore = defineStore('actividades', {
         this.activityLookupMap.set(record.id, record)
         // CORRECTO: Sanitizar para IndexedDB
         syncStore.saveToLocalStorage('actividades', JSON.parse(JSON.stringify(this.actividades)));
+        
+        // Invalidar cache de la lista paginada para que la interfaz se refresque sola
+        tieredCache.invalidatePattern('actividades')
 
         if (actividadData.prioridad === 'alta') {
           try {
@@ -302,6 +305,7 @@ export const useActividadesStore = defineStore('actividades', {
         this.activityLookupMap.set(id, record)
         // CORRECTO: Sanitizar para IndexedDB
         syncStore.saveToLocalStorage('actividades', JSON.parse(JSON.stringify(this.actividades)));
+        tieredCache.invalidatePattern('actividades')
         return record
       } catch (error) {
         handleError(error, 'Error al actualizar actividad')
@@ -350,6 +354,7 @@ export const useActividadesStore = defineStore('actividades', {
         if (this.activityLookupMap instanceof Map) this.activityLookupMap.delete(id)
         // CORRECTO: Sanitizar para IndexedDB
         syncStore.saveToLocalStorage('actividades', JSON.parse(JSON.stringify(this.actividades)));
+        tieredCache.invalidatePattern('actividades')
         return true
       } catch (error) {
         handleError(error, 'Error al eliminar actividad')

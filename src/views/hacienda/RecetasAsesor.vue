@@ -310,7 +310,7 @@ import { useActividadesStore } from '@/stores/actividadesStore'
 import { useProgramacionesStore } from '@/stores/programaciones/programacionesStore'
 import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import { handleError } from '@/utils/errorHandler'
-import EnviarPaqueteWizard from '@/components/asesores/EnviarPaqueteWizard.vue'
+import EnviarPaqueteWizard from '@/components/forms/asesores/EnviarPaqueteWizard.vue'
 import { useDisplay } from 'vuetify'
 
 const route = useRoute()

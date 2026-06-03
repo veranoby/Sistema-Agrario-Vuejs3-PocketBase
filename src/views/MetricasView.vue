@@ -4,7 +4,7 @@
           <header role="banner" class="bg-background shadow-sm">
         <div class="profile-container">
           <h3 class="profile-title" id="dashboard-welcome-title">
-            Hub de Inteligencia y Métricas
+            HUB DE INTELIGENCIA Y METRICAS
             <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
               <v-avatar start> <v-img :src="avatarUrl" alt="Avatar del usuario"></v-img> </v-avatar>
               {{ t('roles.' + userRole) }}

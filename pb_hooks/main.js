@@ -633,6 +633,49 @@ routerAdd("POST", "/api/admin/users/:id/reset-password", (e) => {
 }, $apis.requireAuth())
 
 // ============================================
+// POST /api/admin/users/:id/disconnect
+// ============================================
+routerAdd("POST", "/api/admin/users/:id/disconnect", (e) => {
+  const info = e.requestInfo()
+  const userId = info.pathParam("id")
+  const caller = info.authRecord
+
+  if (!caller || caller.get("role") !== "superadmin") {
+    return e.json(HTTP_STATUS.UNAUTHORIZED, { error: "Solo un superadmin puede desconectar usuarios." })
+  }
+
+  if (!userId) {
+    return e.json(HTTP_STATUS.BAD_REQUEST, { error: "userId required" })
+  }
+
+  try {
+    const usersCollection = $app.dao().findCollectionByNameOrId("users")
+    const user = $app.dao().findFirstRecordByFilter(
+      usersCollection,
+      $app.dao().filter("id = {:id}", { id: userId })
+    )
+
+    if (!user) {
+      return e.json(404, { error: "User not found" })
+    }
+
+    user.setTokenKey($security.randomString(50))
+    $app.dao().saveRecord(user)
+
+    return e.json(HTTP_STATUS.OK, {
+      success: true,
+      message: "Usuario desconectado exitosamente"
+    })
+  } catch (err) {
+    console.error("Error disconnecting user:", err.message)
+    return e.json(HTTP_STATUS.SERVER_ERROR, {
+      error: "Failed to disconnect user",
+      details: err.message
+    })
+  }
+}, $apis.requireAuth())
+
+// ============================================
 // POST /api/admin/users/:id/haciendas
 // ============================================
 routerAdd("POST", "/api/admin/users/:id/haciendas", (e) => {

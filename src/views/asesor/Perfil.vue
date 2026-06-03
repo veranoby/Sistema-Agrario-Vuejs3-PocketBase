@@ -5,8 +5,8 @@
       <v-row class="mb-4">
         <v-col cols="12">
           <div>
-            <h1 class="text-h4 font-weight-bold text-teal-darken-3 mb-1">
-              <v-icon icon="mdi-account-circle" color="teal" size="36" class="mr-2"></v-icon>
+            <h1 class="text-h4 font-weight-bold text-indigo-darken-3 mb-1">
+              <v-icon icon="mdi-account-circle" color="indigo" size="36" class="mr-2"></v-icon>
               Mi Perfil Profesional
             </h1>
             <p class="text-subtitle-1 text-grey-darken-1">
@@ -20,7 +20,7 @@
         <!-- Form Column -->
         <v-col cols="12" md="8">
           <v-card class="elevation-3 rounded-xl border border-grey-lighten-3 pa-6">
-            <v-card-title class="pa-0 mb-4 text-h6 font-weight-bold text-teal-darken-4">
+            <v-card-title class="pa-0 mb-4 text-h6 font-weight-bold text-indigo-darken-4">
               Datos del Asesor Técnico
             </v-card-title>
             
@@ -33,7 +33,7 @@
                     label="Nombre"
                     variant="outlined"
                     density="compact"
-                    color="teal"
+                    color="indigo"
                     disabled
                   ></v-text-field>
                 </v-col>
@@ -43,7 +43,7 @@
                     label="Apellido"
                     variant="outlined"
                     density="compact"
-                    color="teal"
+                    color="indigo"
                     disabled
                   ></v-text-field>
                 </v-col>
@@ -55,7 +55,7 @@
                     label="Correo Electrónico"
                     variant="outlined"
                     density="compact"
-                    color="teal"
+                    color="indigo"
                     disabled
                   ></v-text-field>
                 </v-col>
@@ -65,7 +65,7 @@
                     label="Número de Colegiatura (SENESCYT / Colegiado)"
                     variant="outlined"
                     density="compact"
-                    color="teal"
+                    color="indigo"
                     disabled
                     prepend-inner-icon="mdi-certificate"
                   ></v-text-field>
@@ -82,7 +82,7 @@
                     chips
                     variant="outlined"
                     density="compact"
-                    color="teal"
+                    color="indigo"
                     :rules="[v => v.length > 0 || 'Debes seleccionar al menos una especialidad']"
                     required
                   ></v-select>
@@ -99,7 +99,7 @@
                     chips
                     variant="outlined"
                     density="compact"
-                    color="teal"
+                    color="indigo"
                     :rules="[v => v.length > 0 || 'Debes seleccionar al menos una provincia de cobertura']"
                     required
                   ></v-select>
@@ -111,7 +111,7 @@
                     label="Cédula o RUC (Opcional)"
                     variant="outlined"
                     density="compact"
-                    color="teal"
+                    color="indigo"
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12" sm="6">
@@ -120,7 +120,7 @@
                     label="Dirección Física"
                     variant="outlined"
                     density="compact"
-                    color="teal"
+                    color="indigo"
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12" sm="6">
@@ -129,7 +129,7 @@
                     label="Ciudad"
                     variant="outlined"
                     density="compact"
-                    color="teal"
+                    color="indigo"
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12" sm="6">
@@ -138,7 +138,7 @@
                     label="País"
                     variant="outlined"
                     density="compact"
-                    color="teal"
+                    color="indigo"
                   ></v-text-field>
                 </v-col>
 
@@ -161,7 +161,7 @@
               <div class="d-flex justify-end">
                 <v-btn
                   type="submit"
-                  color="teal"
+                  color="indigo"
                   variant="flat"
                   class="font-weight-bold text-white rounded-lg px-6"
                   prepend-icon="mdi-content-save"
@@ -177,7 +177,7 @@
         <!-- Preview Column -->
         <v-col cols="12" md="4">
           <v-card class="elevation-3 rounded-xl border border-grey-lighten-3 pa-6 h-100">
-            <v-card-title class="pa-0 mb-4 text-h6 font-weight-bold text-teal-darken-4">
+            <v-card-title class="pa-0 mb-4 text-h6 font-weight-bold text-indigo-darken-4">
               Vista Previa en Directorio
             </v-card-title>
             
@@ -187,17 +187,24 @@
 
             <!-- Card Preview Model -->
             <v-card class="elevation-4 rounded-lg overflow-hidden border border-grey-lighten-2 w-100">
-              <div class="bg-gradient-teal py-4 px-4 text-white d-flex align-center gap-3">
-                <v-avatar size="56" class="border border-white border-2 elevation-2">
-                  <div class="d-flex align-center justify-center bg-teal-darken-1 text-h6 font-weight-bold fill-height text-white w-100 h-100">
+              <div class="bg-gradient-indigo py-4 px-4 text-white d-flex align-center gap-3">
+                <v-avatar size="56" class="border border-white border-2 elevation-2 position-relative hover-avatar" @click="triggerAvatarUpload">
+                  <v-img v-if="authStore.user?.avatar" :src="avatarUrl"></v-img>
+                  <div v-else class="d-flex align-center justify-center bg-indigo-darken-1 text-h6 font-weight-bold fill-height text-white w-100 h-100">
                     {{ initials }}
                   </div>
+                  <div class="avatar-overlay d-flex align-center justify-center text-center">
+                    <v-icon color="white" size="24">mdi-camera</v-icon>
+                  </div>
                 </v-avatar>
+                <!-- Input oculto para cambiar imagen de perfil -->
+                <input ref="avatarInput" type="file" class="d-none" accept="image/*" @change="onAvatarChange">
+
                 <div class="overflow-hidden">
                   <h3 class="text-subtitle-1 font-weight-bold text-truncate mb-0">
                     {{ name }} {{ lastname }}
                   </h3>
-                  <span class="text-caption text-teal-lighten-5 d-block">
+                  <span class="text-caption text-indigo-lighten-5 d-block">
                     Reg: {{ numeroColegiatura || 'N/A' }}
                   </span>
                 </div>
@@ -212,7 +219,7 @@
                       v-for="(spec, idx) in limitItems(selectedEspecialidades, 3)"
                       :key="spec"
                       size="x-small"
-                      color="teal-darken-1"
+                      color="indigo-darken-1"
                       variant="flat"
                       class="font-weight-medium text-white"
                     >
@@ -221,9 +228,9 @@
                     <v-chip
                       v-if="selectedEspecialidades.length > 3"
                       size="x-small"
-                      color="teal-lighten-4"
+                      color="indigo-lighten-4"
                       variant="flat"
-                      class="font-weight-bold text-teal-darken-3"
+                      class="font-weight-bold text-indigo-darken-3"
                     >
                       +{{ selectedEspecialidades.length - 3 }}
                     </v-chip>
@@ -318,11 +325,15 @@
                     size="small"
                     prepend-icon="mdi-credit-card-outline"
                     @click="openSubscriptionDialog"
-                    class="text-none mb-2"
+                    class="text-none mb-2 w-100"
                   >
                     Suscribirse ($5/mes)
                   </v-btn>
                   
+                  <v-alert v-else type="info" density="compact" variant="tonal" class="text-caption mt-2 mb-2">
+                    Tienes una solicitud de pago pendiente de revisión.
+                  </v-alert>
+
                   <v-btn
                     color="info"
                     variant="tonal"
@@ -333,10 +344,6 @@
                   >
                     Ver Historial de Solicitudes
                   </v-btn>
-                  
-                  <v-alert v-else type="info" density="compact" variant="tonal" class="text-caption mt-2">
-                    Tienes una solicitud de pago pendiente de revisión.
-                  </v-alert>
                 </div>
               </v-card-text>
             </v-card>
@@ -348,7 +355,7 @@
     <!-- Modal Suscripción -->
     <v-dialog v-model="subscriptionDialog" max-width="600">
       <v-card class="rounded-xl">
-        <v-card-title class="bg-teal-darken-3 text-white px-4 py-3 d-flex align-center">
+        <v-card-title class="bg-indigo-darken-3 text-white px-4 py-3 d-flex align-center">
           <v-icon start>mdi-account-hard-hat</v-icon>
           Activar Entorno Profesional
           <v-spacer></v-spacer>
@@ -371,9 +378,9 @@
               </div>
             </v-col>
             <v-col cols="12" sm="6">
-              <div class="bg-teal-lighten-5 pa-3 rounded-lg border border-teal-lighten-3 h-100">
-                <div class="text-caption text-teal-darken-2 font-weight-bold mb-1">Período de Activación (Estimado)</div>
-                <div class="text-body-2 text-teal-darken-4 font-weight-medium">
+              <div class="bg-indigo-lighten-5 pa-3 rounded-lg border border-indigo-lighten-3 h-100">
+                <div class="text-caption text-indigo-darken-2 font-weight-bold mb-1">Período de Activación (Estimado)</div>
+                <div class="text-body-2 text-indigo-darken-4 font-weight-medium">
                   {{ new Date().toLocaleDateString() }} - {{ new Date(Date.now() + 30*24*60*60*1000).toLocaleDateString() }}
                 </div>
               </div>
@@ -382,12 +389,12 @@
 
           <v-divider class="my-4"></v-divider>
 
-          <h3 class="text-subtitle-1 font-weight-bold text-teal-darken-4 mb-2">Instrucciones Bancarias</h3>
+          <h3 class="text-subtitle-1 font-weight-bold text-indigo-darken-4 mb-2">Instrucciones Bancarias</h3>
           <p class="text-body-2 text-grey-darken-2 mb-4">
             Para desbloquear tu portafolio y aparecer en el directorio de búsqueda, realiza el pago mensual de $5 USD y sube el comprobante.
           </p>
           
-          <v-card variant="outlined" class="rounded-lg border-teal pa-4 bg-teal-lighten-5 mb-6 text-teal-darken-4">
+          <v-card variant="outlined" class="rounded-lg border-indigo pa-4 bg-indigo-lighten-5 mb-6 text-indigo-darken-4">
             <v-row dense>
               <v-col cols="12" sm="6" class="py-1">
                 <strong>Banco:</strong> Banco Pichincha
@@ -418,7 +425,7 @@
             density="comfortable"
             prepend-inner-icon="mdi-receipt"
             prepend-icon=""
-            color="teal"
+            color="indigo"
             :rules="[v => !!v || 'Debe adjuntar un comprobante']"
           ></v-file-input>
         </v-card-text>
@@ -426,7 +433,7 @@
         <v-card-actions class="px-6 pb-6 bg-grey-lighten-5">
           <v-spacer></v-spacer>
           <v-btn variant="text" color="grey-darken-1" @click="subscriptionDialog = false">Cancelar</v-btn>
-          <v-btn variant="flat" color="teal" :loading="submittingSub" @click="submitSubscription" :disabled="!comprobanteFile">Enviar Comprobante</v-btn>
+          <v-btn variant="flat" color="indigo" :loading="submittingSub" @click="submitSubscription" :disabled="!comprobanteFile">Enviar Comprobante</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -473,10 +480,12 @@ import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
 import { pb } from '@/utils/pocketbase'
 import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
+import { useAvatarStore } from '@/stores/avatarStore'
 import { handleError } from '@/utils/errorHandler'
 
 const authStore = useAuthStore()
 const uiFeedback = useUiFeedbackStore()
+const avatarStore = useAvatarStore()
 
 const formValid = ref(false)
 const loading = ref(false)
@@ -517,6 +526,33 @@ const initials = computed(() => {
   const last = lastname.value ? lastname.value[0] : ''
   return (first + last).toUpperCase()
 })
+
+const avatarUrl = computed(() => {
+  return avatarStore.getAvatarUrl(authStore.user, authStore.user?.collectionId)
+})
+
+const avatarInput = ref(null)
+
+const triggerAvatarUpload = () => {
+  avatarInput.value.click()
+}
+
+const onAvatarChange = async (e) => {
+  const file = e.target.files[0]
+  if (!file) return
+  
+  try {
+    uiFeedback.showLoading()
+    const updatedUser = await avatarStore.saveAvatar('users', authStore.user.id, file)
+    authStore.user = updatedUser
+    uiFeedback.showSnackbar('Foto de perfil actualizada exitosamente', 'success')
+  } catch (error) {
+    handleError(error, 'Error al actualizar la foto de perfil')
+  } finally {
+    uiFeedback.hideLoading()
+    e.target.value = '' // reset
+  }
+}
 
 onMounted(async () => {
   name.value = authStore.user?.name || ''
@@ -654,8 +690,8 @@ const saveProfile = async () => {
 </script>
 
 <style scoped>
-.bg-gradient-teal {
-  background: linear-gradient(135deg, #00796B 0%, #004D40 100%);
+.bg-gradient-indigo {
+  background: linear-gradient(135deg, #3949AB 0%, #1A237E 100%);
 }
 .italic-bio {
   font-style: italic;
@@ -670,5 +706,23 @@ const saveProfile = async () => {
 }
 .border-2 {
   border-width: 2px !important;
+}
+.hover-avatar {
+  cursor: pointer;
+  overflow: hidden;
+}
+.avatar-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 10;
+}
+.hover-avatar:hover .avatar-overlay {
+  opacity: 1;
 }
 </style>

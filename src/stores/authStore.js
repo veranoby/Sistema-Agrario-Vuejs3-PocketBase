@@ -669,7 +669,7 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    async logout() {
+    async logout(silent = false) {
       const uiFeedbackStore = useUiFeedbackStore()
 
 
@@ -695,7 +695,9 @@ export const useAuthStore = defineStore('auth', {
         logger.auth('Cleared remembered user credentials during logout.')
         localStorage.removeItem('last_auth_success')
 
-        uiFeedbackStore.showSnackbar('Logged out successfully', 'success')
+        if (!silent) {
+          uiFeedbackStore.showSnackbar('Logged out successfully', 'success')
+        }
       } catch (error) {
         handleError(error, 'Error al cerrar sesión')
         uiFeedbackStore.showSnackbar('Error al cerrar sesión', 'error')

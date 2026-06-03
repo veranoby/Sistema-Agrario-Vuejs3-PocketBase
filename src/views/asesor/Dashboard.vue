@@ -1,8 +1,8 @@
 <template>
-  <v-container fluid class="px-6 py-6 fill-height align-start">
+  <v-container fluid class="pa-2 fill-height align-start">
     <!-- Subscription Checking Loader -->
     <div v-if="checkingSubscription" class="w-100 d-flex justify-center align-center py-12">
-      <v-progress-circular indeterminate color="teal" size="64" width="6"></v-progress-circular>
+      <v-progress-circular indeterminate color="indigo" size="64" width="6"></v-progress-circular>
     </div>
 
     <!-- Payment Required Overlay (Subscription Inactive) -->
@@ -17,13 +17,13 @@
         </div>
 
         <v-card-text class="pa-6">
-          <h3 class="text-h6 font-weight-bold text-teal-darken-3 mb-4">Instrucciones de Pago</h3>
+          <h3 class="text-h6 font-weight-bold text-indigo-darken-3 mb-4">Instrucciones de Pago</h3>
           
           <p class="text-body-1 text-grey-darken-3 mb-4">
             Para activar tu perfil y aparecer en el directorio visible para todas las haciendas asociadas de ConAgri, realiza el depósito o transferencia bancaria mensual:
           </p>
 
-          <v-card variant="outlined" class="rounded-lg border-teal pa-4 bg-teal-lighten-5 mb-6 text-teal-darken-4">
+          <v-card variant="outlined" class="rounded-lg border-indigo pa-4 bg-indigo-lighten-5 mb-6 text-indigo-darken-4">
             <v-row>
               <v-col cols="12" sm="6" class="py-1">
                 <strong>Banco:</strong> Banco Pichincha
@@ -54,7 +54,7 @@
               Envía el comprobante digital de pago a <strong>pagos@conagri.com</strong> o súbelo directamente en tu perfil para agilizar el proceso. El equipo administrativo validará tu transacción y activará tu cuenta en un lapso menor a 2 horas.
             </p>
             <v-btn
-              color="teal-darken-2"
+              color="indigo-darken-2"
               variant="flat"
               class="font-weight-bold text-white rounded-lg px-6"
               prepend-icon="mdi-account-circle"
@@ -85,32 +85,37 @@
     </div>
 
     <!-- Active Subscription Dashboard -->
-    <div v-else class="w-100">
+    <div v-else class="w-100 d-flex flex-column gap-4">
       <!-- Header -->
-      <v-row class="mb-4">
-        <v-col cols="12">
-          <div class="d-flex align-center justify-space-between flex-wrap gap-4">
-            <div>
-              <h1 class="text-h4 font-weight-bold text-teal-darken-3 mb-1">
-                Panel de Control de Asesoría
-              </h1>
-              <p class="text-subtitle-1 text-grey-darken-1">
-                Bienvenido, Dr. {{ authStore.user?.name }} {{ authStore.user?.lastname }}. Gestiona tus haciendas vinculadas y emite recetas técnicas fitosanitarias.
-              </p>
+      <header class="w-100 bg-background shadow-sm p-0 mb-4">
+        <div class="profile-container mt-0 ml-0">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div class="w-full sm:flex-grow">
+              <h3 class="profile-title text-sm sm:text-lg mb-2 sm:mb-0">
+                Dashboard de Asesoría
+                <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
+                  <v-avatar start>
+                    <v-img :src="avatarUrl" alt="Avatar"></v-img>
+                  </v-avatar>
+                  {{ userRole }}
+                </v-chip>
+                <v-chip color="indigo-darken-2" variant="flat" size="small" class="text-white mx-1" pill>
+                  <v-icon start icon="mdi-shield-check" class="mr-1"></v-icon>
+                  Profesional Certificado
+                </v-chip>
+              </h3>
             </div>
-            
-            <v-chip color="teal-darken-2" variant="flat" class="text-white font-weight-bold px-4 py-2">
-              <v-icon start icon="mdi-shield-check" class="mr-1"></v-icon>
-              Profesional Agrícola Certificado
-            </v-chip>
           </div>
-        </v-col>
-      </v-row>
+          <div class="avatar-container">
+            <img :src="avatarUrl" alt="Avatar" class="avatar-image" />
+          </div>
+        </div>
+      </header>
 
       <!-- Metricas -->
-      <v-row class="mb-6">
+      <v-row class="mb-6 mt-0">
         <v-col cols="12" sm="4">
-          <v-card class="elevation-3 hover-card rounded-xl bg-gradient-teal text-white">
+          <v-card class="elevation-3 hover-card rounded-xl bg-gradient-indigo text-white">
             <v-card-text class="d-flex align-center justify-space-between pa-6">
               <div>
                 <span class="text-subtitle-1 opacity-90 font-weight-medium">Mis Haciendas Activas</span>
@@ -151,7 +156,7 @@
           <v-card class="elevation-3 rounded-xl h-100 border border-grey-lighten-3">
             <v-card-title class="bg-grey-lighten-4 py-4 px-6 d-flex align-center justify-space-between">
               <span class="text-h6 font-weight-bold text-grey-darken-3">Últimos Paquetes Recibidos</span>
-              <v-btn size="small" variant="text" color="teal" class="font-weight-bold" @click="router.push('/asesor/haciendas')">
+              <v-btn size="small" variant="text" color="indigo" class="font-weight-bold" @click="router.push('/asesor/haciendas')">
                 Ver Todas
               </v-btn>
             </v-card-title>
@@ -164,7 +169,7 @@
                         <v-icon icon="mdi-package-variant" color="orange-darken-2"></v-icon>
                       </v-avatar>
                     </template>
-                    <v-list-item-title class="font-weight-bold text-teal-darken-4 text-subtitle-1">
+                    <v-list-item-title class="font-weight-bold text-indigo-darken-4 text-subtitle-1">
                       {{ pkg.haciendaNombre }}
                     </v-list-item-title>
                     <v-list-item-subtitle class="text-body-2 mt-1">
@@ -172,7 +177,7 @@
                     </v-list-item-subtitle>
                     <template v-slot:append>
                       <div class="text-right">
-                        <v-chip size="x-small" :color="pkg.estado === 'enviado' ? 'orange' : 'teal'" class="text-white font-weight-bold mb-1">
+                        <v-chip size="x-small" :color="pkg.estado === 'enviado' ? 'orange' : 'indigo'" class="text-white font-weight-bold mb-1">
                           {{ pkg.estado === 'enviado' ? 'Nuevo' : 'Revisado' }}
                         </v-chip>
                         <span class="text-caption text-grey d-block">{{ formatDate(pkg.created) }}</span>
@@ -201,8 +206,8 @@
                 <template v-for="(receta, idx) in recentPrescriptions" :key="receta.id">
                   <v-list-item class="py-4 px-6 hover-list" @click="goToHacienda(receta.haciendaId)">
                     <template v-slot:prepend>
-                      <v-avatar color="teal-lighten-5" class="mr-3">
-                        <v-icon icon="mdi-file-document-edit" color="teal-darken-2"></v-icon>
+                      <v-avatar color="indigo-lighten-5" class="mr-3">
+                        <v-icon icon="mdi-file-document-edit" color="indigo-darken-2"></v-icon>
                       </v-avatar>
                     </template>
                     <v-list-item-title class="font-weight-bold text-grey-darken-4 text-subtitle-1">
@@ -236,7 +241,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { pb } from '@/utils/pocketbase'
@@ -254,6 +259,13 @@ const draftPrescriptionsCount = ref(0)
 
 const recentPackages = ref([])
 const recentPrescriptions = ref([])
+
+const userRole = computed(() => {
+  return authStore.user?.role === 'asesor' ? 'Asesor Técnico' : 'Superadmin'
+})
+const avatarUrl = computed(() => {
+  return authStore.avatarUrl || 'https://ui-avatars.com/api/?name=Asesor&background=E8EAF6&color=3F51B5'
+})
 
 onMounted(async () => {
   try {
@@ -378,8 +390,8 @@ const getRecipeStatusLabel = (state) => {
 </script>
 
 <style scoped>
-.bg-gradient-teal {
-  background: linear-gradient(135deg, #00796B 0%, #004D40 100%);
+.bg-gradient-indigo {
+  background: linear-gradient(135deg, #3949AB 0%, #1A237E 100%);
 }
 .bg-gradient-orange {
   background: linear-gradient(135deg, #E65100 0%, #FF9800 100%);

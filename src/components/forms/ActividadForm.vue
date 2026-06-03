@@ -1,5 +1,6 @@
 <template>
   <v-dialog
+    :retain-focus="false"
     v-model="dialogVisible"
     persistent
     transition="dialog-bottom-transition"

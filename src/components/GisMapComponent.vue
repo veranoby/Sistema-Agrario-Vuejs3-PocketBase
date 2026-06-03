@@ -152,14 +152,14 @@ export default defineComponent({
           map.getPane('haciendaPane').style.pointerEvents = 'none';
         }
 
-        // Un círculo geográfico fijo de 15 metros.
+        // Un círculo geográfico fijo de 4 metros (reducido a la cuarta parte).
         centerCircleMarker = L.circle(coords, {
           pane: 'haciendaPane',
           color: '#ffffff',
           weight: 3,
           fillColor: HACIENDA_CENTER_COLOR,
           fillOpacity: 1,
-          radius: 15
+          radius: 4
         }).addTo(map);
         
         const popupContent = props.haciendaName 

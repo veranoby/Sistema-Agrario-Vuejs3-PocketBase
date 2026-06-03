@@ -2,23 +2,30 @@
   <v-container fluid class="px-6 py-6 fill-height align-start">
     <div class="w-100">
       <!-- Header -->
-      <v-row class="mb-4">
-        <v-col cols="12">
-          <div>
-            <h1 class="text-h4 font-weight-bold text-teal-darken-3 mb-1">
-              <v-icon icon="mdi-barn" color="teal" size="36" class="mr-2"></v-icon>
-              Mis Haciendas Vinculadas
-            </h1>
-            <p class="text-subtitle-1 text-grey-darken-1">
-              Aquí puedes ver y gestionar las haciendas que te han concedido acceso a sus registros de siembra.
-            </p>
+      <header class="w-100 bg-background shadow-sm p-0 mb-4">
+        <div class="profile-container mt-0 ml-0">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div class="w-full sm:flex-grow">
+              <h3 class="profile-title text-sm sm:text-lg mb-2 sm:mb-0">
+                Mis Haciendas Vinculadas
+                <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
+                  <v-avatar start>
+                    <v-img :src="avatarUrl" alt="Avatar"></v-img>
+                  </v-avatar>
+                  {{ userRole }}
+                </v-chip>
+              </h3>
+            </div>
           </div>
-        </v-col>
-      </v-row>
+          <div class="avatar-container">
+            <img :src="avatarUrl" alt="Avatar" class="avatar-image" />
+          </div>
+        </div>
+      </header>
 
       <!-- Cargando / Sin Resultados -->
       <div v-if="loading" class="d-flex justify-center align-center py-12">
-        <v-progress-circular indeterminate color="teal" size="64" width="6"></v-progress-circular>
+        <v-progress-circular indeterminate color="indigo" size="64" width="6"></v-progress-circular>
       </div>
 
       <div v-else-if="haciendas.length === 0" class="text-center py-12">
@@ -40,12 +47,12 @@
         >
           <v-card class="h-100 d-flex flex-column elevation-3 hover-card rounded-lg overflow-hidden border border-grey-lighten-3">
             <!-- Header Card Gradient -->
-            <div class="bg-gradient-teal py-4 px-5 text-white d-flex align-center justify-space-between position-relative">
+            <div class="bg-gradient-indigo py-4 px-5 text-white d-flex align-center justify-space-between position-relative">
               <div>
                 <h3 class="text-h6 font-weight-bold text-truncate mb-0">
                   {{ hacienda.nombre }}
                 </h3>
-                <span class="text-caption text-teal-lighten-4 d-block">
+                <span class="text-caption text-indigo-lighten-4 d-block">
                   Ubicación: {{ hacienda.provincia || 'Ecuador' }}
                 </span>
               </div>
@@ -62,7 +69,7 @@
             <!-- Body Card -->
             <v-card-text class="flex-grow-1 pt-4 pb-2">
               <div class="d-flex align-center mb-3">
-                <v-icon icon="mdi-account" color="teal" class="mr-2"></v-icon>
+                <v-icon icon="mdi-account" color="indigo" class="mr-2"></v-icon>
                 <div>
                   <span class="text-caption text-grey d-block">Propietario / Administrador</span>
                   <span class="text-body-2 font-weight-medium">{{ hacienda.ownerName || 'N/A' }}</span>
@@ -70,7 +77,7 @@
               </div>
 
               <div class="d-flex align-center mb-3">
-                <v-icon icon="mdi-email" color="teal" class="mr-2"></v-icon>
+                <v-icon icon="mdi-email" color="indigo" class="mr-2"></v-icon>
                 <div>
                   <span class="text-caption text-grey d-block">Email de Contacto</span>
                   <span class="text-body-2">{{ hacienda.ownerEmail || 'N/A' }}</span>
@@ -78,7 +85,7 @@
               </div>
 
               <div class="d-flex align-center mb-3" v-if="hacienda.superficie">
-                <v-icon icon="mdi-texture" color="teal" class="mr-2"></v-icon>
+                <v-icon icon="mdi-texture" color="indigo" class="mr-2"></v-icon>
                 <div>
                   <span class="text-caption text-grey d-block">Superficie Total</span>
                   <span class="text-body-2">{{ hacienda.superficie }} Hectáreas</span>
@@ -87,7 +94,7 @@
 
               <div class="mt-4 pt-2 border-t border-grey-lighten-4 d-flex justify-space-between align-center">
                 <span class="text-caption font-weight-bold text-grey-darken-1">Paquetes Compartidos:</span>
-                <v-chip size="small" color="teal-lighten-4" class="text-teal-darken-4 font-weight-bold">
+                <v-chip size="small" color="indigo-lighten-4" class="text-indigo-darken-4 font-weight-bold">
                   {{ hacienda.totalPackages }} en total
                 </v-chip>
               </div>
@@ -98,7 +105,7 @@
             <v-card-actions class="px-5 py-3 bg-grey-lighten-5">
               <v-btn
                 block
-                color="teal"
+                color="indigo"
                 variant="flat"
                 class="font-weight-bold text-white"
                 prepend-icon="mdi-eye"
@@ -115,7 +122,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { pb } from '@/utils/pocketbase'
@@ -126,6 +133,13 @@ const authStore = useAuthStore()
 
 const loading = ref(false)
 const haciendas = ref([])
+
+const userRole = computed(() => {
+  return authStore.user?.role === 'asesor' ? 'Asesor Técnico' : 'Superadmin'
+})
+const avatarUrl = computed(() => {
+  return authStore.avatarUrl || 'https://ui-avatars.com/api/?name=Asesor&background=E8EAF6&color=3F51B5'
+})
 
 onMounted(async () => {
   loading.value = true
@@ -190,14 +204,14 @@ const goToHacienda = (hacienda) => {
 </script>
 
 <style scoped>
-.bg-gradient-teal {
-  background: linear-gradient(135deg, #00796B 0%, #004D40 100%);
+.bg-gradient-indigo {
+  background: linear-gradient(135deg, #3949AB 0%, #1A237E 100%);
 }
 .hover-card {
   transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 .hover-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 10px 20px rgba(0, 77, 64, 0.15) !important;
+  box-shadow: 0 10px 20px rgba(26, 35, 126, 0.15) !important;
 }
 </style>

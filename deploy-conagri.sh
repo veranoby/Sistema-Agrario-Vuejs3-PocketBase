@@ -96,7 +96,12 @@ if [ "$DRY_RUN" = false ]; then
     -e "ssh -i $SSH_KEY -o StrictHostKeyChecking=no" \
     "$LOCAL_ROOT/pocketbase/pb_migrations/" "$PROD_SERVER:$REMOTE_PATH/pocketbase/pb_migrations/"
 
-  # Hooks JS si existen
+  # Hooks JS: Sincronizar desde la raíz al directorio interno de pocketbase primero
+  [ -d "$LOCAL_ROOT/pb_hooks" ] && \
+    echo "[INFO] Sincronizando pb_hooks (raíz) -> pocketbase/pb_hooks/" && \
+    rsync -av --no-compress "$LOCAL_ROOT/pb_hooks/" "$LOCAL_ROOT/pocketbase/pb_hooks/"
+
+  # Luego, desplegar los hooks al servidor
   [ -d "$LOCAL_ROOT/pocketbase/pb_hooks" ] && \
     rsync -av --no-compress \
       -e "ssh -i $SSH_KEY -o StrictHostKeyChecking=no" \

@@ -119,14 +119,21 @@
           <v-btn v-role="'USERS_MANAGE'" icon="mdi-pencil" size="small" variant="text" @click="editUser(item)" />
           <v-btn
             v-role="'USERS_MANAGE'"
+            icon="mdi-account-off-outline"
+            size="small"
+            variant="text"
+            color="warning"
+            title="Desconectar usuario"
+            @click="disconnectUser(item)"
+          />
+          <v-btn
+            v-role="'USERS_MANAGE'"
             icon="mdi-delete"
             size="small"
             variant="text"
             color="error"
             @click="confirmDelete(item)"
           />
-
-
         </template>
 
         <!-- No Data -->
@@ -254,6 +261,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
 import { exportUsersToMarkdown } from '@/utils/exporters/markdownExporter'
 import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
@@ -476,6 +484,21 @@ async function deleteUser() {
     await fetchUsers()
   } catch (error) {
     handleError(error, 'Error al eliminar usuario')
+  } finally {
+    loading.value = false
+  }
+}
+
+// Desconectar usuario
+async function disconnectUser(user) {
+  loading.value = true
+  try {
+    await pb.send(`/api/admin/users/${user.id}/disconnect`, {
+      method: 'POST'
+    })
+    showSnackbar(`Sesión desconectada para ${user.email}`, 'success')
+  } catch (error) {
+    handleError(error, 'Error al desconectar usuario')
   } finally {
     loading.value = false
   }

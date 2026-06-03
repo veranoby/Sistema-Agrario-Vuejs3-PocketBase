@@ -48,7 +48,7 @@ export class PermissionError extends AgriError {
 
 const POCKETBASE_ERROR_MAP = {
   400: 'Los datos enviados no son válidos',
-  401: 'Tu sesión ha expirado. Inicia sesión nuevamente',
+  401: 'Sesión terminada. Es posible que se haya iniciado sesión en otro dispositivo.',
   403: 'No tienes permisos para realizar esta acción',
   404: 'El recurso solicitado no fue encontrado',
   409: 'El registro ya existe o hay un conflicto',
@@ -119,7 +119,16 @@ export function handleError(error, customMessage = null, options = { silent: fal
 function mapPocketBaseError(error, friendlyMessage) {
   const status = error.status
 
-  if (status === 401) return new AuthError(friendlyMessage, status)
+  if (status === 401) {
+    // Forzar cierre de sesión real cuando el JWT es inválido (ej. single-session policy)
+    import('@/stores/authStore').then(({ useAuthStore }) => {
+      const authStore = useAuthStore()
+      authStore.logout(true)
+    }).catch(() => {})
+    
+    return new AuthError(friendlyMessage, status)
+  }
+  
   if (status === 403) return new PermissionError(friendlyMessage)
   if (status === 400) return new ValidationError(friendlyMessage, extractValidationFields(error))
   return new AgriError(friendlyMessage, `PB_${status}`, { statusCode: status })
