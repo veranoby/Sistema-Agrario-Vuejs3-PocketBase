@@ -19,6 +19,7 @@
     "@vuelidate/core": "^2.0.3",
     "@vuelidate/validators": "^2.0.4",
     "@vueup/vue-quill": "^1.2.0",
+    "browser-image-compression": "^2.0.2",
     "chart.js": "^4.5.1",
     "date-fns": "^4.1.0",
     "jspdf": "^4.0.0",

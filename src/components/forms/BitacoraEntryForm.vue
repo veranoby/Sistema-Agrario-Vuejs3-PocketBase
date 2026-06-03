@@ -34,7 +34,7 @@
               <h4>Datos de la Entrada</h4>
             </div>
             
-            <div class="ml-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="ml-8 grid grid-cols-1 gap-4">
               <v-text-field
                 v-model="formData.fecha_ejecucion"
                 label="Fecha y Hora de Ejecución"
@@ -67,7 +67,7 @@
                 variant="outlined"
                 density="compact"
                 prepend-inner-icon="mdi-hammer-wrench"
-                class="rounded-lg md:col-span-2"
+                class="rounded-lg"
                 @update:modelValue="onActividadChange"
                 :disabled="isEditMode || modoOrdenTrabajo"
                 clearable
@@ -89,7 +89,7 @@
                 variant="outlined"
                 density="compact"
                 prepend-inner-icon="mdi-account-group"
-                class="rounded-lg md:col-span-2 mt-2"
+                class="rounded-lg mt-2"
               ></v-autocomplete>
             </div>
           </div>
@@ -205,9 +205,44 @@
               </div>
             </div>
           </div>
+          <!-- SECCIÓN 5: Evidencia Fotográfica -->
+          <div class="bg-dinamico p-4 rounded-xl border border-blue-lighten-4">
+            <div class="flex items-center mb-4">
+              <v-icon color="blue" class="mr-2">mdi-camera</v-icon>
+              <h4 class="font-weight-bold text-blue-darken-3">Fotografía / Evidencia</h4>
+            </div>
+            <div class="ml-8">
+              <v-file-input
+                v-model="formData.fotos"
+                accept="image/*"
+                label="Tomar o adjuntar foto"
+                prepend-icon=""
+                prepend-inner-icon="mdi-camera-plus"
+                variant="outlined"
+                density="compact"
+                multiple
+                chips
+                color="blue"
+                class="rounded-lg mb-2"
+                @change="handleFotosUpload"
+              >
+                <template v-slot:selection="{ fileNames }">
+                  <template v-for="fileName in fileNames" :key="fileName">
+                    <v-chip size="small" color="blue" class="mr-2">
+                      {{ fileName }}
+                    </v-chip>
+                  </template>
+                </template>
+              </v-file-input>
+              <div v-if="isCompressing" class="d-flex align-center mt-2">
+                <v-progress-circular indeterminate size="20" color="blue" class="mr-2"></v-progress-circular>
+                <span class="text-caption text-blue-darken-2">Comprimiendo imágenes para envío rápido...</span>
+              </div>
+            </div>
+          </div>
 
-          <!-- SECCIÓN 5: Firma Digital -->
-          <div v-if="formData.estado_ejecucion === 'completado'" class="mt-2 border-t pt-4">
+          <!-- SECCIÓN 6: Firma Digital -->
+          <div v-if="formData.estado_ejecucion === 'completado'" class="mt-4 border-t pt-4">
             <v-alert
               v-if="haciendaStore.isModuleActive('pdf_bpa') && !formData.signature"
               type="info"
@@ -257,6 +292,7 @@
 
 <script setup>
 import { ref, reactive, onMounted, watch, computed } from 'vue';
+import imageCompression from 'browser-image-compression';
 import { useActividadesStore } from '@/stores/actividadesStore';
 import { useSiembrasStore } from '@/stores/siembrasStore';
 import { useBitacoraStore } from '@/stores/bitacoraStore';
@@ -324,9 +360,44 @@ const defaultFormData = () => ({
   bpa_respuestas: {},
   trabajadores_involucrados: [],
   signature: null,
+  fotos: [],
 });
 
 const formData = reactive(defaultFormData());
+const isCompressing = ref(false);
+
+const handleFotosUpload = async (event) => {
+  const files = event.target?.files || formData.fotos;
+  if (!files || files.length === 0) return;
+  
+  isCompressing.value = true;
+  const compressedFiles = [];
+  
+  const options = {
+    maxSizeMB: 0.5,
+    maxWidthOrHeight: 1280,
+    useWebWorker: true,
+    fileType: 'image/jpeg',
+  };
+
+  try {
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (file.type.startsWith('image/')) {
+        const compressedFile = await imageCompression(file, options);
+        compressedFiles.push(new File([compressedFile], file.name, { type: 'image/jpeg' }));
+      } else {
+        compressedFiles.push(file);
+      }
+    }
+    formData.fotos = compressedFiles;
+  } catch (error) {
+    console.error('Error comprimiendo imágenes:', error);
+    uiFeedbackStore.showSnackbar('Hubo un error al comprimir algunas imágenes.', 'error');
+  } finally {
+    isCompressing.value = false;
+  }
+};
 
 const rules = {
   required: value => (Array.isArray(value) ? value.length > 0 : !!value) || 'Este campo es requerido.',
@@ -652,7 +723,8 @@ async function submitForm() {
       metricas: filteredMetricas,
       bpa_respuestas: formData.bpa_respuestas,
       signature: formData.signature,
-      trabajadores_involucrados: formData.trabajadores_involucrados
+      trabajadores_involucrados: formData.trabajadores_involucrados,
+      fotos: formData.fotos
     };
 
     if (isEditMode.value) {
@@ -719,6 +791,7 @@ async function submitForm() {
 
 function closeDialog() {
   Object.assign(formData, defaultFormData()); // Reset form
+  formData.fotos = [];
   insumosConsumidos.value = [];
   nuevoInsumo.item = null;
   nuevoInsumo.cantidad = null;
