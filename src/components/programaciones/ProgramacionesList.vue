@@ -21,7 +21,7 @@
                 </v-chip>
               </h3>
             </div>
-            <div class="w-full sm:w-auto z-10" v-if="actividadesStore.actividades.length > 0">
+            <div class="w-full sm:w-auto z-10 hidden-sm-and-down" v-if="actividadesStore.actividades.length > 0 && !mobile">
               <v-btn
                 prepend-icon="mdi-plus-circle"
                 color="success"
@@ -132,6 +132,18 @@
       :programacion-actual="programacionEditando"
       @guardado="handleGuardado"
     />
+
+    <v-btn
+      v-if="actividadesStore.actividades.length > 0 && mobile"
+      color="success"
+      icon="mdi-plus"
+      size="x-large"
+      position="fixed"
+      location="bottom right"
+      class="mb-4 mr-4 elevation-8"
+      style="z-index: 100"
+      @click="openNuevaProgramacion"
+    ></v-btn>
   </v-container>
 </template>
 
@@ -148,11 +160,13 @@ import { useHaciendaStore } from '@/stores/haciendaStore'
 import { useAuthStore } from '@/stores/authStore'
 import { storeToRefs } from 'pinia'
 import { useSiembrasStore } from '@/stores/siembrasStore'
+import { useDisplay } from 'vuetify'
 
 const { t } = useI18n()
 const authStore = useAuthStore()
-const haciendaStore = useHaciendaStore()
+const { mobile } = useDisplay()
 const siembrasStore = useSiembrasStore()
+const haciendaStore = useHaciendaStore()
 
 const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
 const userRole = computed(() => authStore.user.role)

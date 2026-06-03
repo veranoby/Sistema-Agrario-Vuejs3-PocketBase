@@ -21,7 +21,7 @@
                 </v-chip>
               </h3>
             </div>
-            <div class="w-full sm:w-auto z-10" v-if="siembrasStore.siembras.length > 0 && canCreate">
+            <div class="w-full sm:w-auto z-10 hidden-sm-and-down" v-if="siembrasStore.siembras.length > 0 && canCreate && !mobile">
               <v-btn
                 prepend-icon="mdi-plus-circle"
                 color="success"
@@ -130,6 +130,18 @@
     </main>
 
     <ActividadForm v-model="dialogNuevaActividad" @actividad-creada="onActividadCreada" />
+
+    <v-btn
+      v-if="siembrasStore.siembras.length > 0 && canCreate && mobile"
+      color="success"
+      icon="mdi-plus"
+      size="x-large"
+      position="fixed"
+      location="bottom right"
+      class="mb-4 mr-4 elevation-8"
+      style="z-index: 100"
+      @click="NuevaActividad"
+    ></v-btn>
   </v-container>
 </template>
 
@@ -148,10 +160,12 @@ import { useZonasStore } from '@/stores/zonasStore'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import ActividadForm from '../forms/ActividadForm.vue'
+import { useDisplay } from 'vuetify'
 
 const { t } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
+const { mobile } = useDisplay()
 const haciendaStore = useHaciendaStore()
 const ActividadesStore = useActividadesStore()
 const zonasStore = useZonasStore()
@@ -206,15 +220,6 @@ const abrirActividad = (id) => {
 
 const getActividadEstado = (isActive) => {
   return isActive ? t('activities.active') : t('activities.stopped')
-}
-
-function formatDate(dateString) {
-  if (!dateString) return 'N/A'
-  try {
-    return format(new Date(dateString), 'dd MMM yyyy', { locale: es })
-  } catch {
-    return dateString
-  }
 }
 </script>
 

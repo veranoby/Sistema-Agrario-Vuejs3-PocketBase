@@ -46,9 +46,8 @@
                 </v-chip>
               </h3>
             </div>
-            <div class="w-full sm:w-auto z-10">
+            <div class="w-full sm:w-auto z-10 hidden-sm-and-down" v-if="canCreate && !mobile">
               <v-btn
-                v-if="canCreate"
                 prepend-icon="mdi-plus-circle"
                 color="success"
                 variant="flat"
@@ -122,7 +121,14 @@
                     </div>
                     
                     <div class="d-flex align-center flex-wrap gap-1 mb-2">
-                      <v-chip
+ 
+                      
+                      <v-chip size="x-small" variant="flat" color="green-darken-3" class="text-white">
+                        <v-icon start size="10">mdi-sprout</v-icon>
+                        {{ siembra.tipo }}
+                      </v-chip>
+
+                     <v-chip
                         :color="getStatusColor(siembra.estado)"
                         size="x-small"
                         variant="flat"
@@ -130,11 +136,7 @@
                       >
                         {{ siembra.estado }}
                       </v-chip>
-                      
-                      <v-chip size="x-small" variant="tonal" color="green-lighten-4" class="text-white">
-                        <v-icon start size="10">mdi-sprout</v-icon>
-                        {{ siembra.tipo }}
-                      </v-chip>
+
                     </div>
 
                     <div class="d-flex align-center flex-wrap gap-1 mt-auto">
@@ -208,6 +210,18 @@
       :siembra-nombre="selectedSiembra?.nombre"
       @deleted="onSiembraEliminada"
     />
+
+    <v-btn
+      v-if="canCreate && mobile"
+      color="success"
+      icon="mdi-plus"
+      size="x-large"
+      position="fixed"
+      location="bottom right"
+      class="mb-4 mr-4 elevation-8"
+      style="z-index: 100"
+      @click="abrirDialogCreacion"
+    ></v-btn>
   </v-container>
 </template>
 
@@ -222,17 +236,19 @@ import { storeToRefs } from 'pinia'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import GisMapComponent from '@/components/GisMapComponent.vue'
-import { SIEMBRA_COLORS, POI_FALLBACK_COLOR } from '@/constants/mapColors'
+import { SIEMBRA_COLORS } from '@/constants/mapColors'
 import SiembraCreateDialog from './SiembraCreateDialog.vue'
 import SiembraDeleteModal from './SiembraDeleteModal.vue'
 import { useAvatarStore } from '@/stores/avatarStore'
 import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import { logger } from '@/utils/logger'
+import { useDisplay } from 'vuetify'
 
 const router = useRouter()
 const siembrasStore = useSiembrasStore()
 const zonasStore = useZonasStore()
 const authStore = useAuthStore()
+const { mobile } = useDisplay()
 const haciendaStore = useHaciendaStore()
 const avatarStore = useAvatarStore()
 const uiFeedbackStore = useUiFeedbackStore()
@@ -240,7 +256,7 @@ const uiFeedbackStore = useUiFeedbackStore()
 const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
 // Reactividad directa con los stores
 const { siembras } = storeToRefs(siembrasStore)
-const { zonas, tiposZonas } = storeToRefs(zonasStore)
+const { zonas } = storeToRefs(zonasStore)
 
 const dialogNuevaSiembra = ref(false)
 
