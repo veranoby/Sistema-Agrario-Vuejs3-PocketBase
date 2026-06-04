@@ -12,9 +12,15 @@
           <div class="grid items-center gap-12 lg:grid-cols-2">
             <div class="flex flex-col justify-center space-y-8">
               <div class="space-y-4">
-                <div class="inline-flex items-center rounded-full bg-green-100/50 px-3 py-1 text-sm font-semibold text-green-800 ring-1 ring-inset ring-green-600/20">
-                  <v-icon size="small" class="mr-1">mdi-leaf</v-icon>
-                  Plataforma Agrícola Inteligente
+                <div class="flex flex-wrap gap-2 items-center">
+                  <div class="inline-flex items-center rounded-full bg-green-100/50 px-3 py-1 text-sm font-semibold text-green-800 ring-1 ring-inset ring-green-600/20">
+                    <v-icon size="small" class="mr-1">mdi-leaf</v-icon>
+                    Plataforma Agrícola Inteligente
+                  </div>
+                  <div class="inline-flex items-center rounded-full bg-green-50 px-3 py-1 text-sm font-bold text-green-700 ring-1 ring-inset ring-green-600/30">
+                    <v-icon size="small" class="mr-1">mdi-tag-outline</v-icon>
+                    Uso Gratuito
+                  </div>
                 </div>
                 <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight" style="background-image: linear-gradient(to right, #0a1929, #243b53, #16a34a); -webkit-background-clip: text; color: transparent; line-height: 1.1;">
                   Democratizando la trazabilidad en el campo

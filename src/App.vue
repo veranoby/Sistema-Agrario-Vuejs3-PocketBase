@@ -199,9 +199,7 @@ watch(
       
       // Mostrar prompt de PWA si está pendiente
       if (pwaStore.deferredPrompt) {
-        setTimeout(() => {
-          pwaStore.showInstallPrompt()
-        }, 2000)
+        pwaStore.showInstallPrompt()
       }
 
       if (!schedulerStore.initialized) {
@@ -226,6 +224,9 @@ onMounted(async () => {
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault()
     pwaStore.setDeferredPrompt(e)
+    if (authStore.isLoggedIn) {
+      pwaStore.showInstallPrompt()
+    }
   })
 
   window.addEventListener('openAuthModal', () => {
@@ -299,10 +300,10 @@ const handleVisibilityChange = () => {
 const refreshTokenIfNeeded = async () => {
   if (authStore.isLoggedIn) {
     try {
-      if (authStore.tokenNeedsRefresh()) {
-         // console.log('[APP] Ejecutando refresh token...')
-        await authStore.refreshToken()
-         // console.log('[APP] Refresh token completado')
+      // Forzar siempre la validación al recuperar el foco para detectar doble sesión
+      const syncStore = useSyncStore()
+      if (syncStore.isOnline) {
+        await authStore.refreshToken(true) // Pasar true para forzar
       }
     } catch (error) {
        // console.error('[APP] Error en refreshTokenIfNeeded:', error)

@@ -280,13 +280,13 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    async refreshToken() {
+    async refreshToken(force = false) {
       logger.auth('Attempting to refresh token. Current authProvider.authStore.isValid:', authProvider.authStore.isValid)
       if (!authProvider.authStore.isValid) {
         return false
       }
 
-      if (this.tokenNeedsRefresh()) {
+      if (force || this.tokenNeedsRefresh()) {
         try {
           const freshAuthData = await authProvider.refreshSession()
           logger.auth('authRefresh successful - record ID:', freshAuthData.record?.id)
@@ -300,10 +300,19 @@ export const useAuthStore = defineStore('auth', {
           localStorage.setItem('last_auth_success', Date.now().toString())
 
           return true
-        } catch (error) {
-          logger.auth('Error during token refresh:', error.message)
-          return false
-        }
+          } catch (error) {
+            logger.auth('Error during token refresh:', error.message)
+            // 401 = token inválido (sesión iniciada en otro dispositivo)
+            if (error?.status === 401) {
+              const uiFeedbackStore = useUiFeedbackStore()
+              uiFeedbackStore.showSnackbar(
+                'Sesión terminada. Es posible que se haya iniciado sesión en otro dispositivo.',
+                'error'
+              )
+              await this.logout(true) // silent=true para no sobrescribir el mensaje anterior
+            }
+            return false
+          }
       }
 
       return true
