@@ -55,7 +55,7 @@
         <v-window v-model="tab">
           <!-- Inventory Tab -->
           <v-window-item value="inventario">
-            <v-card-title class="pt-6 px-6">
+            <v-card-title class="pt-6 px-6 soft-green-filter border-b mb-4">
               <v-row>
                 <v-col cols="12" sm="6" md="4" class="mb-2">
                   <v-text-field

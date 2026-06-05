@@ -341,3 +341,10 @@ h6 {
 .rich-text-content pre code {
   @apply bg-transparent p-0 text-base;
 }
+
+.soft-green-filter {
+  background-color: #f1f8e9 !important;
+  border-color: #c5e1a5 !important;
+  border-width: 1px !important;
+  border-style: solid !important;
+}

@@ -47,12 +47,12 @@
         <v-card class="mb-4">
           <v-card-text>
             <v-row align="center">
-              <v-col cols="12" sm="7" md="5" class="d-flex align-center">
-                <v-btn icon variant="text" @click="finanzaStore.changeMonth('prev')">
-                  <v-icon>mdi-chevron-left-circle</v-icon>
+              <v-col cols="12" md="5" class="d-flex align-center justify-center px-1">
+                <v-btn icon size="small" variant="text" @click="finanzaStore.changeMonth('prev')" class="mr-1">
+                  <v-icon size="large">mdi-chevron-left-circle</v-icon>
                 </v-btn>
 
-                <div class="d-flex flex-column flex-sm-row gap-1 mx-2">
+                <div class="d-flex flex-row gap-2 flex-grow-1">
                   <v-select
                     v-model="selectedMonth"
                     :items="months"
@@ -60,7 +60,7 @@
                     density="compact"
                     variant="outlined"
                     hide-details
-                    class="month-selector"
+                    class="month-selector flex-grow-1"
                     @update:modelValue="updateMonth"
                   ></v-select>
 
@@ -71,13 +71,14 @@
                     density="compact"
                     variant="outlined"
                     hide-details
-                    class="year-selector"
+                    class="year-selector flex-grow-1"
+                    style="max-width: 120px;"
                     @update:modelValue="updateYear"
                   ></v-select>
                 </div>
 
-                <v-btn icon variant="text" @click="finanzaStore.changeMonth('next')">
-                  <v-icon>mdi-chevron-right-circle</v-icon>
+                <v-btn icon size="small" variant="text" @click="finanzaStore.changeMonth('next')" class="ml-1">
+                  <v-icon size="large">mdi-chevron-right-circle</v-icon>
                 </v-btn>
               </v-col>
 
@@ -127,7 +128,7 @@
         </v-card>
 
         <v-expansion-panels class="mb-4" v-if="mobile">
-          <v-expansion-panel>
+          <v-expansion-panel class="soft-green-filter">
             <v-expansion-panel-title>
               <v-icon start>mdi-filter-variant</v-icon>
               {{ t('finance.filters') || 'Filtros' }}

@@ -29,7 +29,7 @@
     <!-- Filters -->
     <v-row class="px-4 mb-4">
       <v-col cols="12">
-        <v-card flat rounded="lg" class="pa-4 siembras-info elevation-0 border mb-2">
+        <v-card flat rounded="lg" class="pa-4 soft-green-filter elevation-0 mb-2">
           <div class="text-subtitle-1 mb-3 font-weight-bold text-blue-grey-darken-3">
             <v-icon color="primary" class="mr-2">mdi-filter-variant</v-icon>Filtros Globales
           </div>
@@ -576,10 +576,7 @@ onMounted(async () => {
 .profile-title {
   margin: 0;
 }
-.siembras-info {
-  background-color: #f1f8e9 !important; /* light green similar to siembras workspace */
-  border-color: #c5e1a5 !important;
-}
+
 .kpi-card {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   border: 1px solid rgba(0,0,0,0.05);

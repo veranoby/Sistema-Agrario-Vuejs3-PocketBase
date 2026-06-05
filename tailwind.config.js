@@ -17,6 +17,7 @@ export default {
         ]
       },
       colors: {
+        primary: '#198f4c',
         priority: {
           baja: '#4caf50',
           media: '#ff9800',

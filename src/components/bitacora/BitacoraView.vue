@@ -61,7 +61,7 @@
     <v-row>
       <v-col cols="12">
         <v-expansion-panels class="mb-4">
-          <v-expansion-panel>
+          <v-expansion-panel class="soft-green-filter">
             <v-expansion-panel-title>
               <v-icon start>mdi-filter-variant</v-icon>
               Filtros 
