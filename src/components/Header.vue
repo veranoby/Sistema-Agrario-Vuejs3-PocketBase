@@ -3,12 +3,10 @@
     <template v-slot:prepend>
       <v-app-bar-nav-icon @click="$emit('HandleDrawer')"></v-app-bar-nav-icon>
     </template>
-    <v-app-bar-title @click="$router.push('/')"
-      ><span class="hidden sm:inline"
-        >ConAgri <v-icon size="24" color="green">mdi-leaf</v-icon
-        ></span
-      ></v-app-bar-title
-    >
+    <v-app-bar-title @click="$router.push('/')" style="cursor: pointer;">
+      <span class="hidden sm:inline font-weight-bold mr-1">ConAgri</span>
+      <v-icon size="24" color="primary">mdi-leaf</v-icon>
+    </v-app-bar-title>
 
     <v-spacer></v-spacer>
 
