@@ -11,13 +11,13 @@ export const useThemeStore = defineStore('theme', {
 
       // Aplicar tema a Vuetify y CSS personalizado
       document.documentElement.setAttribute('data-theme', this.currentTheme)
-      document.documentElement.classList.toggle('dark-mode', this.currentTheme === 'dark')
+      document.documentElement.classList.toggle('dark', this.currentTheme === 'dark')
     },
 
     initTheme() {
       // Aplicar tema inicial
       document.documentElement.setAttribute('data-theme', this.currentTheme)
-      document.documentElement.classList.toggle('dark-mode', this.currentTheme === 'dark')
+      document.documentElement.classList.toggle('dark', this.currentTheme === 'dark')
     }
   }
 })

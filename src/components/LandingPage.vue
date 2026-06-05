@@ -3,7 +3,7 @@
     <div class="flex flex-col min-h-dvh" style="font-family: 'Plus Jakarta Sans', sans-serif;">
       
       <!-- HERO COMBINADO CON MISIÓN (Alto Impacto) -->
-      <section class="w-full rounded-lg py-16 md:py-32 relative overflow-hidden bg-[#f8f9fb]">
+      <section class="w-full rounded-lg py-16 md:py-32 relative overflow-hidden bg-[#f8f9fb] dark:bg-[#121212]">
         <!-- Decoración de fondo abstracta -->
         <div class="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-primary/10 blur-3xl mix-blend-multiply"></div>
         <div class="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 rounded-full bg-blue-500/10 blur-3xl mix-blend-multiply"></div>
@@ -76,17 +76,17 @@
                 class="aspect-[4/3] w-full rounded-[2rem] object-cover shadow-2xl shadow-green-900/20" 
               />
               <!-- Tarjeta Flotante superpuesta -->
-              <div class="absolute -bottom-6 -left-6 rounded-lg bg-white/90 backdrop-blur-md p-6 shadow-xl border border-white/40 max-w-[250px] animate-bounce-slow">
+              <div class="absolute -bottom-6 -left-6 rounded-lg bg-white/90 dark:bg-[#1e1e1e]/90 backdrop-blur-md p-6 shadow-xl border border-white/40 max-w-[250px] animate-bounce-slow">
                 <div class="flex items-center gap-4 mb-2">
                   <div class="p-2 bg-primary rounded-lg text-white">
                     <v-icon>mdi-check-decagram</v-icon>
                   </div>
                   <div>
-                    <p class="text-sm font-bold text-gray-900">Actividad Firmada</p>
+                    <p class="text-sm font-bold text-gray-900 dark:text-gray-100">Actividad Firmada</p>
                     <p class="text-xs text-primary">Hace 2 mins</p>
                   </div>
                 </div>
-                <p class="text-xs text-gray-600">Sincronización confirmada a la nube mediante cola offline.</p>
+                <p class="text-xs text-gray-600 dark:text-gray-400">Sincronización confirmada a la nube mediante cola offline.</p>
               </div>
             </div>
           </div>
@@ -94,7 +94,7 @@
       </section>
 
       <!-- Pilares Base -->
-      <section class="w-full py-16 md:py-24 bg-white border-y border-gray-100">
+      <section class="w-full py-16 md:py-24 bg-white dark:bg-[#1e1e1e] border-y border-gray-100 dark:border-[#333]">
         <div class="container px-4 md:px-6">
           <div class="flex flex-col items-center justify-center space-y-4 text-center mb-16">
             <h2 class="text-3xl font-bold tracking-tighter sm:text-4xl text-primary">
@@ -105,25 +105,25 @@
             </p>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            <div class="feature-card flex flex-col items-center text-center space-y-4 p-8 bg-white">
+            <div class="feature-card flex flex-col items-center text-center space-y-4 p-8 bg-white dark:bg-[#1e1e1e]">
               <div class="p-4 bg-primary text-white rounded-lg">
                 <v-icon size="40">mdi-shield-check</v-icon>
               </div>
-              <h3 class="text-xl font-bold text-[#243b53]">Trazabilidad Inmutable</h3>
+              <h3 class="text-xl font-bold text-[#243b53] dark:text-gray-200">Trazabilidad Inmutable</h3>
               <p class="text-sm text-muted-foreground leading-relaxed">Firmas criptográficas RSA locales para garantizar la integridad legal de sus bitácoras ante estrictas auditorías BPA.</p>
             </div>
-            <div class="feature-card flex flex-col items-center text-center space-y-4 p-8 bg-white">
+            <div class="feature-card flex flex-col items-center text-center space-y-4 p-8 bg-white dark:bg-[#1e1e1e]">
               <div class="p-4 bg-primary text-white rounded-lg">
                 <v-icon size="40">mdi-map-marker-path</v-icon>
               </div>
-              <h3 class="text-xl font-bold text-[#243b53]">Mapeo GIS</h3>
+              <h3 class="text-xl font-bold text-[#243b53] dark:text-gray-200">Mapeo GIS</h3>
               <p class="text-sm text-muted-foreground leading-relaxed">Delimitación precisa de lotes, almacenes y zonas ecológicas con integración nativa a mapas interactivos Leaflet.</p>
             </div>
-            <div class="feature-card flex flex-col items-center text-center space-y-4 p-8 bg-white">
+            <div class="feature-card flex flex-col items-center text-center space-y-4 p-8 bg-white dark:bg-[#1e1e1e]">
               <div class="p-4 bg-primary text-white rounded-lg">
                 <v-icon size="40">mdi-sync-off</v-icon>
               </div>
-              <h3 class="text-xl font-bold text-[#243b53]">Offline-First</h3>
+              <h3 class="text-xl font-bold text-[#243b53] dark:text-gray-200">Offline-First</h3>
               <p class="text-sm text-muted-foreground leading-relaxed">Opere sin conexión en zonas remotas. Nuestro sistema IndexedDB garantiza una sincronización automática al recuperar cobertura.</p>
             </div>
           </div>
@@ -131,7 +131,7 @@
       </section>
 
       <!-- Módulos Premium -->
-      <section class="w-full py-16 md:py-24 bg-[#f8f9fb]">
+      <section class="w-full py-16 md:py-24 bg-[#f8f9fb] dark:bg-[#121212]">
         <div class="container px-4 md:px-6">
           <div class="flex flex-col items-center justify-center space-y-4 text-center mb-16">
             <h2 class="text-3xl font-bold tracking-tighter sm:text-4xl text-primary">
@@ -142,32 +142,32 @@
             </p>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-            <div class="p-6 border border-[#d9e2ec] rounded-lg bg-white text-center shadow-sm hover:shadow-md transition-shadow">
+            <div class="p-6 border border-[#d9e2ec] dark:border-[#333] rounded-lg bg-white dark:bg-[#1e1e1e] text-center shadow-sm hover:shadow-md transition-shadow">
               <div class="mx-auto w-12 h-12 flex items-center justify-center rounded-full bg-primary text-white mb-4">
                 <v-icon size="24">mdi-robot</v-icon>
               </div>
-              <h4 class="font-bold text-[#243b53] mb-2">IA Agronómica</h4>
+              <h4 class="font-bold text-[#243b53] dark:text-gray-200 mb-2">IA Agronómica</h4>
               <p class="text-xs text-muted-foreground">Diagnósticos de plagas y Action Cards ejecutables al instante.</p>
             </div>
-            <div class="p-6 border border-[#d9e2ec] rounded-lg bg-white text-center shadow-sm hover:shadow-md transition-shadow">
+            <div class="p-6 border border-[#d9e2ec] dark:border-[#333] rounded-lg bg-white dark:bg-[#1e1e1e] text-center shadow-sm hover:shadow-md transition-shadow">
               <div class="mx-auto w-12 h-12 flex items-center justify-center rounded-full bg-primary text-white mb-4">
                 <v-icon size="24">mdi-cash-multiple</v-icon>
               </div>
-              <h4 class="font-bold text-[#243b53] mb-2">Costo por Hectárea</h4>
+              <h4 class="font-bold text-[#243b53] dark:text-gray-200 mb-2">Costo por Hectárea</h4>
               <p class="text-xs text-muted-foreground">Control financiero y cálculo en tiempo real de rentabilidad (ROI).</p>
             </div>
-            <div class="p-6 border border-[#d9e2ec] rounded-lg bg-white text-center shadow-sm hover:shadow-md transition-shadow">
+            <div class="p-6 border border-[#d9e2ec] dark:border-[#333] rounded-lg bg-white dark:bg-[#1e1e1e] text-center shadow-sm hover:shadow-md transition-shadow">
               <div class="mx-auto w-12 h-12 flex items-center justify-center rounded-full bg-primary text-white mb-4">
                 <v-icon size="24">mdi-account-group</v-icon>
               </div>
-              <h4 class="font-bold text-[#243b53] mb-2">Nómina Express</h4>
+              <h4 class="font-bold text-[#243b53] dark:text-gray-200 mb-2">Nómina Express</h4>
               <p class="text-xs text-muted-foreground">Gestión ágil de pagos, jornales, horas extras y destajos en campo.</p>
             </div>
-            <div class="p-6 border border-[#d9e2ec] rounded-lg bg-white text-center shadow-sm hover:shadow-md transition-shadow">
+            <div class="p-6 border border-[#d9e2ec] dark:border-[#333] rounded-lg bg-white dark:bg-[#1e1e1e] text-center shadow-sm hover:shadow-md transition-shadow">
               <div class="mx-auto w-12 h-12 flex items-center justify-center rounded-full bg-primary text-white mb-4">
                 <v-icon size="24">mdi-warehouse</v-icon>
               </div>
-              <h4 class="font-bold text-[#243b53] mb-2">Bodega Kardex</h4>
+              <h4 class="font-bold text-[#243b53] dark:text-gray-200 mb-2">Bodega Kardex</h4>
               <p class="text-xs text-muted-foreground">Control estricto de lotes de insumos, stock y fechas de expiración.</p>
             </div>
           </div>
@@ -175,33 +175,33 @@
       </section>
 
       <!-- Sección: Planes y Suscripción (Optimizada visualmente) -->
-      <section class="w-full py-16 md:py-24 bg-white">
+      <section class="w-full py-16 md:py-24 bg-white dark:bg-[#1e1e1e]">
         <div class="container px-6 md:px-8">
           <div class="flex flex-col items-center justify-center space-y-4 text-center">
-            <h2 class="text-3xl font-bold tracking-tighter sm:text-4xl text-[#0a1929]">Nuestros Planes</h2>
+            <h2 class="text-3xl font-bold tracking-tighter sm:text-4xl text-[#0a1929] dark:text-white">Nuestros Planes</h2>
             <p class="text-muted-foreground md:text-lg">Elige la solución que mejor se adapte al tamaño de tu operación agrícola.</p>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-6xl mt-12 mx-auto">
             
             <!-- Plan Gratis -->
-            <div class="pricing-card flex flex-col justify-between bg-white">
+            <div class="pricing-card flex flex-col justify-between bg-white dark:bg-[#1e1e1e]">
               <div class="p-6 pb-4">
-                <h3 class="text-xl font-bold text-[#243b53] mb-2">Gratis</h3>
+                <h3 class="text-xl font-bold text-[#243b53] dark:text-gray-200 mb-2">Gratis</h3>
                 <p class="text-sm text-muted-foreground h-10">Productores individuales.</p>
                 <div class="mt-4 mb-2">
-                  <span class="text-3xl font-extrabold text-[#0a1929]">$0</span>
-                  <span class="text-sm text-gray-500 font-medium">/mes</span>
+                  <span class="text-3xl font-extrabold text-[#0a1929] dark:text-white">$0</span>
+                  <span class="text-sm text-gray-500 dark:text-gray-400 font-medium">/mes</span>
                 </div>
               </div>
               <div class="px-6 pb-6">
                 <ul class="space-y-3 mb-6">
-                  <li class="flex items-start text-sm text-gray-700">
+                  <li class="flex items-start text-sm text-gray-700 dark:text-gray-300">
                     <v-icon color="primary" size="18" class="mr-2 mt-0.5">mdi-check-circle</v-icon> 1 Usuario (Admin)
                   </li>
-                  <li class="flex items-start text-sm text-gray-700">
+                  <li class="flex items-start text-sm text-gray-700 dark:text-gray-300">
                     <v-icon color="primary" size="18" class="mr-2 mt-0.5">mdi-check-circle</v-icon> Libro Diario (Bitácora) y Firmas RSA
                   </li>
-                  <li class="flex items-start text-sm text-gray-700">
+                  <li class="flex items-start text-sm text-gray-700 dark:text-gray-300">
                     <v-icon color="primary" size="18" class="mr-2 mt-0.5">mdi-check-circle</v-icon> GIS, Finanzas Base y AI (BYOK)
                   </li>
                 </ul>
@@ -210,7 +210,7 @@
             </div>
 
             <!-- Plan Intermedio (Destacado) -->
-            <div class="pricing-card highlighted flex flex-col justify-between bg-white relative">
+            <div class="pricing-card highlighted flex flex-col justify-between bg-white dark:bg-[#1e1e1e] relative">
               <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-primary text-white px-3 py-1 rounded-full text-[10px] font-bold tracking-wide shadow-md">
                 RECOMENDADO
               </div>
@@ -218,19 +218,19 @@
                 <h3 class="text-xl font-bold text-primary mb-2">Básico</h3>
                 <p class="text-sm text-muted-foreground h-10">Equipos de campo pequeños.</p>
                 <div class="mt-4 mb-2">
-                  <span class="text-3xl font-extrabold text-[#0a1929]">$5</span>
-                  <span class="text-sm text-gray-500 font-medium">/mes</span>
+                  <span class="text-3xl font-extrabold text-[#0a1929] dark:text-white">$5</span>
+                  <span class="text-sm text-gray-500 dark:text-gray-400 font-medium">/mes</span>
                 </div>
               </div>
               <div class="px-6 pb-6">
                 <ul class="space-y-3 mb-6">
-                  <li class="flex items-start text-sm text-gray-700">
+                  <li class="flex items-start text-sm text-gray-700 dark:text-gray-300">
                     <v-icon color="primary" size="18" class="mr-2 mt-0.5">mdi-check-circle</v-icon> Hasta 3 Usuarios
                   </li>
-                  <li class="flex items-start text-sm text-gray-700">
+                  <li class="flex items-start text-sm text-gray-700 dark:text-gray-300">
                     <v-icon color="primary" size="18" class="mr-2 mt-0.5">mdi-check-circle</v-icon> Libro Diario (Bitácora) y Firmas RSA
                   </li>
-                  <li class="flex items-start text-sm text-gray-700">
+                  <li class="flex items-start text-sm text-gray-700 dark:text-gray-300">
                     <v-icon color="primary" size="18" class="mr-2 mt-0.5">mdi-check-circle</v-icon> GIS, Finanzas Base y AI (BYOK)
                   </li>
                 </ul>
@@ -239,24 +239,24 @@
             </div>
 
             <!-- Plan Premium -->
-            <div class="pricing-card flex flex-col justify-between bg-white">
+            <div class="pricing-card flex flex-col justify-between bg-white dark:bg-[#1e1e1e]">
               <div class="p-6 pb-4">
-                <h3 class="text-xl font-bold text-[#243b53] mb-2">Premium</h3>
+                <h3 class="text-xl font-bold text-[#243b53] dark:text-gray-200 mb-2">Premium</h3>
                 <p class="text-sm text-muted-foreground h-10">Haciendas medianas.</p>
                 <div class="mt-4 mb-2">
-                  <span class="text-3xl font-extrabold text-[#0a1929]">$10</span>
-                  <span class="text-sm text-gray-500 font-medium">/mes</span>
+                  <span class="text-3xl font-extrabold text-[#0a1929] dark:text-white">$10</span>
+                  <span class="text-sm text-gray-500 dark:text-gray-400 font-medium">/mes</span>
                 </div>
               </div>
               <div class="px-6 pb-6">
                 <ul class="space-y-3 mb-6">
-                  <li class="flex items-start text-sm text-gray-700">
+                  <li class="flex items-start text-sm text-gray-700 dark:text-gray-300">
                     <v-icon color="primary" size="18" class="mr-2 mt-0.5">mdi-check-circle</v-icon> Hasta 9 Usuarios
                   </li>
-                  <li class="flex items-start text-sm text-gray-700">
+                  <li class="flex items-start text-sm text-gray-700 dark:text-gray-300">
                     <v-icon color="primary" size="18" class="mr-2 mt-0.5">mdi-check-circle</v-icon> Libro Diario (Bitácora) y Firmas RSA
                   </li>
-                  <li class="flex items-start text-sm text-gray-700">
+                  <li class="flex items-start text-sm text-gray-700 dark:text-gray-300">
                     <v-icon color="primary" size="18" class="mr-2 mt-0.5">mdi-check-circle</v-icon> GIS, Finanzas Base y AI (BYOK)
                   </li>
                 </ul>
@@ -265,24 +265,24 @@
             </div>
 
             <!-- Módulos Adicionales -->
-            <div class="pricing-card flex flex-col justify-between bg-[#f8f9fb] border-dashed border-2">
+            <div class="pricing-card flex flex-col justify-between bg-[#f8f9fb] dark:bg-[#121212] border-dashed border-2">
               <div class="p-6 pb-4">
                 <h3 class="text-xl font-bold text-blue-900 mb-2">Módulos Extra</h3>
                 <p class="text-sm text-muted-foreground h-10">Personaliza tu hacienda a medida.</p>
                 <div class="mt-4 mb-2">
-                  <span class="text-2xl font-extrabold text-[#0a1929]">$1-$5</span>
-                  <span class="text-sm text-gray-500 font-medium">/mes c/u</span>
+                  <span class="text-2xl font-extrabold text-[#0a1929] dark:text-white">$1-$5</span>
+                  <span class="text-sm text-gray-500 dark:text-gray-400 font-medium">/mes c/u</span>
                 </div>
               </div>
               <div class="px-6 pb-6">
                 <ul class="space-y-3 mb-6">
-                  <li class="flex items-start text-sm text-gray-700">
+                  <li class="flex items-start text-sm text-gray-700 dark:text-gray-300">
                     <v-icon color="primary" size="18" class="mr-2 mt-0.5">mdi-plus-circle</v-icon> Costo por Hectárea (ROI)
                   </li>
-                  <li class="flex items-start text-sm text-gray-700">
+                  <li class="flex items-start text-sm text-gray-700 dark:text-gray-300">
                     <v-icon color="primary" size="18" class="mr-2 mt-0.5">mdi-plus-circle</v-icon> Kardex de Bodega y Nómina
                   </li>
-                  <li class="flex items-start text-sm text-gray-700">
+                  <li class="flex items-start text-sm text-gray-700 dark:text-gray-300">
                     <v-icon color="primary" size="18" class="mr-2 mt-0.5">mdi-plus-circle</v-icon> PDF Inmutable BPA y más
                   </li>
                 </ul>

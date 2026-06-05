@@ -30,23 +30,37 @@
       <v-spacer></v-spacer>
 
       <div class="flex flex-col sm:flex-row">
+        <!-- Desktop Button -->
         <v-btn
           variant="flat"
           prepend-icon="mdi-login"
           color="primary"
           v-if="!isLoggedIn"
           @click="$emit('openAuthModal')"
-        > {{ $t('header.login') }}</v-btn
+          class="hidden-xs"
+        > {{ $t('header.login') }}</v-btn>
+        
+        <!-- Mobile Icon Button -->
+        <v-btn
+          icon
+          variant="flat"
+          color="primary"
+          v-if="!isLoggedIn"
+          @click="$emit('openAuthModal')"
+          class="hidden-sm-and-up"
+          size="small"
         >
+          <v-icon>mdi-login</v-icon>
+        </v-btn>
       </div>
       <v-spacer></v-spacer>
 
       <v-menu offset-y>
         <template v-slot:activator="{ props }">
-          <v-btn text v-bind="props" class="ml-2 px-2" size="small">
-            <v-icon start icon="mdi-web"></v-icon>
-            <span class="text-uppercase">{{ currentLocale }}</span>
-            <v-icon end icon="mdi-chevron-down" size="x-small"></v-icon>
+          <v-btn text v-bind="props" class="ml-1 sm:ml-2 px-1 sm:px-2" size="small" style="min-width: 0;">
+            <v-icon icon="mdi-web" :class="{'mr-1': true, 'mr-sm-1': true}"></v-icon>
+            <span class="text-uppercase hidden-xs">{{ currentLocale }}</span>
+            <v-icon icon="mdi-chevron-down" size="x-small"></v-icon>
           </v-btn>
         </template>
         <v-list density="compact" min-width="120">
@@ -70,13 +84,13 @@
         icon
         size="small"
         @click="toggleTheme"
-        class="ml-2"
+        class="ml-1 sm:ml-2"
         :color="currentTheme === 'dark' ? 'yellow' : 'grey'"
       >
         <v-icon>{{ currentTheme === 'dark' ? 'mdi-weather-night' : 'mdi-weather-sunny' }}</v-icon>
       </v-btn>
 
-      <NotificationBell class="ml-2" color="white" />
+      <NotificationBell class="ml-1 sm:ml-2" color="white" />
 
       <v-chip
         v-if="pendingOperations > 0"
@@ -114,7 +128,7 @@
 
       <v-tooltip bottom>
         <template v-slot:activator="{ props }">
-          <v-icon v-bind="props" :color="connectionStatus.color" class="ml-2">
+          <v-icon v-bind="props" :color="connectionStatus.color" class="ml-1 sm:ml-2">
             {{ connectionStatus.icon }}
           </v-icon>
         </template>

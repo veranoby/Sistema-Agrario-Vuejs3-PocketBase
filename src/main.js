@@ -61,8 +61,8 @@ const vuetify = createVuetify({
         dark: true,
         colors: {
           background: '#121212',
-          surface: '#212121',
-          primary: '#2196F3',
+          surface: '#1e1e1e',
+          primary: '#2eb864',
           secondary: '#424242'
         }
       }
