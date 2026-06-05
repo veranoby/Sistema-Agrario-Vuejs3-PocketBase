@@ -27,19 +27,24 @@ onRecordCreateRequest((e) => {
 }, "users");
 
 // Política de sesión única — PocketBase v0.23+ compatible
-// Rotamos el tokenKey ANTES de e.next() para que el JWT se firme con la nueva clave.
-// Esto invalida inmediatamente todos los tokens anteriores de este usuario en el servidor.
+// SOLO rotamos el tokenKey en un login real (password/oauth2), NO en auth-refresh.
+// auth-refresh llega con authMethod == "" — saltarlo evita el falso positivo de
+// auto-expulsión cuando el timer de refresco del frontend llama a auth-refresh.
 onRecordAuthRequest((e) => {
+    // authMethod es "password", "oauth2", etc. en logins reales.
+    // En auth-refresh el campo llega vacío — no rotar en ese caso.
+    if (!e.authMethod) {
+        return e.next()
+    }
+
     try {
-        // refreshTokenKey() genera y asigna un nuevo tokenKey aleatorio en el record (en memoria)
+        // Rotar tokenKey ANTES de e.next(): el JWT se firma con la nueva clave,
+        // invalidando inmediatamente todos los tokens anteriores del usuario.
         e.record.refreshTokenKey()
-        // $app.save() persiste el nuevo tokenKey en la BD — API correcta en PB v0.23+
-        // (reemplaza el $app.dao().saveRecord() removido desde v0.23)
         $app.save(e.record)
     } catch (err) {
         $app.logger().error("Error rotando tokenKey para sesión única: " + err)
     }
-    // e.next() se ejecuta DESPUÉS del save: el JWT que genera usa el tokenKey ya persistido
     return e.next()
 }, "users")
 
