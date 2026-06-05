@@ -275,18 +275,18 @@
             </v-card>
             
             <!-- Suscripcion de Asesor -->
-            <v-card class="mt-6 elevation-2 rounded-lg border" :color="subscriptionActive ? 'green-lighten-5' : 'orange-lighten-5'">
+            <v-card class="mt-6 rounded-lg border" :color="subscriptionActive ? 'primary' : 'warning'" variant="tonal">
               <v-card-text>
                 <div class="d-flex align-center mb-2">
-                  <v-icon :color="subscriptionActive ? 'green' : 'orange'" class="mr-2">
+                  <v-icon :color="subscriptionActive ? 'primary' : 'warning'" class="mr-2">
                     {{ subscriptionActive ? 'mdi-check-decagram' : 'mdi-alert-circle-outline' }}
                   </v-icon>
-                  <h3 class="text-subtitle-1 font-weight-bold" :class="subscriptionActive ? 'text-primary-3' : 'text-orange-darken-3'">
+                  <h3 class="text-subtitle-1 font-weight-bold" :class="subscriptionActive ? 'text-primary' : 'text-warning'">
                     Estado de Suscripción
                   </h3>
                 </div>
                 
-                <p v-if="subscriptionActive" class="text-caption text-primary-2 mb-2">
+                <p v-if="subscriptionActive" class="text-caption mb-2" :style="{ opacity: 0.8 }">
                   Tu entorno profesional está activo. Las haciendas pueden vincularte a sus proyectos.
                 </p>
                 <v-alert
@@ -304,7 +304,7 @@
                 
                 <v-btn
                   v-if="subscriptionActive"
-                  color="info"
+                  color="primary"
                   variant="tonal"
                   size="small"
                   prepend-icon="mdi-history"
@@ -314,7 +314,7 @@
                   Ver Historial de Solicitudes
                 </v-btn>
                 <div v-else>
-                  <p class="text-caption text-orange-darken-2 mb-3">
+                  <p class="text-caption text-warning mb-3">
                     Tu entorno está en modo restringido. Para habilitar tu portafolio y ser visible para todas las haciendas, requieres activar tu plan profesional.
                   </p>
                   
