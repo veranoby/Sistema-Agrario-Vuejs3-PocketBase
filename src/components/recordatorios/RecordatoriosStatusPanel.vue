@@ -18,7 +18,7 @@
           <v-list-item
             v-for="item in items"
             :key="item.id"
-            class="mb-3 rounded-sm"
+            class="mb-3 rounded-lg"
             :style="`border-left: 3px solid ${color}; `"
           >
             <!-- Fila 1: Título y metadatos -->

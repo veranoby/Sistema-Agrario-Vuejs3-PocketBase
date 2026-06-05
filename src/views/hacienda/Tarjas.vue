@@ -49,7 +49,7 @@
     <!-- Tabla principal -->
     <v-row>
       <v-col cols="12">
-        <v-card class="rounded-xl bg-white shadow-sm border overflow-hidden">
+        <v-card class="rounded-lg bg-white shadow-sm border overflow-hidden">
           <v-toolbar color="transparent" flat class="px-4">
             <v-toolbar-title class="font-weight-bold text-grey-darken-4">
               Historial Reciente de Cosecha
@@ -373,7 +373,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.rounded-xl {
+.rounded-lg {
   border-radius: 16px !important;
 }
 </style>

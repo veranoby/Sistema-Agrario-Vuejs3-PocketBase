@@ -1,6 +1,6 @@
 <template>
-  <v-dialog v-model="uiStore.confirm.show" persistent max-width="450px" class="rounded-xl overflow-hidden">
-    <v-card class="rounded-xl">
+  <v-dialog v-model="uiStore.confirm.show" persistent max-width="450px" class="rounded-lg overflow-hidden">
+    <v-card class="rounded-lg">
       <v-toolbar :color="uiStore.confirm.color" dark flat density="compact">
         <v-icon start class="ml-4">{{ uiStore.confirm.icon }}</v-icon>
         <v-toolbar-title class="text-subtitle-1 font-weight-bold">

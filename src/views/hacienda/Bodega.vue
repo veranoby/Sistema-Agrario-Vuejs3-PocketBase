@@ -40,7 +40,7 @@
       </header>
 
       <!-- Main Tabs: Inventory & Historical Movements -->
-      <v-card class="elevation-4 rounded-xl border border-grey-lighten-3 mt-4">
+      <v-card class="elevation-4 rounded-lg border border-grey-lighten-3 mt-4">
         <v-tabs v-model="tab" color="teal" align-tabs="start" class="border-bottom">
           <v-tab value="inventario" class="font-weight-bold">
             <v-icon start icon="mdi-clipboard-list-outline"></v-icon>
@@ -57,7 +57,7 @@
           <v-window-item value="inventario">
             <v-card-title class="pt-6 px-6">
               <v-row>
-                <v-col cols="12" sm="6" md="4">
+                <v-col cols="12" sm="6" md="4" class="mb-2">
                   <v-text-field
                     v-model="search"
                     prepend-inner-icon="mdi-magnify"
@@ -68,7 +68,7 @@
                     color="teal"
                   ></v-text-field>
                 </v-col>
-                <v-col cols="12" sm="6" md="3">
+                <v-col cols="12" sm="6" md="3" class="mb-2">
                   <v-select
                     v-model="filtroTipo"
                     :items="[
@@ -179,7 +179,7 @@
           <v-window-item value="movimientos">
             <v-card-title class="pt-6 px-6">
               <v-row>
-                <v-col cols="12" sm="6" md="4">
+                <v-col cols="12" sm="6" md="4" class="mb-2">
                   <v-text-field
                     v-model="searchMov"
                     prepend-inner-icon="mdi-magnify"
@@ -256,7 +256,7 @@
 
     <!-- Modal Nuevo / Editar Item -->
     <v-dialog v-model="modalItemOpen" max-width="600px">
-      <v-card class="rounded-xl elevation-5">
+      <v-card class="rounded-lg elevation-5">
         <v-card-title class="bg-gradient-teal text-white py-4 px-6">
           <span class="text-h5 font-weight-bold">
             {{ editMode ? 'Editar Insumo' : 'Registrar Nuevo Insumo' }}
@@ -364,7 +364,7 @@
 
     <!-- Modal Registro Movimiento (Ingreso/Egreso Manual) -->
     <v-dialog v-model="modalMovOpen" max-width="500px">
-      <v-card class="rounded-xl elevation-5">
+      <v-card class="rounded-lg elevation-5">
         <v-card-title class="bg-gradient-teal text-white py-4 px-6">
           <span class="text-h5 font-weight-bold">Ajuste de Stock</span>
         </v-card-title>
@@ -447,7 +447,7 @@
 
     <!-- Dialog Confirmación Eliminar -->
     <v-dialog v-model="dialogEliminar" max-width="400px">
-      <v-card class="rounded-xl">
+      <v-card class="rounded-lg">
         <v-card-title class="bg-red-darken-1 text-white py-4 px-6">
           <span class="text-h6 font-weight-bold">¿Eliminar Insumo?</span>
         </v-card-title>

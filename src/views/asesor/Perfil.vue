@@ -19,7 +19,7 @@
       <v-row>
         <!-- Form Column -->
         <v-col cols="12" md="8">
-          <v-card class="elevation-3 rounded-xl border border-grey-lighten-3 pa-6">
+          <v-card class="elevation-3 rounded-lg border border-grey-lighten-3 pa-6">
             <v-card-title class="pa-0 mb-4 text-h6 font-weight-bold text-indigo-darken-4">
               Datos del Asesor Técnico
             </v-card-title>
@@ -176,7 +176,7 @@
 
         <!-- Preview Column -->
         <v-col cols="12" md="4">
-          <v-card class="elevation-3 rounded-xl border border-grey-lighten-3 pa-6 h-100">
+          <v-card class="elevation-3 rounded-lg border border-grey-lighten-3 pa-6 h-100">
             <v-card-title class="pa-0 mb-4 text-h6 font-weight-bold text-indigo-darken-4">
               Vista Previa en Directorio
             </v-card-title>
@@ -354,7 +354,7 @@
     
     <!-- Modal Suscripción -->
     <v-dialog v-model="subscriptionDialog" max-width="600">
-      <v-card class="rounded-xl">
+      <v-card class="rounded-lg">
         <v-card-title class="bg-indigo-darken-3 text-white px-4 py-3 d-flex align-center">
           <v-icon start>mdi-account-hard-hat</v-icon>
           Activar Entorno Profesional
@@ -440,7 +440,7 @@
 
     <!-- Modal Historial -->
     <v-dialog v-model="historyModalOpen" max-width="800px" scrollable>
-      <v-card class="rounded-xl">
+      <v-card class="rounded-lg">
         <v-toolbar color="info" dark>
           <v-toolbar-title>Historial de Solicitudes</v-toolbar-title>
           <v-spacer></v-spacer>

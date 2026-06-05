@@ -13,7 +13,7 @@
         </div>
 
         <!-- Main Content Card -->
-        <v-card class="elevation-10 rounded-2xl glass-card overflow-hidden transition-all duration-300">
+        <v-card class="elevation-10 rounded-lg glass-card overflow-hidden transition-all duration-300">
           <!-- Top Decorative Accent Bar -->
           <div class="h-2 w-100" :class="accentBarClass"></div>
 
@@ -63,7 +63,7 @@
               variant="flat"
               prepend-icon="mdi-home"
               size="large"
-              class="rounded-xl px-6"
+              class="rounded-lg px-6"
               to="/"
             >
               Ir al Inicio
@@ -141,7 +141,7 @@
             <v-divider class="my-6"></v-divider>
 
             <!-- Hash SHA-256 Box -->
-            <div class="bg-green-lighten-5 border border-green-lighten-3 pa-4 rounded-xl mb-6">
+            <div class="bg-green-lighten-5 border border-green-lighten-3 pa-4 rounded-lg mb-6">
               <div class="d-flex align-center mb-1">
                 <v-icon color="success" size="small" class="mr-1">mdi-key-variant</v-icon>
                 <span class="text-caption font-weight-black text-green-darken-4 uppercase-tracking">Integridad de Firma Criptográfica</span>
@@ -173,7 +173,7 @@
                 variant="flat"
                 prepend-icon="mdi-printer"
                 size="large"
-                class="rounded-xl px-6 shadow-btn"
+                class="rounded-lg px-6 shadow-btn"
                 @click="printReceipt"
               >
                 Imprimir Validación
@@ -183,7 +183,7 @@
                 variant="outlined"
                 prepend-icon="mdi-home"
                 size="large"
-                class="rounded-xl px-6"
+                class="rounded-lg px-6"
                 to="/"
               >
                 Ir al Inicio

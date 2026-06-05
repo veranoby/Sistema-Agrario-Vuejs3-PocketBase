@@ -50,7 +50,7 @@
         <v-window-item value="paquetes">
           <v-row>
             <!-- Left Column: Packages List -->
-            <v-col cols="12" md="4">
+            <v-col cols="12" md="4" v-if="!mobile || !selectedPackage">
               <v-card class="elevation-2 rounded-lg border border-grey-lighten-3 h-100 d-flex flex-column" style="max-height: 600px;">
                 <v-card-title class="bg-grey-lighten-4 py-3 px-4 text-subtitle-1 font-weight-bold text-grey-darken-3">
                   Paquetes Recibidos
@@ -103,7 +103,17 @@
             </v-col>
 
             <!-- Right Column: Package Detail -->
-            <v-col cols="12" md="8">
+            <v-col cols="12" md="8" v-if="!mobile || selectedPackage">
+              <v-btn
+                v-if="mobile && selectedPackage"
+                variant="text"
+                color="teal"
+                prepend-icon="mdi-arrow-left"
+                class="mb-2 font-weight-bold px-0"
+                @click="selectedPackage = null"
+              >
+                Volver a Paquetes
+              </v-btn>
               <v-card class="elevation-2 rounded-lg border border-grey-lighten-3 h-100" v-if="selectedPackage">
                 <v-card-title class="bg-teal py-3 px-5 text-white font-weight-bold d-flex justify-space-between align-center">
                   <span>Detalle del Paquete de Evaluación</span>
@@ -320,11 +330,13 @@ import { useActividadesStore } from '@/stores/actividadesStore'
 import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import { handleError } from '@/utils/errorHandler'
 import RecetaEditorDialog from '@/components/asesores/RecetaEditorDialog.vue'
+import { useDisplay } from 'vuetify'
 
 const route = useRoute()
 const router = useRouter()
 const actividadesStore = useActividadesStore()
 const uiFeedback = useUiFeedbackStore()
+const { mobile } = useDisplay()
 
 const haciendaId = route.params.hacienda_id
 

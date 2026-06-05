@@ -51,7 +51,7 @@
         Configure las tarifas de venta en Ajustes de Hacienda para ver estimaciones de ingresos reales.
       </v-alert>
 
-      <v-card class="elevation-3 rounded-xl border border-grey-lighten-2 mt-4">
+      <v-card class="elevation-3 rounded-lg border border-grey-lighten-2 mt-4">
         <v-card-title class="pt-6 px-6 pb-2">
           <v-row>
             <v-col cols="12" sm="6" md="4">

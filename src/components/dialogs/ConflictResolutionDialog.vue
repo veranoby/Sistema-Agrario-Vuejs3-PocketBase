@@ -5,7 +5,7 @@
     persistent
     scrollable
   >
-    <v-card class="rounded-xl">
+    <v-card class="rounded-lg">
       <v-card-title class="pa-4 bg-error-lighten-5 flex items-center border-b">
         <v-icon start color="error" size="28" class="mr-3">mdi-alert-octagon</v-icon>
         <span class="text-h5 font-weight-bold">Conflictos de Sincronización</span>
@@ -31,7 +31,7 @@
           <div
             v-for="conflict in localConflicts"
             :key="conflict.id || conflict.tempId"
-            class="border rounded-xl pa-4 transition-all"
+            class="border rounded-lg pa-4 transition-all"
             :class="conflict.resolved ? 'bg-grey-lighten-5 opacity-80' : 'bg-white shadow-sm'"
           >
             <div class="flex items-center gap-3 mb-4">

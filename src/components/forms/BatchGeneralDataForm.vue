@@ -2,7 +2,7 @@
   <v-form ref="form">
     <div v-if="actividadPreview" class="flex flex-col gap-8">
       <!-- Activity Preview Section -->
-      <div class="bg-dinamico p-4 rounded-xl">
+      <div class="bg-dinamico p-4 rounded-lg">
         <div class="flex items-center mb-4">
           <v-icon color="success" class="mr-2">mdi-leaf</v-icon>
           <div class="flex flex-col">
@@ -36,7 +36,7 @@
       </div>
 
       <!-- Additional Observations Input -->
-      <div class="bg-dinamico p-4 rounded-xl">
+      <div class="bg-dinamico p-4 rounded-lg">
         <div class="flex items-center mb-4">
           <v-icon color="primary" class="mr-2">mdi-pencil-outline</v-icon>
           <h4 class="">Observaciones Adicionales</h4>

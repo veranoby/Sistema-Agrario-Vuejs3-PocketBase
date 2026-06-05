@@ -126,7 +126,109 @@
           </v-card-text>
         </v-card>
 
-        <v-card class="mb-4" v-if="!mobile">
+        <v-expansion-panels class="mb-4" v-if="mobile">
+          <v-expansion-panel>
+            <v-expansion-panel-title>
+              <v-icon start>mdi-filter-variant</v-icon>
+              {{ t('finance.filters') || 'Filtros' }}
+            </v-expansion-panel-title>
+            <v-expansion-panel-text>
+              <v-row>
+                <v-col cols="12" sm="6" class="mb-2">
+                  <v-text-field
+                    v-model="filters.razonSocial"
+                    :label="t('finance.filter_by_business_name')"
+                    density="compact"
+                    compact
+                    variant="outlined"
+                    prepend-inner-icon="mdi-filter"
+                    hide-details
+                    clearable
+                    color="primary"
+                    :class="filters.razonSocial ? 'active-filter' : ''"
+                    :bg-color="filters.razonSocial ? 'blue-lighten-4' : undefined"
+                  ></v-text-field>
+                </v-col>
+                <v-col cols="12" sm="3" class="mb-2">
+                  <v-select
+                    v-model="filters.categoria"
+                    :items="[
+                      '',
+                      'SERVICIOS LEGALES',
+                      'INVERSION',
+                      'SUNDRY',
+                      'ALIMENTACION',
+                      'EQUIPOS',
+                      'HONORARIOS',
+                      'MOVILIZACION',
+                      'MATERIALES'
+                    ]"
+                    :label="t('finance.filter_by_category')"
+                    density="compact"
+                    compact
+                    variant="outlined"
+                    prepend-inner-icon="mdi-filter"
+                    hide-details
+                    clearable
+                    color="success"
+                    :class="filters.categoria ? 'active-filter' : ''"
+                    :bg-color="filters.categoria ? 'green-lighten-3' : undefined"
+                  ></v-select>
+                </v-col>
+                <v-col cols="12" sm="3" class="mb-2">
+                  <v-select
+                    v-model="filters.pagadoPor"
+                    :items="usuariosItems"
+                    :label="t('finance.filter_by_paid_by')"
+                    density="compact"
+                    compact
+                    variant="outlined"
+                    prepend-inner-icon="mdi-filter"
+                    hide-details
+                    clearable
+                    color="primary"
+                    :class="filters.pagadoPor ? 'active-filter' : ''"
+                    :bg-color="filters.pagadoPor ? 'blue-lighten-4' : undefined"
+                  ></v-select>
+                </v-col>
+              </v-row>
+              <v-row class="mt-2">
+                <v-col cols="12" sm="6" class="mb-2">
+                  <v-text-field
+                    v-model="filters.detalle"
+                    :label="t('finance.filter_by_detail')"
+                    density="compact"
+                    compact
+                    variant="outlined"
+                    prepend-inner-icon="mdi-filter"
+                    hide-details
+                    clearable
+                    color="success"
+                    :class="filters.detalle ? 'active-filter' : ''"
+                    :bg-color="filters.detalle ? 'green-lighten-3' : undefined"
+                  ></v-text-field>
+                </v-col>
+                <v-col cols="12" sm="6" class="mb-2">
+                  <v-text-field
+                    v-model="filters.comentarios"
+                    :label="t('finance.filter_by_comments')"
+                    density="compact"
+                    compact
+                    variant="outlined"
+                    prepend-inner-icon="mdi-filter"
+                    hide-details
+                    clearable
+                    color="primary"
+                    :class="filters.comentarios ? 'active-filter' : ''"
+                    :bg-color="filters.comentarios ? 'blue-lighten-4' : undefined"
+                  ></v-text-field>
+                </v-col>
+              </v-row>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
+
+        <v-card class="mb-4" v-else>
           <v-card-text>
             <v-row>
               <v-col cols="12" sm="6">

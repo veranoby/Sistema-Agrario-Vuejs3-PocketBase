@@ -123,20 +123,49 @@
       <v-row v-if="hasData">
         <!-- Distribution of Costs -->
         <v-col cols="12" md="6">
-          <v-card class="elevation-3 rounded-xl pa-4 bg-white border border-grey-lighten-2 h-100">
+          <v-card class="elevation-3 rounded-lg pa-4 bg-white border border-grey-lighten-2 h-100">
             <v-card-title class="font-weight-black text-teal-darken-3 px-2 mb-4 d-flex align-center">
               <v-icon icon="mdi-chart-pie" color="teal" class="mr-2"></v-icon>
               Distribución de Costos Operativos
             </v-card-title>
-            <div class="chart-container py-4">
+            <div class="chart-container py-4" v-if="!mobile">
               <Doughnut :data="chartDataCosto" :options="chartOptionsDoughnut" />
             </div>
+            <v-list v-else density="compact" class="bg-transparent">
+              <v-list-item>
+                <template v-slot:prepend>
+                  <v-icon color="#3f51b5" icon="mdi-circle"></v-icon>
+                </template>
+                <v-list-item-title>Mano de Obra</v-list-item-title>
+                <template v-slot:append>
+                  <span class="font-weight-bold">${{ formatNumber(totalNomina) }}</span>
+                </template>
+              </v-list-item>
+              <v-list-item>
+                <template v-slot:prepend>
+                  <v-icon color="#ff9800" icon="mdi-circle"></v-icon>
+                </template>
+                <v-list-item-title>Insumos</v-list-item-title>
+                <template v-slot:append>
+                  <span class="font-weight-bold">${{ formatNumber(totalBodega) }}</span>
+                </template>
+              </v-list-item>
+              <v-list-item>
+                <template v-slot:prepend>
+                  <v-icon color="#009688" icon="mdi-circle"></v-icon>
+                </template>
+                <v-list-item-title>Finanzas</v-list-item-title>
+                <template v-slot:append>
+                  <span class="font-weight-bold">${{ formatNumber(totalFinanzas) }}</span>
+                </template>
+              </v-list-item>
+            </v-list>
           </v-card>
         </v-col>
 
         <!-- Budget vs Real -->
         <v-col cols="12" md="6">
-          <v-card class="elevation-3 rounded-xl pa-4 bg-white border border-grey-lighten-2 h-100">
+          <v-card class="elevation-3 rounded-lg pa-4 bg-white border border-grey-lighten-2 h-100">
             <v-card-title class="font-weight-black text-teal-darken-3 px-2 mb-4 d-flex align-center">
               <v-icon icon="mdi-chart-bar-stacked" color="teal" class="mr-2"></v-icon>
               Presupuesto Proyectado vs Costo Real
@@ -149,7 +178,7 @@
 
         <!-- Weekly Harvest Projection -->
         <v-col cols="12">
-          <v-card class="elevation-3 rounded-xl pa-4 bg-white border border-grey-lighten-2 mt-4">
+          <v-card class="elevation-3 rounded-lg pa-4 bg-white border border-grey-lighten-2 mt-4">
             <v-card-title class="font-weight-black text-teal-darken-3 px-2 mb-4 d-flex align-center">
               <v-icon icon="mdi-chart-timeline-variant-shimmer" color="teal" class="mr-2"></v-icon>
               Proyección y Tendencia de Cosecha Semanal
@@ -168,7 +197,7 @@
             icon="mdi-chart-box-outline"
             title="Datos Insuficientes"
             text="Aún no hay suficientes registros de nóminas, movimientos de bodega o tarjas registradas para este mes en su hacienda. Comience registrando movimientos o nóminas para ver el análisis."
-            class="rounded-xl border border-grey-lighten-3 elevation-1 bg-white py-12"
+            class="rounded-lg border border-grey-lighten-3 elevation-1 bg-white py-12"
           >
             <template v-slot:actions>
               <v-btn color="teal" variant="flat" class="text-white font-weight-bold rounded-lg px-6" @click="cargarDatos">
@@ -191,6 +220,7 @@ import { useHaciendaStore } from '@/stores/haciendaStore'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/authStore'
+import { useDisplay } from 'vuetify'
 import {
   Chart as ChartJS,
   Title,
@@ -225,6 +255,7 @@ const tarjasStore = useTarjasStore()
 const haciendaStore = useHaciendaStore()
 const authStore = useAuthStore()
 const { t } = useI18n()
+const { mobile } = useDisplay()
 const { userRole, avatarUrl } = storeToRefs(authStore)
 const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
 

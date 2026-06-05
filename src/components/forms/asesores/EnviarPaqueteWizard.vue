@@ -1,6 +1,6 @@
 <template>
   <v-dialog :model-value="modelValue" @update:model-value="emit('update:modelValue', $event)" max-width="850px" persistent>
-    <v-card class="rounded-xl overflow-hidden elevation-5 border-teal-lighten-4 border">
+    <v-card class="rounded-lg overflow-hidden elevation-5 border-teal-lighten-4 border">
       <!-- Title -->
       <v-card-title class="bg-gradient-teal py-4 px-6 text-white d-flex align-center justify-space-between">
         <div class="d-flex align-center gap-2">

@@ -99,7 +99,7 @@
 
         <div class=" bg-card text-card-foreground shadow-sm" aria-label="Secciones de acción">
           <!-- SECCIÓN: Programaciones Vencidas (Nuevo) -->
-          <v-card v-if="programacionesVencidas.length" class="bg-dinamico p-4 rounded-xl" color="transparent" flat>
+          <v-card v-if="programacionesVencidas.length" class="bg-dinamico p-4 rounded-lg" color="transparent" flat>
             <v-card-title class="px-0 pb-4 d-flex align-center">
               <v-icon start color="error">mdi-clock-alert-outline</v-icon>
               <span class="text-h6 font-weight-bold text-error">{{ $t('dashboard.overdue_schedules') }}</span>

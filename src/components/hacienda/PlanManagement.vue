@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col border-1 m-5 px-6 pb-0 pt-4 bg-dinamico shadow-md hover:shadow-xl rounded-xl border">
+  <div class="flex flex-col border-1 m-5 px-6 pb-0 pt-4 bg-dinamico shadow-md hover:shadow-xl rounded-lg border">
     <div class="flex items-center justify-between mb-4">
       <div>
         <h2 class="text-l font-bold">{{ t('plan_management.current_plan') }}</h2>
@@ -229,7 +229,7 @@
             <v-row>
               <v-col cols="12" md="6">
                 <h3 class="text-h6 mb-4">Resumen de Suscripción</h3>
-                <v-card variant="flat" class="mb-4 pa-4 border rounded-xl bg-white">
+                <v-card variant="flat" class="mb-4 pa-4 border rounded-lg bg-white">
                   <div class="d-flex justify-space-between mb-2">
                     <span class="font-weight-medium">Plan Base ({{ selectedPlanData?.nombre || '?' }})</span>
                     <span class="font-weight-bold">${{ selectedPlanData?.precio || 0 }}.00/mes</span>
@@ -262,7 +262,7 @@
                   </div>
                 </v-card>
 
-                <v-alert v-if="billingCycle === 'yearly'" type="success" variant="tonal" density="compact" class="rounded-xl">
+                <v-alert v-if="billingCycle === 'yearly'" type="success" variant="tonal" density="compact" class="rounded-lg">
                   <v-icon start>mdi-piggy-bank</v-icon>
                   Estás ahorrando <strong>${{ annualSavings.toFixed(2) }}</strong> al año con el pago anual.
                 </v-alert>
@@ -270,7 +270,7 @@
 
               <v-col cols="12" md="6">
                 <h3 class="text-h6 mb-4">Finalizar Pago</h3>
-                <div class="bg-white pa-4 rounded-xl mb-4 border border-dashed">
+                <div class="bg-white pa-4 rounded-lg mb-4 border border-dashed">
                   <div class="text-subtitle-2 font-weight-bold mb-2 flex items-center">
                     <v-icon start color="primary" size="small">mdi-bank</v-icon>
                     Instrucciones Bancarias
@@ -290,7 +290,7 @@
                   show-size
                   hint="PDF, JPG o PNG (Max 5MB)"
                   persistent-hint
-                  class="bg-white rounded-xl"
+                  class="bg-white rounded-lg"
                 ></v-file-input>
               </v-col>
             </v-row>

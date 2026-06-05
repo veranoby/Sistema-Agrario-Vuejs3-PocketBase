@@ -5,7 +5,7 @@
     max-width="500"
     persistent
   >
-    <v-card class="rounded-xl overflow-hidden shadow-2xl">
+    <v-card class="rounded-lg overflow-hidden shadow-2xl">
       <v-toolbar color="green-darken-3" dark class="px-4">
         <v-icon start size="large">mdi-dolly</v-icon>
         <v-toolbar-title class="font-weight-bold text-h6">
@@ -317,7 +317,7 @@ const handleSubmit = async () => {
 </script>
 
 <style scoped>
-.rounded-xl {
+.rounded-lg {
   border-radius: 16px !important;
 }
 .shadow-2xl {

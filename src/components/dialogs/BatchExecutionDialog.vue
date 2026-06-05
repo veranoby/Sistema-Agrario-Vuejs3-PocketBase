@@ -1,6 +1,6 @@
 <template>
   <v-dialog v-model="dialog" persistent max-width="900px" width="95%" scrollable>
-    <v-card class="rounded-xl overflow-hidden">
+    <v-card class="rounded-lg overflow-hidden">
       <v-toolbar color="success" dark flat height="70">
         <v-icon size="28" class="ml-4 mr-3">mdi-playlist-check</v-icon>
         <div class="flex flex-col">
@@ -153,7 +153,7 @@
 
     <!-- Diálogo de Advertencia por Selección Incompleta -->
     <v-dialog v-model="showWarningDialog" max-width="500px" persistent>
-      <v-card class="rounded-xl">
+      <v-card class="rounded-lg">
         <v-toolbar color="warning" dark flat density="compact">
           <v-icon class="ml-4 mr-2">mdi-alert</v-icon>
           <v-toolbar-title class="text-subtitle-1 font-weight-bold">Atención: Selección Incompleta</v-toolbar-title>

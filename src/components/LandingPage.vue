@@ -3,7 +3,7 @@
     <div class="flex flex-col min-h-dvh" style="font-family: 'Plus Jakarta Sans', sans-serif;">
       
       <!-- HERO COMBINADO CON MISIÓN (Alto Impacto) -->
-      <section class="w-full rounded-2xl py-16 md:py-32 relative overflow-hidden bg-[#f8f9fb]">
+      <section class="w-full rounded-lg py-16 md:py-32 relative overflow-hidden bg-[#f8f9fb]">
         <!-- Decoración de fondo abstracta -->
         <div class="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-green-500/10 blur-3xl mix-blend-multiply"></div>
         <div class="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 rounded-full bg-blue-500/10 blur-3xl mix-blend-multiply"></div>
@@ -76,7 +76,7 @@
                 class="aspect-[4/3] w-full rounded-[2rem] object-cover shadow-2xl shadow-green-900/20" 
               />
               <!-- Tarjeta Flotante superpuesta -->
-              <div class="absolute -bottom-6 -left-6 rounded-2xl bg-white/90 backdrop-blur-md p-6 shadow-xl border border-white/40 max-w-[250px] animate-bounce-slow">
+              <div class="absolute -bottom-6 -left-6 rounded-lg bg-white/90 backdrop-blur-md p-6 shadow-xl border border-white/40 max-w-[250px] animate-bounce-slow">
                 <div class="flex items-center gap-4 mb-2">
                   <div class="p-2 bg-green-100 rounded-lg text-green-700">
                     <v-icon>mdi-check-decagram</v-icon>
@@ -106,21 +106,21 @@
           </div>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             <div class="feature-card flex flex-col items-center text-center space-y-4 p-8 bg-white">
-              <div class="p-4 bg-green-50 text-green-600 rounded-2xl">
+              <div class="p-4 bg-green-50 text-green-600 rounded-lg">
                 <v-icon size="40">mdi-shield-check</v-icon>
               </div>
               <h3 class="text-xl font-bold text-[#243b53]">Trazabilidad Inmutable</h3>
               <p class="text-sm text-muted-foreground leading-relaxed">Firmas criptográficas RSA locales para garantizar la integridad legal de sus bitácoras ante estrictas auditorías BPA.</p>
             </div>
             <div class="feature-card flex flex-col items-center text-center space-y-4 p-8 bg-white">
-              <div class="p-4 bg-green-50 text-green-600 rounded-2xl">
+              <div class="p-4 bg-green-50 text-green-600 rounded-lg">
                 <v-icon size="40">mdi-map-marker-path</v-icon>
               </div>
               <h3 class="text-xl font-bold text-[#243b53]">Mapeo GIS</h3>
               <p class="text-sm text-muted-foreground leading-relaxed">Delimitación precisa de lotes, almacenes y zonas ecológicas con integración nativa a mapas interactivos Leaflet.</p>
             </div>
             <div class="feature-card flex flex-col items-center text-center space-y-4 p-8 bg-white">
-              <div class="p-4 bg-green-50 text-green-600 rounded-2xl">
+              <div class="p-4 bg-green-50 text-green-600 rounded-lg">
                 <v-icon size="40">mdi-sync-off</v-icon>
               </div>
               <h3 class="text-xl font-bold text-[#243b53]">Offline-First</h3>
@@ -142,28 +142,28 @@
             </p>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-            <div class="p-6 border border-[#d9e2ec] rounded-2xl bg-white text-center shadow-sm hover:shadow-md transition-shadow">
+            <div class="p-6 border border-[#d9e2ec] rounded-lg bg-white text-center shadow-sm hover:shadow-md transition-shadow">
               <div class="mx-auto w-12 h-12 flex items-center justify-center rounded-full bg-green-100 text-green-700 mb-4">
                 <v-icon size="24">mdi-robot</v-icon>
               </div>
               <h4 class="font-bold text-[#243b53] mb-2">IA Agronómica</h4>
               <p class="text-xs text-muted-foreground">Diagnósticos de plagas y Action Cards ejecutables al instante.</p>
             </div>
-            <div class="p-6 border border-[#d9e2ec] rounded-2xl bg-white text-center shadow-sm hover:shadow-md transition-shadow">
+            <div class="p-6 border border-[#d9e2ec] rounded-lg bg-white text-center shadow-sm hover:shadow-md transition-shadow">
               <div class="mx-auto w-12 h-12 flex items-center justify-center rounded-full bg-green-100 text-green-700 mb-4">
                 <v-icon size="24">mdi-cash-multiple</v-icon>
               </div>
               <h4 class="font-bold text-[#243b53] mb-2">Costo por Hectárea</h4>
               <p class="text-xs text-muted-foreground">Control financiero y cálculo en tiempo real de rentabilidad (ROI).</p>
             </div>
-            <div class="p-6 border border-[#d9e2ec] rounded-2xl bg-white text-center shadow-sm hover:shadow-md transition-shadow">
+            <div class="p-6 border border-[#d9e2ec] rounded-lg bg-white text-center shadow-sm hover:shadow-md transition-shadow">
               <div class="mx-auto w-12 h-12 flex items-center justify-center rounded-full bg-green-100 text-green-700 mb-4">
                 <v-icon size="24">mdi-account-group</v-icon>
               </div>
               <h4 class="font-bold text-[#243b53] mb-2">Nómina Express</h4>
               <p class="text-xs text-muted-foreground">Gestión ágil de pagos, jornales, horas extras y destajos en campo.</p>
             </div>
-            <div class="p-6 border border-[#d9e2ec] rounded-2xl bg-white text-center shadow-sm hover:shadow-md transition-shadow">
+            <div class="p-6 border border-[#d9e2ec] rounded-lg bg-white text-center shadow-sm hover:shadow-md transition-shadow">
               <div class="mx-auto w-12 h-12 flex items-center justify-center rounded-full bg-green-100 text-green-700 mb-4">
                 <v-icon size="24">mdi-warehouse</v-icon>
               </div>
@@ -295,7 +295,7 @@
       </section>
 
       <!-- Contact & Footer Section (ConEspacio styled) -->
-      <section id="contact-section" class="w-full rounded-2xl py-16 md:py-24 text-white relative overflow-hidden" style="background: radial-gradient(circle at 30% top, #1e293b, #0a1929);">
+      <section id="contact-section" class="w-full rounded-lg py-16 md:py-24 text-white relative overflow-hidden" style="background: radial-gradient(circle at 30% top, #1e293b, #0a1929);">
         <!-- Ruido visual sutil para el fondo oscuro (SVG de textura) -->
         <div class="absolute inset-0 opacity-[0.03]" style="background-image: url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E');"></div>
         
@@ -306,14 +306,14 @@
               <p class="text-gray-300 text-lg md:text-xl">Únase a cientos de agricultores que ya han digitalizado y asegurado sus bitácoras con la tecnología de ConAgri.</p>
               
               <div class="space-y-5 pt-4">
-                <div class="flex items-center text-gray-200 bg-white/5 p-4 rounded-xl border border-white/10">
+                <div class="flex items-center text-gray-200 bg-white/5 p-4 rounded-lg border border-white/10">
                   <v-icon color="success" size="28" class="mr-4">mdi-email</v-icon>
                   <div>
                     <p class="text-xs text-gray-400 font-semibold text-uppercase">Correo Directo</p>
                     <p class="text-base font-medium">contacto@conespacio.org</p>
                   </div>
                 </div>
-                <div class="flex items-center text-gray-200 bg-white/5 p-4 rounded-xl border border-white/10">
+                <div class="flex items-center text-gray-200 bg-white/5 p-4 rounded-lg border border-white/10">
                   <v-icon color="success" size="28" class="mr-4">mdi-headset</v-icon>
                   <div>
                     <p class="text-xs text-gray-400 font-semibold text-uppercase">Soporte Técnico</p>
@@ -324,7 +324,7 @@
             </div>
 
             <!-- Formulario -->
-            <v-card class="elevation-12 rounded-2xl overflow-hidden" style="background: rgba(255, 255, 255, 0.08); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.15);">
+            <v-card class="elevation-12 rounded-lg overflow-hidden" style="background: rgba(255, 255, 255, 0.08); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.15);">
               <div class="p-8">
                 <h3 class="text-2xl font-bold mb-6 text-white">Envíenos un mensaje</h3>
                 <v-form ref="form" v-model="valid">
@@ -476,7 +476,7 @@ const openAuth = () => {
 /* Aplicación de Manual de Marca: UI Flotante y Tarjetas */
 .feature-card {
   border: 1px solid rgba(217, 226, 236, 0.5); /* Navy 100 at 50% opacity */
-  border-radius: 1rem; /* rounded-2xl for modern look */
+  border-radius: 1rem; /* rounded-lg for modern look */
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }

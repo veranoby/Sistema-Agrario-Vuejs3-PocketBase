@@ -204,7 +204,7 @@
 
     <!-- Dialog Aprobar y Programar -->
     <v-dialog v-model="approveDialog" max-width="500px">
-      <v-card class="rounded-xl border border-teal-lighten-4">
+      <v-card class="rounded-lg border border-teal-lighten-4">
         <v-card-title class="bg-teal py-4 px-6 text-white font-weight-bold">
           Aprobar y Programar Actividad
         </v-card-title>
@@ -247,7 +247,7 @@
 
     <!-- Dialog Rechazar -->
     <v-dialog v-model="rejectDialog" max-width="500px">
-      <v-card class="rounded-xl border border-red-lighten-4">
+      <v-card class="rounded-lg border border-red-lighten-4">
         <v-card-title class="bg-red-darken-1 py-4 px-6 text-white font-weight-bold">
           Rechazar Receta Técnica
         </v-card-title>

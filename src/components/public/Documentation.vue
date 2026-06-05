@@ -19,42 +19,42 @@
                 Manuales Especializados
               </h2>
               <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                <router-link to="/manuales/ai_assistant_premium" target="_blank" class="flex items-center p-4 border border-green-100 bg-white rounded-xl shadow-sm hover:-translate-y-1 hover:shadow-md transition-all text-decoration-none">
+                <router-link to="/manuales/ai_assistant_premium" target="_blank" class="flex items-center p-4 border border-green-100 bg-white rounded-lg shadow-sm hover:-translate-y-1 hover:shadow-md transition-all text-decoration-none">
                   <v-icon color="success" class="mr-3" size="32">mdi-robot</v-icon>
                   <div>
                     <h4 class="font-bold text-green-900 text-sm">Asistente IA Premium</h4>
                     <span class="text-xs text-muted-foreground">Guía de prompts y action cards</span>
                   </div>
                 </router-link>
-                <router-link to="/manuales/costo_por_hectarea" target="_blank" class="flex items-center p-4 border border-green-100 bg-white rounded-xl shadow-sm hover:-translate-y-1 hover:shadow-md transition-all text-decoration-none">
+                <router-link to="/manuales/costo_por_hectarea" target="_blank" class="flex items-center p-4 border border-green-100 bg-white rounded-lg shadow-sm hover:-translate-y-1 hover:shadow-md transition-all text-decoration-none">
                   <v-icon color="success" class="mr-3" size="32">mdi-cash-multiple</v-icon>
                   <div>
                     <h4 class="font-bold text-green-900 text-sm">Costo por Hectárea</h4>
                     <span class="text-xs text-muted-foreground">Cálculo de ROI y reportes</span>
                   </div>
                 </router-link>
-                <router-link to="/manuales/kardex_bodega" target="_blank" class="flex items-center p-4 border border-green-100 bg-white rounded-xl shadow-sm hover:-translate-y-1 hover:shadow-md transition-all text-decoration-none">
+                <router-link to="/manuales/kardex_bodega" target="_blank" class="flex items-center p-4 border border-green-100 bg-white rounded-lg shadow-sm hover:-translate-y-1 hover:shadow-md transition-all text-decoration-none">
                   <v-icon color="success" class="mr-3" size="32">mdi-warehouse</v-icon>
                   <div>
                     <h4 class="font-bold text-green-900 text-sm">Kardex de Bodega</h4>
                     <span class="text-xs text-muted-foreground">Inventario y lotes</span>
                   </div>
                 </router-link>
-                <router-link to="/manuales/nomina_express" target="_blank" class="flex items-center p-4 border border-green-100 bg-white rounded-xl shadow-sm hover:-translate-y-1 hover:shadow-md transition-all text-decoration-none">
+                <router-link to="/manuales/nomina_express" target="_blank" class="flex items-center p-4 border border-green-100 bg-white rounded-lg shadow-sm hover:-translate-y-1 hover:shadow-md transition-all text-decoration-none">
                   <v-icon color="success" class="mr-3" size="32">mdi-account-group</v-icon>
                   <div>
                     <h4 class="font-bold text-green-900 text-sm">Nómina Express</h4>
                     <span class="text-xs text-muted-foreground">Gestión de jornales y pagos</span>
                   </div>
                 </router-link>
-                <router-link to="/manuales/pdf_bpa" target="_blank" class="flex items-center p-4 border border-green-100 bg-white rounded-xl shadow-sm hover:-translate-y-1 hover:shadow-md transition-all text-decoration-none">
+                <router-link to="/manuales/pdf_bpa" target="_blank" class="flex items-center p-4 border border-green-100 bg-white rounded-lg shadow-sm hover:-translate-y-1 hover:shadow-md transition-all text-decoration-none">
                   <v-icon color="success" class="mr-3" size="32">mdi-file-pdf-box</v-icon>
                   <div>
                     <h4 class="font-bold text-green-900 text-sm">Reportes BPA</h4>
                     <span class="text-xs text-muted-foreground">Generación para auditorías</span>
                   </div>
                 </router-link>
-                <router-link to="/manuales/tarjas_campo" target="_blank" class="flex items-center p-4 border border-green-100 bg-white rounded-xl shadow-sm hover:-translate-y-1 hover:shadow-md transition-all text-decoration-none">
+                <router-link to="/manuales/tarjas_campo" target="_blank" class="flex items-center p-4 border border-green-100 bg-white rounded-lg shadow-sm hover:-translate-y-1 hover:shadow-md transition-all text-decoration-none">
                   <v-icon color="success" class="mr-3" size="32">mdi-clipboard-list-outline</v-icon>
                   <div>
                     <h4 class="font-bold text-green-900 text-sm">Tarjas de Campo</h4>
@@ -71,7 +71,7 @@
                 Guía Rápida de Uso
               </h2>
               <div class="grid md:grid-cols-2 gap-6">
-                <div class="rounded-xl border border-green-100 bg-white p-6 shadow-sm">
+                <div class="rounded-lg border border-green-100 bg-white p-6 shadow-sm">
                   <h3 class="text-lg font-bold text-green-800 mb-2">1. Configuración Inicial</h3>
                   <ul class="list-disc pl-5 space-y-2 text-sm text-muted-foreground mb-4">
                     <li>Registre su cuenta y acceda al panel.</li>
@@ -79,7 +79,7 @@
                     <li>Invite colaboradores asignando roles: <em>Operador</em> o <em>Auditor</em>.</li>
                   </ul>
                 </div>
-                <div class="rounded-xl border border-green-100 bg-white p-6 shadow-sm">
+                <div class="rounded-lg border border-green-100 bg-white p-6 shadow-sm">
                   <h3 class="text-lg font-bold text-green-800 mb-2">2. Operación Diaria</h3>
                   <ul class="list-disc pl-5 space-y-2 text-sm text-muted-foreground mb-4">
                     <li>Cree <strong>Siembras</strong> vinculadas a los lotes dibujados.</li>
@@ -88,7 +88,7 @@
                   </ul>
                   <router-link to="/manuales/operacion_diaria" target="_blank" class="text-sm font-bold text-green-700 hover:underline flex items-center"><v-icon size="16" class="mr-1">mdi-book-open</v-icon> Ver Manual</router-link>
                 </div>
-                <div class="rounded-xl border border-green-100 bg-white p-6 shadow-sm">
+                <div class="rounded-lg border border-green-100 bg-white p-6 shadow-sm">
                   <h3 class="text-lg font-bold text-green-800 mb-2">3. Programaciones y Bitácora</h3>
                   <ul class="list-disc pl-5 space-y-2 text-sm text-muted-foreground mb-4">
                     <li>Agende aplicaciones y labores futuras en <strong>Programaciones</strong>.</li>
@@ -97,7 +97,7 @@
                   </ul>
                   <router-link to="/manuales/programaciones_bitacora" target="_blank" class="text-sm font-bold text-green-700 hover:underline flex items-center"><v-icon size="16" class="mr-1">mdi-book-open</v-icon> Ver Manual</router-link>
                 </div>
-                <div class="rounded-xl border border-green-100 bg-white p-6 shadow-sm">
+                <div class="rounded-lg border border-green-100 bg-white p-6 shadow-sm">
                   <h3 class="text-lg font-bold text-green-800 mb-2">4. Finanzas Básicas</h3>
                   <ul class="list-disc pl-5 space-y-2 text-sm text-muted-foreground mb-4">
                     <li>Acceda a <strong>Finanzas</strong> para registrar gastos operativos diarios.</li>
@@ -116,7 +116,7 @@
                 Preguntas Frecuentes
               </h2>
               
-              <v-expansion-panels variant="accordion" class="rounded-xl overflow-hidden border border-green-100">
+              <v-expansion-panels variant="accordion" class="rounded-lg overflow-hidden border border-green-100">
                 <v-expansion-panel
                   title="¿Cómo garantiza ConAgri el cumplimiento BPA (Buenas Prácticas Agrícolas)?"
                   text="Validamos obligatoriamente fecha, geolocalización, insumos, y firma digital RSA en cada registro, garantizando inmutabilidad y transparencia requerida por GlobalG.A.P. y otros sellos."

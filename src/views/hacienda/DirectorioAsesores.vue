@@ -25,7 +25,7 @@
       </header>
 
       <!-- Filtros -->
-      <v-card class="m-4 rounded-xl">
+      <v-card class="m-4 rounded-lg">
         <v-card-text class="pt-6">
           <v-row>
             <v-col cols="12" md="4" lg="5">

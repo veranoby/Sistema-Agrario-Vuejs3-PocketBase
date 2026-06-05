@@ -1,5 +1,5 @@
 <template>
-  <div class="bpa-checklist bg-dinamico p-4 rounded-xl">
+  <div class="bpa-checklist bg-dinamico p-4 rounded-lg">
     <div class="flex items-center mb-4">
       <v-icon color="primary" class="mr-2">mdi-check-all</v-icon>
       <h4 class="font-weight-bold">Checklist BPA (Buenas Prácticas Agrícolas)</h4>

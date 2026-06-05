@@ -6,8 +6,7 @@ export default {
     extend: {
       fontFamily: {
         sans: [
-          'Inter var',
-          'SF Pro Display',
+          '"Plus Jakarta Sans"',
           '-apple-system',
           'BlinkMacSystemFont',
           'Segoe UI',
@@ -31,7 +30,7 @@ export default {
           invierno: '#64b5f6'
         },
         agri: {
-          primary: '#2e7d32',
+          primary: '#198f4c',
           success: '#4caf50',
           warning: '#ff9800',
           error: '#f44336',

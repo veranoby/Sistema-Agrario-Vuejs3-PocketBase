@@ -1,5 +1,5 @@
 <template>
-  <v-card class="rounded-xl overflow-hidden borderless-dialog">
+  <v-card class="rounded-lg overflow-hidden borderless-dialog">
     <v-toolbar :color="isEditMode ? 'warning' : 'success'" dark flat height="70">
       <v-icon size="28" class="ml-4 mr-3">{{ isEditMode ? 'mdi-pencil' : 'mdi-plus-circle' }}</v-icon>
       <div class="flex flex-col">
@@ -28,7 +28,7 @@
         <div class="flex flex-col gap-6 pa-6">
           
           <!-- SECCIÓN 1: Datos Básicos -->
-          <div class="bg-dinamico p-4 rounded-xl">
+          <div class="bg-dinamico p-4 rounded-lg">
             <div class="flex items-center mb-4">
               <v-icon color="success" class="mr-2">mdi-information-outline</v-icon>
               <h4>Datos de la Entrada</h4>
@@ -95,7 +95,7 @@
           </div>
 
           <!-- SECCIÓN 2: Siembras Involucradas (Checklist Inteligente) -->
-          <div class="bg-dinamico p-4 rounded-xl">
+          <div class="bg-dinamico p-4 rounded-lg">
             <SiembraSelectorList
               v-model="formData.siembras_ids"
               :available-ids="relevantSiembraIds"
@@ -123,7 +123,7 @@
           </div>
 
           <!-- SECCIÓN BODEGA: Consumo de Insumos -->
-          <div v-if="showBodegaSection" class="bg-dinamico p-4 rounded-xl border border-teal-lighten-4">
+          <div v-if="showBodegaSection" class="bg-dinamico p-4 rounded-lg border border-teal-lighten-4">
             <div class="flex items-center mb-4">
               <v-icon color="teal" class="mr-2">mdi-warehouse</v-icon>
               <h4 class="font-weight-bold text-teal-darken-3">Consumo de Insumos de Bodega</h4>
@@ -206,7 +206,7 @@
             </div>
           </div>
           <!-- SECCIÓN 5: Evidencia Fotográfica -->
-          <div class="bg-dinamico p-4 rounded-xl border border-blue-lighten-4">
+          <div class="bg-dinamico p-4 rounded-lg border border-blue-lighten-4">
             <div class="flex items-center mb-4">
               <v-icon color="blue" class="mr-2">mdi-camera</v-icon>
               <h4 class="font-weight-bold text-blue-darken-3">Fotografía / Evidencia</h4>

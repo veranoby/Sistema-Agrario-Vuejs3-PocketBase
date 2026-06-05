@@ -1,0 +1,1422 @@
+{
+  "totalFiles": 125,
+  "fonts": {
+    "hardcodedFontFamily": [
+      {
+        "file": "src/components/reports/ReportCountdownClock.vue",
+        "matches": [
+          "font-family: 'Roboto Mono'"
+        ]
+      },
+      {
+        "file": "src/components/public/Documentation.vue",
+        "matches": [
+          "font-family: 'Plus Jakarta Sans'"
+        ]
+      },
+      {
+        "file": "src/components/public/ManualViewer.vue",
+        "matches": [
+          "font-family: 'Plus Jakarta Sans'"
+        ]
+      },
+      {
+        "file": "src/components/ConflictHistoryViewer.vue",
+        "matches": [
+          "font-family: 'Roboto Mono'"
+        ]
+      },
+      {
+        "file": "src/components/LandingPage.vue",
+        "matches": [
+          "font-family: 'Plus Jakarta Sans'"
+        ]
+      }
+    ]
+  },
+  "colors": {
+    "rawHexColors": [
+      {
+        "file": "src/components/forms/ZonaForm.vue",
+        "count": 2,
+        "samples": [
+          "#4CAF50",
+          "#9E9E9E"
+        ]
+      },
+      {
+        "file": "src/components/forms/asesores/EnviarPaqueteWizard.vue",
+        "count": 3,
+        "samples": [
+          "#00796B",
+          "#004D40"
+        ]
+      },
+      {
+        "file": "src/components/admin/HaciendasManagement.vue",
+        "count": 1,
+        "samples": [
+          "#3F51B5"
+        ]
+      },
+      {
+        "file": "src/components/actividades/ActividadesProgramaciones.vue",
+        "count": 1,
+        "samples": [
+          "#6e97b21c"
+        ]
+      },
+      {
+        "file": "src/components/actividades/ActividadesEditDialog.vue",
+        "count": 1,
+        "samples": [
+          "#e2e8f0"
+        ]
+      },
+      {
+        "file": "src/components/actividades/ActividadesWorkspace.vue",
+        "count": 2,
+        "samples": [
+          "#e2e8f0"
+        ]
+      },
+      {
+        "file": "src/components/actividades/ActividadesInfo.vue",
+        "count": 2,
+        "samples": [
+          "#333",
+          "#999"
+        ]
+      },
+      {
+        "file": "src/components/actividades/ActividadesDashboard.vue",
+        "count": 4,
+        "samples": [
+          "#4CAF50",
+          "#FF9800",
+          "#e2e8f0"
+        ]
+      },
+      {
+        "file": "src/components/siembras/SiembraInfo.vue",
+        "count": 1,
+        "samples": [
+          "#333"
+        ]
+      },
+      {
+        "file": "src/components/siembras/SiembraZonas.vue",
+        "count": 1,
+        "samples": [
+          "#333"
+        ]
+      },
+      {
+        "file": "src/components/siembras/SiembraActividades.vue",
+        "count": 1,
+        "samples": [
+          "#333"
+        ]
+      },
+      {
+        "file": "src/components/siembras/CycleChart.vue",
+        "count": 19,
+        "samples": [
+          "#f44336",
+          "#333",
+          "#ccc",
+          "#666",
+          "#ddd"
+        ]
+      },
+      {
+        "file": "src/components/siembras/SiembraWorkspace.vue",
+        "count": 10,
+        "samples": [
+          "#2e7d32",
+          "#4caf50",
+          "#5d4037",
+          "#3e2723",
+          "#ffd54f"
+        ]
+      },
+      {
+        "file": "src/components/siembras/SiembrasDashboard.vue",
+        "count": 9,
+        "samples": [
+          "#4CAF50",
+          "#1976d2",
+          "#2e7d32",
+          "#f57c00",
+          "#9e9e9e"
+        ]
+      },
+      {
+        "file": "src/components/bitacora/BitacoraSignature.vue",
+        "count": 6,
+        "samples": [
+          "#9e9e9e",
+          "#1b5e20",
+          "#fff",
+          "#4caf50",
+          "#bdbdbd"
+        ]
+      },
+      {
+        "file": "src/components/bitacora/EmbeddedBitacoraList.vue",
+        "count": 1,
+        "samples": [
+          "#e0e0e0"
+        ]
+      },
+      {
+        "file": "src/components/public/Documentation.vue",
+        "count": 1,
+        "samples": [
+          "#64748b"
+        ]
+      },
+      {
+        "file": "src/components/public/ManualViewer.vue",
+        "count": 4,
+        "samples": [
+          "#333",
+          "#14532d",
+          "#dcfce7",
+          "#166534"
+        ]
+      },
+      {
+        "file": "src/components/hacienda/PlanManagement.vue",
+        "count": 3,
+        "samples": [
+          "#2c3e50",
+          "#4caf50",
+          "#546e7a"
+        ]
+      },
+      {
+        "file": "src/components/programaciones/ProgramacionesList.vue",
+        "count": 2,
+        "samples": [
+          "#5757572e",
+          "#5757577d"
+        ]
+      },
+      {
+        "file": "src/components/programaciones/ProgramacionPanel.vue",
+        "count": 6,
+        "samples": [
+          "#4caf50",
+          "#ffd54f",
+          "#f57c00",
+          "#1976d2",
+          "#d32f2f"
+        ]
+      },
+      {
+        "file": "src/components/FinanzasConfig.vue",
+        "count": 1,
+        "samples": [
+          "#4caf50"
+        ]
+      },
+      {
+        "file": "src/components/Sidebar.vue",
+        "count": 1,
+        "samples": [
+          "#4caf50"
+        ]
+      },
+      {
+        "file": "src/components/zonasConfig.vue",
+        "count": 1,
+        "samples": [
+          "#6380a247"
+        ]
+      },
+      {
+        "file": "src/components/Dashboard.vue",
+        "count": 3,
+        "samples": [
+          "#6380a247",
+          "#4CAF50",
+          "#8d6e63"
+        ]
+      },
+      {
+        "file": "src/components/GisMapComponent.vue",
+        "count": 14,
+        "samples": [
+          "#ffffff",
+          "#1565C0",
+          "#9E9E9E",
+          "#2196f3",
+          "#4CAF50"
+        ]
+      },
+      {
+        "file": "src/components/AiAssistant.vue",
+        "count": 4,
+        "samples": [
+          "#fff9c4",
+          "#f44336",
+          "#ff9800",
+          "#4caf50"
+        ]
+      },
+      {
+        "file": "src/components/LandingPage.vue",
+        "count": 30,
+        "samples": [
+          "#f8f9fb",
+          "#0a1929",
+          "#243b53",
+          "#16a34a",
+          "#d9e2ec"
+        ]
+      },
+      {
+        "file": "src/components/asesores/RecetaEditorDialog.vue",
+        "count": 2,
+        "samples": [
+          "#00796B",
+          "#004D40"
+        ]
+      },
+      {
+        "file": "src/views/MetricasView.vue",
+        "count": 14,
+        "samples": [
+          "#4CAF50",
+          "#FF9800",
+          "#FFC107",
+          "#2196F3",
+          "#FF5722"
+        ]
+      },
+      {
+        "file": "src/views/hacienda/DirectorioAsesores.vue",
+        "count": 3,
+        "samples": [
+          "#00796B",
+          "#004D40",
+          "#555"
+        ]
+      },
+      {
+        "file": "src/views/hacienda/RecetasAsesor.vue",
+        "count": 8,
+        "samples": [
+          "#00796B",
+          "#004D40",
+          "#E65100",
+          "#FF9800",
+          "#1B5E20"
+        ]
+      },
+      {
+        "file": "src/views/hacienda/Bodega.vue",
+        "count": 3,
+        "samples": [
+          "#00796B",
+          "#004D40",
+          "#e0e0e0"
+        ]
+      },
+      {
+        "file": "src/views/hacienda/DashboardGerencial.vue",
+        "count": 7,
+        "samples": [
+          "#3f51b5",
+          "#ff9800",
+          "#009688",
+          "#b2dfdb"
+        ]
+      },
+      {
+        "file": "src/views/hacienda/RentabilidadSiembras.vue",
+        "count": 2,
+        "samples": [
+          "#1b5e20",
+          "#b71c1c"
+        ]
+      },
+      {
+        "file": "src/views/hacienda/Nomina.vue",
+        "count": 1,
+        "samples": [
+          "#f1f8e9"
+        ]
+      },
+      {
+        "file": "src/views/asesor/Dashboard.vue",
+        "count": 7,
+        "samples": [
+          "#3949AB",
+          "#1A237E",
+          "#E65100",
+          "#FF9800",
+          "#0D47A1"
+        ]
+      },
+      {
+        "file": "src/views/asesor/HaciendasList.vue",
+        "count": 2,
+        "samples": [
+          "#3949AB",
+          "#1A237E"
+        ]
+      },
+      {
+        "file": "src/views/asesor/HaciendaDetail.vue",
+        "count": 11,
+        "samples": [
+          "#00796B",
+          "#004D40",
+          "#0D47A1",
+          "#1976D2",
+          "#E65100"
+        ]
+      },
+      {
+        "file": "src/views/asesor/Perfil.vue",
+        "count": 3,
+        "samples": [
+          "#3949AB",
+          "#1A237E",
+          "#555"
+        ]
+      },
+      {
+        "file": "src/views/ValidarFirma.vue",
+        "count": 3,
+        "samples": [
+          "#f4fbf7",
+          "#e8f5e9",
+          "#c8e6c9"
+        ]
+      },
+      {
+        "file": "src/App.vue",
+        "count": 8,
+        "samples": [
+          "#f5f5f5",
+          "#ffffff",
+          "#1e1e1e",
+          "#2d2d2d"
+        ]
+      }
+    ]
+  },
+  "borders": {
+    "customBorderRadius": [
+      {
+        "file": "src/components/forms/ZonaForm.vue",
+        "matches": [
+          "border-radius: 4px"
+        ]
+      },
+      {
+        "file": "src/components/dialogs/BatchExecutionDialog.vue",
+        "matches": [
+          "border-radius: 12px"
+        ]
+      },
+      {
+        "file": "src/components/dialogs/GlobalConfirmDialog.vue",
+        "matches": [
+          "border-radius: 24px"
+        ]
+      },
+      {
+        "file": "src/components/admin/AsesoresManagement.vue",
+        "matches": [
+          "border-radius: 8px"
+        ]
+      },
+      {
+        "file": "src/components/actividades/ActividadesEditDialog.vue",
+        "matches": [
+          "border-radius: 0.375rem"
+        ]
+      },
+      {
+        "file": "src/components/actividades/ActividadesWorkspace.vue",
+        "matches": [
+          "border-radius: 0.375rem"
+        ]
+      },
+      {
+        "file": "src/components/actividades/ActividadesDashboard.vue",
+        "matches": [
+          "border-radius: 12px",
+          "border-radius: 0.375rem"
+        ]
+      },
+      {
+        "file": "src/components/siembras/SiembrasDashboard.vue",
+        "matches": [
+          "border-radius: 8px",
+          "border-radius: 12px"
+        ]
+      },
+      {
+        "file": "src/components/bitacora/EmbeddedBitacoraList.vue",
+        "matches": [
+          "border-radius: 4px"
+        ]
+      },
+      {
+        "file": "src/components/hacienda/HaciendaInfo.vue",
+        "matches": [
+          "border-radius: 4px"
+        ]
+      },
+      {
+        "file": "src/components/hacienda/PlanManagement.vue",
+        "matches": [
+          "border-radius: 12px",
+          "border-radius: 50%"
+        ]
+      },
+      {
+        "file": "src/components/programaciones/ProgramacionPanel.vue",
+        "matches": [
+          "border-radius: 8px"
+        ]
+      },
+      {
+        "file": "src/components/SelectiveSyncSettings.vue",
+        "matches": [
+          "border-radius: 8px"
+        ]
+      },
+      {
+        "file": "src/components/ConflictHistoryViewer.vue",
+        "matches": [
+          "border-radius: 4px"
+        ]
+      },
+      {
+        "file": "src/components/Sidebar.vue",
+        "matches": [
+          "border-radius: 4px"
+        ]
+      },
+      {
+        "file": "src/components/GisMapComponent.vue",
+        "matches": [
+          "border-radius: 8px",
+          "border-radius: 4px"
+        ]
+      },
+      {
+        "file": "src/components/LandingPage.vue",
+        "matches": [
+          "border-radius: 1rem",
+          "border-radius: 8px",
+          "border-radius: 1.25rem"
+        ]
+      },
+      {
+        "file": "src/components/tarjas/RegistroTarjaForm.vue",
+        "matches": [
+          "border-radius: 16px"
+        ]
+      },
+      {
+        "file": "src/views/hacienda/Tarjas.vue",
+        "matches": [
+          "border-radius: 16px"
+        ]
+      }
+    ]
+  },
+  "collisions": {
+    "tailwindVuetifyOverlap": [
+      {
+        "file": "src/components/forms/auth/AuthModal.vue",
+        "count": 15,
+        "samples": [
+          "<v-card-text class=\"m-0 p-0\"",
+          "<v-row class=\"m-0 p-0\"",
+          "<v-col class=\"m-0 p-0\""
+        ]
+      },
+      {
+        "file": "src/components/forms/auth/ProfileInfo.vue",
+        "count": 1,
+        "samples": [
+          "<v-btn\r\n                  icon\r\n                  size=\"small\"\r\n                  color=\"green-lighten-2\"\r\n                  class=\"absolute bottom-0 right-0\""
+        ]
+      },
+      {
+        "file": "src/components/forms/AvatarForm.vue",
+        "count": 1,
+        "samples": [
+          "<v-col cols=\"12\" class=\"text-center\""
+        ]
+      },
+      {
+        "file": "src/components/forms/FormularioMetricas.vue",
+        "count": 1,
+        "samples": [
+          "<v-card\n        v-for=\"grupo in metricasAgrupadas\"\n        :key=\"grupo.principal.key\"\n        variant=\"flat\"\n        class=\"transition-all rounded-lg bg-grey-lighten-4\"\n        :class=\"{ 'bg-success-lighten-5 elevation-1': localSelection.includes(grupo.principal.key) }\""
+        ]
+      },
+      {
+        "file": "src/components/forms/SiembraSelectorList.vue",
+        "count": 2,
+        "samples": [
+          "<v-card\n        v-for=\"siembra in siembrasToDisplay\"\n        :key=\"siembra.id\"\n        variant=\"flat\"\n        class=\"transition-all rounded-lg bg-grey-lighten-4\"\n        :class=\"{ 'bg-success-lighten-5 elevation-1': modelValue.includes(siembra.id) }\"",
+          "<v-card-text class=\"pa-3 flex items-center\""
+        ]
+      },
+      {
+        "file": "src/components/forms/BitacoraEntryForm.vue",
+        "count": 4,
+        "samples": [
+          "<v-card class=\"rounded-xl overflow-hidden borderless-dialog\"",
+          "<v-card-text class=\"pa-0 overflow-y-auto\"",
+          "<v-btn\r\n                    color=\"teal\"\r\n                    icon=\"mdi-plus\"\r\n                    variant=\"flat\"\r\n                    class=\"text-white\""
+        ]
+      },
+      {
+        "file": "src/components/forms/ZonaForm.vue",
+        "count": 2,
+        "samples": [
+          "<v-btn\n                    icon\n                    size=\"x-small\"\n                    color=\"success\"\n                    class=\"absolute bottom-0 right-0\"",
+          "<v-card \n                  v-for=\"(pregunta, index) in getBpaPreguntas\" \n                  :key=\"index\"\n                  variant=\"flat\"\n                  class=\"pa-4 bg-white border rounded-xl\""
+        ]
+      },
+      {
+        "file": "src/components/forms/HaciendaForm.vue",
+        "count": 6,
+        "samples": [
+          "<v-card variant=\"flat\" class=\"border pa-4 rounded-xl bg-grey-lighten-5\"",
+          "<v-card variant=\"flat\" class=\"border pa-4 rounded-xl bg-grey-lighten-5\"",
+          "<v-card variant=\"flat\" class=\"border pa-4 rounded-xl bg-grey-lighten-5\""
+        ]
+      },
+      {
+        "file": "src/components/forms/asesores/EnviarPaqueteWizard.vue",
+        "count": 15,
+        "samples": [
+          "<v-card class=\"rounded-xl overflow-hidden elevation-5 border-teal-lighten-4 border\"",
+          "<v-card-title class=\"bg-gradient-teal py-4 px-6 text-white d-flex align-center justify-space-between\"",
+          "<v-card\n                  v-for=\"siembra in activeSiembras\"\n                  :key=\"siembra.id\"\n                  :class=\"['mb-2 border rounded-lg transition-all', selectedSiembraId === siembra.id ? 'border-teal bg-teal-lighten-5 elevation-1' : 'border-grey-lighten-3']\""
+        ]
+      },
+      {
+        "file": "src/components/dialogs/BatchExecutionDialog.vue",
+        "count": 7,
+        "samples": [
+          "<v-card class=\"rounded-xl overflow-hidden\"",
+          "<v-btn\n                size=\"small\"\n                variant=\"tonal\"\n                color=\"success\"\n                @click=\"selectAllFechas\"\n                :disabled=\"allFechasSelected\"\n                class=\"flex-1 sm:flex-none\"",
+          "<v-btn\n                size=\"small\"\n                variant=\"tonal\"\n                color=\"warning\"\n                @click=\"clearAllFechas\"\n                :disabled=\"!anyFechasSelected\"\n                class=\"flex-1 sm:flex-none\""
+        ]
+      },
+      {
+        "file": "src/components/dialogs/ConfirmationDialog.vue",
+        "count": 1,
+        "samples": [
+          "<v-card-title class=\"text-h5\""
+        ]
+      },
+      {
+        "file": "src/components/dialogs/ConflictResolutionDialog.vue",
+        "count": 6,
+        "samples": [
+          "<v-card-title class=\"pa-4 bg-error-lighten-5 flex items-center border-b\"",
+          "<v-card\n                  variant=\"outlined\"\n                  :color=\"conflict.resolution === 'local' ? 'success' : 'grey-lighten-1'\"\n                  class=\"rounded-lg transition-all border-2\"\n                  :class=\"{ 'bg-green-lighten-5 border-success': conflict.resolution === 'local' }\"",
+          "<v-card\n                  variant=\"outlined\"\n                  :color=\"conflict.resolution === 'server' ? 'success' : 'grey-lighten-1'\"\n                  class=\"rounded-lg transition-all border-2\"\n                  :class=\"{ 'bg-green-lighten-5 border-success': conflict.resolution === 'server' }\""
+        ]
+      },
+      {
+        "file": "src/components/dialogs/GlobalConfirmDialog.vue",
+        "count": 2,
+        "samples": [
+          "<v-card-text class=\"pa-6 text-body-1\"",
+          "<v-card-actions class=\"pa-4 bg-grey-lighten-5\""
+        ]
+      },
+      {
+        "file": "src/components/admin/SuperAdminDashboard.vue",
+        "count": 3,
+        "samples": [
+          "<v-card-text class=\"text-center py-6\"",
+          "<v-card-text class=\"text-center py-6\"",
+          "<v-card-text class=\"text-center py-6\""
+        ]
+      },
+      {
+        "file": "src/components/admin/HaciendasManagement.vue",
+        "count": 7,
+        "samples": [
+          "<v-col cols=\"12\" md=\"2\" class=\"d-flex align-center\"",
+          "<v-card-title class=\"bg-primary text-white\"",
+          "<v-card-title class=\"text-subtitle-1\""
+        ]
+      },
+      {
+        "file": "src/components/admin/LogsViewer.vue",
+        "count": 6,
+        "samples": [
+          "<v-col cols=\"12\" md=\"4\" class=\"d-flex align-center\"",
+          "<v-card-text class=\"text-center\"",
+          "<v-card-text class=\"text-center\""
+        ]
+      },
+      {
+        "file": "src/components/admin/SuperAdminAnalytics.vue",
+        "count": 4,
+        "samples": [
+          "<v-card-title class=\"d-flex justify-space-between align-center\"",
+          "<v-card-text class=\"text-center\"",
+          "<v-card-text class=\"text-center\""
+        ]
+      },
+      {
+        "file": "src/components/admin/SuperAdminFinanzas.vue",
+        "count": 1,
+        "samples": [
+          "<v-card-title class=\"bg-primary text-white py-3\""
+        ]
+      },
+      {
+        "file": "src/components/admin/UsersManagement.vue",
+        "count": 4,
+        "samples": [
+          "<v-col cols=\"12\" md=\"2\" class=\"d-flex align-center justify-end\"",
+          "<v-btn color=\"secondary\" @click=\"exportToMarkdown\" class=\"w-100\"",
+          "<v-card-title class=\"bg-primary text-white\""
+        ]
+      },
+      {
+        "file": "src/components/admin/SystemSettings.vue",
+        "count": 2,
+        "samples": [
+          "<v-col cols=\"12\" class=\"text-right\"",
+          "<v-col cols=\"12\" class=\"text-center\""
+        ]
+      },
+      {
+        "file": "src/components/admin/dialogs/UserAdminDialog.vue",
+        "count": 1,
+        "samples": [
+          "<v-card-title class=\"text-h6 bg-primary text-white\""
+        ]
+      },
+      {
+        "file": "src/components/admin/AsesoresManagement.vue",
+        "count": 4,
+        "samples": [
+          "<v-card-title class=\"d-flex justify-space-between align-center\"",
+          "<v-card-title class=\"bg-primary text-white d-flex align-center\"",
+          "<v-card v-else class=\"d-flex flex-column align-center justify-center py-12 bg-grey-lighten-4\""
+        ]
+      },
+      {
+        "file": "src/components/admin/SuperAdminSuscripciones.vue",
+        "count": 2,
+        "samples": [
+          "<v-card-text class=\"text-center pa-4\"",
+          "<v-card-title class=\"bg-green justify-center\""
+        ]
+      },
+      {
+        "file": "src/components/actividades/ActividadesProgramaciones.vue",
+        "count": 1,
+        "samples": [
+          "<v-card-title class=\"headline d-flex justify-between\""
+        ]
+      },
+      {
+        "file": "src/components/actividades/ActividadesRecordatorios.vue",
+        "count": 1,
+        "samples": [
+          "<v-card-title class=\"headline d-flex justify-between\""
+        ]
+      },
+      {
+        "file": "src/components/actividades/ActividadesBitacora.vue",
+        "count": 1,
+        "samples": [
+          "<v-card-title class=\"d-flex justify-space-between align-center text-body-1\""
+        ]
+      },
+      {
+        "file": "src/components/actividades/ActividadesEditDialog.vue",
+        "count": 2,
+        "samples": [
+          "<v-card-title class=\"headline d-flex justify-between\"",
+          "<v-btn\n                  icon\n                  size=\"small\"\n                  color=\"green-lighten-2\"\n                  class=\"absolute bottom-0 right-0\""
+        ]
+      },
+      {
+        "file": "src/components/actividades/ActividadesWorkspace.vue",
+        "count": 1,
+        "samples": [
+          "<v-col cols=\"3\" class=\"p-0 pr-4\""
+        ]
+      },
+      {
+        "file": "src/components/actividades/ActividadesInfo.vue",
+        "count": 1,
+        "samples": [
+          "<v-card-title class=\"headline d-flex flex-column\""
+        ]
+      },
+      {
+        "file": "src/components/actividades/ActividadesSiembrasZonas.vue",
+        "count": 1,
+        "samples": [
+          "<v-card-title class=\"headline d-flex justify-between\""
+        ]
+      },
+      {
+        "file": "src/components/actividades/ActividadesDashboard.vue",
+        "count": 2,
+        "samples": [
+          "<v-btn\n                prepend-icon=\"mdi-plus-circle\"\n                color=\"success\"\n                variant=\"flat\"\n                class=\"font-weight-bold text-white elevation-2 rounded-lg\"",
+          "<v-card-title class=\"px-2 py-0 w-full\""
+        ]
+      },
+      {
+        "file": "src/components/siembras/SiembraInfo.vue",
+        "count": 1,
+        "samples": [
+          "<v-card-title class=\"headline d-flex justify-between align-center\""
+        ]
+      },
+      {
+        "file": "src/components/siembras/SiembraZonas.vue",
+        "count": 3,
+        "samples": [
+          "<v-card-title class=\"d-flex justify-space-between align-center\"",
+          "<v-card flat class=\"p-2 bg-transparent\"",
+          "<v-col cols=\"3\" class=\"d-flex justify-center align-center\""
+        ]
+      },
+      {
+        "file": "src/components/siembras/SiembraActividades.vue",
+        "count": 3,
+        "samples": [
+          "<v-card-title class=\"d-flex justify-space-between align-center\"",
+          "<v-card flat class=\"p-2 bg-transparent\"",
+          "<v-col cols=\"3\" class=\"d-flex justify-center align-center\""
+        ]
+      },
+      {
+        "file": "src/components/siembras/SiembraBitacora.vue",
+        "count": 1,
+        "samples": [
+          "<v-card-title class=\"d-flex justify-space-between align-center\""
+        ]
+      },
+      {
+        "file": "src/components/siembras/SiembraWorkspace.vue",
+        "count": 2,
+        "samples": [
+          "<v-card class=\"mb-4 overflow-hidden border\"",
+          "<v-btn\n                  size=\"small\"\n                  color=\"green-lighten-2\"\n                  icon\n                  rounded=\"circle\"\n                  class=\"absolute bottom-0 right-0\""
+        ]
+      },
+      {
+        "file": "src/components/siembras/SiembraDeleteModal.vue",
+        "count": 1,
+        "samples": [
+          "<v-card-actions class=\"pa-4 bg-grey-lighten-4\""
+        ]
+      },
+      {
+        "file": "src/components/siembras/SiembrasDashboard.vue",
+        "count": 3,
+        "samples": [
+          "<v-btn\n                prepend-icon=\"mdi-plus-circle\"\n                color=\"success\"\n                variant=\"flat\"\n                class=\"font-weight-bold text-white elevation-2 rounded-lg\"",
+          "<v-card-title class=\"px-2 py-0 w-full\"",
+          "<v-card variant=\"elevated\" elevation=\"2\" class=\"h-100\""
+        ]
+      },
+      {
+        "file": "src/components/reports/ReportScheduler.vue",
+        "count": 1,
+        "samples": [
+          "<v-card-title class=\"d-flex align-center\""
+        ]
+      },
+      {
+        "file": "src/components/reports/ScheduledReportsList.vue",
+        "count": 1,
+        "samples": [
+          "<v-card-title class=\"d-flex justify-space-between align-center\""
+        ]
+      },
+      {
+        "file": "src/components/reports/ReportsView.vue",
+        "count": 1,
+        "samples": [
+          "<v-card variant=\"tonal\" :color=\"getTemplateColor(template.id)\" class=\"h-100\""
+        ]
+      },
+      {
+        "file": "src/components/bitacora/BitacoraEntryCard.vue",
+        "count": 1,
+        "samples": [
+          "<v-card-title class=\"d-flex justify-space-between\""
+        ]
+      },
+      {
+        "file": "src/components/bitacora/BitacoraView.vue",
+        "count": 3,
+        "samples": [
+          "<v-btn\r\n                prepend-icon=\"mdi-plus-circle\"\r\n                color=\"success\"\r\n                variant=\"flat\"\r\n                class=\"font-weight-bold text-white elevation-2 rounded-lg\"",
+          "<v-col cols=\"12\" class=\"text-center\"",
+          "<v-col class=\"text-center\""
+        ]
+      },
+      {
+        "file": "src/components/knowledge/ProgramDetailView.vue",
+        "count": 3,
+        "samples": [
+          "<v-card-title class=\"text-h4\"",
+          "<v-card-title class=\"text-h6\"",
+          "<v-card-title class=\"text-h6\""
+        ]
+      },
+      {
+        "file": "src/components/knowledge/SiembraKnowledge.vue",
+        "count": 3,
+        "samples": [
+          "<v-card-title class=\"text-h4\"",
+          "<v-card-title class=\"text-h6\"",
+          "<v-card-title class=\"text-h6\""
+        ]
+      },
+      {
+        "file": "src/components/cliente/CostSummary.vue",
+        "count": 1,
+        "samples": [
+          "<v-card-title class=\"text-h5\""
+        ]
+      },
+      {
+        "file": "src/components/public/PlanExpired.vue",
+        "count": 1,
+        "samples": [
+          "<v-col cols=\"12\" sm=\"8\" md=\"6\" class=\"text-center\""
+        ]
+      },
+      {
+        "file": "src/components/public/ManualViewer.vue",
+        "count": 1,
+        "samples": [
+          "<v-card class=\"pa-6 pa-md-10 rounded-xl shadow-sm border border-green-100\""
+        ]
+      },
+      {
+        "file": "src/components/hacienda/HaciendaUserManagement.vue",
+        "count": 1,
+        "samples": [
+          "<v-col cols=\"12\" md=\"5\" class=\"pa-4 bg-grey-lighten-4\""
+        ]
+      },
+      {
+        "file": "src/components/hacienda/PlanManagement.vue",
+        "count": 7,
+        "samples": [
+          "<v-card-text class=\"pa-0 bg-grey-lighten-5\"",
+          "<v-card\n                    v-bind=\"hoverProps\"\n                    class=\"plan-card p-6 shadow-md transition-all duration-300 cursor-pointer h-full border-2\"\n                    :class=\"{\n                      'plan-card-hover border-success': isHovering,\n                      'plan-card-selected border-success bg-green-lighten-5': selectedPlan === plan.id,\n                      'border-transparent': !isHovering && selectedPlan !== plan.id\n                    }\"",
+          "<v-card variant=\"flat\" class=\"mb-4 pa-4 border rounded-xl bg-white\""
+        ]
+      },
+      {
+        "file": "src/components/programaciones/ProgramacionesList.vue",
+        "count": 5,
+        "samples": [
+          "<v-btn\n                prepend-icon=\"mdi-plus-circle\"\n                color=\"success\"\n                variant=\"flat\"\n                class=\"font-weight-bold text-white elevation-2 rounded-lg\"",
+          "<v-col\n            cols=\"12\"\n            sm=\"6\"\n            md=\"4\"\n            lg=\"4\"\n            class=\"p-1\"",
+          "<v-card-title class=\"font-bold text-sm text-white p-2 pb-1\""
+        ]
+      },
+      {
+        "file": "src/components/programaciones/ProgramacionPanel.vue",
+        "count": 2,
+        "samples": [
+          "<v-btn\n          v-if=\"showBatchExecutionButton\"\n          variant=\"tonal\"\n          color=\"warning\"\n          size=\"small\"\n          density=\"comfortable\"\n          @click=\"showBatchDialog = true\"\n          class=\"flex-grow-1\"",
+          "<v-btn\n          v-if=\"showSingleExecutionButton\"\n          variant=\"tonal\"\n          color=\"success\"\n          size=\"small\"\n          density=\"comfortable\"\n          @click=\"handleRegistrarCumplimiento\"\n          class=\"flex-grow-1\""
+        ]
+      },
+      {
+        "file": "src/components/recordatorios/Recordatorios.vue",
+        "count": 1,
+        "samples": [
+          "<v-btn\n                prepend-icon=\"mdi-plus-circle\"\n                color=\"success\"\n                variant=\"flat\"\n                class=\"font-weight-bold text-white elevation-2 rounded-lg\""
+        ]
+      },
+      {
+        "file": "src/components/recordatorios/RecordatoriosStatusPanel.vue",
+        "count": 4,
+        "samples": [
+          "<v-card density=\"compact\" class=\"m-1 p-0 siembra-info\"",
+          "<v-col cols=\"12\" sm=\"9\" class=\"pr-sm-3\"",
+          "<v-col cols=\"12\" sm=\"1\" class=\"pr-sm-3\""
+        ]
+      },
+      {
+        "file": "src/components/PerformanceDashboard.vue",
+        "count": 6,
+        "samples": [
+          "<v-card class=\"pa-4 text-center rounded-lg\"",
+          "<v-card class=\"pa-4 text-center rounded-lg\"",
+          "<v-card class=\"pa-4 text-center rounded-lg\""
+        ]
+      },
+      {
+        "file": "src/components/SelectiveSyncSettings.vue",
+        "count": 1,
+        "samples": [
+          "<v-card-title class=\"d-flex align-center\""
+        ]
+      },
+      {
+        "file": "src/components/ConflictHistoryViewer.vue",
+        "count": 1,
+        "samples": [
+          "<v-card-title class=\"d-flex align-center justify-space-between\""
+        ]
+      },
+      {
+        "file": "src/components/Header.vue",
+        "count": 2,
+        "samples": [
+          "<v-btn\n          text\n          size=\"small\"\n          @click=\"$router.push('/documentation')\"\n          class=\"flex items-center\"",
+          "<v-btn text size=\"small\" @click=\"scrollToContact\" class=\"flex items-center\""
+        ]
+      },
+      {
+        "file": "src/components/NotificationBell.vue",
+        "count": 1,
+        "samples": [
+          "<v-card-title class=\"d-flex align-center pa-4\""
+        ]
+      },
+      {
+        "file": "src/components/FinanzasConfig.vue",
+        "count": 5,
+        "samples": [
+          "<v-btn\n                prepend-icon=\"mdi-plus-circle\"\n                color=\"success\"\n                variant=\"flat\"\n                class=\"font-weight-bold text-white elevation-2 rounded-lg\"",
+          "<v-col cols=\"12\" sm=\"7\" md=\"5\" class=\"d-flex align-center\"",
+          "<v-col cols=\"12\" sm=\"6\" md=\"3\" class=\"d-flex align-center justify-center\""
+        ]
+      },
+      {
+        "file": "src/components/zonasConfig.vue",
+        "count": 3,
+        "samples": [
+          "<v-card class=\"bg-dinamico\"",
+          "<v-card-title class=\"d-flex justify-space-between align-center\"",
+          "<v-col cols=\"3\" class=\"d-flex justify-center align-center\""
+        ]
+      },
+      {
+        "file": "src/components/Dashboard.vue",
+        "count": 5,
+        "samples": [
+          "<v-btn v-bind=\"props\" prepend-icon=\"mdi-export\" color=\"success\" variant=\"flat\"\n                  class=\"font-weight-bold text-white elevation-2 rounded-lg\"",
+          "<v-btn\n            block\n            sm:inline-flex\n            size=\"small\"\n            variant=\"flat\"\n            \n            color=\"#6380a247\"\n            prepend-icon=\"mdi-plus\"\n            @click=\"recordatoriosStore.abrirNuevoRecordatorio\"\n            class=\"min-w-[210px] mt-0 m-1 mb-4\"",
+          "<v-card v-if=\"programacionesVencidas.length\" class=\"bg-dinamico p-4 rounded-xl\""
+        ]
+      },
+      {
+        "file": "src/components/AiAssistant.vue",
+        "count": 2,
+        "samples": [
+          "<v-btn\n                    v-if=\"accion.tipo !== 'info'\"\n                    size=\"x-small\"\n                    color=\"green-darken-2\"\n                    variant=\"elevated\"\n                    :loading=\"executing === accion.id\"\n                    :disabled=\"executed.has(accion.id)\"\n                    @click=\"executeAction(accion)\"\n                    class=\"text-none flex-shrink-0\"",
+          "<v-btn\n            block\n            color=\"green-darken-2\"\n            size=\"large\"\n            prepend-icon=\"mdi-sparkles\"\n            :loading=\"loading\"\n            :disabled=\"loading\"\n            @click=\"analyze\"\n            class=\"text-none font-weight-bold\""
+        ]
+      },
+      {
+        "file": "src/components/LandingPage.vue",
+        "count": 8,
+        "samples": [
+          "<v-btn \n                  color=\"success\" \n                  size=\"x-large\" \n                  rounded=\"lg\" \n                  class=\"text-capitalize font-weight-bold hero-btn shadow-lg\"",
+          "<v-btn \n                  variant=\"outlined\" \n                  color=\"success\" \n                  size=\"x-large\" \n                  rounded=\"lg\" \n                  class=\"text-capitalize font-weight-bold\"",
+          "<v-btn variant=\"outlined\" color=\"#243b53\" class=\"w-full text-capitalize font-weight-bold btn-rounded\""
+        ]
+      },
+      {
+        "file": "src/components/asesores/RecetaEditorDialog.vue",
+        "count": 4,
+        "samples": [
+          "<v-card class=\"rounded-xl overflow-hidden border border-teal-lighten-4\"",
+          "<v-card-title class=\"bg-gradient-teal py-4 px-6 text-white d-flex align-center justify-space-between\"",
+          "<v-card-actions class=\"px-6 py-4 bg-grey-lighten-5 d-flex justify-space-between\""
+        ]
+      },
+      {
+        "file": "src/components/tarjas/RegistroTarjaForm.vue",
+        "count": 2,
+        "samples": [
+          "<v-card class=\"rounded-xl overflow-hidden shadow-2xl\"",
+          "<v-card-actions class=\"pa-4 bg-grey-lighten-4\""
+        ]
+      },
+      {
+        "file": "src/views/MetricasView.vue",
+        "count": 14,
+        "samples": [
+          "<v-card v-bind=\"props\" flat rounded=\"lg\" class=\"pa-4 text-center kpi-card\"",
+          "<v-card v-bind=\"props\" flat rounded=\"lg\" class=\"pa-4 text-center kpi-card\"",
+          "<v-card v-bind=\"props\" flat rounded=\"lg\" class=\"pa-4 text-center kpi-card\""
+        ]
+      },
+      {
+        "file": "src/views/hacienda/DirectorioAsesores.vue",
+        "count": 5,
+        "samples": [
+          "<v-card class=\"m-4 rounded-xl\"",
+          "<v-card class=\"h-100 d-flex flex-column elevation-3 hover-card rounded-lg overflow-hidden\"",
+          "<v-card-text class=\"flex-grow-1 pt-4 pb-1\""
+        ]
+      },
+      {
+        "file": "src/views/hacienda/RecetasAsesor.vue",
+        "count": 11,
+        "samples": [
+          "<v-btn\n                color=\"teal\"\n                variant=\"flat\"\n                class=\"font-weight-bold text-white rounded-lg px-4\"",
+          "<v-card class=\"elevation-3 rounded-lg overflow-hidden border border-grey-lighten-3 d-flex flex-column h-100\"",
+          "<v-card-text class=\"flex-grow-1 pt-4\""
+        ]
+      },
+      {
+        "file": "src/views/hacienda/Bodega.vue",
+        "count": 10,
+        "samples": [
+          "<v-btn\n                prepend-icon=\"mdi-plus-circle\"\n                color=\"success\"\n                variant=\"flat\"\n                class=\"font-weight-bold text-white elevation-2 rounded-lg\"",
+          "<v-card-title class=\"bg-gradient-teal text-white py-4 px-6\"",
+          "<v-card-actions class=\"px-6 py-4 justify-end gap-2 bg-grey-lighten-5\""
+        ]
+      },
+      {
+        "file": "src/views/hacienda/Tarjas.vue",
+        "count": 2,
+        "samples": [
+          "<v-btn\n                prepend-icon=\"mdi-plus-circle\"\n                color=\"success\"\n                variant=\"flat\"\n                class=\"font-weight-bold text-white elevation-2 rounded-lg\"",
+          "<v-card class=\"rounded-xl bg-white shadow-sm border overflow-hidden\""
+        ]
+      },
+      {
+        "file": "src/views/hacienda/DashboardGerencial.vue",
+        "count": 22,
+        "samples": [
+          "<v-btn\n                color=\"green-darken-3\"\n                variant=\"flat\"\n                prepend-icon=\"mdi-refresh\"\n                class=\"font-weight-bold text-white elevation-2 rounded-lg\"",
+          "<v-btn\n                color=\"green-darken-3\"\n                variant=\"flat\"\n                prepend-icon=\"mdi-file-excel\"\n                class=\"font-weight-bold text-white rounded-lg elevation-2\"",
+          "<v-card class=\"elevation-1 rounded-lg border h-100 pa-2\""
+        ]
+      },
+      {
+        "file": "src/views/hacienda/RentabilidadSiembras.vue",
+        "count": 1,
+        "samples": [
+          "<v-btn\n                color=\"green-darken-3\"\n                variant=\"flat\"\n                prepend-icon=\"mdi-refresh\"\n                class=\"font-weight-bold text-white elevation-2 rounded-lg\""
+        ]
+      },
+      {
+        "file": "src/views/hacienda/Nomina.vue",
+        "count": 22,
+        "samples": [
+          "<v-card class=\"rounded-xl pa-5 bg-white shadow-sm border h-100\"",
+          "<v-col cols=\"12\" sm=\"2\" class=\"d-flex flex-column gap-2\"",
+          "<v-card class=\"rounded-xl pa-5 bg-white shadow-sm border h-100\""
+        ]
+      },
+      {
+        "file": "src/views/asesor/Dashboard.vue",
+        "count": 15,
+        "samples": [
+          "<v-card class=\"elevation-4 rounded-xl overflow-hidden border border-orange-lighten-4\"",
+          "<v-card variant=\"outlined\" class=\"rounded-lg border-indigo pa-4 bg-indigo-lighten-5 mb-6 text-indigo-darken-4\"",
+          "<v-btn\n              color=\"indigo-darken-2\"\n              variant=\"flat\"\n              class=\"font-weight-bold text-white rounded-lg px-6\""
+        ]
+      },
+      {
+        "file": "src/views/asesor/HaciendasList.vue",
+        "count": 4,
+        "samples": [
+          "<v-card class=\"h-100 d-flex flex-column elevation-3 hover-card rounded-lg overflow-hidden border border-grey-lighten-3\"",
+          "<v-card-text class=\"flex-grow-1 pt-4 pb-2\"",
+          "<v-card-actions class=\"px-5 py-3 bg-grey-lighten-5\""
+        ]
+      },
+      {
+        "file": "src/views/asesor/HaciendaDetail.vue",
+        "count": 11,
+        "samples": [
+          "<v-btn\n                color=\"teal\"\n                variant=\"flat\"\n                class=\"font-weight-bold text-white rounded-lg px-4\"",
+          "<v-card class=\"elevation-2 rounded-lg border border-grey-lighten-3 h-100 d-flex flex-column\"",
+          "<v-card-title class=\"bg-grey-lighten-4 py-3 px-4 text-subtitle-1 font-weight-bold text-grey-darken-3\""
+        ]
+      },
+      {
+        "file": "src/views/asesor/Perfil.vue",
+        "count": 12,
+        "samples": [
+          "<v-card-title class=\"pa-0 mb-4 text-h6 font-weight-bold text-indigo-darken-4\"",
+          "<v-btn\n                  type=\"submit\"\n                  color=\"indigo\"\n                  variant=\"flat\"\n                  class=\"font-weight-bold text-white rounded-lg px-6\"",
+          "<v-card class=\"elevation-3 rounded-xl border border-grey-lighten-3 pa-6 h-100\""
+        ]
+      },
+      {
+        "file": "src/views/ValidarFirma.vue",
+        "count": 5,
+        "samples": [
+          "<v-row justify=\"center\" class=\"w-100\"",
+          "<v-card class=\"elevation-10 rounded-2xl glass-card overflow-hidden transition-all duration-300\"",
+          "<v-card-text v-if=\"loading\" class=\"text-center py-12 px-6\""
+        ]
+      },
+      {
+        "file": "src/App.vue",
+        "count": 2,
+        "samples": [
+          "<v-btn \n        v-if=\"authStore.user?.role === 'administrador'\" \n        size=\"x-small\" \n        variant=\"flat\" \n        color=\"white\" \n        class=\"ml-4 text-black font-weight-black\"",
+          "<v-btn color=\"white\" variant=\"elevated\" class=\"font-weight-bold text-success ml-2\""
+        ]
+      }
+    ]
+  },
+  "headers": {
+    "customHeaderReferences": [
+      "src/components/forms/auth/ProfileInfo.vue",
+      "src/components/forms/FinanzasImportExcel.vue",
+      "src/components/forms/FormularioMetricas.vue",
+      "src/components/forms/ZonaForm.vue",
+      "src/components/admin/LogsViewer.vue",
+      "src/components/admin/AdminExports.vue",
+      "src/components/admin/SuperAdminAnalytics.vue",
+      "src/components/admin/UsersManagement.vue",
+      "src/components/admin/AsesoresManagement.vue",
+      "src/components/actividades/ActividadesHeader.vue",
+      "src/components/actividades/ActividadesWorkspace.vue",
+      "src/components/actividades/ActividadesDashboard.vue",
+      "src/components/siembras/SiembraHeader.vue",
+      "src/components/siembras/SiembraWorkspace.vue",
+      "src/components/siembras/SiembrasDashboard.vue",
+      "src/components/bitacora/BitacoraView.vue",
+      "src/components/cliente/ModuleCard.vue",
+      "src/components/hacienda/HaciendaInfo.vue",
+      "src/components/hacienda/PlanManagement.vue",
+      "src/components/programaciones/ProgramacionesList.vue",
+      "src/components/programaciones/ProgramacionPanel.vue",
+      "src/components/recordatorios/Recordatorios.vue",
+      "src/components/Header.vue",
+      "src/components/FinanzasConfig.vue",
+      "src/components/zonasConfig.vue",
+      "src/components/Dashboard.vue",
+      "src/components/AiAssistant.vue",
+      "src/views/MetricasView.vue",
+      "src/views/hacienda/DirectorioAsesores.vue",
+      "src/views/hacienda/RecetasAsesor.vue",
+      "src/views/hacienda/Bodega.vue",
+      "src/views/hacienda/Tarjas.vue",
+      "src/views/hacienda/DashboardGerencial.vue",
+      "src/views/hacienda/RentabilidadSiembras.vue",
+      "src/views/hacienda/Nomina.vue",
+      "src/views/asesor/Dashboard.vue",
+      "src/views/asesor/HaciendasList.vue",
+      "src/views/asesor/HaciendaDetail.vue",
+      "src/views/asesor/Perfil.vue",
+      "src/views/ValidarFirma.vue",
+      "src/App.vue"
+    ]
+  },
+  "responsiveness": {
+    "useDisplayCount": 7,
+    "mediaQueriesCount": 4,
+    "tailwindResponsiveCount": 31,
+    "responsiveFiles": [
+      {
+        "file": "src/components/forms/auth/UserForm.vue",
+        "hasUseDisplay": false,
+        "tailwindClassesCount": 1
+      },
+      {
+        "file": "src/components/forms/FormularioMetricas.vue",
+        "hasUseDisplay": false,
+        "tailwindClassesCount": 2
+      },
+      {
+        "file": "src/components/forms/SiembraSelectorList.vue",
+        "hasUseDisplay": false,
+        "tailwindClassesCount": 1
+      },
+      {
+        "file": "src/components/forms/BitacoraEntryForm.vue",
+        "hasUseDisplay": false,
+        "tailwindClassesCount": 2
+      },
+      {
+        "file": "src/components/forms/ZonaForm.vue",
+        "hasUseDisplay": false,
+        "tailwindClassesCount": 9
+      },
+      {
+        "file": "src/components/forms/HaciendaForm.vue",
+        "hasUseDisplay": false,
+        "tailwindClassesCount": 6
+      },
+      {
+        "file": "src/components/dialogs/BatchExecutionDialog.vue",
+        "hasUseDisplay": false,
+        "tailwindClassesCount": 7
+      },
+      {
+        "file": "src/components/dialogs/ConflictResolutionDialog.vue",
+        "hasUseDisplay": false,
+        "tailwindClassesCount": 2
+      },
+      {
+        "file": "src/components/actividades/ActividadesHeader.vue",
+        "hasUseDisplay": false,
+        "tailwindClassesCount": 7
+      },
+      {
+        "file": "src/components/actividades/ActividadesDashboard.vue",
+        "hasUseDisplay": true,
+        "tailwindClassesCount": 6
+      },
+      {
+        "file": "src/components/siembras/SiembrasDashboard.vue",
+        "hasUseDisplay": true,
+        "tailwindClassesCount": 6
+      },
+      {
+        "file": "src/components/bitacora/BitacoraView.vue",
+        "hasUseDisplay": false,
+        "tailwindClassesCount": 6
+      },
+      {
+        "file": "src/components/public/Documentation.vue",
+        "hasUseDisplay": false,
+        "tailwindClassesCount": 5
+      },
+      {
+        "file": "src/components/public/ManualViewer.vue",
+        "hasUseDisplay": false,
+        "tailwindClassesCount": 2
+      },
+      {
+        "file": "src/components/hacienda/PlanManagement.vue",
+        "hasUseDisplay": false,
+        "tailwindClassesCount": 1
+      },
+      {
+        "file": "src/components/programaciones/ProgramacionesList.vue",
+        "hasUseDisplay": true,
+        "tailwindClassesCount": 6
+      },
+      {
+        "file": "src/components/recordatorios/Recordatorios.vue",
+        "hasUseDisplay": false,
+        "tailwindClassesCount": 7
+      },
+      {
+        "file": "src/components/recordatorios/RecordatoriosStatusPanel.vue",
+        "hasUseDisplay": false,
+        "tailwindClassesCount": 0
+      },
+      {
+        "file": "src/components/PerformanceDashboard.vue",
+        "hasUseDisplay": false,
+        "tailwindClassesCount": 3
+      },
+      {
+        "file": "src/components/SelectiveSyncSettings.vue",
+        "hasUseDisplay": false,
+        "tailwindClassesCount": 0
+      },
+      {
+        "file": "src/components/ConflictHistoryViewer.vue",
+        "hasUseDisplay": false,
+        "tailwindClassesCount": 0
+      },
+      {
+        "file": "src/components/Header.vue",
+        "hasUseDisplay": false,
+        "tailwindClassesCount": 6
+      },
+      {
+        "file": "src/components/StatusBar.vue",
+        "hasUseDisplay": false,
+        "tailwindClassesCount": 1
+      },
+      {
+        "file": "src/components/FinanzasConfig.vue",
+        "hasUseDisplay": true,
+        "tailwindClassesCount": 6
+      },
+      {
+        "file": "src/components/zonasConfig.vue",
+        "hasUseDisplay": false,
+        "tailwindClassesCount": 11
+      },
+      {
+        "file": "src/components/Dashboard.vue",
+        "hasUseDisplay": false,
+        "tailwindClassesCount": 3
+      },
+      {
+        "file": "src/components/LandingPage.vue",
+        "hasUseDisplay": false,
+        "tailwindClassesCount": 30
+      },
+      {
+        "file": "src/views/AboutView.vue",
+        "hasUseDisplay": false,
+        "tailwindClassesCount": 0
+      },
+      {
+        "file": "src/views/hacienda/RecetasAsesor.vue",
+        "hasUseDisplay": true,
+        "tailwindClassesCount": 0
+      },
+      {
+        "file": "src/views/hacienda/Bodega.vue",
+        "hasUseDisplay": false,
+        "tailwindClassesCount": 6
+      },
+      {
+        "file": "src/views/hacienda/Tarjas.vue",
+        "hasUseDisplay": true,
+        "tailwindClassesCount": 6
+      },
+      {
+        "file": "src/views/hacienda/DashboardGerencial.vue",
+        "hasUseDisplay": false,
+        "tailwindClassesCount": 6
+      },
+      {
+        "file": "src/views/hacienda/RentabilidadSiembras.vue",
+        "hasUseDisplay": false,
+        "tailwindClassesCount": 6
+      },
+      {
+        "file": "src/views/hacienda/Nomina.vue",
+        "hasUseDisplay": true,
+        "tailwindClassesCount": 5
+      },
+      {
+        "file": "src/views/asesor/Dashboard.vue",
+        "hasUseDisplay": false,
+        "tailwindClassesCount": 5
+      },
+      {
+        "file": "src/views/asesor/HaciendasList.vue",
+        "hasUseDisplay": false,
+        "tailwindClassesCount": 5
+      }
+    ]
+  }
+}

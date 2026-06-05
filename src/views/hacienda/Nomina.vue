@@ -53,7 +53,7 @@
         <!-- Panel de Filtros & Configuración de Tarifas -->
         <v-row class="mb-6">
           <v-col cols="12" lg="8">
-            <v-card class="rounded-xl pa-5 bg-white shadow-sm border h-100">
+            <v-card class="rounded-lg pa-5 bg-white shadow-sm border h-100">
               <h3 class="text-h6 font-weight-bold text-grey-darken-3 mb-4 d-flex align-center gap-2">
                 <v-icon icon="mdi-calendar-range" color="green-darken-2"></v-icon>
                 Periodo de Nómina
@@ -119,7 +119,7 @@
           </v-col>
 
           <v-col cols="12" lg="4">
-            <v-card class="rounded-xl pa-5 bg-white shadow-sm border h-100">
+            <v-card class="rounded-lg pa-5 bg-white shadow-sm border h-100">
               <div class="d-flex align-center justify-between mb-4">
                 <h3 class="text-h6 font-weight-bold text-grey-darken-3 d-flex align-center gap-2">
                   <v-icon icon="mdi-cog-outline" color="green-darken-2"></v-icon>
@@ -185,25 +185,25 @@
         <!-- Resumen General KPIs -->
         <v-row class="mb-6" v-if="detallesBorrador.length > 0">
           <v-col cols="12" sm="6" md="3">
-            <v-card class="rounded-xl bg-green-darken-3 text-white pa-4 shadow-sm">
+            <v-card class="rounded-lg bg-green-darken-3 text-white pa-4 shadow-sm">
               <div class="text-caption font-weight-bold text-green-lighten-3">TOTAL NETO A PAGAR</div>
               <div class="text-h4 font-weight-black mt-1">${{ totalNeto.toFixed(2) }}</div>
             </v-card>
           </v-col>
           <v-col cols="12" sm="6" md="3">
-            <v-card class="rounded-xl bg-white pa-4 shadow-sm border">
+            <v-card class="rounded-lg bg-white pa-4 shadow-sm border">
               <div class="text-caption font-weight-bold text-grey-darken-1">TOTAL EN JORNALES</div>
               <div class="text-h4 font-weight-black mt-1 text-green-darken-4">${{ totalJornal.toFixed(2) }}</div>
             </v-card>
           </v-col>
           <v-col cols="12" sm="6" md="3">
-            <v-card class="rounded-xl bg-white pa-4 shadow-sm border">
+            <v-card class="rounded-lg bg-white pa-4 shadow-sm border">
               <div class="text-caption font-weight-bold text-grey-darken-1">TOTAL EN DESTAJOS</div>
               <div class="text-h4 font-weight-black mt-1 text-green-darken-4">${{ totalDestajo.toFixed(2) }}</div>
             </v-card>
           </v-col>
           <v-col cols="12" sm="6" md="3">
-            <v-card class="rounded-xl bg-white pa-4 shadow-sm border">
+            <v-card class="rounded-lg bg-white pa-4 shadow-sm border">
               <div class="text-caption font-weight-bold text-grey-darken-1">TRABAJADORES</div>
               <div class="text-h4 font-weight-black mt-1 text-grey-darken-4">{{ detallesBorrador.length }}</div>
             </v-card>
@@ -213,7 +213,7 @@
         <!-- Tabla de Nómina Activa -->
         <v-row v-if="detallesBorrador.length > 0">
           <v-col cols="12">
-            <v-card class="rounded-xl bg-white shadow-sm border overflow-hidden">
+            <v-card class="rounded-lg bg-white shadow-sm border overflow-hidden">
               <v-toolbar color="transparent" flat class="px-4">
                 <v-toolbar-title class="font-weight-bold text-grey-darken-4">
                   Cálculo de Haberes de la Semana
@@ -239,7 +239,7 @@
               </v-toolbar>
               <v-divider></v-divider>
 
-              <v-table class="payroll-table">
+              <v-table class="payroll-table" v-if="!mobile">
                 <thead>
                   <tr>
                     <th class="text-left font-weight-bold text-subtitle-2">Operario</th>
@@ -333,6 +333,52 @@
                   </tr>
                 </tbody>
               </v-table>
+              
+              <div class="d-flex flex-column gap-3 pa-2" v-else>
+                <v-card v-for="row in detallesBorrador" :key="row.operario_id" class="border rounded-lg pa-3 elevation-0 bg-grey-lighten-4">
+                  <div class="d-flex align-center gap-2 mb-3">
+                    <v-avatar color="green-lighten-4" size="32" class="text-green-darken-4 font-weight-bold">
+                      {{ getInitials(row.operario_nombre) }}
+                    </v-avatar>
+                    <span class="font-weight-bold text-subtitle-1">{{ row.operario_nombre }}</span>
+                  </div>
+                  <v-row dense>
+                    <v-col cols="6">
+                      <v-text-field
+                        v-model.number="row.dias_trabajados"
+                        label="Días"
+                        type="number"
+                        min="0"
+                        max="7"
+                        step="0.5"
+                        variant="outlined"
+                        density="compact"
+                        hide-details
+                        class="rounded-lg bg-white"
+                        @input="recalculateRow(row)"
+                        :readonly="isSavedPayrollClosed"
+                      ></v-text-field>
+                    </v-col>
+                    <v-col cols="6">
+                      <v-text-field
+                        v-model.number="row.ajustes"
+                        label="Ajustes ($)"
+                        type="number"
+                        variant="outlined"
+                        density="compact"
+                        hide-details
+                        class="rounded-lg bg-white"
+                        @input="recalculateRow(row)"
+                        :readonly="isSavedPayrollClosed"
+                      ></v-text-field>
+                    </v-col>
+                  </v-row>
+                  <div class="d-flex justify-space-between align-center mt-3 pt-3 border-t">
+                    <span class="text-caption text-grey-darken-1">Neto a pagar:</span>
+                    <span class="font-weight-black text-green-darken-4 text-h6">${{ row.total_neto.toFixed(2) }}</span>
+                  </div>
+                </v-card>
+              </div>
 
               <v-divider></v-divider>
 
@@ -403,7 +449,7 @@
 
       <!-- PESTAÑA 2: HISTORIAL DE NÓMINAS -->
       <v-window-item value="historial">
-        <v-card class="rounded-xl bg-white shadow-sm border overflow-hidden">
+        <v-card class="rounded-lg bg-white shadow-sm border overflow-hidden">
           <v-toolbar color="transparent" flat class="px-4">
             <v-toolbar-title class="font-weight-bold text-grey-darken-4">
               Historial de Cierres de Nómina
@@ -473,7 +519,7 @@
 
       <!-- PESTAÑA 3: ASISTENCIA DIARIA -->
       <v-window-item value="asistencia">
-        <v-card class="rounded-xl bg-white shadow-sm border overflow-hidden">
+        <v-card class="rounded-lg bg-white shadow-sm border overflow-hidden">
           <v-toolbar color="transparent" flat class="px-4" :class="{'flex-wrap': mobile, 'py-2': mobile, 'h-auto': mobile}">
             <v-toolbar-title class="font-weight-bold text-grey-darken-4" :class="{'w-100 mb-2': mobile}">
               Asistencia Diaria
@@ -570,7 +616,7 @@
               <v-list-item
                 v-for="item in registrosAsistencia"
                 :key="item.operario_id"
-                class="mb-3 bg-grey-lighten-4 rounded-xl mx-2 border pb-3 pt-2"
+                class="mb-3 bg-grey-lighten-4 rounded-lg mx-2 border pb-3 pt-2"
               >
                 <div class="font-weight-bold text-subtitle-1 mb-2">{{ item.operario_nombre }}</div>
                 <v-btn-toggle
@@ -599,7 +645,7 @@
 
       <!-- PESTAÑA 4: PLANTILLA DE PERSONAL -->
       <v-window-item value="plantilla">
-        <v-card class="rounded-xl bg-white shadow-sm border overflow-hidden">
+        <v-card class="rounded-lg bg-white shadow-sm border overflow-hidden">
           <v-toolbar color="transparent" flat class="px-4">
             <v-toolbar-title class="font-weight-bold text-grey-darken-4">
               Gestión de Trabajadores
@@ -639,7 +685,7 @@
 
     <!-- Modal para Confirmar Cierre -->
     <v-dialog v-model="cerrarConfirmDialog" max-width="400">
-      <v-card class="rounded-xl">
+      <v-card class="rounded-lg">
         <v-card-title class="bg-green-darken-3 text-white pa-4">
           <v-icon start>mdi-lock</v-icon>
           ¿Cerrar esta Nómina?
@@ -669,7 +715,7 @@
 
     <!-- Modal Trabajador -->
     <v-dialog v-model="dialogoTrabajador" max-width="500">
-      <v-card class="rounded-xl">
+      <v-card class="rounded-lg">
         <v-card-title class="bg-green-darken-3 text-white pa-4">
           {{ formTrabajador.id ? 'Editar Trabajador' : 'Nuevo Trabajador' }}
         </v-card-title>

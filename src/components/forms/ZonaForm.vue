@@ -283,7 +283,7 @@
                   v-for="(pregunta, index) in getBpaPreguntas" 
                   :key="index"
                   variant="flat"
-                  class="pa-4 bg-white border rounded-xl"
+                  class="pa-4 bg-white border rounded-lg"
                 >
                   <div class="d-flex align-start gap-3 mb-2">
                     <v-avatar size="24" color="success" variant="tonal">

@@ -7,7 +7,7 @@
 
     <!-- Payment Required Overlay (Subscription Inactive) -->
     <div v-else-if="!subscriptionActive" class="w-100 max-width-800 mx-auto py-6">
-      <v-card class="elevation-4 rounded-xl overflow-hidden border border-orange-lighten-4">
+      <v-card class="elevation-4 rounded-lg overflow-hidden border border-orange-lighten-4">
         <div class="bg-gradient-orange py-6 px-6 text-white text-center">
           <v-icon icon="mdi-credit-card-off-outline" size="72" class="mb-3"></v-icon>
           <h2 class="text-h4 font-weight-black">Suscripción Inactiva</h2>
@@ -115,7 +115,7 @@
       <!-- Metricas -->
       <v-row class="mb-6 mt-0">
         <v-col cols="12" sm="4">
-          <v-card class="elevation-3 hover-card rounded-xl bg-gradient-indigo text-white">
+          <v-card class="elevation-3 hover-card rounded-lg bg-gradient-indigo text-white">
             <v-card-text class="d-flex align-center justify-space-between pa-6">
               <div>
                 <span class="text-subtitle-1 opacity-90 font-weight-medium">Mis Haciendas Activas</span>
@@ -126,7 +126,7 @@
           </v-card>
         </v-col>
         <v-col cols="12" sm="4">
-          <v-card class="elevation-3 hover-card rounded-xl bg-gradient-orange text-white">
+          <v-card class="elevation-3 hover-card rounded-lg bg-gradient-orange text-white">
             <v-card-text class="d-flex align-center justify-space-between pa-6">
               <div>
                 <span class="text-subtitle-1 opacity-90 font-weight-medium">Paquetes Pendientes</span>
@@ -137,7 +137,7 @@
           </v-card>
         </v-col>
         <v-col cols="12" sm="4">
-          <v-card class="elevation-3 hover-card rounded-xl bg-gradient-blue text-white">
+          <v-card class="elevation-3 hover-card rounded-lg bg-gradient-blue text-white">
             <v-card-text class="d-flex align-center justify-space-between pa-6">
               <div>
                 <span class="text-subtitle-1 opacity-90 font-weight-medium">Recetas en Borrador</span>
@@ -153,7 +153,7 @@
       <v-row>
         <!-- Left: Pending Packages -->
         <v-col cols="12" md="6">
-          <v-card class="elevation-3 rounded-xl h-100 border border-grey-lighten-3">
+          <v-card class="elevation-3 rounded-lg h-100 border border-grey-lighten-3">
             <v-card-title class="bg-grey-lighten-4 py-4 px-6 d-flex align-center justify-space-between">
               <span class="text-h6 font-weight-bold text-grey-darken-3">Últimos Paquetes Recibidos</span>
               <v-btn size="small" variant="text" color="indigo" class="font-weight-bold" @click="router.push('/asesor/haciendas')">
@@ -197,7 +197,7 @@
 
         <!-- Right: Recent Recipes -->
         <v-col cols="12" md="6">
-          <v-card class="elevation-3 rounded-xl h-100 border border-grey-lighten-3">
+          <v-card class="elevation-3 rounded-lg h-100 border border-grey-lighten-3">
             <v-card-title class="bg-grey-lighten-4 py-4 px-6 d-flex align-center justify-space-between">
               <span class="text-h6 font-weight-bold text-grey-darken-3">Últimas Recetas Emitidas</span>
             </v-card-title>

@@ -8,7 +8,7 @@
     <!-- Lienzo de Dibujo interactivo -->
     <div 
       v-if="!isSigned"
-      class="canvas-wrapper position-relative bg-white rounded-xl border-2 border-dashed"
+      class="canvas-wrapper position-relative bg-white rounded-lg border-2 border-dashed"
       :class="hasDrawn ? 'border-success' : 'border-grey-lighten-1'"
       style="overflow: hidden; max-width: 420px; width: 100%;"
     >
@@ -39,7 +39,7 @@
     <!-- Firma existente en modo lectura -->
     <div 
       v-else-if="existingSignature?.trazo" 
-      class="existing-signature-preview border rounded-xl pa-3 bg-grey-lighten-4 d-flex flex-column align-center"
+      class="existing-signature-preview border rounded-lg pa-3 bg-grey-lighten-4 d-flex flex-column align-center"
       style="max-width: 420px; width: 100%;"
     >
       <div class="text-caption text-grey-darken-1 mb-2 font-weight-bold">Firma registrada físicamente:</div>

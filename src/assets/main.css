@@ -148,6 +148,29 @@ h6 {
   -webkit-mask-image: linear-gradient(to right, transparent, black 75%);
 }
 
+@media (max-width: 640px) {
+  .profile-container {
+    padding: 12px;
+    margin: 10px 0px;
+    align-items: flex-start;
+  }
+  .avatar-container {
+    width: 100%;
+    opacity: 0.15;
+    z-index: 1;
+    pointer-events: none;
+  }
+  .avatar-image {
+    mask-image: linear-gradient(to right, transparent, black 100%);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 100%);
+  }
+  .profile-container > div:not(.avatar-container) {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+  }
+}
+
 .text-xxs {
   font-size: 0.6rem; /* Ajusta el tamaño según sea necesario */
 }

@@ -13,7 +13,7 @@
             Volver a Documentación
           </v-btn>
 
-          <v-card class="pa-6 pa-md-10 rounded-xl shadow-sm border border-green-100">
+          <v-card class="pa-6 pa-md-10 rounded-lg shadow-sm border border-green-100">
             <div v-if="loading" class="d-flex justify-center my-10">
               <v-progress-circular indeterminate color="success"></v-progress-circular>
             </div>
