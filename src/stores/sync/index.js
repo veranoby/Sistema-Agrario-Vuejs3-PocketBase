@@ -207,7 +207,14 @@ export const useSyncStore = defineStore('sync', {
       // RESTAURAR ESTADO (Ahora usa IndexedDB)
       try {
         const q = localStorage.getItem('agri_syncQueue')
-        this.queue = q ? JSON.parse(q) : []
+        const rawQueue = q ? JSON.parse(q) : []
+        // Resetear ops que quedaron en 'syncing' o 'failed' (p.ej. por logout forzado
+        // o token expirado). Al re-login siempre se reintenta con token fresco.
+        this.queue = rawQueue.map(op =>
+          (op.status === 'syncing' || op.status === 'failed')
+            ? { ...op, status: 'pending', retries: 0 }
+            : op
+        )
         const savedIdMap = await syncCache.get('tempToRealIdMap')
         if (savedIdMap) {
           this.idMapper.setMap(savedIdMap)
@@ -244,6 +251,22 @@ export const useSyncStore = defineStore('sync', {
         syncCache.save('tempToRealIdMap', idMap)
       } catch (error) {
         logger.error('[SYNC] Error saving queue to storage', error)
+      }
+    },
+
+    /**
+     * Prepara la cola antes de un logout forzado (p.ej. sesión invalidada remotamente).
+     * Resetea ops en 'syncing' a 'pending' para que sobrevivan y se reintenten al re-login.
+     * NUNCA borra la cola — solo protege su integridad.
+     */
+    resetForLogout() {
+      const hadSyncing = this.queue.some(op => op.status === 'syncing')
+      this.queue = this.queue.map(op =>
+        op.status === 'syncing' ? { ...op, status: 'pending', retries: 0 } : op
+      )
+      if (hadSyncing) {
+        this.persistQueueState()
+        logger.warn('[SYNC] resetForLogout: ops en syncing reseteadas a pending antes de logout')
       }
     },
 

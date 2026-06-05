@@ -30,6 +30,7 @@ export const useAuthStore = defineStore('auth', {
     initialized: false,
     initPromise: null,
     refreshTimer: null,
+    _sessionSubscription: null, // ID del usuario suscrito para detección de sesión remota
     version: 1
   }),
 
@@ -198,11 +199,9 @@ export const useAuthStore = defineStore('auth', {
     },
 
     startRefreshTimerIfNeeded(rememberMeIsActive) {
-      if (rememberMeIsActive) {
-        this.startRefreshTimer()
-      } else {
-        this.stopRefreshTimer()
-      }
+      // Timer siempre activo — independiente de rememberMe.
+      // Sin timer, una sesión invalidada remotamente nunca se detecta.
+      this.startRefreshTimer()
     },
 
     async ensureAuthInitialized() {
@@ -233,7 +232,7 @@ export const useAuthStore = defineStore('auth', {
         }
       }, 2000)
 
-      this.refreshTimer = setInterval(debouncedRefresh, 15 * 60 * 1000)
+      this.refreshTimer = setInterval(debouncedRefresh, 2 * 60 * 1000) // cada 2 min
     },
 
     stopRefreshTimer() {
@@ -328,7 +327,7 @@ export const useAuthStore = defineStore('auth', {
 
       const now = Date.now()
       const timeSinceLastSuccess = now - lastSuccess
-      const refreshThreshold = 20 * 60 * 1000
+      const refreshThreshold = 5 * 60 * 1000 // 5 min: ventana máxima de sesión concurrente
 
       const shouldRefresh = timeSinceLastSuccess > refreshThreshold
       if (shouldRefresh || (import.meta.env.DEV && timeSinceLastSuccess > 30 * 60 * 1000)) {
@@ -489,10 +488,61 @@ export const useAuthStore = defineStore('auth', {
       this.user = record
       this.token = authProvider.authStore.token
       this.isLoggedIn = true
+      this.subscribeToSessionEvents()
     },
 
     setUser(record) {
       this.user = record
+    },
+
+    /**
+     * Suscribe al registro propio del usuario vía PocketBase Realtime.
+     * Cuando otro dispositivo inicia sesión (rotando el tokenKey), el update
+     * del registro dispara este handler. Se usa getOne (NO authRefresh) para
+     * verificar el token sin volver a rotar el tokenKey (evita ping-pong).
+     */
+    subscribeToSessionEvents() {
+      if (!this.user?.id || !this.isLoggedIn) return
+
+      // No re-suscribir si ya estamos suscritos al mismo usuario
+      if (this._sessionSubscription === this.user.id) return
+
+      // Limpiar suscripción anterior si existía (cambio de usuario)
+      if (this._sessionSubscription) {
+        try { pb.collection('users').unsubscribe(this._sessionSubscription) } catch { /* ignorar */ }
+        this._sessionSubscription = null
+      }
+
+      const userId = this.user.id
+      this._sessionSubscription = userId
+
+      pb.collection('users').subscribe(userId, async (event) => {
+        if (event.action !== 'update' || !this.isLoggedIn) return
+        try {
+          // getOne verifica el token SIN disparar onRecordAuthRequest
+          // (a diferencia de authRefresh, que rotaría el tokenKey de nuevo)
+          await pb.collection('users').getOne(userId)
+          // Token válido — fue una actualización legítima (perfil, etc.)
+          this.setUser(event.record)
+        } catch (error) {
+          if (error?.status === 401) {
+            logger.auth('[AUTH] Sesión invalidada remotamente — otro dispositivo inició sesión')
+            const uiFeedbackStore = useUiFeedbackStore()
+            const syncStore = useSyncStore()
+            // Proteger la cola antes del logout
+            syncStore.resetForLogout()
+            await this.logout(true)
+            uiFeedbackStore.showSnackbar(
+              'Sesión cerrada: se detectó acceso desde otro dispositivo. Tus cambios offline están guardados.',
+              'warning',
+              8000
+            )
+          }
+        }
+      }).catch(err => {
+        logger.auth('[AUTH] Error al suscribirse a eventos de sesión:', err?.message)
+        this._sessionSubscription = null
+      })
     },
 
     async registerAsesor(formData) {
@@ -681,9 +731,14 @@ export const useAuthStore = defineStore('auth', {
     async logout(silent = false) {
       const uiFeedbackStore = useUiFeedbackStore()
 
-
       try {
         this.stopRefreshTimer()
+
+        // Desuscribir del realtime antes de perder el token
+        if (this._sessionSubscription) {
+          try { pb.collection('users').unsubscribe(this._sessionSubscription) } catch { /* ignorar */ }
+          this._sessionSubscription = null
+        }
 
         if (router.currentRoute.value.path !== '/') {
           await router.push('/')
@@ -691,8 +746,10 @@ export const useAuthStore = defineStore('auth', {
 
         authProvider.logout()
         const syncStore = useSyncStore()
+        // Proteger ops en vuelo antes de disponer el store
+        syncStore.resetForLogout()
         syncStore.dispose()
-        
+
         this.user = null
         this.token = null
         this.isLoggedIn = false
