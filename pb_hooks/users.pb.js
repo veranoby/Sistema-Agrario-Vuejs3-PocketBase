@@ -26,15 +26,20 @@ onRecordCreateRequest((e) => {
     return res;
 }, "users");
 
-// Implementación de política de sesión única
+// Política de sesión única — PocketBase v0.23+ compatible
+// Rotamos el tokenKey ANTES de e.next() para que el JWT se firme con la nueva clave.
+// Esto invalida inmediatamente todos los tokens anteriores de este usuario en el servidor.
 onRecordAuthRequest((e) => {
-    const res = e.next();
     try {
-        // Regenerar el tokenKey invalida automáticamente los JWT anteriores emitidos para este usuario
-        e.record.setTokenKey($security.randomString(50));
-        $app.dao().saveRecord(e.record);
+        // refreshTokenKey() genera y asigna un nuevo tokenKey aleatorio en el record (en memoria)
+        e.record.refreshTokenKey()
+        // $app.save() persiste el nuevo tokenKey en la BD — API correcta en PB v0.23+
+        // (reemplaza el $app.dao().saveRecord() removido desde v0.23)
+        $app.save(e.record)
     } catch (err) {
-        $app.logger().error("Error rotando tokenKey para sesión única: " + err);
+        $app.logger().error("Error rotando tokenKey para sesión única: " + err)
     }
-    return res;
-}, "users");
+    // e.next() se ejecuta DESPUÉS del save: el JWT que genera usa el tokenKey ya persistido
+    return e.next()
+}, "users")
+
