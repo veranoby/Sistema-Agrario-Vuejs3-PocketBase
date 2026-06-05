@@ -11,26 +11,24 @@
     <v-spacer></v-spacer>
 
     <template v-slot:append>
-      <div class="flex flex-row sm:flex-row text-sm sm:text-base">
+      <div class="d-flex align-center gap-1 sm:gap-2 text-sm sm:text-base">
         <v-btn
           text
           size="small"
           @click="$router.push('/documentation')"
-          class="flex items-center"
+          class="px-1 sm:px-2"
+          style="min-width: 0;"
         >
-          <v-icon class="mr-2" icon="mdi-book"></v-icon>
+          <v-icon :class="{'mr-0': true, 'sm:mr-2': true}" icon="mdi-book"></v-icon>
           <span class="hidden sm:inline">{{ $t('header.documentation') }}</span>
         </v-btn>
-        <v-btn text size="small" @click="scrollToContact" class="flex items-center">
-          <v-icon class="mr-2" icon="mdi-email"></v-icon>
+        
+        <v-btn text size="small" @click="scrollToContact" class="px-1 sm:px-2" style="min-width: 0;">
+          <v-icon :class="{'mr-0': true, 'sm:mr-2': true}" icon="mdi-email"></v-icon>
           <span class="hidden sm:inline">{{ $t('header.contact_us') }}</span>
         </v-btn>
-      </div>
 
-      <v-spacer></v-spacer>
-
-      <div class="flex flex-col sm:flex-row">
-        <!-- Desktop Button -->
+        <!-- Desktop Login Button -->
         <v-btn
           variant="flat"
           prepend-icon="mdi-login"
@@ -40,100 +38,97 @@
           class="hidden-xs"
         > {{ $t('header.login') }}</v-btn>
         
-        <!-- Mobile Icon Button -->
+        <!-- Mobile Login Button (Rectangular) -->
         <v-btn
-          icon
           variant="flat"
           color="primary"
           v-if="!isLoggedIn"
           @click="$emit('openAuthModal')"
-          class="hidden-sm-and-up"
+          class="hidden-sm-and-up px-2"
           size="small"
+          style="min-width: 0;"
         >
           <v-icon>mdi-login</v-icon>
         </v-btn>
-      </div>
-      <v-spacer></v-spacer>
 
-      <v-menu offset-y>
-        <template v-slot:activator="{ props }">
-          <v-btn text v-bind="props" class="ml-1 sm:ml-2 px-1 sm:px-2" size="small" style="min-width: 0;">
-            <v-icon icon="mdi-web" :class="{'mr-1': true, 'mr-sm-1': true}"></v-icon>
-            <span class="text-uppercase hidden-xs">{{ currentLocale }}</span>
-            <v-icon icon="mdi-chevron-down" size="x-small"></v-icon>
-          </v-btn>
-        </template>
-        <v-list density="compact" min-width="120">
-          <v-list-item
-            v-for="lang in languages"
-            :key="lang.code"
-            @click="setLanguage(lang.code)"
-            :active="currentLocale === lang.code"
-            color="primary"
-          >
-            <template v-slot:prepend>
-              <v-icon v-if="currentLocale === lang.code" size="small" color="primary">mdi-check</v-icon>
-              <v-icon v-else size="small" class="opacity-0">mdi-check</v-icon>
-            </template>
-            <v-list-item-title>{{ lang.name }}</v-list-item-title>
-          </v-list-item>
-        </v-list>
-      </v-menu>
+        <v-menu offset-y>
+          <template v-slot:activator="{ props }">
+            <v-btn text v-bind="props" class="px-1 sm:px-2" size="small" style="min-width: 0;">
+              <v-icon icon="mdi-web" :class="{'mr-0': true, 'sm:mr-1': true}"></v-icon>
+              <span class="text-uppercase hidden-xs">{{ currentLocale }}</span>
+              <v-icon icon="mdi-chevron-down" size="x-small" class="hidden-xs"></v-icon>
+            </v-btn>
+          </template>
+          <v-list density="compact" min-width="120">
+            <v-list-item
+              v-for="lang in languages"
+              :key="lang.code"
+              @click="setLanguage(lang.code)"
+              :active="currentLocale === lang.code"
+              color="primary"
+            >
+              <template v-slot:prepend>
+                <v-icon v-if="currentLocale === lang.code" size="small" color="primary">mdi-check</v-icon>
+                <v-icon v-else size="small" class="opacity-0">mdi-check</v-icon>
+              </template>
+              <v-list-item-title>{{ lang.name }}</v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
 
-      <v-btn
-        icon
-        size="small"
-        @click="toggleTheme"
-        class="ml-1 sm:ml-2"
-        :color="currentTheme === 'dark' ? 'yellow' : 'grey'"
-      >
-        <v-icon>{{ currentTheme === 'dark' ? 'mdi-weather-night' : 'mdi-weather-sunny' }}</v-icon>
-      </v-btn>
-
-      <NotificationBell class="ml-1 sm:ml-2" color="white" />
-
-      <v-chip
-        v-if="pendingOperations > 0"
-        size="x-small"
-        variant="tonal"
-        color="warning"
-        class="ml-2"
-      >
-        <v-icon start size="16">mdi-cloud-upload</v-icon>
-        {{ pendingOperations }}
-        <v-tooltip activator="parent" location="bottom">
-          {{ pendingOperations }} operaciones pendientes de sincronizar
-        </v-tooltip>
-      </v-chip>
-
-      <v-btn
-        v-if="pendingTasksCount > 0"
-        icon
-        size="x-small"
-        variant="text"
-        class="ml-2"
-      >
-        <v-badge
-          :content="pendingTasksCount > 99 ? '99+' : pendingTasksCount"
-          color="warning"
-          offset-x="4"
-          offset-y="4"
+        <v-btn
+          icon
+          size="small"
+          @click="toggleTheme"
+          :color="currentTheme === 'dark' ? 'yellow' : 'grey'"
+          style="width: 32px; height: 32px;"
         >
-          <v-icon>mdi-calendar-check</v-icon>
-        </v-badge>
-        <v-tooltip activator="parent" location="bottom">
-          {{ pendingTasksCount }} tareas pendientes
-        </v-tooltip>
-      </v-btn>
+          <v-icon>{{ currentTheme === 'dark' ? 'mdi-weather-night' : 'mdi-weather-sunny' }}</v-icon>
+        </v-btn>
 
-      <v-tooltip bottom>
-        <template v-slot:activator="{ props }">
-          <v-icon v-bind="props" :color="connectionStatus.color" class="ml-1 sm:ml-2">
-            {{ connectionStatus.icon }}
-          </v-icon>
-        </template>
-        {{ connectionStatus.text }}
-      </v-tooltip>
+        <NotificationBell color="white" />
+
+        <v-chip
+          v-if="pendingOperations > 0"
+          size="x-small"
+          variant="tonal"
+          color="warning"
+        >
+          <v-icon start size="16">mdi-cloud-upload</v-icon>
+          {{ pendingOperations }}
+          <v-tooltip activator="parent" location="bottom">
+            {{ pendingOperations }} operaciones pendientes de sincronizar
+          </v-tooltip>
+        </v-chip>
+
+        <v-btn
+          v-if="pendingTasksCount > 0"
+          icon
+          size="x-small"
+          variant="text"
+        >
+          <v-badge
+            :content="pendingTasksCount > 99 ? '99+' : pendingTasksCount"
+            color="warning"
+            offset-x="4"
+            offset-y="4"
+          >
+            <v-icon>mdi-calendar-check</v-icon>
+          </v-badge>
+          <v-tooltip activator="parent" location="bottom">
+            {{ pendingTasksCount }} tareas pendientes
+          </v-tooltip>
+        </v-btn>
+
+        <v-tooltip bottom>
+          <template v-slot:activator="{ props }">
+            <v-icon v-bind="props" :color="connectionStatus.color" size="small">
+              {{ connectionStatus.icon }}
+            </v-icon>
+          </template>
+          {{ connectionStatus.text }}
+        </v-tooltip>
+      </div>
     </template>
   </v-app-bar>
 </template>
