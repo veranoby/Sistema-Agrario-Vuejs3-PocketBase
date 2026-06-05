@@ -4,16 +4,17 @@
       <!-- Header Estandarizado -->
       <div class="profile-container mt-0 ml-0 mb-4">
         <div>
-          <h2 class="profile-title text-h4 font-weight-bold mb-1" style="color: var(--color_titulo)">
-            <v-icon icon="mdi-account-circle" color="primary" size="36" class="mr-2"></v-icon>
+          <h3 class="profile-title text-h6 sm:text-h5 font-weight-bold mb-1" style="color: var(--color_titulo)">
+            <v-icon icon="mdi-account-circle" color="primary" size="32" class="mr-2"></v-icon>
             Mi Perfil Profesional
-          </h2>
-          <p class="text-subtitle-1 text-grey-darken-1" style="margin-top: 8px;">
+          </h3>
+          <p class="text-subtitle-2 sm:text-subtitle-1 text-grey-darken-1" style="margin-top: 8px;">
             Administra tus especialidades, provincias de cobertura y biografía corta para darte a conocer en el directorio de haciendas.
           </p>
         </div>
         <div class="avatar-container">
-          <img src="@/assets/placeholder-user.png" alt="Perfil Asesor" class="avatar-image" />
+          <img v-if="authStore.user?.avatar" :src="avatarUrl" alt="Perfil Asesor" class="avatar-image" />
+          <img v-else src="@/assets/placeholder-user.png" alt="Perfil Asesor" class="avatar-image" />
         </div>
       </div>
 
