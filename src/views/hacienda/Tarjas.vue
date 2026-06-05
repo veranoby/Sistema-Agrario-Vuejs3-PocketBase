@@ -29,7 +29,7 @@
             <div class="w-full sm:w-auto z-10 d-flex gap-2 hidden-sm-and-down" v-if="!mobile">
               <v-btn
                 prepend-icon="mdi-plus-circle"
-                color="success"
+                color="primary"
                 variant="flat"
                 class="font-weight-bold text-white elevation-2 rounded-lg"
                 @click="abrirRegistroForm"
@@ -181,7 +181,7 @@
                     </v-list-item-subtitle>
                     <template v-slot:append>
                       <div class="d-flex flex-column align-end">
-                        <div class="font-weight-bold text-subtitle-1 text-green-darken-3">
+                        <div class="font-weight-bold text-subtitle-1 text-primary-3">
                           {{ item.cantidad }} {{ item.tipo_unidad }}
                         </div>
                         <div v-if="item.cantidad_merma" class="text-caption text-red-darken-3">
@@ -206,7 +206,7 @@
         </v-card>
         <v-btn
           v-if="mobile"
-          color="success"
+          color="primary"
           icon="mdi-plus"
           size="x-large"
           position="fixed"

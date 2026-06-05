@@ -20,7 +20,7 @@
                 placeholder="Ej: Control de Sigatoka Negra - Lote A"
                 variant="outlined"
                 density="compact"
-                color="teal"
+                color="primary"
                 :rules="[v => !!v || 'El título es requerido']"
                 required
               ></v-text-field>
@@ -36,7 +36,7 @@
                 label="Siembra Objetivo"
                 variant="outlined"
                 density="compact"
-                color="teal"
+                color="primary"
                 :rules="[v => !!v || 'La siembra es requerida']"
                 required
               ></v-select>
@@ -50,7 +50,7 @@
                 placeholder="Ej: Sigatoka Negra (Mycosphaerella fijiensis)"
                 variant="outlined"
                 density="compact"
-                color="teal"
+                color="primary"
                 :rules="[v => !!v || 'El blanco biológico es requerido']"
                 required
               ></v-text-field>
@@ -64,7 +64,7 @@
                 placeholder="Ej: Mancozeb 80 WP"
                 variant="outlined"
                 density="compact"
-                color="teal"
+                color="primary"
                 :rules="[v => !!v || 'El producto es requerido']"
                 required
               ></v-text-field>
@@ -78,7 +78,7 @@
                 placeholder="Ej: Mancozeb 80%"
                 variant="outlined"
                 density="compact"
-                color="teal"
+                color="primary"
               ></v-text-field>
             </v-col>
 
@@ -93,7 +93,7 @@
                 step="0.1"
                 variant="outlined"
                 density="compact"
-                color="teal"
+                color="primary"
                 :rules="[v => (v !== '' && v !== null && v >= 0) || 'La dosis es requerida']"
                 required
               ></v-text-field>
@@ -107,7 +107,7 @@
                 label="Unidad"
                 variant="outlined"
                 density="compact"
-                color="teal"
+                color="primary"
                 :rules="[v => !!v || 'La unidad es requerida']"
                 required
               ></v-select>
@@ -122,7 +122,7 @@
                 min="0"
                 variant="outlined"
                 density="compact"
-                color="teal"
+                color="primary"
                 hint="Período de carencia antes de cosecha"
                 persistent-hint
               ></v-text-field>
@@ -137,7 +137,7 @@
                 min="0"
                 variant="outlined"
                 density="compact"
-                color="teal"
+                color="primary"
                 hint="Período de reingreso al área"
                 persistent-hint
               ></v-text-field>
@@ -151,7 +151,7 @@
                 placeholder="Ej: Aspersión foliar con equipo de mochila"
                 variant="outlined"
                 density="compact"
-                color="teal"
+                color="primary"
               ></v-text-field>
             </v-col>
 
@@ -165,7 +165,7 @@
                 rows="4"
                 maxlength="1000"
                 counter
-                color="teal"
+                color="primary"
                 :rules="[v => !!v || 'Las instrucciones técnicas son requeridas']"
                 required
               ></v-textarea>
@@ -191,7 +191,7 @@
             Guardar Borrador
           </v-btn>
           <v-btn
-            color="teal"
+            color="primary"
             variant="flat"
             class="font-weight-bold text-white rounded-lg"
             prepend-icon="mdi-send"

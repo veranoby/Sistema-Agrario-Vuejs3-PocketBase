@@ -35,7 +35,7 @@
           @click="$router.push('/admin/analytics?tab=operations')"
         >
           <v-card-text class="text-center py-6">
-            <v-icon size="64" color="success" class="mb-4">mdi-chart-pie</v-icon>
+            <v-icon size="64" color="primary" class="mb-4">mdi-chart-pie</v-icon>
             <h3 class="text-h6 mb-2">Métricas de Uso</h3>
             <p class="text-subtitle-2 text-medium-emphasis">
               Análisis de uso por hacienda y tipo de actividad
@@ -121,7 +121,7 @@
         <div class="d-flex justify-space-between align-center">
           <div>
             <strong>Estado del Sistema:</strong>
-            <v-chip color="success" size="small" class="ml-2">
+            <v-chip color="primary" size="small" class="ml-2">
               <v-icon start>mdi-check-circle</v-icon>
               Operativo
             </v-chip>

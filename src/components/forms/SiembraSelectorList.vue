@@ -2,7 +2,7 @@
   <div class="siembra-selector">
     <div class="flex items-center justify-between mb-4">
       <h4 class="text-grey-darken-3 flex items-center">
-        <v-icon start color="success" class="mr-2">mdi-sprout-outline</v-icon>
+        <v-icon start color="primary" class="mr-2">mdi-sprout-outline</v-icon>
         Siembras Involucradas
       </h4>
       <div v-if="siembrasToDisplay.length > 1" class="flex gap-2">
@@ -28,7 +28,7 @@
     </div>
 
     <div v-if="loading" class="flex justify-center py-4">
-      <v-progress-circular indeterminate color="success" size="24" />
+      <v-progress-circular indeterminate color="primary" size="24" />
     </div>
 
     <div v-else-if="siembrasToDisplay.length > 0" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -37,18 +37,18 @@
         :key="siembra.id"
         variant="flat"
         class="transition-all rounded-lg bg-grey-lighten-4"
-        :class="{ 'bg-success-lighten-5 elevation-1': modelValue.includes(siembra.id) }"
+        :class="{ 'bg-primary-5 elevation-1': modelValue.includes(siembra.id) }"
         @click="toggleSelection(siembra.id)"
       >
         <v-card-text class="pa-3 flex items-center">
           <v-checkbox-btn
             :model-value="modelValue.includes(siembra.id)"
-            color="success"
+            color="primary"
             density="compact"
             class="mr-2"
           />
           <div class="flex flex-col">
-            <span class="text-body-2" :class="modelValue.includes(siembra.id) ? 'text-success font-weight-bold' : 'text-grey-darken-3'">
+            <span class="text-body-2" :class="modelValue.includes(siembra.id) ? 'text-primary font-weight-bold' : 'text-grey-darken-3'">
               {{ siembra.nombre }}
             </span>
             <span class="text-caption text-grey-darken-1">

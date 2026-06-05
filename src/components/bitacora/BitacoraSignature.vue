@@ -1,7 +1,7 @@
 <template>
   <div class="bitacora-signature-container d-flex flex-col gap-3 my-4">
     <div class="text-subtitle-1 font-weight-bold mb-1 text-grey-darken-3 d-flex align-center">
-      <v-icon color="success" class="mr-2">mdi-draw-pen</v-icon>
+      <v-icon color="primary" class="mr-2">mdi-draw-pen</v-icon>
       Firma del Operador / Responsable
     </div>
 
@@ -48,7 +48,7 @@
         alt="Firma del operador"
         style="max-height: 100px; max-width: 100%; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));" 
       />
-      <v-chip color="success" size="small" variant="tonal" class="mt-3 font-weight-bold" prepend-icon="mdi-check-decagram">
+      <v-chip color="primary" size="small" variant="tonal" class="mt-3 font-weight-bold" prepend-icon="mdi-check-decagram">
         Criptográficamente Firmado
       </v-chip>
     </div>
@@ -73,7 +73,7 @@
         <v-btn
           v-if="!isSigned"
           size="small"
-          color="success"
+          color="primary"
           prepend-icon="mdi-signature"
           @click="handleSign"
           :loading="signing"
@@ -84,7 +84,7 @@
         
         <v-chip 
           v-else-if="!existingSignature" 
-          color="success" 
+          color="primary" 
           prepend-icon="mdi-check-circle" 
           class="font-weight-bold"
           variant="flat"

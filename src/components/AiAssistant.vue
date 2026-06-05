@@ -90,7 +90,7 @@
             <v-card-text class="pa-4">
               <div class="d-flex align-start mb-2">
                 <v-icon color="green-darken-3" size="18" class="mr-2 mt-1">mdi-clipboard-text-outline</v-icon>
-                <span class="text-caption font-weight-bold text-green-darken-3 text-uppercase">Diagnóstico</span>
+                <span class="text-caption font-weight-bold text-primary-3 text-uppercase">Diagnóstico</span>
               </div>
               <p class="text-body-2 text-grey-darken-3 mb-0" style="line-height:1.6">
                 {{ result.diagnostico }}

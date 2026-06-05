@@ -125,7 +125,7 @@
                   <v-icon icon="mdi-cog-outline" color="green-darken-2"></v-icon>
                   Tarifas Oficiales
                 </h3>
-                <v-chip size="x-small" color="success" class="font-weight-bold">Configuración</v-chip>
+                <v-chip size="x-small" color="primary" class="font-weight-bold">Configuración</v-chip>
               </div>
               
               <v-row class="dense">
@@ -185,21 +185,21 @@
         <!-- Resumen General KPIs -->
         <v-row class="mb-6" v-if="detallesBorrador.length > 0">
           <v-col cols="12" sm="6" md="3">
-            <v-card class="rounded-lg bg-green-darken-3 text-white pa-4 shadow-sm">
-              <div class="text-caption font-weight-bold text-green-lighten-3">TOTAL NETO A PAGAR</div>
+            <v-card class="rounded-lg bg-primary-3 text-white pa-4 shadow-sm">
+              <div class="text-caption font-weight-bold text-primary-3">TOTAL NETO A PAGAR</div>
               <div class="text-h4 font-weight-black mt-1">${{ totalNeto.toFixed(2) }}</div>
             </v-card>
           </v-col>
           <v-col cols="12" sm="6" md="3">
             <v-card class="rounded-lg bg-white pa-4 shadow-sm border">
               <div class="text-caption font-weight-bold text-grey-darken-1">TOTAL EN JORNALES</div>
-              <div class="text-h4 font-weight-black mt-1 text-green-darken-4">${{ totalJornal.toFixed(2) }}</div>
+              <div class="text-h4 font-weight-black mt-1 text-primary-4">${{ totalJornal.toFixed(2) }}</div>
             </v-card>
           </v-col>
           <v-col cols="12" sm="6" md="3">
             <v-card class="rounded-lg bg-white pa-4 shadow-sm border">
               <div class="text-caption font-weight-bold text-grey-darken-1">TOTAL EN DESTAJOS</div>
-              <div class="text-h4 font-weight-black mt-1 text-green-darken-4">${{ totalDestajo.toFixed(2) }}</div>
+              <div class="text-h4 font-weight-black mt-1 text-primary-4">${{ totalDestajo.toFixed(2) }}</div>
             </v-card>
           </v-col>
           <v-col cols="12" sm="6" md="3">
@@ -256,7 +256,7 @@
                   <tr v-for="row in detallesBorrador" :key="row.operario_id">
                     <td class="font-weight-bold text-grey-darken-4 py-3">
                       <div class="d-flex align-center gap-2">
-                        <v-avatar color="green-lighten-4" size="32" class="text-green-darken-4 font-weight-bold">
+                        <v-avatar color="green-lighten-4" size="32" class="text-primary-4 font-weight-bold">
                           {{ getInitials(row.operario_nombre) }}
                         </v-avatar>
                         {{ row.operario_nombre }}
@@ -327,7 +327,7 @@
                         :readonly="isSavedPayrollClosed"
                       ></v-text-field>
                     </td>
-                    <td class="text-right font-weight-black text-green-darken-4">
+                    <td class="text-right font-weight-black text-primary-4">
                       ${{ row.total_neto.toFixed(2) }}
                     </td>
                   </tr>
@@ -337,7 +337,7 @@
               <div class="d-flex flex-column gap-3 pa-2" v-else>
                 <v-card v-for="row in detallesBorrador" :key="row.operario_id" class="border rounded-lg pa-3 elevation-0 bg-grey-lighten-4">
                   <div class="d-flex align-center gap-2 mb-3">
-                    <v-avatar color="green-lighten-4" size="32" class="text-green-darken-4 font-weight-bold">
+                    <v-avatar color="green-lighten-4" size="32" class="text-primary-4 font-weight-bold">
                       {{ getInitials(row.operario_nombre) }}
                     </v-avatar>
                     <span class="font-weight-bold text-subtitle-1">{{ row.operario_nombre }}</span>
@@ -375,7 +375,7 @@
                   </v-row>
                   <div class="d-flex justify-space-between align-center mt-3 pt-3 border-t">
                     <span class="text-caption text-grey-darken-1">Neto a pagar:</span>
-                    <span class="font-weight-black text-green-darken-4 text-h6">${{ row.total_neto.toFixed(2) }}</span>
+                    <span class="font-weight-black text-primary-4 text-h6">${{ row.total_neto.toFixed(2) }}</span>
                   </div>
                 </v-card>
               </div>
@@ -474,7 +474,7 @@
 
             <!-- Total Pagado Column -->
             <template #[`item.total_pagado`]="{ item }">
-              <span class="font-weight-bold text-green-darken-4">
+              <span class="font-weight-bold text-primary-4">
                 ${{ item.total_pagado.toFixed(2) }}
               </span>
             </template>
@@ -686,7 +686,7 @@
     <!-- Modal para Confirmar Cierre -->
     <v-dialog v-model="cerrarConfirmDialog" max-width="400">
       <v-card class="rounded-lg">
-        <v-card-title class="bg-green-darken-3 text-white pa-4">
+        <v-card-title class="bg-primary-3 text-white pa-4">
           <v-icon start>mdi-lock</v-icon>
           ¿Cerrar esta Nómina?
         </v-card-title>
@@ -716,7 +716,7 @@
     <!-- Modal Trabajador -->
     <v-dialog v-model="dialogoTrabajador" max-width="500">
       <v-card class="rounded-lg">
-        <v-card-title class="bg-green-darken-3 text-white pa-4">
+        <v-card-title class="bg-primary-3 text-white pa-4">
           {{ formTrabajador.id ? 'Editar Trabajador' : 'Nuevo Trabajador' }}
         </v-card-title>
         <v-card-text class="pa-6">

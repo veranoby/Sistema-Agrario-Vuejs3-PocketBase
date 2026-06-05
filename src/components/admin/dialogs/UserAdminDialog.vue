@@ -193,7 +193,7 @@
       <v-card-actions class="pb-4 pr-4">
         <v-spacer></v-spacer>
         <v-btn color="error" variant="elevated" @click="close" :disabled="loading">Cancelar</v-btn>
-        <v-btn color="success" variant="elevated" @click="submit" :loading="loading" :disabled="!isValid">Guardar</v-btn>
+        <v-btn color="primary" variant="elevated" @click="submit" :loading="loading" :disabled="!isValid">Guardar</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>

@@ -66,7 +66,7 @@
         <v-card hover class="export-card">
           <v-card-text>
             <div class="d-flex align-center mb-3">
-              <v-icon size="40" color="success" class="mr-3">mdi-check-all</v-icon>
+              <v-icon size="40" color="primary" class="mr-3">mdi-check-all</v-icon>
               <h3 class="text-h6">Tipos de Actividades</h3>
             </div>
             <p class="text-body-2 text-grey mb-3">
@@ -80,7 +80,7 @@
             </div>
           </v-card-text>
           <v-card-actions>
-            <v-btn color="success" variant="tonal" block @click="exportData('actividades')">
+            <v-btn color="primary" variant="tonal" block @click="exportData('actividades')">
               <v-icon start>mdi-download</v-icon>
               Exportar Actividades
             </v-btn>

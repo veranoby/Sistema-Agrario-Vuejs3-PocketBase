@@ -109,7 +109,7 @@
       <v-col cols="12" md="3">
         <v-card color="green-lighten-5">
           <v-card-text class="text-center">
-            <div class="text-h4 text-green">{{ infoCount }}</div>
+            <div class="text-h4 text-primary">{{ infoCount }}</div>
             <div class="text-subtitle-2 text-grey">INFO</div>
           </v-card-text>
         </v-card>

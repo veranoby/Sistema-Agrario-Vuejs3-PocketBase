@@ -55,7 +55,7 @@
                 <p class="text-caption">${{ totalYearly.toFixed(2) }}/año (${{ (totalYearly / 12).toFixed(2) }}/mes)</p>
               </div>
               <div class="text-right">
-                <p class="text-subtitle-2 font-weight-bold text-success">Ahorras ${{ annualSavings.toFixed(2) }}</p>
+                <p class="text-subtitle-2 font-weight-bold text-primary">Ahorras ${{ annualSavings.toFixed(2) }}</p>
                 <p class="text-caption">({{ savingsPercent }}%)</p>
               </div>
             </div>

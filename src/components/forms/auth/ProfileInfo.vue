@@ -24,7 +24,7 @@
             <v-icon
               v-if="user?.verified"
               class="ml-1"
-              color="success"
+              color="primary"
               size="small"
               :title="t('profile.email_verified')"
             >mdi-check-circle</v-icon>
@@ -49,7 +49,7 @@
           ></v-alert>
           <v-btn
             size="small"
-            color="success"
+            color="primary"
             variant="outlined"
             :loading="resendingEmail"
             @click="resendVerificationEmail"
@@ -91,7 +91,7 @@
   >
     <v-card>
       <v-form @submit.prevent="saveProfileChanges">
-        <v-toolbar color="success" dark>
+        <v-toolbar color="primary" dark>
           <v-toolbar-title>{{ t('profile.edit_profile') }}</v-toolbar-title>
           <v-spacer></v-spacer>
           <v-chip variant="outlined" size="small" color="white" class="mr-6">

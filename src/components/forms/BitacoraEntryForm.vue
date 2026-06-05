@@ -30,7 +30,7 @@
           <!-- SECCIÓN 1: Datos Básicos -->
           <div class="bg-dinamico p-4 rounded-lg">
             <div class="flex items-center mb-4">
-              <v-icon color="success" class="mr-2">mdi-information-outline</v-icon>
+              <v-icon color="primary" class="mr-2">mdi-information-outline</v-icon>
               <h4>Datos de la Entrada</h4>
             </div>
             
@@ -73,7 +73,7 @@
                 clearable
               >
                 <template v-slot:append-inner v-if="modoOrdenTrabajo">
-                  <v-icon color="success">mdi-lock</v-icon>
+                  <v-icon color="primary">mdi-lock</v-icon>
                 </template>
               </v-autocomplete>
               <v-autocomplete
@@ -125,8 +125,8 @@
           <!-- SECCIÓN BODEGA: Consumo de Insumos -->
           <div v-if="showBodegaSection" class="bg-dinamico p-4 rounded-lg border border-teal-lighten-4">
             <div class="flex items-center mb-4">
-              <v-icon color="teal" class="mr-2">mdi-warehouse</v-icon>
-              <h4 class="font-weight-bold text-teal-darken-3">Consumo de Insumos de Bodega</h4>
+              <v-icon color="primary" class="mr-2">mdi-warehouse</v-icon>
+              <h4 class="font-weight-bold text-primary-3">Consumo de Insumos de Bodega</h4>
             </div>
             
             <div class="ml-8">
@@ -135,13 +135,13 @@
                 <div 
                   v-for="(insumo, idx) in insumosConsumidos" 
                   :key="idx"
-                  class="d-flex align-center justify-space-between p-3 rounded-lg border border-teal-lighten-4 bg-teal-lighten-5"
+                  class="d-flex align-center justify-space-between p-3 rounded-lg border border-teal-lighten-4 bg-primary-5"
                 >
                   <div class="d-flex align-center gap-2">
-                    <v-chip color="teal" size="small" variant="flat" class="text-white">
+                    <v-chip color="primary" size="small" variant="flat" class="text-white">
                       {{ getNombreInsumo(insumo.item) }}
                     </v-chip>
-                    <span class="text-subtitle-2 font-weight-medium text-teal-darken-4">
+                    <span class="text-subtitle-2 font-weight-medium text-primary-4">
                       Cantidad: {{ insumo.cantidad }} {{ getUnidadInsumo(insumo.item) }}
                     </span>
                   </div>
@@ -167,7 +167,7 @@
                   density="compact"
                   hide-details
                   class="rounded-lg md:col-span-2"
-                  color="teal"
+                  color="primary"
                 >
                   <template v-slot:item="{ props: itemProps, item }">
                     <v-list-item v-bind="itemProps" :subtitle="'Stock: ' + item.raw.stock_actual + ' ' + item.raw.unidad">
@@ -186,12 +186,12 @@
                     density="compact"
                     hide-details
                     class="rounded-lg"
-                    color="teal"
+                    color="primary"
                     @keyup.enter="agregarInsumo"
                   ></v-text-field>
 
                   <v-btn
-                    color="teal"
+                    color="primary"
                     icon="mdi-plus"
                     variant="flat"
                     class="text-white"

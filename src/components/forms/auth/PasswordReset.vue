@@ -2,7 +2,7 @@
   <v-container class="fill-height justify-center bg-grey-lighten-4">
     <v-col cols="12" sm="8" md="6" lg="4">
       <v-card class="elevation-8">
-        <v-toolbar color="success" dark flat>
+        <v-toolbar color="primary" dark flat>
           <v-toolbar-title>{{ t('auth.recover_password_title') }}</v-toolbar-title>
           <v-spacer></v-spacer>
           <v-btn icon to="/">
@@ -27,12 +27,12 @@
 
           <!-- Estado de éxito -->
           <div v-else-if="resetSuccess" class="text-center py-6">
-            <v-icon color="success" size="64" class="mb-4">mdi-check-circle-outline</v-icon>
+            <v-icon color="primary" size="64" class="mb-4">mdi-check-circle-outline</v-icon>
             <h3 class="text-h5 mb-2">{{ t('auth.password_reset_success_title') }}</h3>
             <p class="text-body-1 mb-6">
               {{ t('auth.password_reset_success_message') }}
             </p>
-            <v-btn color="success" to="/" block>{{ t('auth.login') }}</v-btn>
+            <v-btn color="primary" to="/" block>{{ t('auth.login') }}</v-btn>
           </div>
 
           <!-- Formulario de reset -->
@@ -52,7 +52,7 @@
               ]"
               :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
               :type="showPassword ? 'text' : 'password'"
-              color="success"
+              color="primary"
               density="compact"
               prepend-inner-icon="mdi-lock-outline"
               class="mb-4"
@@ -70,7 +70,7 @@
               ]"
               :append-inner-icon="showConfirm ? 'mdi-eye-off' : 'mdi-eye'"
               :type="showConfirm ? 'text' : 'password'"
-              color="success"
+              color="primary"
               density="compact"
               prepend-inner-icon="mdi-lock-check-outline"
               class="mb-4"
@@ -96,7 +96,7 @@
 
             <v-btn
               type="submit"
-              color="success"
+              color="primary"
               block
               :loading="loading"
               :disabled="!canSubmit"
@@ -107,7 +107,7 @@
         </v-card-text>
 
         <v-card-actions class="justify-center pa-4">
-          <router-link to="/" class="text-decoration-none text-success">
+          <router-link to="/" class="text-decoration-none text-primary">
             <small>{{ t('auth.back_to_login') }}</small>
           </router-link>
         </v-card-actions>

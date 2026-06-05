@@ -10,7 +10,7 @@
         </v-toolbar-title>
         <v-btn icon="mdi-chevron-right" variant="text" @click="nextMonth"></v-btn>
         <v-spacer></v-spacer>
-        <div class="mr-4 text-subtitle-2 font-weight-bold text-success">
+        <div class="mr-4 text-subtitle-2 font-weight-bold text-primary">
           Ingreso Mensual: ${{ totalMensual.toFixed(2) }}
         </div>
         <v-btn color="primary" variant="outlined" size="small" class="mr-2" @click="exportToExcel">
@@ -58,7 +58,7 @@
                 </template>
               </v-tooltip>
               <template v-if="item.estado === 'pendiente'">
-                <v-btn size="small" color="success" class="mr-2" @click="openApproveModal(item)">Aprobar</v-btn>
+                <v-btn size="small" color="primary" class="mr-2" @click="openApproveModal(item)">Aprobar</v-btn>
                 <v-btn size="small" color="error" @click="openRejectModal(item)">Rechazar</v-btn>
               </template>
             </div>
@@ -89,7 +89,7 @@
     <!-- Modal Aprobar -->
     <v-dialog v-model="approveModal" max-width="500">
       <v-card>  
-        <v-card-title class="bg-green justify-center">Confirmar Aprobación</v-card-title>
+        <v-card-title class="bg-primary justify-center">Confirmar Aprobación</v-card-title>
         <v-card-text>
           ¿Estás seguro de aprobar esta solicitud?<br><br>
           <div v-if="selectedItem?.tipo === 'plan_upgrade'">
@@ -109,7 +109,7 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn color="red" variant="flat" @click="approveModal = false">Cancelar</v-btn>
-          <v-btn variant="flat" color="success" :loading="processing" @click="processApprove">Aprobar y Aplicar</v-btn>
+          <v-btn variant="flat" color="primary" :loading="processing" @click="processApprove">Aprobar y Aplicar</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>

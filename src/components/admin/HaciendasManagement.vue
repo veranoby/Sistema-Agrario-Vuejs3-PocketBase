@@ -276,7 +276,7 @@
         <v-card-actions class="pb-4 pr-4">
           <v-spacer />
           <v-btn color="error" variant="elevated" @click="closeDialog">CANCELAR</v-btn>
-          <v-btn color="success" variant="elevated" :disabled="!formValid" @click="saveHacienda">GUARDAR</v-btn>
+          <v-btn color="primary" variant="elevated" :disabled="!formValid" @click="saveHacienda">GUARDAR</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>

@@ -21,7 +21,7 @@
             <div class="w-full sm:w-auto z-10 d-flex gap-2">
               <v-btn
                 prepend-icon="mdi-plus-circle"
-                color="success"
+                color="primary"
                 variant="flat"
                 class="font-weight-bold text-white elevation-2 rounded-lg"
                 @click="showNewEntryDialog = true"

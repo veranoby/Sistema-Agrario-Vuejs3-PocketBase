@@ -95,7 +95,7 @@
         scrollable
       >
         <v-card rounded="xl">
-          <v-toolbar color="success" dark>
+          <v-toolbar color="primary" dark>
             <v-toolbar-title>{{ t('hacienda_info.edit_hacienda') }}</v-toolbar-title>
             <v-spacer></v-spacer>
             <v-btn icon @click="closeEditDialog">

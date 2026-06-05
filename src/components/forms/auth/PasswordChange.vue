@@ -21,7 +21,7 @@
       scrollable
     >
       <v-card>
-        <v-toolbar color="success" dark>
+        <v-toolbar color="primary" dark>
           <v-toolbar-title>{{ t('password_change.change_password') }}</v-toolbar-title>
           <v-spacer></v-spacer>
         </v-toolbar>

@@ -7,8 +7,8 @@
           <div class="d-flex align-center justify-space-between flex-wrap gap-4">
             <div>
               <div class="d-flex align-center gap-2 mb-1">
-                <v-btn icon="mdi-arrow-left" variant="text" color="teal" @click="router.push('/asesor/haciendas')"></v-btn>
-                <h1 class="text-h4 font-weight-bold text-teal-darken-3">
+                <v-btn icon="mdi-arrow-left" variant="text" color="primary" @click="router.push('/asesor/haciendas')"></v-btn>
+                <h1 class="text-h4 font-weight-bold text-primary-3">
                   Expediente de {{ hacienda?.nombre || 'Hacienda' }}
                 </h1>
               </div>
@@ -19,7 +19,7 @@
             
             <div class="pl-12 pl-sm-0">
               <v-btn
-                color="teal"
+                color="primary"
                 variant="flat"
                 class="font-weight-bold text-white rounded-lg px-4"
                 prepend-icon="mdi-file-document-edit"
@@ -33,7 +33,7 @@
       </v-row>
 
       <!-- Main Tabs -->
-      <v-tabs v-model="tab" color="teal" align-tabs="start" class="border-b border-grey-lighten-2 mb-6">
+      <v-tabs v-model="tab" color="primary" align-tabs="start" class="border-b border-grey-lighten-2 mb-6">
         <v-tab value="paquetes" class="font-weight-bold">
           <v-icon start icon="mdi-package-variant-closed"></v-icon>
           Paquetes de Evaluación
@@ -61,7 +61,7 @@
                     <template v-for="(pkg, idx) in paquetes" :key="pkg.id">
                       <v-list-item
                         :active="selectedPackage?.id === pkg.id"
-                        active-color="teal"
+                        active-color="primary"
                         class="py-3 px-4 cursor-pointer border-b border-grey-lighten-4"
                         @click="selectPackage(pkg)"
                       >
@@ -73,7 +73,7 @@
                           ></v-icon>
                         </template>
 
-                        <v-list-item-title class="font-weight-bold text-teal-darken-4">
+                        <v-list-item-title class="font-weight-bold text-primary-4">
                           Evaluación #{{ pkgsCount - idx }}
                         </v-list-item-title>
                         <v-list-item-subtitle class="text-caption mt-1">
@@ -107,7 +107,7 @@
               <v-btn
                 v-if="mobile && selectedPackage"
                 variant="text"
-                color="teal"
+                color="primary"
                 prepend-icon="mdi-arrow-left"
                 class="mb-2 font-weight-bold px-0"
                 @click="selectedPackage = null"
@@ -115,9 +115,9 @@
                 Volver a Paquetes
               </v-btn>
               <v-card class="elevation-2 rounded-lg border border-grey-lighten-3 h-100" v-if="selectedPackage">
-                <v-card-title class="bg-teal py-3 px-5 text-white font-weight-bold d-flex justify-space-between align-center">
+                <v-card-title class="bg-primary py-3 px-5 text-white font-weight-bold d-flex justify-space-between align-center">
                   <span>Detalle del Paquete de Evaluación</span>
-                  <v-chip size="small" color="white" class="text-teal font-weight-bold">
+                  <v-chip size="small" color="white" class="text-primary font-weight-bold">
                     {{ formatDate(selectedPackage.created) }}
                   </v-chip>
                 </v-card-title>
@@ -125,7 +125,7 @@
                 <v-card-text class="pa-5 overflow-y-auto" style="max-height: 550px;">
                   <!-- Notas Hacienda -->
                   <div class="mb-4">
-                    <span class="text-subtitle-2 font-weight-bold text-teal-darken-4 d-block mb-1">
+                    <span class="text-subtitle-2 font-weight-bold text-primary-4 d-block mb-1">
                       Mensaje / Notas del Agricultor:
                     </span>
                     <p class="text-body-2 bg-grey-lighten-4 pa-3 rounded text-grey-darken-3 whitespace-pre-line italic">
@@ -137,7 +137,7 @@
 
                   <!-- Siembras Relacionadas -->
                   <div class="mb-4">
-                    <span class="text-subtitle-2 font-weight-bold text-teal-darken-4 d-block mb-2">
+                    <span class="text-subtitle-2 font-weight-bold text-primary-4 d-block mb-2">
                       Siembras Compartidas:
                     </span>
                     <v-card variant="outlined" class="rounded-lg border-grey-lighten-2 pa-3">
@@ -148,7 +148,7 @@
                             Variedad: {{ packageSiembra?.variedad || 'N/A' }} | Tipo: {{ packageSiembra?.tipo }}
                           </div>
                         </div>
-                        <v-chip size="small" color="teal" variant="flat" class="text-white">
+                        <v-chip size="small" color="primary" variant="flat" class="text-white">
                           Inicio: {{ formatDate(packageSiembra?.fecha_inicio) }}
                         </v-chip>
                       </div>
@@ -157,7 +157,7 @@
 
                   <!-- Zonas -->
                   <div class="mb-4">
-                    <span class="text-subtitle-2 font-weight-bold text-teal-darken-4 d-block mb-2">
+                    <span class="text-subtitle-2 font-weight-bold text-primary-4 d-block mb-2">
                       Zonas Geográficas Relacionadas ({{ packageZonas.length }}):
                     </span>
                     <div class="d-flex flex-wrap gap-2" v-if="packageZonas.length > 0">
@@ -179,7 +179,7 @@
 
                   <!-- Bitacoras -->
                   <div>
-                    <span class="text-subtitle-2 font-weight-bold text-teal-darken-4 d-block mb-2">
+                    <span class="text-subtitle-2 font-weight-bold text-primary-4 d-block mb-2">
                       Entradas de Bitácora de Campo ({{ packageBitacoras.length }}):
                     </span>
                     <v-expansion-panels variant="accordion" v-if="packageBitacoras.length > 0">
@@ -222,7 +222,7 @@
               </v-card>
 
               <div class="h-100 d-flex align-center justify-center border border-dashed rounded-lg border-teal py-12" v-else>
-                <div class="text-center text-teal-darken-3">
+                <div class="text-center text-primary-3">
                   <v-icon icon="mdi-gesture-tap-select" size="64" class="mb-2"></v-icon>
                   <h3 class="text-h6 font-weight-bold">Selecciona un paquete</h3>
                   <p class="text-body-2">Elige un expediente de la izquierda para analizar sus bitácoras de campo.</p>
@@ -259,7 +259,7 @@
                   <v-row class="mb-2">
                     <v-col cols="6" class="py-1">
                       <span class="text-caption text-grey d-block">Siembra</span>
-                      <span class="text-body-2 font-weight-medium text-teal-darken-4">
+                      <span class="text-body-2 font-weight-medium text-primary-4">
                         {{ getSiembraName(receta.siembra_id) }}
                       </span>
                     </v-col>
@@ -295,11 +295,11 @@
                 <!-- Actions for Drafts -->
                 <v-divider v-if="receta.estado === 'borrador'"></v-divider>
                 <v-card-actions class="px-4 py-3 bg-grey-lighten-5" v-if="receta.estado === 'borrador'">
-                  <v-btn color="teal" variant="text" class="font-weight-bold" prepend-icon="mdi-pencil" @click="editRecipe(receta.id)">
+                  <v-btn color="primary" variant="text" class="font-weight-bold" prepend-icon="mdi-pencil" @click="editRecipe(receta.id)">
                     Editar Borrador
                   </v-btn>
                   <v-spacer></v-spacer>
-                  <v-btn color="teal" variant="flat" class="font-weight-bold text-white rounded-lg" prepend-icon="mdi-send" @click="sendDraft(receta)">
+                  <v-btn color="primary" variant="flat" class="font-weight-bold text-white rounded-lg" prepend-icon="mdi-send" @click="sendDraft(receta)">
                     Enviar a Hacienda
                   </v-btn>
                 </v-card-actions>

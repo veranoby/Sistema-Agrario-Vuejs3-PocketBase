@@ -42,7 +42,7 @@
             <v-card variant="elevated" elevation="2">
               <v-card-text>
                 <div class="d-flex align-center">
-                  <v-avatar size="48" color="success" class="mr-4">
+                  <v-avatar size="48" color="primary" class="mr-4">
                     <v-icon color="white">mdi-home-city</v-icon>
                   </v-avatar>
                   <div>
@@ -272,7 +272,7 @@
               </v-col>
 
               <v-col cols="12" sm="4">
-                <v-card variant="tonal" color="success">
+                <v-card variant="tonal" color="primary">
                   <v-card-text class="text-center">
                     <div class="text-h3 font-weight-bold">{{ topHaciendas.length }}</div>
                     <div class="text-subtitle-2">Haciendas Activas</div>

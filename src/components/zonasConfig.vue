@@ -30,7 +30,7 @@
                   'text-red font-extrabold pt-0 pb-2 text-xs sm:text-sm': promedioBpaEstado < 40,
                   'text-orange font-extrabold pt-0 pb-2 text-xs sm:text-sm':
                     promedioBpaEstado >= 40 && promedioBpaEstado < 80,
-                  'text-green font-extrabold pt-0 pb-2 text-xs sm:text-sm': promedioBpaEstado >= 80
+                  'text-primary font-extrabold pt-0 pb-2 text-xs sm:text-sm': promedioBpaEstado >= 80
                 }"
               >
                 {{ t('zones.bpa_progress') }}:
@@ -59,11 +59,11 @@
         <v-tabs
           v-model="tab"
           bg-color="#6380a247"
-          slider-color="green"
+          slider-color="primary"
           stacked
           show-arrows
           density="compact"
-          selected-class="bg-green-lighten-1"
+          selected-class="bg-primary-1"
           center-active
         >
           <v-tab v-for="tipoZona in tiposZonas" :key="tipoZona.id" :value="tipoZona.id">
@@ -83,7 +83,7 @@
             <v-card class="bg-dinamico">
               <v-card-title class="d-flex justify-space-between align-center">
                 <span
-                  class="hidden sm:inline text-sm truncate text-green-600"
+                  class="hidden sm:inline text-sm truncate text-primary"
                   style="max-width: 80%; white-space: normal"
                   v-html="tipoZona.descripcion || t('zones.no_description_available')"
                 ></span>
@@ -135,7 +135,7 @@
                       :class="{
                         'text-red font-extrabold': item.bpa_estado < 40,
                         'text-orange font-extrabold': item.bpa_estado >= 40 && item.bpa_estado < 80,
-                        'text-green font-extrabold': item.bpa_estado >= 80
+                        'text-primary font-extrabold': item.bpa_estado >= 80
                       }"
                     >
                       {{ item.bpa_estado }}%

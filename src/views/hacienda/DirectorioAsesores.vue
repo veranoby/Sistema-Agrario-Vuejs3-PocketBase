@@ -36,7 +36,7 @@
                 variant="outlined"
                 density="compact"
                 hide-details
-                color="teal"
+                color="primary"
                 @input="onSearchInput"
               ></v-text-field>
             </v-col>
@@ -52,7 +52,7 @@
                 variant="outlined"
                 density="compact"
                 hide-details
-                color="teal"
+                color="primary"
                 @update:model-value="applyFilters"
               ></v-select>
             </v-col>
@@ -68,7 +68,7 @@
                 variant="outlined"
                 density="compact"
                 hide-details
-                color="teal"
+                color="primary"
                 @update:model-value="applyFilters"
               ></v-select>
             </v-col>
@@ -78,7 +78,7 @@
 
       <!-- Cargando / Sin Resultados -->
       <div v-if="asesoresStore.loading" class="d-flex justify-center align-center py-12">
-        <v-progress-circular indeterminate color="teal" size="64" width="6"></v-progress-circular>
+        <v-progress-circular indeterminate color="primary" size="64" width="6"></v-progress-circular>
       </div>
 
       <div v-else-if="asesoresStore.asesores.length === 0" class="text-center py-12">
@@ -103,7 +103,7 @@
               <v-avatar size="56" class="border border-white border-2 elevation-2">
                 <v-img :src="getAvatar(asesor)" alt="Avatar">
                   <template v-slot:placeholder>
-                    <div class="d-flex align-center justify-center bg-teal-darken-1 text-h6 font-weight-bold fill-height text-white">
+                    <div class="d-flex align-center justify-center bg-primary-1 text-h6 font-weight-bold fill-height text-white">
                       {{ getInitials(asesor) }}
                     </div>
                   </template>
@@ -113,7 +113,7 @@
                 <h3 class="text-subtitle-1 font-weight-bold text-truncate mb-0">
                   {{ asesor.name }} {{ asesor.lastname }}
                 </h3>
-                <span class="text-caption text-teal-lighten-5 d-block">
+                <span class="text-caption text-primary-5 d-block">
                   Reg: {{ asesor.parsedInfo?.numero_colegiatura || 'N/A' }}
                 </span>
               </div>
@@ -140,7 +140,7 @@
                     size="x-small"
                     color="teal-lighten-4"
                     variant="flat"
-                    class="font-weight-bold text-teal-darken-3"
+                    class="font-weight-bold text-primary-3"
                   >
                     +{{ asesor.parsedInfo.especialidades.length - 3 }}
                   </v-chip>
@@ -187,7 +187,7 @@
               <v-btn
                 v-if="getEstado(asesor.id) === 'ninguna'"
                 block
-                color="teal"
+                color="primary"
                 variant="flat"
                 class="font-weight-bold"
                 prepend-icon="mdi-account-plus"

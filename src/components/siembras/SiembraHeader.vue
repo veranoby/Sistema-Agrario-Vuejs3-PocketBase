@@ -3,7 +3,7 @@
     <div class="profile-container">
       <h3 class="profile-title">
         <nav class="flex mb-3" aria-label="Breadcrumb">
-          <ol class="flex items-center space-x-2 bg-green-lighten-4 py-2 px-4 rounded-r-full">
+          <ol class="flex items-center space-x-2 bg-primary-4 py-2 px-4 rounded-r-full">
             <li>
               <div class="flex items-center">
                 <v-icon>mdi-sprout</v-icon>

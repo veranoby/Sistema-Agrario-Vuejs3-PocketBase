@@ -61,7 +61,7 @@
           </template>
         </v-data-table>
 
-        <v-progress-linear color="success" :value="importProgress" height="12">
+        <v-progress-linear color="primary" :value="importProgress" height="12">
           <strong>{{ importProgress }}%</strong>
         </v-progress-linear>
       </v-card-text>

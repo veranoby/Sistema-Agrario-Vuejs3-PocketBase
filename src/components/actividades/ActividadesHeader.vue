@@ -5,7 +5,7 @@
         <div class="w-full sm:flex-grow">
           <h3 class="profile-title">
             <nav class="flex mb-3" aria-label="Breadcrumb">
-              <ol class="flex items-center space-x-2 bg-green-lighten-4 py-2 px-4 rounded-r-full">
+              <ol class="flex items-center space-x-2 bg-primary-4 py-2 px-4 rounded-r-full">
                 <li>
                   <div class="flex items-center">
                     <v-icon>mdi-gesture-tap-button</v-icon>
@@ -60,7 +60,7 @@
               'text-red font-extrabold pt-0 pb-2 text-xs sm:text-sm': actividadInfo.bpa_estado < 40,
               'text-orange font-extrabold pt-0 pb-2 text-xs sm:text-sm':
                 actividadInfo.bpa_estado >= 40 && actividadInfo.bpa_estado < 80,
-              'text-green font-extrabold pt-0 pb-2 text-xs sm:text-sm':
+              'text-primary font-extrabold pt-0 pb-2 text-xs sm:text-sm':
                 actividadInfo.bpa_estado >= 80
             }"
           >

@@ -21,7 +21,7 @@
                 </v-chip>
 
                 <!-- Estadísticas como v-chips -->
-                <v-chip variant="flat" size="small" color="success" class="mx-1" pill>
+                <v-chip variant="flat" size="small" color="primary" class="mx-1" pill>
                   <v-icon start size="small">mdi-sprout</v-icon>
                   Activas: {{ metrics.activeSiembras }}
                 </v-chip>
@@ -49,7 +49,7 @@
             <div class="w-full sm:w-auto z-10 hidden-sm-and-down" v-if="canCreate && !mobile">
               <v-btn
                 prepend-icon="mdi-plus-circle"
-                color="success"
+                color="primary"
                 variant="flat"
                 class="font-weight-bold text-white elevation-2 rounded-lg"
                 @click="abrirDialogCreacion"
@@ -173,7 +173,7 @@
           <v-col cols="12">
             <v-card variant="elevated" elevation="2" class="h-100">
               <v-card-title class="pa-4">
-                <v-icon start color="success">mdi-map</v-icon>
+                <v-icon start color="primary">mdi-map</v-icon>
                 {{ $t('sowings.sowings_map') }}
               </v-card-title>
               <v-divider />
@@ -213,7 +213,7 @@
 
     <v-btn
       v-if="canCreate && mobile"
-      color="success"
+      color="primary"
       icon="mdi-plus"
       size="x-large"
       position="fixed"

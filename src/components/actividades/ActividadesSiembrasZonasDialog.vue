@@ -2,7 +2,7 @@
   <v-dialog v-model="dialogVisible" persistent max-width="900px">
     <div class="grid grid-cols-2 gap-2 p-0 m-2 bg-white">
       <v-card>
-        <v-toolbar color="success" dark density="compact">
+        <v-toolbar color="primary" dark density="compact">
           <v-toolbar-title small
             ><span class="text-sm"
               ><v-icon class="mr-2">mdi-sprout</v-icon>{{ t('activity_workspace.sowings_projects') }}</span

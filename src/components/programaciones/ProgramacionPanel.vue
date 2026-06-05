@@ -103,7 +103,7 @@
         <v-btn
           v-if="showSingleExecutionButton"
           variant="tonal"
-          color="success"
+          color="primary"
           size="small"
           density="comfortable"
           @click="handleRegistrarCumplimiento"

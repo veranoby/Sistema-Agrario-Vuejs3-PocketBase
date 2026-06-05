@@ -83,7 +83,7 @@
       <v-spacer></v-spacer>
       <v-btn
         v-if="isBpaActive"
-        color="success"
+        color="primary"
         variant="tonal"
         size="small"
         prepend-icon="mdi-file-pdf-box"

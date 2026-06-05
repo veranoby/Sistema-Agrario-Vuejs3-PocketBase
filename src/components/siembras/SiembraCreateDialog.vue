@@ -1,7 +1,7 @@
 <template>
   <v-dialog v-model="dialog" persistent max-width="500px">
     <v-card>
-      <v-toolbar color="success" dark>
+      <v-toolbar color="primary" dark>
         <v-toolbar-title>{{ t('sowings.new_sowing') }}</v-toolbar-title>
         <v-spacer></v-spacer>
       </v-toolbar>

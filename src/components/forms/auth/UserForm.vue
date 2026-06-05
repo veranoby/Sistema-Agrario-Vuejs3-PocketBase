@@ -87,7 +87,7 @@
       >
         CANCELAR
       </v-btn>
-      <v-btn color="success" variant="flat" type="submit" :loading="loading" :disabled="!formValid">
+      <v-btn color="primary" variant="flat" type="submit" :loading="loading" :disabled="!formValid">
         {{ isEditing ? 'GUARDAR Cambios' : 'Crear Usuario' }}
       </v-btn>
     </v-card-actions>

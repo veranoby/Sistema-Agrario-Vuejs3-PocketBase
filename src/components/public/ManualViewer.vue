@@ -5,7 +5,7 @@
         <div class="mx-auto max-w-4xl">
           <v-btn
             variant="text"
-            color="success"
+            color="primary"
             prepend-icon="mdi-arrow-left"
             class="mb-6"
             @click="$router.push('/documentation')"
@@ -15,7 +15,7 @@
 
           <v-card class="pa-6 pa-md-10 rounded-lg shadow-sm border border-green-100">
             <div v-if="loading" class="d-flex justify-center my-10">
-              <v-progress-circular indeterminate color="success"></v-progress-circular>
+              <v-progress-circular indeterminate color="primary"></v-progress-circular>
             </div>
             
             <div v-else-if="error" class="text-center my-10">

@@ -19,7 +19,7 @@
             </v-chip>
           </div>
         </div>
-        <v-chip v-if="isActive" color="success" size="small">
+        <v-chip v-if="isActive" color="primary" size="small">
           <v-icon start size="small">mdi-check-circle</v-icon>
           ACTIVO
         </v-chip>

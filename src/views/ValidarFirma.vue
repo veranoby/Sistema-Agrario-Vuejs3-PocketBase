@@ -5,10 +5,10 @@
         
         <!-- Header Branding (Visible on mobile/standalone) -->
         <div class="text-center mb-8 fade-in-down">
-          <div class="d-inline-flex align-center justify-center rounded-circle bg-green-lighten-5 pa-3 mb-3 shadow-soft">
-            <v-icon size="40" color="success">mdi-shield-check</v-icon>
+          <div class="d-inline-flex align-center justify-center rounded-circle bg-primary-5 pa-3 mb-3 shadow-soft">
+            <v-icon size="40" color="primary">mdi-shield-check</v-icon>
           </div>
-          <h2 class="text-h4 font-weight-black text-green-darken-4 text-tracking-tight">ConAgri Oráculo</h2>
+          <h2 class="text-h4 font-weight-black text-primary-4 text-tracking-tight">ConAgri Oráculo</h2>
           <p class="text-subtitle-2 text-grey-darken-1 mt-1">Plataforma Pública de Validación Criptográfica</p>
         </div>
 
@@ -24,7 +24,7 @@
                 indeterminate
                 :size="72"
                 :width="6"
-                color="success"
+                color="primary"
               ></v-progress-circular>
             </div>
             <h3 class="text-h6 font-weight-bold text-grey-darken-3">Consultando el Oráculo</h3>
@@ -74,11 +74,11 @@
           <v-card-text v-else class="py-8 px-6">
             <!-- Sello Grande de Éxito -->
             <div class="text-center mb-6">
-              <div class="d-inline-flex justify-center align-center rounded-circle bg-green-lighten-5 border-success-glow pa-4 mb-3 scale-up">
-                <v-icon size="64" color="success">mdi-check-decagram</v-icon>
+              <div class="d-inline-flex justify-center align-center rounded-circle bg-primary-5 border-success-glow pa-4 mb-3 scale-up">
+                <v-icon size="64" color="primary">mdi-check-decagram</v-icon>
               </div>
-              <h3 class="text-h5 font-weight-black text-green-darken-4">DOCUMENTO AUTÉNTICO</h3>
-              <v-chip color="success" size="small" class="font-weight-bold px-4 mt-2" variant="flat">
+              <h3 class="text-h5 font-weight-black text-primary-4">DOCUMENTO AUTÉNTICO</h3>
+              <v-chip color="primary" size="small" class="font-weight-bold px-4 mt-2" variant="flat">
                 Verificación Exitosa
               </v-chip>
             </div>
@@ -141,10 +141,10 @@
             <v-divider class="my-6"></v-divider>
 
             <!-- Hash SHA-256 Box -->
-            <div class="bg-green-lighten-5 border border-green-lighten-3 pa-4 rounded-lg mb-6">
+            <div class="bg-primary-5 border border-green-lighten-3 pa-4 rounded-lg mb-6">
               <div class="d-flex align-center mb-1">
-                <v-icon color="success" size="small" class="mr-1">mdi-key-variant</v-icon>
-                <span class="text-caption font-weight-black text-green-darken-4 uppercase-tracking">Integridad de Firma Criptográfica</span>
+                <v-icon color="primary" size="small" class="mr-1">mdi-key-variant</v-icon>
+                <span class="text-caption font-weight-black text-primary-4 uppercase-tracking">Integridad de Firma Criptográfica</span>
               </div>
               <div class="text-caption font-mono text-grey-darken-2 text-break select-all mt-1">
                 {{ verificationData.hash }}
@@ -154,22 +154,22 @@
             <!-- Footer checks -->
             <div class="d-flex flex-column gap-2 text-caption text-grey-darken-1 mb-8">
               <div class="d-flex align-center">
-                <v-icon color="success" size="16" class="mr-2">mdi-check-circle</v-icon>
+                <v-icon color="primary" size="16" class="mr-2">mdi-check-circle</v-icon>
                 Firma criptográfica generada con clave privada RSA verificada.
               </div>
               <div class="d-flex align-center">
-                <v-icon color="success" size="16" class="mr-2">mdi-check-circle</v-icon>
+                <v-icon color="primary" size="16" class="mr-2">mdi-check-circle</v-icon>
                 Registro inmutable auditado sin alteraciones.
               </div>
               <div class="d-flex align-center">
-                <v-icon color="success" size="16" class="mr-2">mdi-check-circle</v-icon>
+                <v-icon color="primary" size="16" class="mr-2">mdi-check-circle</v-icon>
                 BPA ConAgri - Registro de control oficial Agrocalidad.
               </div>
             </div>
 
             <div class="d-flex flex-column flex-sm-row gap-3 justify-center">
               <v-btn
-                color="success"
+                color="primary"
                 variant="flat"
                 prepend-icon="mdi-printer"
                 size="large"
@@ -220,7 +220,7 @@ const verificationData = ref(null)
 const accentBarClass = computed(() => {
   if (loading.value) return 'bg-grey-lighten-1'
   if (error.value || !verificationData.value?.valid) return 'bg-red-darken-4'
-  return 'bg-green-darken-4'
+  return 'bg-primary-4'
 })
 
 onMounted(async () => {

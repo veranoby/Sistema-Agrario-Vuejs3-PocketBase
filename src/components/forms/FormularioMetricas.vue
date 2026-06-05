@@ -3,7 +3,7 @@
     <!-- Header and Batch Controls -->
     <div class="flex items-center justify-between mb-4">
       <h4 class="text-grey-darken-3 flex items-center">
-        <v-icon start color="success" class="mr-2">mdi-chart-line</v-icon>
+        <v-icon start color="primary" class="mr-2">mdi-chart-line</v-icon>
         Métricas a Registrar
       </h4>
       <div class="flex gap-2">
@@ -34,19 +34,19 @@
         :key="grupo.principal.key"
         variant="flat"
         class="transition-all rounded-lg bg-grey-lighten-4"
-        :class="{ 'bg-success-lighten-5 elevation-1': localSelection.includes(grupo.principal.key) }"
+        :class="{ 'bg-primary-5 elevation-1': localSelection.includes(grupo.principal.key) }"
       >
         <v-card-text class="pa-3">
           <div class="flex items-center mb-2">
             <v-checkbox-btn
               :model-value="localSelection.includes(grupo.principal.key)"
               @update:model-value="toggleMetricSelection(grupo.principal.key, grupo.unidad?.key)"
-              color="success"
+              color="primary"
               density="compact"
               class="mr-2 mt-n1"
             />
             <div class="flex flex-col" @click="toggleMetricSelection(grupo.principal.key, grupo.unidad?.key)" style="cursor: pointer;">
-              <span class="text-body-2" :class="localSelection.includes(grupo.principal.key) ? 'text-success font-weight-bold' : 'text-grey-darken-3'">
+              <span class="text-body-2" :class="localSelection.includes(grupo.principal.key) ? 'text-primary font-weight-bold' : 'text-grey-darken-3'">
                 {{ grupo.principal.descripcion }}
               </span>
             </div>
@@ -88,7 +88,7 @@
                   v-model="metricasValues[grupo.principal.key]"
                   :label="grupo.principal.descripcion"
                   density="compact"
-                  color="success"
+                  color="primary"
                   hide-details="auto"
                   :disabled="!localSelection.includes(grupo.principal.key)"
                 ></v-checkbox>

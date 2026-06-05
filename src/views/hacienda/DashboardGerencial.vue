@@ -6,7 +6,7 @@
           <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div class="w-full sm:flex-grow">
               <h3 class="profile-title text-sm sm:text-lg mb-2 sm:mb-0 text-uppercase">
-                <v-icon icon="mdi-chart-bar" color="teal" class="mr-2"></v-icon> Dashboard Gerencial
+                <v-icon icon="mdi-chart-bar" color="primary" class="mr-2"></v-icon> Dashboard Gerencial
                 <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
                   <v-avatar start> <v-img :src="avatarUrl" alt="Avatar del usuario"></v-img> </v-avatar>
                   {{ t('roles.' + userRole) }}
@@ -54,7 +54,7 @@
             <v-card-text class="d-flex align-center justify-space-between pa-2">
               <div>
                 <span class="text-caption font-weight-bold text-grey-darken-1 d-block mb-1">COSTO OPERATIVO TOTAL</span>
-                <span class="text-h6 font-weight-black text-teal-darken-4">${{ formatNumber(totalCostos) }}</span>
+                <span class="text-h6 font-weight-black text-primary-4">${{ formatNumber(totalCostos) }}</span>
               </div>
               <v-avatar color="teal-lighten-5" size="36">
                 <v-icon icon="mdi-currency-usd" color="teal-darken-3" size="20"></v-icon>
@@ -69,7 +69,7 @@
             <v-card-text class="d-flex align-center justify-space-between pa-2">
               <div>
                 <span class="text-caption font-weight-bold text-grey-darken-1 d-block mb-1">MANO DE OBRA (NÓMINA)</span>
-                <span class="text-h6 font-weight-black text-teal-darken-4">${{ formatNumber(totalNomina) }}</span>
+                <span class="text-h6 font-weight-black text-primary-4">${{ formatNumber(totalNomina) }}</span>
               </div>
               <v-avatar color="indigo-lighten-5" size="36">
                 <v-icon icon="mdi-account-group" color="indigo-darken-3" size="20"></v-icon>
@@ -89,7 +89,7 @@
             <v-card-text class="d-flex align-center justify-space-between pa-2">
               <div>
                 <span class="text-caption font-weight-bold text-grey-darken-1 d-block mb-1">INSUMOS CONSUMIDOS</span>
-                <span class="text-h6 font-weight-black text-teal-darken-4">${{ formatNumber(totalBodega) }}</span>
+                <span class="text-h6 font-weight-black text-primary-4">${{ formatNumber(totalBodega) }}</span>
               </div>
               <v-avatar color="amber-lighten-5" size="36">
                 <v-icon icon="mdi-sprout-outline" color="amber-darken-4" size="20"></v-icon>
@@ -109,7 +109,7 @@
             <v-card-text class="d-flex align-center justify-space-between pa-2">
               <div>
                 <span class="text-caption font-weight-bold text-grey-darken-1 d-block mb-1">VOLUMEN COSECHA</span>
-                <span class="text-h6 font-weight-black text-teal-darken-4">{{ formatNumber(totalCosechaVolumen) }} un.</span>
+                <span class="text-h6 font-weight-black text-primary-4">{{ formatNumber(totalCosechaVolumen) }} un.</span>
               </div>
               <v-avatar color="teal-lighten-5" size="36">
                 <v-icon icon="mdi-package-variant" color="teal-darken-3" size="20"></v-icon>
@@ -124,8 +124,8 @@
         <!-- Distribution of Costs -->
         <v-col cols="12" md="6">
           <v-card class="elevation-3 rounded-lg pa-4 bg-white border border-grey-lighten-2 h-100">
-            <v-card-title class="font-weight-black text-teal-darken-3 px-2 mb-4 d-flex align-center">
-              <v-icon icon="mdi-chart-pie" color="teal" class="mr-2"></v-icon>
+            <v-card-title class="font-weight-black text-primary-3 px-2 mb-4 d-flex align-center">
+              <v-icon icon="mdi-chart-pie" color="primary" class="mr-2"></v-icon>
               Distribución de Costos Operativos
             </v-card-title>
             <div class="chart-container py-4" v-if="!mobile">
@@ -166,8 +166,8 @@
         <!-- Budget vs Real -->
         <v-col cols="12" md="6">
           <v-card class="elevation-3 rounded-lg pa-4 bg-white border border-grey-lighten-2 h-100">
-            <v-card-title class="font-weight-black text-teal-darken-3 px-2 mb-4 d-flex align-center">
-              <v-icon icon="mdi-chart-bar-stacked" color="teal" class="mr-2"></v-icon>
+            <v-card-title class="font-weight-black text-primary-3 px-2 mb-4 d-flex align-center">
+              <v-icon icon="mdi-chart-bar-stacked" color="primary" class="mr-2"></v-icon>
               Presupuesto Proyectado vs Costo Real
             </v-card-title>
             <div class="chart-container py-4">
@@ -179,8 +179,8 @@
         <!-- Weekly Harvest Projection -->
         <v-col cols="12">
           <v-card class="elevation-3 rounded-lg pa-4 bg-white border border-grey-lighten-2 mt-4">
-            <v-card-title class="font-weight-black text-teal-darken-3 px-2 mb-4 d-flex align-center">
-              <v-icon icon="mdi-chart-timeline-variant-shimmer" color="teal" class="mr-2"></v-icon>
+            <v-card-title class="font-weight-black text-primary-3 px-2 mb-4 d-flex align-center">
+              <v-icon icon="mdi-chart-timeline-variant-shimmer" color="primary" class="mr-2"></v-icon>
               Proyección y Tendencia de Cosecha Semanal
             </v-card-title>
             <div class="chart-container-large py-4">
@@ -200,7 +200,7 @@
             class="rounded-lg border border-grey-lighten-3 elevation-1 bg-white py-12"
           >
             <template v-slot:actions>
-              <v-btn color="teal" variant="flat" class="text-white font-weight-bold rounded-lg px-6" @click="cargarDatos">
+              <v-btn color="primary" variant="flat" class="text-white font-weight-bold rounded-lg px-6" @click="cargarDatos">
                 Reintentar Cargar
               </v-btn>
             </template>

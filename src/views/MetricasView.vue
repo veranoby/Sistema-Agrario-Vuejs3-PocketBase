@@ -85,7 +85,7 @@
           <template v-slot:activator="{ props }">
             <v-card v-bind="props" flat rounded="lg" class="pa-4 text-center kpi-card">
               <div class=" font-weight-bold text-uppercase">Rendimiento Total</div>
-              <div class="text-h5 font-weight-black text-success mt-2 fluid-kpi-value">{{ totalCosecha.toFixed(1) }} kg</div>
+              <div class="text-h5 font-weight-black text-primary mt-2 fluid-kpi-value">{{ totalCosecha.toFixed(1) }} kg</div>
               <div class="text-caption text-grey mt-1">Eficiencia: {{ rendimientoPlanta.toFixed(2) }} kg/planta</div>
             </v-card>
           </template>
@@ -189,7 +189,7 @@
       <v-col cols="12">
         <v-card flat rounded="lg" class="pa-4 elevation-1">
           <v-card-title class="font-weight-bold text-blue-grey-darken-3 d-flex align-center">
-            <v-icon color="success" class="mr-2">mdi-chart-bar</v-icon>
+            <v-icon color="primary" class="mr-2">mdi-chart-bar</v-icon>
             Evolución de Producción (Cosecha)
             <v-tooltip text="Métrica: 'cantidad_cosechada'. Se agrupa y suma el total diario de kilogramos normalizados registrados." location="top">
               <template v-slot:activator="{ props }">

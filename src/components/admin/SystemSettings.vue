@@ -35,7 +35,7 @@
               <v-switch
                 v-model="localConfig.allow_registration"
                 label="Permitir Registros"
-                color="success"
+                color="primary"
                 hint="Permite nuevos registros desde el landing page"
                 persistent-hint
               />
@@ -112,7 +112,7 @@
       <v-col cols="12">
         <v-card>
           <v-card-title>
-            <v-icon start color="green">mdi-bank</v-icon>
+            <v-icon start color="primary">mdi-bank</v-icon>
             Información Bancaria
           </v-card-title>
           <v-card-text>
@@ -167,7 +167,7 @@
                  <v-list-item-title>{{ modulo.nombre || modulo.name }}</v-list-item-title>
                  <v-list-item-subtitle>{{ modulo.descripcion }}</v-list-item-subtitle>
                  <template v-slot:append>
-                   <v-switch v-model="modulo.is_active" color="success" hide-details @change="updateModulo(modulo)"></v-switch>
+                   <v-switch v-model="modulo.is_active" color="primary" hide-details @change="updateModulo(modulo)"></v-switch>
                  </template>
                </v-list-item>
              </v-list>

@@ -9,7 +9,7 @@
         <!-- Section: Basic Data -->
         <v-card variant="flat" class="border pa-4 rounded-lg bg-grey-lighten-5">
           <div class="flex items-center mb-4">
-            <v-icon color="success" class="mr-2">mdi-home-outline</v-icon>
+            <v-icon color="primary" class="mr-2">mdi-home-outline</v-icon>
             <h4 class="font-bold">{{ t('hacienda_info.basic_data') || 'Datos Básicos' }}</h4>
           </div>
           
@@ -37,7 +37,7 @@
         <!-- Section: Contact & AI -->
         <v-card variant="flat" class="border pa-4 rounded-lg bg-grey-lighten-5">
           <div class="flex items-center mb-4">
-            <v-icon color="success" class="mr-2">mdi-card-account-phone</v-icon>
+            <v-icon color="primary" class="mr-2">mdi-card-account-phone</v-icon>
             <h4 class="font-bold">{{ t('hacienda_info.contact') }}</h4>
           </div>
           
@@ -129,7 +129,7 @@
         <!-- Section: Tarifas de Venta -->
         <v-card variant="flat" class="border pa-4 rounded-lg bg-grey-lighten-5">
           <div class="flex items-center mb-4">
-            <v-icon color="success" class="mr-2">mdi-cash-multiple</v-icon>
+            <v-icon color="primary" class="mr-2">mdi-cash-multiple</v-icon>
             <h4 class="font-bold">Tarifas de Venta Estimada (Rentabilidad)</h4>
           </div>
           
@@ -177,14 +177,14 @@
         <v-card variant="flat" class="border pa-4 rounded-lg bg-grey-lighten-5">
           <div class="flex justify-between items-center mb-4">
             <div class="flex items-center">
-              <v-icon color="success" class="mr-2">mdi-chart-box</v-icon>
+              <v-icon color="primary" class="mr-2">mdi-chart-box</v-icon>
               <h4 class="font-bold">{{ t('hacienda_info.metrics') }}</h4>
             </div>
             <v-btn
               size="x-small"
               variant="flat"
               icon="mdi-plus"
-              color="success"
+              color="primary"
               @click="openAddMetricaDialog"
             ></v-btn>
           </div>
@@ -250,7 +250,7 @@
         <!-- Section: Extended Info -->
         <v-card variant="flat" class="border pa-4 rounded-lg bg-grey-lighten-5">
           <div class="mb-2 flex items-center">
-            <v-icon color="success" class="mr-2">mdi-information</v-icon>
+            <v-icon color="primary" class="mr-2">mdi-information</v-icon>
             <h4 class="font-bold">{{ t('hacienda_info.my_info') }}</h4>
           </div>
           <QuillEditor
@@ -376,7 +376,7 @@
     <!-- Diálogo para añadir métrica -->
     <v-dialog v-model="addMetricaDialog" persistent max-width="400px">
       <v-card rounded="xl">
-        <v-toolbar color="success" density="compact">
+        <v-toolbar color="primary" density="compact">
           <v-toolbar-title class="">{{ isEditingMetrica ? (t('hacienda_info.edit_metric') || 'Editar Métrica') : t('hacienda_info.add_metric') }}</v-toolbar-title>
           <v-spacer></v-spacer>
         </v-toolbar>

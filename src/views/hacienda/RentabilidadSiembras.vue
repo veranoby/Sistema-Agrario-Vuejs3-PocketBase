@@ -6,7 +6,7 @@
           <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div class="w-full sm:flex-grow">
               <h3 class="profile-title text-sm sm:text-lg mb-2 sm:mb-0 text-uppercase">
-                <v-icon icon="mdi-matrix" color="teal" class="mr-2"></v-icon> Rentabilidad por Siembras
+                <v-icon icon="mdi-matrix" color="primary" class="mr-2"></v-icon> Rentabilidad por Siembras
                 <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
                   <v-avatar start> <v-img :src="avatarUrl" alt="Avatar del usuario"></v-img> </v-avatar>
                   {{ t('roles.' + userRole) }}
@@ -62,7 +62,7 @@
                 variant="outlined"
                 density="compact"
                 hide-details
-                color="teal"
+                color="primary"
               ></v-text-field>
             </v-col>
           </v-row>
@@ -80,7 +80,7 @@
           >
             <!-- Siembra Column -->
             <template #[`item.nombre`]="{ item }">
-              <div class="font-weight-bold text-teal-darken-4">{{ item.nombre }}</div>
+              <div class="font-weight-bold text-primary-4">{{ item.nombre }}</div>
               <div class="text-caption text-grey-darken-1 text-capitalize">{{ item.tipo }}</div>
             </template>
 
@@ -108,12 +108,12 @@
 
             <!-- Earnings Column -->
             <template #[`item.ingresosEstimados`]="{ item }">
-              <span class="font-weight-bold text-green-darken-3">${{ formatNumber(item.ingresosEstimados) }}</span>
+              <span class="font-weight-bold text-primary-3">${{ formatNumber(item.ingresosEstimados) }}</span>
             </template>
 
             <!-- Margin Net Column -->
             <template #[`item.margenNeto`]="{ item }">
-              <span :class="['font-weight-black', item.margenNeto >= 0 ? 'text-green-darken-4' : 'text-red-darken-4']">
+              <span :class="['font-weight-black', item.margenNeto >= 0 ? 'text-primary-4' : 'text-red-darken-4']">
                 ${{ formatNumber(item.margenNeto) }}
               </span>
             </template>
@@ -235,7 +235,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.text-green-darken-4 {
+.text-primary-4 {
   color: #1b5e20 !important;
 }
 .text-red-darken-4 {

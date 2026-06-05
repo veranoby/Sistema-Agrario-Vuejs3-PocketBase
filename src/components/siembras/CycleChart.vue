@@ -1,7 +1,7 @@
 <template>
   <div class="cycle-chart">
     <div v-if="loading" class="d-flex align-center justify-center" style="height: 300px;">
-      <v-progress-circular indeterminate color="success" />
+      <v-progress-circular indeterminate color="primary" />
     </div>
 
     <div v-else-if="siembras.length === 0" class="d-flex align-center justify-center" style="height: 300px;">

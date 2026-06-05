@@ -11,7 +11,7 @@
         <v-card class="pa-4 text-center rounded-lg" elevation="2">
           <div class="text-overline text-grey-darken-1 mb-1">Operaciones Totales</div>
           <div class="text-h3 font-weight-bold mb-2">{{ metrics.operationCounts.total }}</div>
-          <div class="text-caption font-weight-bold" :class="operationTrend > 0 ? 'text-success' : 'text-error'">
+          <div class="text-caption font-weight-bold" :class="operationTrend > 0 ? 'text-primary' : 'text-error'">
             <v-icon start size="14">{{ operationTrend > 0 ? 'mdi-trending-up' : 'mdi-trending-down' }}</v-icon>
             {{ operationTrend > 0 ? '+' : '' }}{{ operationTrend.toFixed(1) }}% <span class="text-grey">(1h)</span>
           </div>

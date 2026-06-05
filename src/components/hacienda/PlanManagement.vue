@@ -16,7 +16,7 @@
         <v-btn color="info" @click="openHistoryModal" icon size="small" variant="tonal" class="mr-2">
           <v-icon>mdi-history</v-icon>
         </v-btn>
-        <v-btn color="success" @click="openChangePlanModal" icon size="small" variant="tonal">
+        <v-btn color="primary" @click="openChangePlanModal" icon size="small" variant="tonal">
           <v-icon>mdi-cog</v-icon>
         </v-btn>
       </div>
@@ -128,7 +128,7 @@
     scrollable
   >
     <v-card elevation="3" class="plan-dialog">
-      <v-toolbar color="success" dark>
+      <v-toolbar color="primary" dark>
         <v-btn icon @click="goBack" v-if="currentStep > 1">
           <v-icon>mdi-arrow-left</v-icon>
         </v-btn>
@@ -149,7 +149,7 @@
               size="small"
               fill-dot
             >
-              <div :class="['text-caption font-weight-bold mt-1 text-center', currentStep >= index + 1 ? 'text-success' : 'text-grey']">
+              <div :class="['text-caption font-weight-bold mt-1 text-center', currentStep >= index + 1 ? 'text-primary' : 'text-grey']">
                 {{ stepName }}
               </div>
             </v-timeline-item>
@@ -175,12 +175,12 @@
                     class="plan-card p-6 shadow-md transition-all duration-300 cursor-pointer h-full border-2"
                     :class="{
                       'plan-card-hover border-success': isHovering,
-                      'plan-card-selected border-success bg-green-lighten-5': selectedPlan === plan.id,
+                      'plan-card-selected border-success bg-primary-5': selectedPlan === plan.id,
                       'border-transparent': !isHovering && selectedPlan !== plan.id
                     }"
                   >
                     <div v-if="selectedPlan === plan.id" class="check-icon">
-                      <v-icon color="success">mdi-check-circle</v-icon>
+                      <v-icon color="primary">mdi-check-circle</v-icon>
                     </div>
                     <h3 class="text-xl font-bold mb-2 plan-name">{{ plan.nombre.toUpperCase() }}</h3>
                     <p class="text-2xl font-bold mb-4 plan-price">
@@ -188,11 +188,11 @@
                     </p>
                     <ul class="text-sm space-y-2 plan-features">
                       <li class="flex items-center">
-                        <v-icon color="success" size="small" class="mr-2">mdi-account-check</v-icon>
+                        <v-icon color="primary" size="small" class="mr-2">mdi-account-check</v-icon>
                         {{ plan.auditores }} Auditores
                       </li>
                       <li class="flex items-center">
-                        <v-icon color="success" size="small" class="mr-2">mdi-account-hard-hat</v-icon>
+                        <v-icon color="primary" size="small" class="mr-2">mdi-account-hard-hat</v-icon>
                         {{ plan.operadores }} Operadores
                       </li>
                     </ul>
@@ -247,7 +247,7 @@
 
                   <div class="mb-4">
                     <div class="text-caption text-grey mb-2">CICLO DE FACTURACIÓN</div>
-                    <v-btn-toggle v-model="billingCycle" mandatory color="success" density="compact" rounded="pill" class="w-full">
+                    <v-btn-toggle v-model="billingCycle" mandatory color="primary" density="compact" rounded="pill" class="w-full">
                       <v-btn value="monthly" class="flex-grow-1">Mensual</v-btn>
                       <v-btn value="yearly" class="flex-grow-1">Anual (-17%)</v-btn>
                     </v-btn-toggle>
@@ -256,7 +256,7 @@
                   <div class="d-flex justify-space-between align-end mt-6">
                     <div class="text-caption text-grey">TOTAL ESTIMADO</div>
                     <div class="text-right">
-                      <div class="text-h4 font-weight-bold text-success">${{ totalAmount.toFixed(2) }}</div>
+                      <div class="text-h4 font-weight-bold text-primary">${{ totalAmount.toFixed(2) }}</div>
                       <div class="text-caption text-grey">{{ billingCycle === 'monthly' ? 'por mes' : 'total anual' }}</div>
                     </div>
                   </div>
@@ -307,7 +307,7 @@
         <v-spacer />
         <v-btn
           v-if="currentStep < 3"
-          color="success"
+          color="primary"
           variant="flat"
           @click="nextStep"
           :disabled="pendingRequest || (currentStep === 1 && !selectedPlan)"
@@ -319,7 +319,7 @@
         </v-btn>
         <v-btn
           v-else
-          color="success"
+          color="primary"
           variant="elevated"
           @click="submitUnifiedRequest"
           :disabled="!paymentReceipt"

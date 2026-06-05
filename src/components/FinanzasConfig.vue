@@ -25,7 +25,7 @@
             <div class="w-full sm:w-auto z-10 hidden-sm-and-down" v-if="!mobile">
               <v-btn
                 prepend-icon="mdi-plus-circle"
-                color="success"
+                color="primary"
                 variant="flat"
                 class="font-weight-bold text-white elevation-2 rounded-lg"
                 @click="openNuevoItem"
@@ -106,7 +106,7 @@
               <v-col cols="12" md="4" class="d-flex gap-2 justify-end">
                 <v-btn
                   variant="tonal"
-                  color="success"
+                  color="primary"
                   prepend-icon="mdi-file-excel"
                   @click="finanzaStore.exportToExcel"
                   size="small"
@@ -171,7 +171,7 @@
                     prepend-inner-icon="mdi-filter"
                     hide-details
                     clearable
-                    color="success"
+                    color="primary"
                     :class="filters.categoria ? 'active-filter' : ''"
                     :bg-color="filters.categoria ? 'green-lighten-3' : undefined"
                   ></v-select>
@@ -204,7 +204,7 @@
                     prepend-inner-icon="mdi-filter"
                     hide-details
                     clearable
-                    color="success"
+                    color="primary"
                     :class="filters.detalle ? 'active-filter' : ''"
                     :bg-color="filters.detalle ? 'green-lighten-3' : undefined"
                   ></v-text-field>
@@ -268,7 +268,7 @@
                   prepend-inner-icon="mdi-filter"
                   hide-details
                   clearable
-                  color="success"
+                  color="primary"
                   :class="filters.categoria ? 'active-filter' : ''"
                   :bg-color="filters.categoria ? 'green-lighten-3' : undefined"
                 ></v-select>
@@ -301,7 +301,7 @@
                   prepend-inner-icon="mdi-filter"
                   hide-details
                   clearable
-                  color="success"
+                  color="primary"
                   :class="filters.detalle ? 'active-filter' : ''"
                   :bg-color="filters.detalle ? 'green-lighten-3' : undefined"
                 ></v-text-field>
@@ -469,7 +469,7 @@
                   </v-list-item-subtitle>
                   <template v-slot:append>
                     <div class="text-right">
-                      <div class="font-weight-bold text-subtitle-1" :class="item.monto < 0 ? 'text-red' : 'text-green'">
+                      <div class="font-weight-bold text-subtitle-1" :class="item.monto < 0 ? 'text-red' : 'text-primary'">
                         {{ formatCurrency(item.monto) }}
                       </div>
                     </div>
@@ -479,7 +479,7 @@
             </template>
           </v-list>
           <v-btn
-            color="success"
+            color="primary"
             icon="mdi-plus"
             size="x-large"
             position="fixed"

@@ -97,7 +97,7 @@
       scrollable
     >
       <v-card>
-        <v-toolbar color="success" dark>
+        <v-toolbar color="primary" dark>
           <v-toolbar-title>{{ t('sowing_workspace.edit_sowing') }}</v-toolbar-title>
           <v-spacer></v-spacer>
         </v-toolbar>
@@ -211,7 +211,7 @@
     <!-- Add Bitacora Dialog -->
     <v-dialog v-model="addBitacoraDialog" max-width="600px">
       <v-card>
-        <v-toolbar color="success" dark>
+        <v-toolbar color="primary" dark>
           <v-toolbar-title>{{ t('sowing_workspace.add_to_log') }}</v-toolbar-title>
           <v-spacer></v-spacer>
         </v-toolbar>

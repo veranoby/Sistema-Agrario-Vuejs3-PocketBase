@@ -8,7 +8,7 @@
     max-width="900px"
   >
     <v-card>
-      <v-toolbar color="success" dark>
+      <v-toolbar color="primary" dark>
         <v-toolbar-title>{{ $t('activities.new_activity') }}</v-toolbar-title>
         <v-spacer></v-spacer>
       </v-toolbar>

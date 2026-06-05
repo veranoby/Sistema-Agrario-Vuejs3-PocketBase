@@ -55,14 +55,14 @@
                   variant="outlined"
                   :color="conflict.resolution === 'local' ? 'success' : 'grey-lighten-1'"
                   class="rounded-lg transition-all border-2"
-                  :class="{ 'bg-green-lighten-5 border-success': conflict.resolution === 'local' }"
+                  :class="{ 'bg-primary-5 border-success': conflict.resolution === 'local' }"
                   @click="!conflict.resolved && selectResolution(conflict, 'local')"
                 >
-                  <div class="pa-3 border-b flex items-center justify-between" :class="conflict.resolution === 'local' ? 'bg-green-lighten-4' : 'bg-grey-lighten-4'">
+                  <div class="pa-3 border-b flex items-center justify-between" :class="conflict.resolution === 'local' ? 'bg-primary-4' : 'bg-grey-lighten-4'">
                     <span class="text-caption font-weight-bold flex items-center">
                       <v-icon start size="14" class="mr-1">mdi-cellphone</v-icon> Local
                     </span>
-                    <v-icon v-if="conflict.resolution === 'local'" color="success" size="16">mdi-check-circle</v-icon>
+                    <v-icon v-if="conflict.resolution === 'local'" color="primary" size="16">mdi-check-circle</v-icon>
                   </div>
                   <v-card-text class="pa-2">
                     <pre class="text-[10px] font-mono bg-black/5 p-2 rounded max-h-32 overflow-y-auto">{{ formatConflictData(conflict.local) }}</pre>
@@ -75,14 +75,14 @@
                   variant="outlined"
                   :color="conflict.resolution === 'server' ? 'success' : 'grey-lighten-1'"
                   class="rounded-lg transition-all border-2"
-                  :class="{ 'bg-green-lighten-5 border-success': conflict.resolution === 'server' }"
+                  :class="{ 'bg-primary-5 border-success': conflict.resolution === 'server' }"
                   @click="!conflict.resolved && selectResolution(conflict, 'server')"
                 >
-                  <div class="pa-3 border-b flex items-center justify-between" :class="conflict.resolution === 'server' ? 'bg-green-lighten-4' : 'bg-grey-lighten-4'">
+                  <div class="pa-3 border-b flex items-center justify-between" :class="conflict.resolution === 'server' ? 'bg-primary-4' : 'bg-grey-lighten-4'">
                     <span class="text-caption font-weight-bold flex items-center">
                       <v-icon start size="14" class="mr-1">mdi-cloud</v-icon> Servidor
                     </span>
-                    <v-icon v-if="conflict.resolution === 'server'" color="success" size="16">mdi-check-circle</v-icon>
+                    <v-icon v-if="conflict.resolution === 'server'" color="primary" size="16">mdi-check-circle</v-icon>
                   </div>
                   <v-card-text class="pa-2">
                     <pre class="text-[10px] font-mono bg-black/5 p-2 rounded max-h-32 overflow-y-auto">{{ formatConflictData(conflict.server) }}</pre>
@@ -128,7 +128,7 @@
           </v-btn>
           <v-btn
             variant="flat"
-            color="success"
+            color="primary"
             :disabled="!allResolved"
             @click="applyResolutions"
             class="px-6"

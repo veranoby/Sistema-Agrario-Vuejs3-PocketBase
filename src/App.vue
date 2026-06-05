@@ -60,7 +60,7 @@
     <v-snackbar
       v-model="pwaStore.installPromptVisible"
       timeout="-1"
-      color="success"
+      color="primary"
       elevation="24"
       location="bottom"
     >
@@ -70,7 +70,7 @@
       </div>
       <template v-slot:actions>
         <v-btn color="white" variant="text" @click="pwaStore.clearPrompt()">Ahora no</v-btn>
-        <v-btn color="white" variant="elevated" class="font-weight-bold text-success ml-2" @click="pwaStore.promptInstall()">Instalar</v-btn>
+        <v-btn color="white" variant="elevated" class="font-weight-bold text-primary ml-2" @click="pwaStore.promptInstall()">Instalar</v-btn>
       </template>
     </v-snackbar>
   </v-app>

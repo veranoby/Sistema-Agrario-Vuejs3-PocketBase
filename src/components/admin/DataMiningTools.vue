@@ -70,7 +70,7 @@
 
           <v-btn
             v-if="results.length > 0"
-            color="success"
+            color="primary"
             @click="exportResults"
             prepend-icon="mdi-download"
           >

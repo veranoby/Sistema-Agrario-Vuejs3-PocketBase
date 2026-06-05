@@ -38,7 +38,7 @@
             :class="{
               'text-red font-extrabold': item.bpa_estado < 40,
               'text-orange font-extrabold': item.bpa_estado >= 40 && item.bpa_estado < 80,
-              'text-green font-extrabold': item.bpa_estado >= 80
+              'text-primary font-extrabold': item.bpa_estado >= 80
             }"
           >
             {{ item.bpa_estado }}%

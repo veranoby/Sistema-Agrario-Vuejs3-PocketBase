@@ -1,7 +1,7 @@
 <template>
   <v-dialog v-model="dialog" persistent max-width="900px" width="95%" scrollable>
     <v-card class="rounded-lg overflow-hidden">
-      <v-toolbar color="success" dark flat height="70">
+      <v-toolbar color="primary" dark flat height="70">
         <v-icon size="28" class="ml-4 mr-3">mdi-playlist-check</v-icon>
         <div class="flex flex-col">
           <v-toolbar-title class="font-weight-bold text-h6 leading-none">Registrar Cumplimientos</v-toolbar-title>
@@ -19,14 +19,14 @@
       <v-card-text class="pa-4 pt-6">
         <div v-if="!loading">
           <div class="flex items-center mb-4">
-            <v-icon color="success" class="mr-2">mdi-calendar-multiselect</v-icon>
+            <v-icon color="primary" class="mr-2">mdi-calendar-multiselect</v-icon>
             <h4 class="">Selección de Fechas</h4>
           </div>
           <p class="text-body-2 text-grey-darken-1 mb-6 ml-8">Seleccione las fechas de cumplimiento que desea registrar en la bitácora.</p>
 
           <!-- Selection Summary and Batch Controls -->
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <v-chip color="success" variant="flat" class="font-weight-bold">
+            <v-chip color="primary" variant="flat" class="font-weight-bold">
               {{ selectedFechas.length }} / {{ pendingFechas.length }} seleccionadas
             </v-chip>
 
@@ -34,7 +34,7 @@
               <v-btn
                 size="small"
                 variant="tonal"
-                color="success"
+                color="primary"
                 @click="selectAllFechas"
                 :disabled="allFechasSelected"
                 class="flex-1 sm:flex-none"
@@ -62,13 +62,13 @@
               :key="fecha"
               variant="flat"
               class="date-card transition-all bg-grey-lighten-4"
-              :class="{ 'date-card--selected bg-success-lighten-5': selectedFechas.includes(fecha) }"
+              :class="{ 'date-card--selected bg-primary-5': selectedFechas.includes(fecha) }"
               @click="toggleFechaSelection(fecha)"
             >
               <div class="pa-3 flex items-center">
                 <v-checkbox-btn
                   :model-value="selectedFechas.includes(fecha)"
-                  color="success"
+                  color="primary"
                   density="compact"
                   class="mr-2"
                 />
@@ -80,7 +80,7 @@
           <!-- Preview de datos generales -->
           <div v-if="selectedFechas.length > 0 && actividadDetalle" class="mt-8">
             <div class="flex items-center mb-4">
-              <v-icon color="success" class="mr-2">mdi-text-box-search-outline</v-icon>
+              <v-icon color="primary" class="mr-2">mdi-text-box-search-outline</v-icon>
               <h4 class="">Información de Bitácora</h4>
             </div>
             
@@ -95,7 +95,7 @@
             <!-- SECCIÓN Checklist BPA -->
             <div v-if="preguntasBpa.length > 0" class="mt-6">
               <div class="flex items-center mb-4">
-                <v-icon color="success" class="mr-2">mdi-clipboard-list-outline</v-icon>
+                <v-icon color="primary" class="mr-2">mdi-clipboard-list-outline</v-icon>
                 <h4 class="">Checklist de Buenas Prácticas Agrícolas (BPA)</h4>
               </div>
               <BpaChecklist
@@ -118,7 +118,7 @@
         </div>
         
         <div v-else class="flex flex-col items-center justify-center py-12">
-          <v-progress-circular indeterminate color="success" size="64" width="6"></v-progress-circular>
+          <v-progress-circular indeterminate color="primary" size="64" width="6"></v-progress-circular>
           <p class="mt-4 text-grey-darken-1">Calculando fechas pendientes...</p>
         </div>
       </v-card-text>

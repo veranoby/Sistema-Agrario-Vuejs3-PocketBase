@@ -7,7 +7,7 @@
           <v-icon icon="mdi-package-variant-closed" size="28"></v-icon>
           <span class="text-h6 font-weight-bold">Enviar Paquete de Evaluación</span>
         </div>
-        <span class="text-subtitle-2 text-teal-lighten-4" v-if="asesor">
+        <span class="text-subtitle-2 text-primary-4" v-if="asesor">
           Asesor: {{ asesor.name }} {{ asesor.lastname }}
         </span>
         <v-btn icon="mdi-close" variant="text" color="white" density="compact" @click="close"></v-btn>
@@ -18,14 +18,14 @@
         <v-stepper v-model="step" :items="stepperItems" hide-actions>
           <template v-slot:item.1>
             <div class="py-4">
-              <h3 class="text-h6 font-weight-bold text-teal-darken-3 mb-2">Paso 1: Selecciona la Siembra</h3>
+              <h3 class="text-h6 font-weight-bold text-primary-3 mb-2">Paso 1: Selecciona la Siembra</h3>
               <p class="text-body-2 text-grey-darken-1 mb-4">
                 Elige la siembra activa que deseas compartir con el asesor para su análisis.
               </p>
 
               <!-- Loading Siembras -->
               <div v-if="loadingSiembras" class="d-flex justify-center py-6">
-                <v-progress-circular indeterminate color="teal"></v-progress-circular>
+                <v-progress-circular indeterminate color="primary"></v-progress-circular>
               </div>
 
               <!-- Empty Siembras -->
@@ -39,21 +39,21 @@
                 <v-card
                   v-for="siembra in activeSiembras"
                   :key="siembra.id"
-                  :class="['mb-2 border rounded-lg transition-all', selectedSiembraId === siembra.id ? 'border-teal bg-teal-lighten-5 elevation-1' : 'border-grey-lighten-3']"
+                  :class="['mb-2 border rounded-lg transition-all', selectedSiembraId === siembra.id ? 'border-teal bg-primary-5 elevation-1' : 'border-grey-lighten-3']"
                   @click="selectedSiembraId = siembra.id"
                   ripple
                 >
                   <v-card-text class="d-flex align-center py-3 px-4">
-                    <v-radio :value="siembra.id" color="teal" class="mr-3"></v-radio>
+                    <v-radio :value="siembra.id" color="primary" class="mr-3"></v-radio>
                     <div class="flex-grow-1">
-                      <div class="font-weight-bold text-teal-darken-4 text-subtitle-1">{{ siembra.nombre }}</div>
+                      <div class="font-weight-bold text-primary-4 text-subtitle-1">{{ siembra.nombre }}</div>
                       <div class="d-flex gap-4 mt-1 text-caption text-grey-darken-1">
                         <span><strong>Variedad:</strong> {{ siembra.variedad || 'N/A' }}</span>
                         <span><strong>Tipo:</strong> {{ siembra.tipo }}</span>
                         <span><strong>Inicio:</strong> {{ formatDate(siembra.fecha_inicio) }}</span>
                       </div>
                     </div>
-                    <v-chip size="small" color="teal" variant="flat" class="text-white">Activa</v-chip>
+                    <v-chip size="small" color="primary" variant="flat" class="text-white">Activa</v-chip>
                   </v-card-text>
                 </v-card>
               </v-radio-group>
@@ -62,14 +62,14 @@
 
           <template v-slot:item.2>
             <div class="py-4">
-              <h3 class="text-h6 font-weight-bold text-teal-darken-3 mb-1">Paso 2: Selecciona Zonas y Bitácoras</h3>
+              <h3 class="text-h6 font-weight-bold text-primary-3 mb-1">Paso 2: Selecciona Zonas y Bitácoras</h3>
               <p class="text-body-2 text-grey-darken-1 mb-4">
                 Elige qué zonas geográficas y qué entradas de bitácora quieres incluir en este paquete.
               </p>
 
               <!-- Loading Zonas/Bitacora -->
               <div v-if="loadingDetails" class="d-flex justify-center py-6">
-                <v-progress-circular indeterminate color="teal"></v-progress-circular>
+                <v-progress-circular indeterminate color="primary"></v-progress-circular>
               </div>
 
               <v-row v-else>
@@ -80,7 +80,7 @@
                       <span class="text-subtitle-1 font-weight-bold text-grey-darken-3">Zonas Geográficas</span>
                       <v-checkbox-btn
                         v-model="allZonasSelected"
-                        color="teal"
+                        color="primary"
                         density="compact"
                         :indeterminate="someZonasSelected"
                         @change="toggleAllZonas"
@@ -95,7 +95,7 @@
                         :key="zona.id"
                         v-model="selectedZonas"
                         :value="zona.id"
-                        color="teal"
+                        color="primary"
                         density="compact"
                         hide-details
                         class="mt-1"
@@ -118,7 +118,7 @@
                       <span class="text-subtitle-1 font-weight-bold text-grey-darken-3">Entradas de Bitácora</span>
                       <v-checkbox-btn
                         v-model="allBitacorasSelected"
-                        color="teal"
+                        color="primary"
                         density="compact"
                         :indeterminate="someBitacorasSelected"
                         @change="toggleAllBitacoras"
@@ -133,7 +133,7 @@
                         :key="entry.id"
                         v-model="selectedBitacoras"
                         :value="entry.id"
-                        color="teal"
+                        color="primary"
                         density="compact"
                         hide-details
                         class="mt-1"
@@ -158,15 +158,15 @@
 
           <template v-slot:item.3>
             <div class="py-4">
-              <h3 class="text-h6 font-weight-bold text-teal-darken-3 mb-2">Paso 3: Confirmación y Notas</h3>
+              <h3 class="text-h6 font-weight-bold text-primary-3 mb-2">Paso 3: Confirmación y Notas</h3>
               <p class="text-body-2 text-grey-darken-1 mb-4">
                 Revisa el resumen de la información que vas a empaquetar y agrega notas aclaratorias para el asesor técnico.
               </p>
 
               <!-- Resumen -->
-              <v-card class="bg-teal-lighten-5 border-teal-lighten-3 border mb-4 rounded-lg">
+              <v-card class="bg-primary-5 border-teal-lighten-3 border mb-4 rounded-lg">
                 <v-card-text class="py-3 px-4">
-                  <div class="font-weight-bold text-teal-darken-4 mb-2">Resumen del Paquete</div>
+                  <div class="font-weight-bold text-primary-4 mb-2">Resumen del Paquete</div>
                   <v-row class="text-body-2 text-grey-darken-3">
                     <v-col cols="12" sm="4">
                       <strong>Siembra:</strong> {{ getSiembraName(selectedSiembraId) }}
@@ -190,7 +190,7 @@
                 rows="4"
                 maxlength="500"
                 counter
-                color="teal"
+                color="primary"
                 required
               ></v-textarea>
             </div>
@@ -215,7 +215,7 @@
         <div>
           <v-btn
             v-if="step < 3"
-            color="teal"
+            color="primary"
             variant="flat"
             class="font-weight-bold text-white rounded-lg"
             append-icon="mdi-arrow-right"

@@ -22,7 +22,7 @@
             </v-chip>
             <v-menu>
               <template v-slot:activator="{ props }">
-                <v-btn v-bind="props" prepend-icon="mdi-export" color="success" variant="flat"
+                <v-btn v-bind="props" prepend-icon="mdi-export" color="primary" variant="flat"
                   class="font-weight-bold text-white elevation-2 rounded-lg">
                   {{ t('dashboard.export') }}
                 </v-btn>

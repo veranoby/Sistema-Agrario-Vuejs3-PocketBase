@@ -24,7 +24,7 @@
             <div class="w-full sm:w-auto z-10 hidden-sm-and-down" v-if="actividadesStore.actividades.length > 0 && !mobile">
               <v-btn
                 prepend-icon="mdi-plus-circle"
-                color="success"
+                color="primary"
                 variant="flat"
                 class="font-weight-bold text-white elevation-2 rounded-lg"
 
@@ -135,7 +135,7 @@
 
     <v-btn
       v-if="actividadesStore.actividades.length > 0 && mobile"
-      color="success"
+      color="primary"
       icon="mdi-plus"
       size="x-large"
       position="fixed"

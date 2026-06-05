@@ -281,12 +281,12 @@
                   <v-icon :color="subscriptionActive ? 'green' : 'orange'" class="mr-2">
                     {{ subscriptionActive ? 'mdi-check-decagram' : 'mdi-alert-circle-outline' }}
                   </v-icon>
-                  <h3 class="text-subtitle-1 font-weight-bold" :class="subscriptionActive ? 'text-green-darken-3' : 'text-orange-darken-3'">
+                  <h3 class="text-subtitle-1 font-weight-bold" :class="subscriptionActive ? 'text-primary-3' : 'text-orange-darken-3'">
                     Estado de Suscripción
                   </h3>
                 </div>
                 
-                <p v-if="subscriptionActive" class="text-caption text-green-darken-2 mb-2">
+                <p v-if="subscriptionActive" class="text-caption text-primary-2 mb-2">
                   Tu entorno profesional está activo. Las haciendas pueden vincularte a sus proyectos.
                 </p>
                 <v-alert
@@ -371,7 +371,7 @@
                   <v-icon :color="subscriptionActive ? 'green' : 'orange'" size="small" class="mr-1">
                     {{ subscriptionActive ? 'mdi-check-circle' : 'mdi-alert-circle' }}
                   </v-icon>
-                  <span class="font-weight-bold" :class="subscriptionActive ? 'text-green-darken-3' : 'text-orange-darken-3'">
+                  <span class="font-weight-bold" :class="subscriptionActive ? 'text-primary-3' : 'text-orange-darken-3'">
                     {{ subscriptionActive ? 'Suscripción Activa' : 'Suscripción Inactiva' }}
                   </span>
                 </div>

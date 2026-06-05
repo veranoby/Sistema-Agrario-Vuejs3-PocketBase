@@ -28,7 +28,7 @@
     <div class="mb-6">
       <div class="flex justify-between items-center mb-2">
         <h3 class="text-l font-semibold">
-          <v-icon color="success" class="mr-2">mdi-account-hard-hat-outline</v-icon> {{ t('user_management.auditors') }}
+          <v-icon color="primary" class="mr-2">mdi-account-hard-hat-outline</v-icon> {{ t('user_management.auditors') }}
         </h3>
         <span v-if="limitsData.hasSubscription" class="text-xs text-grey-darken-1 font-medium">
           {{ t('user_management.auditors_limit_info', { current: limitsData.currentAuditores, limit: limitsData.auditoresLimit }) }}
@@ -82,7 +82,7 @@
     <div class="mb-6">
       <div class="flex justify-between items-center mb-2">
         <h3 class="text-l font-semibold">
-          <v-icon color="success" class="mr-2">mdi-account-cowboy-hat-outline</v-icon> {{ t('user_management.operators') }}
+          <v-icon color="primary" class="mr-2">mdi-account-cowboy-hat-outline</v-icon> {{ t('user_management.operators') }}
         </h3>
         <span v-if="limitsData.hasSubscription" class="text-xs text-grey-darken-1 font-medium">
           {{ t('user_management.operators_limit_info', { current: limitsData.currentOperadores, limit: limitsData.operadoresLimit }) }}
@@ -141,7 +141,7 @@
       scrollable
     >
       <v-card>
-        <v-toolbar color="success" dark>
+        <v-toolbar color="primary" dark>
           <v-toolbar-title>{{ t('user_management.create_new_user') }}</v-toolbar-title>
           <v-spacer></v-spacer>
           <v-btn icon="mdi-close" variant="text" @click="createUserModalOpen = false"></v-btn>
@@ -173,7 +173,7 @@
                     <v-list-item-title class="font-weight-bold">{{ user.name }} {{ user.lastname }}</v-list-item-title>
                     <v-list-item-subtitle>{{ user.email }}</v-list-item-subtitle>
                     <template v-slot:append>
-                      <v-btn  color="success" variant="flat" @click="reactivateUser(user.id)">
+                      <v-btn  color="primary" variant="flat" @click="reactivateUser(user.id)">
                         Reactivar
                       </v-btn>
                     </template>

@@ -7,7 +7,7 @@
           <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div class="w-full sm:flex-grow">
               <h3 class="profile-title text-sm sm:text-lg mb-2 sm:mb-0 text-uppercase">
-                <v-icon icon="mdi-warehouse" color="teal" class="mr-2"></v-icon> Bodega Especializada
+                <v-icon icon="mdi-warehouse" color="primary" class="mr-2"></v-icon> Bodega Especializada
                 <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
                   <v-avatar start> <v-img :src="avatarUrl" alt="Avatar del usuario"></v-img> </v-avatar>
                   {{ t('roles.' + userRole) }}
@@ -25,7 +25,7 @@
             <div class="w-full sm:w-auto z-10">
               <v-btn
                 prepend-icon="mdi-plus-circle"
-                color="success"
+                color="primary"
                 variant="flat"
                 class="font-weight-bold text-white elevation-2 rounded-lg"                @click="abrirModalNuevoItem"
               >
@@ -41,7 +41,7 @@
 
       <!-- Main Tabs: Inventory & Historical Movements -->
       <v-card class="elevation-4 rounded-lg border border-grey-lighten-3 mt-4">
-        <v-tabs v-model="tab" color="teal" align-tabs="start" class="border-bottom">
+        <v-tabs v-model="tab" color="primary" align-tabs="start" class="border-bottom">
           <v-tab value="inventario" class="font-weight-bold">
             <v-icon start icon="mdi-clipboard-list-outline"></v-icon>
             Inventario Disponible
@@ -65,7 +65,7 @@
                     variant="outlined"
                     density="compact"
                     hide-details
-                    color="teal"
+                    color="primary"
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12" sm="6" md="3" class="mb-2">
@@ -81,7 +81,7 @@
                     variant="outlined"
                     density="compact"
                     hide-details
-                    color="teal"
+                    color="primary"
                   ></v-select>
                 </v-col>
               </v-row>
@@ -111,7 +111,7 @@
                 <!-- Stock Actual Column -->
                 <template #[`item.stock_actual`]="{ item }">
                   <div class="d-flex align-center gap-2">
-                    <span :class="{'text-red-darken-3 font-weight-bold': item.stock_actual <= item.stock_minimo, 'text-teal-darken-2 font-weight-medium': item.stock_actual > item.stock_minimo}">
+                    <span :class="{'text-red-darken-3 font-weight-bold': item.stock_actual <= item.stock_minimo, 'text-primary-2 font-weight-medium': item.stock_actual > item.stock_minimo}">
                       {{ item.stock_actual }} {{ item.unidad }}
                     </span>
                     <v-icon
@@ -136,7 +136,7 @@
                         <v-btn
                           v-bind="props"
                           icon="mdi-swap-horizontal"
-                          color="teal"
+                          color="primary"
                           variant="text"
                           size="small"
                           @click="abrirModalMovimiento(item)"
@@ -187,7 +187,7 @@
                     variant="outlined"
                     density="compact"
                     hide-details
-                    color="teal"
+                    color="primary"
                   ></v-text-field>
                 </v-col>
               </v-row>
@@ -225,7 +225,7 @@
 
                 <!-- Cantidad Column -->
                 <template #[`item.cantidad`]="{ item }">
-                  <span :class="item.tipo === 'ingreso' ? 'text-green-darken-2 font-weight-bold' : 'text-red-darken-2 font-weight-bold'">
+                  <span :class="item.tipo === 'ingreso' ? 'text-primary-2 font-weight-bold' : 'text-red-darken-2 font-weight-bold'">
                     {{ item.tipo === 'ingreso' ? '+' : '-' }}{{ item.cantidad }} {{ item.expand?.item?.unidad || '' }}
                   </span>
                 </template>
@@ -233,7 +233,7 @@
                 <!-- Origen/Bitacora Column -->
                 <template #[`item.origen`]="{ item }">
                   <div v-if="item.bitacora">
-                    <v-chip size="x-small" color="teal-lighten-4" class="text-teal-darken-3 font-weight-medium">
+                    <v-chip size="x-small" color="teal-lighten-4" class="text-primary-3 font-weight-medium">
                       Bitácora Campo
                     </v-chip>
                     <span class="text-caption text-grey d-block">ID: {{ item.bitacora }}</span>
@@ -271,7 +271,7 @@
                   v-model="formItemData.nombre"
                   label="Nombre del Producto *"
                   variant="outlined"
-                  color="teal"
+                  color="primary"
                   :rules="[v => !!v || 'El nombre es obligatorio']"
                 ></v-text-field>
               </v-col>
@@ -280,7 +280,7 @@
                   v-model="formItemData.codigo_sar"
                   label="Código SAR (Opcional)"
                   variant="outlined"
-                  color="teal"
+                  color="primary"
                 ></v-text-field>
               </v-col>
 
@@ -290,7 +290,7 @@
                   :items="['plaguicida', 'fertilizante', 'material']"
                   label="Tipo de Insumo *"
                   variant="outlined"
-                  color="teal"
+                  color="primary"
                   class="text-capitalize"
                   :rules="[v => !!v || 'El tipo es obligatorio']"
                 ></v-select>
@@ -301,7 +301,7 @@
                   :items="['kg', 'L', 'cc', 'unidad']"
                   label="Unidad de Medida *"
                   variant="outlined"
-                  color="teal"
+                  color="primary"
                   :rules="[v => !!v || 'La unidad es obligatoria']"
                 ></v-select>
               </v-col>
@@ -312,7 +312,7 @@
                   label="Stock Inicial *"
                   type="number"
                   variant="outlined"
-                  color="teal"
+                  color="primary"
                   min="0"
                   :rules="[
                     v => v !== null && v !== undefined || 'El stock inicial es obligatorio',
@@ -326,7 +326,7 @@
                   label="Stock Mínimo de Alerta *"
                   type="number"
                   variant="outlined"
-                  color="teal"
+                  color="primary"
                   min="0"
                   :rules="[
                     v => v !== null && v !== undefined || 'El stock mínimo es obligatorio',
@@ -340,7 +340,7 @@
                   label="Costo Unitario de Compra ($) *"
                   type="number"
                   variant="outlined"
-                  color="teal"
+                  color="primary"
                   min="0"
                   step="0.01"
                   :rules="[
@@ -355,7 +355,7 @@
 
         <v-card-actions class="px-6 py-4 justify-end gap-2 bg-grey-lighten-5">
           <v-btn variant="outlined" color="grey" @click="modalItemOpen = false" class="rounded-lg font-weight-bold">Cancelar</v-btn>
-          <v-btn variant="flat" color="teal" class="text-white rounded-lg font-weight-bold" @click="guardarItem" :disabled="!formItemValid">
+          <v-btn variant="flat" color="primary" class="text-white rounded-lg font-weight-bold" @click="guardarItem" :disabled="!formItemValid">
             Guardar
           </v-btn>
         </v-card-actions>
@@ -371,7 +371,7 @@
 
         <v-card-text class="pt-6 px-6">
           <div class="mb-4 text-subtitle-1">
-            Insumo: <strong class="text-teal-darken-3">{{ selectedItem?.nombre }}</strong>
+            Insumo: <strong class="text-primary-3">{{ selectedItem?.nombre }}</strong>
             <span class="text-caption text-grey d-block">Stock Actual: {{ selectedItem?.stock_actual }} {{ selectedItem?.unidad }}</span>
           </div>
 
@@ -384,7 +384,7 @@
               ]"
               label="Tipo de Movimiento *"
               variant="outlined"
-              color="teal"
+              color="primary"
               :rules="[v => !!v || 'Seleccione el tipo de movimiento']"
             ></v-select>
 
@@ -393,7 +393,7 @@
               label="Cantidad *"
               type="number"
               variant="outlined"
-              color="teal"
+              color="primary"
               min="0.01"
               step="any"
               :rules="[
@@ -409,7 +409,7 @@
               label="Costo Unitario ($) *"
               type="number"
               variant="outlined"
-              color="teal"
+              color="primary"
               min="0"
               step="0.01"
               :rules="[v => !!v || 'El costo unitario es obligatorio para ingresos']"
@@ -419,7 +419,7 @@
               v-if="formMovData.tipo === 'ingreso' && haciendaStore.isModuleActive('kardex_bodega')"
               v-model="formMovData.registrarFinanzas"
               label="Registrar también como Egreso en Finanzas"
-              color="teal"
+              color="primary"
               hide-details
               class="mb-2"
             ></v-checkbox>
@@ -428,7 +428,7 @@
               v-model="formMovData.notas"
               label="Notas / Justificación *"
               variant="outlined"
-              color="teal"
+              color="primary"
               rows="3"
               placeholder="Describa el motivo del ajuste..."
               :rules="[v => !!v || 'Debe registrar una nota explicativa']"
@@ -438,7 +438,7 @@
 
         <v-card-actions class="px-6 py-4 justify-end gap-2 bg-grey-lighten-5">
           <v-btn variant="outlined" color="grey" @click="modalMovOpen = false" class="rounded-lg font-weight-bold">Cancelar</v-btn>
-          <v-btn variant="flat" color="teal" class="text-white rounded-lg font-weight-bold" @click="registrarMovimiento" :disabled="!formMovValid">
+          <v-btn variant="flat" color="primary" class="text-white rounded-lg font-weight-bold" @click="registrarMovimiento" :disabled="!formMovValid">
             Registrar Ajuste
           </v-btn>
         </v-card-actions>

@@ -1,7 +1,7 @@
 <template>
   <v-card>
     <v-form ref="form" v-model="formularioValido" lazy-validation>
-      <v-toolbar color="success" dark flat>
+      <v-toolbar color="primary" dark flat>
         <v-toolbar-title class="font-weight-bold">
           {{ modoEdicion ? $t('zones.edit') : $t('zones.create') }} {{ tipoZonaActual?.nombre }}
           <template v-if="siembraContext">
@@ -33,7 +33,7 @@
                   <v-btn
                     icon
                     size="x-small"
-                    color="success"
+                    color="primary"
                     class="absolute bottom-0 right-0"
                     @click="showAvatarDialog = true"
                   >
@@ -144,7 +144,7 @@
               <!-- Color de Zona -->
               <div class="col-span-12 mt-2">
                 <div class="text-caption font-weight-bold mb-1 d-flex align-center">
-                  <v-icon start color="success" size="small">mdi-palette</v-icon>
+                  <v-icon start color="primary" size="small">mdi-palette</v-icon>
                   Color en Mapa
                 </div>
                 <div class="d-flex align-center gap-3">
@@ -164,10 +164,10 @@
             <div class="mb-6 p-4 bg-grey-lighten-5 rounded-lg border">
               <div class="d-flex justify-space-between align-center mb-3">
                 <div class="text-subtitle-2 font-weight-bold d-flex align-center">
-                  <v-icon start color="success" size="small">mdi-chart-line</v-icon>
+                  <v-icon start color="primary" size="small">mdi-chart-line</v-icon>
                   Métricas y Atributos
                 </div>
-                <v-btn size="x-small" color="success" @click="openAddMetricaDialog" icon elevation="1">
+                <v-btn size="x-small" color="primary" @click="openAddMetricaDialog" icon elevation="1">
                   <v-icon>mdi-plus</v-icon>
                 </v-btn>
               </div>
@@ -286,7 +286,7 @@
                   class="pa-4 bg-white border rounded-lg"
                 >
                   <div class="d-flex align-start gap-3 mb-2">
-                    <v-avatar size="24" color="success" variant="tonal">
+                    <v-avatar size="24" color="primary" variant="tonal">
                       <span class="text-caption font-weight-bold">{{ index + 1 }}</span>
                     </v-avatar>
                     <div class="text-caption font-weight-bold text-grey-darken-3 leading-tight">
@@ -315,7 +315,7 @@
                         :label="opcion"
                         :value="opcion"
                         density="compact"
-                        color="success"
+                        color="primary"
                       >
                         <template v-slot:label>
                           <span class="text-caption font-weight-medium">{{ opcion }}</span>
@@ -379,7 +379,7 @@
                       icon="mdi-home"
                       size="small"
                       variant="text"
-                      color="green"
+                      color="primary"
                       @click="centerOnHaciendaGPS"
                       title="Centrar mapa en GPS de la Hacienda"
                     ></v-btn>
@@ -414,7 +414,7 @@
                     Modo: {{ drawMode === 'polygon' ? 'Dibujo de Polígono' : 'Marcador de Punto' }}
                   </span>
                   <v-spacer></v-spacer>
-                  <v-chip v-if="gpsAccuracy" size="x-small" color="success" variant="flat" class="mr-2">
+                  <v-chip v-if="gpsAccuracy" size="x-small" color="primary" variant="flat" class="mr-2">
                     Precisión: {{ gpsAccuracy }}m
                   </v-chip>
                 </v-toolbar>
@@ -503,7 +503,7 @@
   <!-- Diálogo para agregar métrica personalizada -->
   <v-dialog v-model="addMetricaDialog" persistent max-width="1400px">
     <v-card>
-      <v-toolbar color="success" dark>
+      <v-toolbar color="primary" dark>
         <v-toolbar-title>Agregar Métrica</v-toolbar-title>
         <v-spacer></v-spacer>
       </v-toolbar>

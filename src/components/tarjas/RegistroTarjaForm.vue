@@ -53,7 +53,7 @@
               <template v-slot:item="{ props, item }">
                 <v-list-item v-bind="props" :title="item.raw.name" :subtitle="item.raw.email">
                   <template v-slot:prepend>
-                    <v-avatar size="32" color="green-lighten-4" class="text-green-darken-3 font-weight-bold text-caption">
+                    <v-avatar size="32" color="green-lighten-4" class="text-primary-3 font-weight-bold text-caption">
                       {{ getInitials(item.raw.name) }}
                     </v-avatar>
                   </template>

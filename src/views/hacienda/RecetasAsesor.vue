@@ -7,8 +7,8 @@
           <div class="d-flex align-center justify-space-between flex-wrap gap-4">
             <div>
               <div class="d-flex align-center gap-2 mb-1">
-                <v-btn icon="mdi-arrow-left" variant="text" color="teal" @click="router.push('/hacienda/directorio-asesores')"></v-btn>
-                <h1 class="text-h4 font-weight-bold text-teal-darken-3">
+                <v-btn icon="mdi-arrow-left" variant="text" color="primary" @click="router.push('/hacienda/directorio-asesores')"></v-btn>
+                <h1 class="text-h4 font-weight-bold text-primary-3">
                   Buzón del Asesor Técnico
                 </h1>
               </div>
@@ -19,7 +19,7 @@
             
             <div class="pl-12 pl-sm-0 hidden-sm-and-down" v-if="!mobile">
               <v-btn
-                color="teal"
+                color="primary"
                 variant="flat"
                 class="font-weight-bold text-white rounded-lg px-4"
                 prepend-icon="mdi-package-variant"
@@ -33,7 +33,7 @@
       </v-row>
 
       <!-- Tabs Navigation -->
-      <v-tabs v-model="tab" color="teal" align-tabs="start" class="border-b border-grey-lighten-2 mb-6">
+      <v-tabs v-model="tab" color="primary" align-tabs="start" class="border-b border-grey-lighten-2 mb-6">
         <v-tab value="recetas" class="font-weight-bold">
           <v-icon start icon="mdi-file-document-edit"></v-icon>
           Recetas Recibidas
@@ -49,7 +49,7 @@
         <!-- TAB 1: RECETAS -->
         <v-window-item value="recetas">
           <div v-if="loading" class="d-flex justify-center align-center py-12">
-            <v-progress-circular indeterminate color="teal" size="50"></v-progress-circular>
+            <v-progress-circular indeterminate color="primary" size="50"></v-progress-circular>
           </div>
 
           <div v-else-if="recetas.length === 0" class="text-center py-12">
@@ -81,7 +81,7 @@
                   <v-row class="mb-2">
                     <v-col cols="6" class="py-1">
                       <span class="text-caption text-grey d-block">Siembra Relacionada</span>
-                      <span class="text-body-2 font-weight-medium text-teal-darken-4">
+                      <span class="text-body-2 font-weight-medium text-primary-4">
                         {{ getSiembraName(receta.siembra_id) }}
                       </span>
                     </v-col>
@@ -128,7 +128,7 @@
                   </v-btn>
                   <v-spacer></v-spacer>
                   <v-btn
-                    color="teal"
+                    color="primary"
                     variant="flat"
                     class="font-weight-bold text-white rounded-lg"
                     prepend-icon="mdi-check-circle"
@@ -145,7 +145,7 @@
         <!-- TAB 2: PAQUETES -->
         <v-window-item value="paquetes">
           <div v-if="loading" class="d-flex justify-center align-center py-12">
-            <v-progress-circular indeterminate color="teal" size="50"></v-progress-circular>
+            <v-progress-circular indeterminate color="primary" size="50"></v-progress-circular>
           </div>
 
           <div v-else-if="paquetes.length === 0" class="text-center py-12">
@@ -161,7 +161,7 @@
               <v-card class="elevation-2 rounded-lg border border-grey-lighten-3">
                 <v-card-text class="pt-4">
                   <div class="d-flex justify-space-between align-center mb-3">
-                    <span class="text-subtitle-2 font-weight-bold text-teal-darken-3">
+                    <span class="text-subtitle-2 font-weight-bold text-primary-3">
                       Paquete de Evaluación
                     </span>
                     <v-chip size="small" :color="paquete.estado === 'enviado' ? 'orange' : 'teal'" variant="flat" class="text-white">
@@ -174,7 +174,7 @@
                   <div class="mb-3">
                     <span class="text-caption text-grey d-block">Resumen de Contenido</span>
                     <div class="d-flex flex-wrap gap-2 mt-1">
-                      <v-chip size="x-small" color="teal-lighten-4" class="text-teal-darken-4">
+                      <v-chip size="x-small" color="teal-lighten-4" class="text-primary-4">
                         Siembra: {{ paquete.siembra_id ? '1' : '0' }}
                       </v-chip>
                       <v-chip size="x-small" color="blue-lighten-4" class="text-blue-darken-4">
@@ -205,7 +205,7 @@
     <!-- Dialog Aprobar y Programar -->
     <v-dialog v-model="approveDialog" max-width="500px">
       <v-card class="rounded-lg border border-teal-lighten-4">
-        <v-card-title class="bg-teal py-4 px-6 text-white font-weight-bold">
+        <v-card-title class="bg-primary py-4 px-6 text-white font-weight-bold">
           Aprobar y Programar Actividad
         </v-card-title>
         <v-card-text class="pa-6">
@@ -219,7 +219,7 @@
             type="date"
             variant="outlined"
             density="compact"
-            color="teal"
+            color="primary"
             :min="todayStr"
             class="mb-4"
           ></v-text-field>
@@ -230,7 +230,7 @@
             label="Frecuencia"
             variant="outlined"
             density="compact"
-            color="teal"
+            color="primary"
           ></v-select>
         </v-card-text>
         <v-card-actions class="px-6 py-4 bg-grey-lighten-5">
@@ -238,7 +238,7 @@
             Cancelar
           </v-btn>
           <v-spacer></v-spacer>
-          <v-btn color="teal" variant="flat" class="font-weight-bold text-white rounded-lg" @click="confirmApprove">
+          <v-btn color="primary" variant="flat" class="font-weight-bold text-white rounded-lg" @click="confirmApprove">
             Confirmar y Programar
           </v-btn>
         </v-card-actions>
@@ -289,7 +289,7 @@
 
     <v-btn
       v-if="mobile"
-      color="teal"
+      color="primary"
       icon="mdi-package-variant"
       size="x-large"
       position="fixed"

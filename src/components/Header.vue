@@ -33,7 +33,7 @@
         <v-btn
           variant="flat"
           prepend-icon="mdi-login"
-          color="success"
+          color="primary"
           v-if="!isLoggedIn"
           @click="$emit('openAuthModal')"
         > {{ $t('header.login') }}</v-btn
@@ -55,10 +55,10 @@
             :key="lang.code"
             @click="setLanguage(lang.code)"
             :active="currentLocale === lang.code"
-            color="success"
+            color="primary"
           >
             <template v-slot:prepend>
-              <v-icon v-if="currentLocale === lang.code" size="small" color="success">mdi-check</v-icon>
+              <v-icon v-if="currentLocale === lang.code" size="small" color="primary">mdi-check</v-icon>
               <v-icon v-else size="small" class="opacity-0">mdi-check</v-icon>
             </template>
             <v-list-item-title>{{ lang.name }}</v-list-item-title>

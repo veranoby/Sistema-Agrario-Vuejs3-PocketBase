@@ -13,7 +13,7 @@
   >
     <v-card>
       <v-tabs v-model="tab" fixed-tabs hide-slider role="tablist" aria-label="Auth tabs">
-        <v-tab value="login" :class="tab === 'login' ? 'bg-green-lighten-1' : 'bg-white'" role="tab" aria-selected="tab === 'login'" aria-controls="login-panel">
+        <v-tab value="login" :class="tab === 'login' ? 'bg-primary-1' : 'bg-white'" role="tab" aria-selected="tab === 'login'" aria-controls="login-panel">
           <v-icon icon="mdi-login"></v-icon> &nbsp; {{ t('auth.login') }}
         </v-tab>
         <v-tab value="register" :class="tab === 'register' ? 'bg-cyan-darken-1' : 'bg-white'" role="tab" aria-selected="tab === 'register'" aria-controls="register-panel">
@@ -43,7 +43,7 @@
                         aria-label="Nombre de usuario"
                         variant="outlined"
                         required
-                        color="success"
+                        color="primary"
                         density="compact"
                         prepend-inner-icon="mdi-account-outline"
                         @input="loginForm.username = loginForm.username.toUpperCase()"
@@ -60,7 +60,7 @@
                         variant="outlined"
                         type="email"
                         required
-                        color="success"
+                        color="primary"
                         density="compact"
                         prepend-inner-icon="mdi-email-outline"
                       ></v-text-field>
@@ -74,7 +74,7 @@
                         aria-label="Contraseña"
                         variant="outlined"
                         required
-                        color="success"
+                        color="primary"
                         :append-inner-icon="visible ? 'mdi-eye-off' : 'mdi-eye'"
                         :type="visible ? 'text' : 'password'"
                         density="compact"
@@ -94,7 +94,7 @@
                     </v-col>
                     <v-col class="pt-4">
                       <a
-                        class="text-caption text-decoration-none text-green"
+                        class="text-caption text-decoration-none text-primary"
                         href="#"
                         rel="noopener noreferrer"
                         @click.prevent="openForgotPasswordDialog"
@@ -105,7 +105,7 @@
                       >
                     </v-col>
                   </v-row>
-                  <v-btn type="submit" @click="login" color="green" block aria-label="Iniciar sesión">{{ t('auth.login') }}</v-btn>
+                  <v-btn type="submit" @click="login" color="primary" block aria-label="Iniciar sesión">{{ t('auth.login') }}</v-btn>
                 </v-form>
               </v-col>
             </v-row>
@@ -157,7 +157,7 @@
                         :loading="checkingUsername"
                       >
                         <template v-if="usernameChecked && usernameAvailable && !checkingUsername" v-slot:append-inner>
-                          <v-icon color="success">mdi-check-circle</v-icon>
+                          <v-icon color="primary">mdi-check-circle</v-icon>
                         </template>
                       </v-text-field>
                     </v-col>
@@ -180,7 +180,7 @@
                         :loading="checkingEmail"
                       >
                         <template v-if="emailChecked && emailAvailable && !checkingEmail" v-slot:append-inner>
-                          <v-icon color="success">mdi-check-circle</v-icon>
+                          <v-icon color="primary">mdi-check-circle</v-icon>
                         </template>
                       </v-text-field>
                     </v-col>
@@ -231,7 +231,7 @@
                         :loading="checkingHacienda"
                       >
                         <template v-if="haciendaChecked && haciendaAvailable && !checkingHacienda" v-slot:append-inner>
-                          <v-icon color="success">mdi-check-circle</v-icon>
+                          <v-icon color="primary">mdi-check-circle</v-icon>
                         </template>
                       </v-text-field>
                     </v-col>
@@ -373,7 +373,7 @@
   <!-- Modal de recuperación de contraseña -->
   <v-dialog v-model="forgotPasswordDialog" max-width="500px" transition="dialog-bottom-transition">
     <v-card>
-      <v-toolbar color="success" dark>
+      <v-toolbar color="primary" dark>
         <v-toolbar-title>{{ t('auth.recover_password_title') }}</v-toolbar-title>
         <v-spacer></v-spacer>
         <v-btn icon @click="forgotPasswordDialog = false">
@@ -398,7 +398,7 @@
                 (v) => !!v || t('auth.required_field', { field: 'Email' }),
                 (v) => /.+@.+\..+/.test(v) || t('auth.invalid_email')
               ]"
-              color="success"
+              color="primary"
               density="compact"
               prepend-inner-icon="mdi-email-outline"
               class="mb-4"
@@ -410,7 +410,7 @@
 
             <v-btn
               type="submit"
-              color="success"
+              color="primary"
               block
               :loading="resetLoading"
               :disabled="!resetEmail || resetLoading"
@@ -421,12 +421,12 @@
         </div>
 
         <div v-else class="text-center py-6">
-          <v-icon color="success" size="64" class="mb-4">mdi-email-check-outline</v-icon>
+          <v-icon color="primary" size="64" class="mb-4">mdi-email-check-outline</v-icon>
           <h3 class="text-h5 mb-2">{{ t('auth.email_sent_title') }}</h3>
           <p class="text-body-1 mb-6">
             {{ t('auth.email_sent_message', { email: resetEmail }) }}
           </p>
-          <v-btn color="success" @click="forgotPasswordDialog = false"> {{ t('auth.got_it') }} </v-btn>
+          <v-btn color="primary" @click="forgotPasswordDialog = false"> {{ t('auth.got_it') }} </v-btn>
         </div>
       </v-card-text>
     </v-card>

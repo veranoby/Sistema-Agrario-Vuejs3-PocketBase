@@ -1,7 +1,7 @@
 <template>
   <div class="bg-dinamico border-1 m-5 mt-4 px-4 py-4 shadow-md hover:shadow-xl rounded-lg">
     <h2 class="text-xl font-bold mb-4">
-      <v-icon color="success" class="mr-2">mdi-bell-ring-outline</v-icon>
+      <v-icon color="primary" class="mr-2">mdi-bell-ring-outline</v-icon>
       {{ t('notifications.title') }}
     </h2>
     <p class="text-xs text-gray-600 mb-6">
@@ -12,7 +12,7 @@
       <div class="mb-4">
         <v-checkbox
           v-model="config.digestWeekly"
-          color="success"
+          color="primary"
           hide-details
           class="mb-0"
         >
@@ -44,7 +44,7 @@
 
       <div class="mt-6 flex justify-end">
         <v-btn
-          color="success"
+          color="primary"
           :loading="saving"
           prepend-icon="mdi-content-save"
           @click="saveSettings"
@@ -56,7 +56,7 @@
     </v-form>
     
     <div v-else-if="loading" class="flex justify-center p-10">
-      <v-progress-circular indeterminate color="success"></v-progress-circular>
+      <v-progress-circular indeterminate color="primary"></v-progress-circular>
     </div>
   </div>
 </template>

@@ -4,7 +4,7 @@
       <!-- Activity Preview Section -->
       <div class="bg-dinamico p-4 rounded-lg">
         <div class="flex items-center mb-4">
-          <v-icon color="success" class="mr-2">mdi-leaf</v-icon>
+          <v-icon color="primary" class="mr-2">mdi-leaf</v-icon>
           <div class="flex flex-col">
             <h4 class=" leading-tight">{{ actividadPreview.nombre }}</h4>
             <span class="text-caption text-grey-darken-1 font-weight-medium">
@@ -12,7 +12,7 @@
             </span>
           </div>
           <v-spacer />
-          <v-chip v-if="!isSingleEntry" color="success" variant="flat" size="small" class="">
+          <v-chip v-if="!isSingleEntry" color="primary" variant="flat" size="small" class="">
             <v-icon start size="14">mdi-calendar-multiple</v-icon>
             {{ fechasSeleccionadas.length }} entradas
           </v-chip>

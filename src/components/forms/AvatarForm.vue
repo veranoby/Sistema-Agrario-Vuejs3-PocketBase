@@ -1,7 +1,7 @@
 <template>
   <v-dialog v-model="dialog" max-width="550px">
     <v-card>
-      <v-toolbar color="success" dark>
+      <v-toolbar color="primary" dark>
         <v-toolbar-title>Editar Avatar</v-toolbar-title>
         <v-spacer></v-spacer>
       </v-toolbar>
@@ -46,7 +46,7 @@
                   <v-icon
                     v-if="isValidFile"
                     size="x-large"
-                    color="success"
+                    color="primary"
                     icon="mdi-check-circle"
                   ></v-icon>
                 </template>
@@ -54,7 +54,7 @@
             </v-col>
             <v-col v-if="isCameraActive" cols="12">
               <video ref="videoRef" autoplay playsinline style="width: 100%; height: auto"></video>
-              <v-btn block color="success" @click="captureImage" :disabled="!isCameraActive">
+              <v-btn block color="primary" @click="captureImage" :disabled="!isCameraActive">
                 Capturar Foto
               </v-btn>
             </v-col>

@@ -2,7 +2,7 @@
   <v-dialog v-model="dialogVisible" persistent max-width="900px">
     <v-form ref="editActividadForm">
       <v-card>
-        <v-toolbar color="success" dark>
+        <v-toolbar color="primary" dark>
           <v-toolbar-title>{{ t('activity_workspace.edit_activity') }}</v-toolbar-title>
           <v-spacer></v-spacer>
         </v-toolbar>
@@ -182,7 +182,7 @@
 
           <v-dialog v-model="addMetricaDialog" persistent max-width="400px">
             <v-card>
-              <v-toolbar color="success" dark>
+              <v-toolbar color="primary" dark>
                 <v-toolbar-title>{{ isEditingMetrica ? t('activity_workspace.edit_metric') : t('activity_workspace.add_metric') }}</v-toolbar-title>
                 <v-spacer></v-spacer>
               </v-toolbar>

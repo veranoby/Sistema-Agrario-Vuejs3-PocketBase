@@ -37,7 +37,7 @@
         {{ t('sowing_workspace.current_area') }}: {{ totalArea }} {{ areaUnit }}
       </v-chip>
 
-      <v-chip variant="flat" size="small" color="green" class="mx-1" pill>
+      <v-chip variant="flat" size="small" color="primary" class="mx-1" pill>
         {{ t('sowing_workspace.target_area') }}: {{ siembraInfo?.area_total || 0 }} ha
       </v-chip>
       </div>
@@ -62,7 +62,7 @@
             :class="{
               'text-red font-extrabold': item.bpa_estado < 40,
               'text-orange font-extrabold': item.bpa_estado >= 40 && item.bpa_estado < 80,
-              'text-green font-extrabold': item.bpa_estado >= 80
+              'text-primary font-extrabold': item.bpa_estado >= 80
             }"
           >
             {{ item.bpa_estado }}%

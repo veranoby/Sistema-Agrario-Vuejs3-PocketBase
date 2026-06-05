@@ -31,7 +31,7 @@
             <div class="w-full sm:w-auto z-10" v-if="canCreate">
               <v-btn
                 prepend-icon="mdi-plus-circle"
-                color="success"
+                color="primary"
                 variant="flat"
                 class="font-weight-bold text-white elevation-2 rounded-lg"                @click="recordatoriosStore.abrirNuevoRecordatorio"
               >
@@ -65,7 +65,7 @@
       />
       <StatusPanel
         :title="t('reminders.completed')"
-        color="green"
+        color="primary"
         :items="recordatoriosStore.recordatoriosCompletados()"
         @update-status="recordatoriosStore.actualizarEstado"
         @edit="recordatoriosStore.editarRecordatorio"
