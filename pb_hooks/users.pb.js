@@ -42,6 +42,10 @@ onRecordAuthRequest((e) => {
         // invalidando inmediatamente todos los tokens anteriores del usuario.
         e.record.refreshTokenKey()
         $app.save(e.record)
+        
+        // OPTIMIZACIÓN: Obligamos a PocketBase a generar un nuevo JWT usando
+        // la llave recién creada y reemplazamos el token obsoleto del evento.
+        e.token = e.record.newAuthToken()
     } catch (err) {
         $app.logger().error("Error rotando tokenKey para sesión única: " + err)
     }
