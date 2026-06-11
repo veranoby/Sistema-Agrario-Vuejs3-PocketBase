@@ -97,7 +97,11 @@ export async function prepareBitacoraEntryData(programacion, actividadesStore) {
     logger.debug('[batchOperations] Prepared data for Bitacora Entry:', prefillDataObject)
     return prefillDataObject
   } catch (error) {
-    logger.error('[batchOperations] Error preparing bitacora entry data:', error?.message, error?.stack)
+    // Usar console.error directamente para ver el mensaje real (el logger lo suprime)
+    console.error('[batchOperations] REAL ERROR:', error)
+    console.error('[batchOperations] MENSAJE:', error?.message)
+    console.error('[batchOperations] STACK:', error?.stack)
+    logger.error('[batchOperations] Error preparing bitacora entry data:', error?.message || String(error))
     return null
   }
 }
