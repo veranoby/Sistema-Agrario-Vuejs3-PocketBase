@@ -386,8 +386,12 @@ const HANDLERS_REGISTRY = {
  * @returns {BaseBitacoraHandler} Handler apropiado
  */
 export async function getHandlerForTipo(tipoActividad, actividadesStore = null) {
+  if (Array.isArray(tipoActividad)) {
+    tipoActividad = tipoActividad[0];
+  }
+
   // Si es un ID, intentar obtener el nombre
-  if (actividadesStore && tipoActividad && tipoActividad.length > 10) {
+  if (actividadesStore && typeof tipoActividad === 'string' && tipoActividad.length > 10) {
     try {
       const tipo = await actividadesStore.tiposActividades.find(t => t.id === tipoActividad)
       if (tipo) {

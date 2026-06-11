@@ -390,7 +390,7 @@ const METRIC_CATEGORIES = {
 export function transformMetricasByTipo(metricas, tipoActividad, formatoReporte = null) {
   // Normalizar el tipo de actividad
   const tipoNormalizado = normalizeTipoActividad(
-    typeof tipoActividad === 'object' ? tipoActividad.nombre : tipoActividad
+    (typeof tipoActividad === 'object' && tipoActividad !== null) ? tipoActividad.nombre : tipoActividad
   )
 
   // Obtener reglas de transformación

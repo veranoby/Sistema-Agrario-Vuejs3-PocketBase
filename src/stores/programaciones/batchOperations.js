@@ -51,7 +51,9 @@ export async function prepareBitacoraEntryData(programacion, actividadesStore) {
 
     // ENHANCED: Obtener tipo de actividad y usar handler especializado
     let tipoActividad = null
-    let tipoActividadId = actividad.tipo_actividades
+    let tipoActividadId = Array.isArray(actividad.tipo_actividades) 
+      ? actividad.tipo_actividades[0] 
+      : actividad.tipo_actividades
 
     if (tipoActividadId) {
       // Cargar tipos si no están cargados
@@ -63,7 +65,9 @@ export async function prepareBitacoraEntryData(programacion, actividadesStore) {
 
     // Si expand no tiene tipo, buscar directamente
     if (!tipoActividad && actividad.expand?.tipo_actividades) {
-      tipoActividad = actividad.expand.tipo_actividades
+      tipoActividad = Array.isArray(actividad.expand.tipo_actividades)
+        ? actividad.expand.tipo_actividades[0]
+        : actividad.expand.tipo_actividades
     }
 
     // Obtener handler especializado para este tipo
@@ -86,7 +90,7 @@ export async function prepareBitacoraEntryData(programacion, actividadesStore) {
     logger.debug('[batchOperations] Prepared data for Bitacora Entry:', prefillDataObject)
     return prefillDataObject
   } catch (error) {
-    logger.error('[batchOperations] Error preparing bitacora entry data:', error)
+    logger.error('[batchOperations] Error preparing bitacora entry data:', error?.stack || error)
     return null
   }
 }
