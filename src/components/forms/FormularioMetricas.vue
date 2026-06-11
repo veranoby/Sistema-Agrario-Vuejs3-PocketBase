@@ -191,25 +191,23 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'update:metricasValues']);
 
-const localSelection = ref([...props.modelValue]);
+const localSelection = computed({
+  get: () => props.modelValue,
+  set: (val) => emit('update:modelValue', val)
+});
+
 const metricasValues = computed({
   get: () => props.metricasValues,
   set: (val) => emit('update:metricasValues', val)
 });
 
-watch(localSelection, (newSelection) => {
-  emit('update:modelValue', newSelection);
-}, { deep: true });
-
-watch(() => props.modelValue, (newParentValue) => {
-  if (JSON.stringify(newParentValue) !== JSON.stringify(localSelection.value)) {
-    localSelection.value = [...newParentValue];
+// Auto-select all metrics when available metrics change, but only if selection is currently empty
+// or if we're initializing
+watch(() => props.metricasDisponibles, (newVal) => {
+  if (props.modelValue.length === 0 && newVal.length > 0) {
+    selectAllMetrics();
   }
-});
-
-watch(() => props.metricasDisponibles, () => {
-  selectAllMetrics();
-}, { deep: true });
+}, { deep: true, immediate: true });
 
 const allMetricsSelected = computed(() => {
   return props.metricasDisponibles.length > 0 &&
@@ -236,27 +234,29 @@ const metricasAgrupadas = computed(() => {
 });
 
 const toggleMetricSelection = (metricKey, unitKey = null) => {
-  const index = localSelection.value.indexOf(metricKey);
+  const newSelection = [...props.modelValue];
+  const index = newSelection.indexOf(metricKey);
   if (index > -1) {
-    localSelection.value.splice(index, 1);
+    newSelection.splice(index, 1);
     if (unitKey) {
-      const unitIndex = localSelection.value.indexOf(unitKey);
-      if (unitIndex > -1) localSelection.value.splice(unitIndex, 1);
+      const unitIndex = newSelection.indexOf(unitKey);
+      if (unitIndex > -1) newSelection.splice(unitIndex, 1);
     }
   } else {
-    localSelection.value.push(metricKey);
-    if (unitKey && !localSelection.value.includes(unitKey)) {
-      localSelection.value.push(unitKey);
+    newSelection.push(metricKey);
+    if (unitKey && !newSelection.includes(unitKey)) {
+      newSelection.push(unitKey);
     }
   }
+  emit('update:modelValue', newSelection);
 };
 
 const selectAllMetrics = () => {
-  localSelection.value = props.metricasDisponibles.map(m => m.key);
+  emit('update:modelValue', props.metricasDisponibles.map(m => m.key));
 };
 
 const clearAllMetrics = () => {
-  localSelection.value = [];
+  emit('update:modelValue', []);
 };
 </script>
 

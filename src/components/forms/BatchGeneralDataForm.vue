@@ -79,7 +79,10 @@ const props = defineProps({
 const emit = defineEmits(['update:observaciones', 'update:metricasSeleccionadas', 'update:metricasValues']);
 
 const form = ref(null);
-const observacionesAdicionales = ref(props.observaciones);
+const observacionesAdicionales = computed({
+  get: () => props.observaciones,
+  set: (val) => emit('update:observaciones', val)
+});
 
 const metricasSeleccionadas = computed({
   get: () => props.metricasSeleccionadas,
@@ -91,9 +94,7 @@ const metricasValues = computed({
   set: (value) => emit('update:metricasValues', value)
 });
 
-watch(() => props.observaciones, (newValue) => {
-  observacionesAdicionales.value = newValue;
-});
+
 
 const metricasDisponibles = computed(() => {
   if (!props.actividadPreview?.metricas) return [];
@@ -160,9 +161,6 @@ const observacionesAutomaticas = computed(() => {
   }
 });
 
-watch(observacionesAdicionales, (newValue) => {
-  emit('update:observaciones', newValue);
-});
 </script>
 
 <style scoped>
