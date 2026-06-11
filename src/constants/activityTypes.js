@@ -82,7 +82,7 @@ export const ACTIVITY_TYPE_REQUIREMENTS = {
     validacionesEspecificas: [
       {
         campo: 'variedad',
-        regla: (val) => val && val.trim().length > 0,
+        regla: (val) => val && String(val).trim().length > 0,
         mensaje: 'La variedad es requerida y no puede estar vacía'
       },
       {
@@ -110,7 +110,7 @@ export const ACTIVITY_TYPE_REQUIREMENTS = {
       },
       {
         campo: 'calidad',
-        regla: (val) => val && val.trim().length > 0,
+        regla: (val) => val && String(val).trim().length > 0,
         mensaje: 'La calidad es requerida'
       },
       {
@@ -128,7 +128,7 @@ export const ACTIVITY_TYPE_REQUIREMENTS = {
     validacionesEspecificas: [
       {
         campo: 'producto',
-        regla: (val) => val && val.trim().length > 0,
+        regla: (val) => val && String(val).trim().length > 0,
         mensaje: 'El producto aplicado es requerido'
       },
       {
@@ -198,7 +198,7 @@ export const ACTIVITY_TYPE_REQUIREMENTS = {
     validacionesEspecificas: [
       {
         campo: 'tipo_fertilizante',
-        regla: (val) => val && val.trim().length > 0,
+        regla: (val) => val && String(val).trim().length > 0,
         mensaje: 'El tipo de fertilizante es requerido'
       },
       {
@@ -221,7 +221,7 @@ export const ACTIVITY_TYPE_REQUIREMENTS = {
     validacionesEspecificas: [
       {
         campo: 'tipo_labranza',
-        regla: (val) => val && val.trim().length > 0,
+        regla: (val) => val && String(val).trim().length > 0,
         mensaje: 'El tipo de labranza es requerido'
       },
       {
@@ -244,7 +244,7 @@ export const ACTIVITY_TYPE_REQUIREMENTS = {
     validacionesEspecificas: [
       {
         campo: 'tipo_poda',
-        regla: (val) => val && val.trim().length > 0,
+        regla: (val) => val && String(val).trim().length > 0,
         mensaje: 'El tipo de poda es requerido'
       },
       {
