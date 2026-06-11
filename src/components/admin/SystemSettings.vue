@@ -1,6 +1,6 @@
 <template>
   <v-container fluid class="system-settings">
-    <h2 class="text-h5 mb-4">Configuración del Sistema</h2>
+    <h3 class="text-md mb-4">Configuración del Sistema</h3>
 
     <v-row v-if="!settingsStore.loading">
       <!-- Configuración General -->

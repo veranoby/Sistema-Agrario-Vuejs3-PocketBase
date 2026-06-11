@@ -26,14 +26,14 @@
 
         <div v-else-if="analysisResult">
           <!-- Advertencia General -->
-          <div class="mb-6 text-body-1">
+          <div class="mb-6  ">
             Estás a punto de eliminar la siembra <strong>{{ siembraNombre }}</strong>. 
             Define qué hacer con los elementos que dependen únicamente de esta siembra:
           </div>
 
           <!-- Elementos Exclusivos -->
           <div v-if="analysisResult.exclusive.length > 0" class="mb-6">
-            <div class="text-subtitle-2 font-weight-bold mb-2 d-flex align-center text-error">
+            <div class="text-md font-weight-bold mb-2 d-flex align-center text-error">
               <v-icon start size="small">mdi-shield-alert</v-icon>
               DEPENDENCIAS EXCLUSIVAS:
             </div>
@@ -43,7 +43,7 @@
                   <v-icon :icon="item.icon" color="error" class="mr-2"></v-icon>
                 </template>
                 
-                <v-list-item-title class="text-subtitle-2 font-weight-bold">
+                <v-list-item-title class="text-md font-weight-bold">
                   {{ item.count }} {{ item.label }}
                 </v-list-item-title>
 
@@ -65,7 +65,7 @@
 
           <!-- Elementos Compartidos -->
           <div v-if="analysisResult.shared.length > 0" class="mb-6">
-            <div class="text-subtitle-2 font-weight-bold mb-2 d-flex align-center text-warning">
+            <div class="text-md font-weight-bold mb-2 d-flex align-center text-warning">
               <v-icon start size="small">mdi-link-off</v-icon>
               ELEMENTOS COMPARTIDOS (SE DESVINCULARÁN):
             </div>

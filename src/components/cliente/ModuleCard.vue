@@ -26,19 +26,19 @@
       </div>
 
       <!-- Descripción -->
-      <p class="text-body-2 text-grey mb-4">
+      <p class="text-smtext-grey mb-4">
         {{ modulo.description }}
       </p>
 
       <!-- Precio -->
       <div class="d-flex justify-space-between align-center mb-4">
         <div>
-          <span class="text-h5 font-weight-bold">${{ modulo.price_monthly }}</span>
-          <span class="text-body-2 text-grey">/mes</span>
+          <span class="text-md font-weight-bold">${{ modulo.price_monthly }}</span>
+          <span class="text-smtext-grey">/mes</span>
         </div>
         <div class="text-right">
           <p class="text-caption text-grey">Precio anual</p>
-          <p class="text-subtitle-2 font-weight-bold">${{ modulo.price_yearly }}</p>
+          <p class="text-md font-weight-bold">${{ modulo.price_yearly }}</p>
         </div>
       </div>
 

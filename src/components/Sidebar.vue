@@ -1,18 +1,28 @@
 <template>
   <v-sheet v-if="isLoggedIn" class="d-flex flex-column" style="height: 90vh">
-    <v-list v-if="navigationLinks && navigationLinks.length > 0" density="compact" nav>
-      <v-list-item
-        v-for="link in navigationLinks"
-        :key="link.id"
-        :to="link.to"
-        link
-        :class="{ 'active-link': isActive(link.to), 'vivid-hover': true }"
-      >
-        <template v-slot:prepend>
-          <v-icon :icon="link.icon"></v-icon>
-        </template>
-        <v-list-item-title class="text-xs">{{ link.label }}</v-list-item-title>
-      </v-list-item>
+    <v-list v-if="groupedLinks && groupedLinks.length > 0" density="compact" nav class="overflow-y-auto">
+      <template v-for="group in groupedLinks" :key="group.name">
+        <v-list-subheader
+          v-if="group.name !== 'General' && group.name !== 'Inicio'"
+          class="text-caption font-weight-bold text-uppercase mt-2 mb-1 pl-2 text-primary"
+          style="min-height: 24px; line-height: 24px;"
+        >
+          {{ group.name }}
+        </v-list-subheader>
+        
+        <v-list-item
+          v-for="link in group.links"
+          :key="link.id"
+          :to="link.to"
+          link
+          :class="{ 'active-link': isActive(link.to), 'vivid-hover': true }"
+        >
+          <template v-slot:prepend>
+            <v-icon :icon="link.icon" size="small"></v-icon>
+          </template>
+          <v-list-item-title class="text-xs">{{ link.label }}</v-list-item-title>
+        </v-list-item>
+      </template>
     </v-list>
     <v-alert v-else type="error">
       Error: No se pudieron cargar los enlaces de navegación de pocketbase...
@@ -80,11 +90,31 @@ export default {
       // Redirigir o realizar otras acciones necesarias
     }
 
+    const groupedLinks = computed(() => {
+      if (!props.navigationLinks) return []
+      
+      const groups = {}
+      props.navigationLinks.forEach(link => {
+        const groupName = link.group || 'General'
+        if (!groups[groupName]) {
+          groups[groupName] = []
+        }
+        groups[groupName].push(link)
+      })
+      
+      // Convert object to array for easier iteration
+      return Object.keys(groups).map(key => ({
+        name: key,
+        links: groups[key]
+      }))
+    })
+
     return { 
       isLoggedIn, 
       handleLogout, 
       isActive,
-      authStore
+      authStore,
+      groupedLinks
     }
   }
 }

@@ -339,14 +339,24 @@ export const useSiembrasStore = defineStore('siembras', {
     },
 
     async fetchSiembrasByProgramacion(programacionId) {
+      // 1. Buscar en store local primero — cero requests al servidor
+      const localResult = this.siembras.filter(s =>
+        Array.isArray(s.programaciones)
+          ? s.programaciones.includes(programacionId)
+          : s.programaciones === programacionId
+      )
+      if (localResult.length > 0) return localResult
+
+      // 2. Solo si no hay datos locales → servidor con límite (no getFullList)
       const syncStore = useSyncStore()
-      if (!syncStore.isOnline) {
-        return this.siembras.filter(s => s.programaciones?.includes(programacionId))
-      }
-      return pb.collection('Siembras').getFullList({
+      if (!syncStore.isOnline) return []
+
+      const result = await pb.collection('Siembras').getList(1, 50, {
         filter: `programaciones ~ "${programacionId}"`,
         sort: '-fecha_ejecucion'
-      }).catch(() => [])
+      }).catch(() => ({ items: [] }))
+
+      return result.items
     },
 
     updateLocalItem(tempId, newItem) {

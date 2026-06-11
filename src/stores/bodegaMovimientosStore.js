@@ -38,6 +38,11 @@ export const useBodegaMovimientosStore = defineStore('bodegaMovimientos', {
 
   actions: {
     async init() {
+      const haciendaStore = useHaciendaStore()
+      if (!haciendaStore.isModuleActive('kardex_bodega')) {
+        logger.debug('[bodegaMovimientosStore] Módulo kardex_bodega inactivo, omitiendo init.')
+        return false
+      }
       try {
         await this.cargarMovimientos()
         return true
@@ -50,6 +55,12 @@ export const useBodegaMovimientosStore = defineStore('bodegaMovimientos', {
     async cargarMovimientos() {
       const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore()
+
+      if (!haciendaStore.isModuleActive('kardex_bodega')) {
+        logger.debug('[bodegaMovimientosStore] cargarMovimientos omitido: módulo inactivo.')
+        return []
+      }
+
       this.loading = true
 
       try {
@@ -79,6 +90,11 @@ export const useBodegaMovimientosStore = defineStore('bodegaMovimientos', {
         syncStore.saveToLocalStorage('bodega_movimientos', JSON.parse(JSON.stringify(this.movimientos)))
         return this.movimientos
       } catch (error) {
+        if (error?.status === 400 || error?.response?.code === 400) {
+          logger.warn('[bodegaMovimientosStore] colección bodega_movimientos no disponible (400). Módulo inactivo en servidor.')
+          this.movimientos = []
+          return []
+        }
         handleError(error, 'Error al cargar movimientos de inventario')
         throw error
       } finally {

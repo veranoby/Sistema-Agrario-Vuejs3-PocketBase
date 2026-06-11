@@ -10,8 +10,8 @@
       <v-card class="elevation-4 rounded-lg overflow-hidden border border-orange-lighten-4">
         <div class="bg-gradient-orange py-6 px-6 text-white text-center">
           <v-icon icon="mdi-credit-card-off-outline" size="72" class="mb-3"></v-icon>
-          <h2 class="text-h4 font-weight-black">Suscripción Inactiva</h2>
-          <p class="text-subtitle-1 opacity-90 mt-2">
+          <h3 class="text-h4 font-weight-black">Suscripción Inactiva</h3>
+          <p class="  opacity-90 mt-2">
             Tu cuenta de Asesor Técnico requiere una suscripción mensual activa de <strong>$5.00 USD</strong>.
           </p>
         </div>
@@ -19,7 +19,7 @@
         <v-card-text class="pa-6">
           <h3 class="text-h6 font-weight-bold text-indigo-darken-3 mb-4">Instrucciones de Pago</h3>
           
-          <p class="text-body-1 text-grey-darken-3 mb-4">
+          <p class="  text-grey-darken-3 mb-4">
             Para activar tu perfil y aparecer en el directorio visible para todas las haciendas asociadas de ConAgri, realiza el depósito o transferencia bancaria mensual:
           </p>
 
@@ -47,10 +47,10 @@
           </v-card>
 
           <div class="bg-grey-lighten-4 pa-4 rounded-lg border border-grey-lighten-3 mb-4">
-            <span class="text-subtitle-2 font-weight-bold text-grey-darken-3 d-block mb-1">
+            <span class="text-md font-weight-bold text-grey-darken-3 d-block mb-1">
               ¿Ya realizaste tu transferencia?
             </span>
-            <p class="text-body-2 text-grey-darken-2 mb-3">
+            <p class="text-smtext-grey-darken-2 mb-3">
               Envía el comprobante digital de pago a <strong>pagos@conagri.com</strong> o súbelo directamente en tu perfil para agilizar el proceso. El equipo administrativo validará tu transacción y activará tu cuenta en un lapso menor a 2 horas.
             </p>
             <v-btn
@@ -86,6 +86,26 @@
 
     <!-- Active Subscription Dashboard -->
     <div v-else class="w-100 d-flex flex-column gap-4">
+      <!-- Alertas de vinculaciones pendientes -->
+      <v-alert
+        v-if="pendingVinculacionesCount > 0"
+        type="warning"
+        variant="tonal"
+        class="mb-6 rounded-lg"
+        border="start"
+      >
+        <template v-slot:prepend>
+          <v-icon icon="mdi-account-clock" size="28" class="mr-2"></v-icon>
+        </template>
+        <div class="d-flex align-center justify-space-between w-100">
+          <div>
+            <div class="text-subtitle-1 font-weight-bold">Tienes {{ pendingVinculacionesCount }} solicitud(es) de vinculación pendiente(s)</div>
+            <div class="text-body-2">Haciendas están esperando que apruebes su conexión.</div>
+          </div>
+          <v-btn color="orange-darken-3" variant="flat" to="/asesor/haciendas" size="small">Revisar</v-btn>
+        </div>
+      </v-alert>
+
       <!-- Header -->
       <header class="w-100 bg-background shadow-sm p-0 mb-4">
         <div class="profile-container mt-0 ml-0">
@@ -118,8 +138,8 @@
           <v-card class="elevation-3 hover-card rounded-lg bg-gradient-indigo text-white">
             <v-card-text class="d-flex align-center justify-space-between pa-6">
               <div>
-                <span class="text-subtitle-1 opacity-90 font-weight-medium">Mis Haciendas Activas</span>
-                <h2 class="text-h3 font-weight-black mt-2">{{ activeFarmsCount }}</h2>
+                <span class="  opacity-90 font-weight-medium">Mis Haciendas Activas</span>
+                <h3 class="text-h3 font-weight-black mt-2">{{ activeFarmsCount }}</h3>
               </div>
               <v-icon icon="mdi-barn" size="56" class="opacity-80"></v-icon>
             </v-card-text>
@@ -129,8 +149,8 @@
           <v-card class="elevation-3 hover-card rounded-lg bg-gradient-orange text-white">
             <v-card-text class="d-flex align-center justify-space-between pa-6">
               <div>
-                <span class="text-subtitle-1 opacity-90 font-weight-medium">Paquetes Pendientes</span>
-                <h2 class="text-h3 font-weight-black mt-2">{{ pendingPackagesCount }}</h2>
+                <span class="  opacity-90 font-weight-medium">Paquetes Pendientes</span>
+                <h3 class="text-h3 font-weight-black mt-2">{{ pendingPackagesCount }}</h3>
               </div>
               <v-icon icon="mdi-package-variant-closed" size="56" class="opacity-80"></v-icon>
             </v-card-text>
@@ -140,8 +160,8 @@
           <v-card class="elevation-3 hover-card rounded-lg bg-gradient-blue text-white">
             <v-card-text class="d-flex align-center justify-space-between pa-6">
               <div>
-                <span class="text-subtitle-1 opacity-90 font-weight-medium">Recetas en Borrador</span>
-                <h2 class="text-h3 font-weight-black mt-2">{{ draftPrescriptionsCount }}</h2>
+                <span class="  opacity-90 font-weight-medium">Recetas en Borrador</span>
+                <h3 class="text-h3 font-weight-black mt-2">{{ draftPrescriptionsCount }}</h3>
               </div>
               <v-icon icon="mdi-file-document-edit" size="56" class="opacity-80"></v-icon>
             </v-card-text>
@@ -169,10 +189,10 @@
                         <v-icon icon="mdi-package-variant" color="orange-darken-2"></v-icon>
                       </v-avatar>
                     </template>
-                    <v-list-item-title class="font-weight-bold text-indigo-darken-4 text-subtitle-1">
+                    <v-list-item-title class="font-weight-bold text-indigo-darken-4  ">
                       {{ pkg.haciendaNombre }}
                     </v-list-item-title>
-                    <v-list-item-subtitle class="text-body-2 mt-1">
+                    <v-list-item-subtitle class="text-smmt-1">
                       {{ pkg.notas_hacienda ? `"${pkg.notas_hacienda}"` : 'Sin notas aclaratorias' }}
                     </v-list-item-subtitle>
                     <template v-slot:append>
@@ -189,7 +209,7 @@
               </v-list>
               <div v-else class="text-center py-12">
                 <v-icon icon="mdi-package-variant-outline" size="64" color="grey-lighten-1" class="mb-2"></v-icon>
-                <p class="text-body-1 text-grey-darken-2">No has recibido paquetes de evaluación todavía.</p>
+                <p class="  text-grey-darken-2">No has recibido paquetes de evaluación todavía.</p>
               </div>
             </v-card-text>
           </v-card>
@@ -210,10 +230,10 @@
                         <v-icon icon="mdi-file-document-edit" color="indigo-darken-2"></v-icon>
                       </v-avatar>
                     </template>
-                    <v-list-item-title class="font-weight-bold text-grey-darken-4 text-subtitle-1">
+                    <v-list-item-title class="font-weight-bold text-grey-darken-4  ">
                       {{ receta.titulo || 'Receta Agrícola' }}
                     </v-list-item-title>
-                    <v-list-item-subtitle class="text-body-2 mt-1">
+                    <v-list-item-subtitle class="text-smmt-1">
                       {{ receta.producto_recomendado || 'N/A' }} — Dosis: {{ receta.dosis }} {{ receta.unidad_dosis }}
                     </v-list-item-subtitle>
                     <template v-slot:append>
@@ -230,7 +250,7 @@
               </v-list>
               <div v-else class="text-center py-12">
                 <v-icon icon="mdi-file-document-outline" size="64" color="grey-lighten-1" class="mb-2"></v-icon>
-                <p class="text-body-1 text-grey-darken-2">No has emitido recetas agrícolas todavía.</p>
+                <p class="  text-grey-darken-2">No has emitido recetas agrícolas todavía.</p>
               </div>
             </v-card-text>
           </v-card>
@@ -254,6 +274,7 @@ const checkingSubscription = ref(true)
 const subscriptionActive = ref(false)
 
 const activeFarmsCount = ref(0)
+const pendingVinculacionesCount = ref(0)
 const pendingPackagesCount = ref(0)
 const draftPrescriptionsCount = ref(0)
 
@@ -291,6 +312,7 @@ onMounted(async () => {
     })
     
     const activeVinculaciones = vinculaciones.filter(v => v.estado === 'activa')
+    pendingVinculacionesCount.value = vinculaciones.filter(v => v.estado === 'pendiente').length
     activeFarmsCount.value = activeVinculaciones.length
     
     const activeVincIds = activeVinculaciones.map(v => v.id)

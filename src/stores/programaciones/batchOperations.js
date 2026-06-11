@@ -203,15 +203,29 @@ export async function ejecutarProgramacionesBatch(payload, stores) {
     if (metricasSeleccionadas.length > 0) {
       // Filtrar por métricas seleccionadas
       for (const key of metricasSeleccionadas) {
-        if (transformedMetricas.flat[key] !== undefined) {
+        if (payload.metricasValues && payload.metricasValues[key] !== undefined) {
+          metricasToSubmit[key] = payload.metricasValues[key]
+        } else if (transformedMetricas.flat[key] !== undefined) {
           metricasToSubmit[key] = transformedMetricas.flat[key]
         } else if (metricasCrudas[key]?.valor !== undefined) {
           metricasToSubmit[key] = metricasCrudas[key].valor
         }
       }
     } else {
-      // Incluir todas las métricas (backward compatibility)
-      Object.assign(metricasToSubmit, transformedMetricas.flat)
+      // Incluir todas las métricas usando valores ingresados (si existen) o defecto
+      const sourceKeys = Object.keys(transformedMetricas.flat).length > 0 
+        ? Object.keys(transformedMetricas.flat) 
+        : Object.keys(metricasCrudas);
+
+      for (const key of sourceKeys) {
+         if (payload.metricasValues && payload.metricasValues[key] !== undefined) {
+           metricasToSubmit[key] = payload.metricasValues[key]
+         } else if (transformedMetricas.flat[key] !== undefined) {
+           metricasToSubmit[key] = transformedMetricas.flat[key]
+         } else if (metricasCrudas[key]?.valor !== undefined) {
+           metricasToSubmit[key] = metricasCrudas[key].valor
+         }
+      }
     }
 
     // Generar observaciones automáticas usando el handler

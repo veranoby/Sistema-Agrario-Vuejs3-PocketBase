@@ -97,9 +97,9 @@
       <section class="w-full py-16 md:py-24 bg-white dark:bg-[#1e1e1e] border-y border-gray-100 dark:border-[#333]">
         <div class="container px-4 md:px-6">
           <div class="flex flex-col items-center justify-center space-y-4 text-center mb-16">
-            <h2 class="text-3xl font-bold tracking-tighter sm:text-4xl text-primary">
+            <h3 class="text-3xl font-bold tracking-tighter sm:text-4xl text-primary">
               Pilares Base para el Campo
-            </h2>
+            </h3>
             <p class="max-w-[700px] text-muted-foreground md:text-lg">
               Funcionalidades esenciales incluidas en todos los planes para asegurar su operación productiva desde el primer día.
             </p>
@@ -134,9 +134,9 @@
       <section class="w-full py-16 md:py-24 bg-[#f8f9fb] dark:bg-[#121212]">
         <div class="container px-4 md:px-6">
           <div class="flex flex-col items-center justify-center space-y-4 text-center mb-16">
-            <h2 class="text-3xl font-bold tracking-tighter sm:text-4xl text-primary">
+            <h3 class="text-3xl font-bold tracking-tighter sm:text-4xl text-primary">
               Módulos Especializados
-            </h2>
+            </h3>
             <p class="max-w-[700px] text-muted-foreground md:text-lg">
               Potencie el crecimiento y la inteligencia de su hacienda con herramientas avanzadas disponibles en planes premium.
             </p>
@@ -178,7 +178,7 @@
       <section class="w-full py-16 md:py-24 bg-white dark:bg-[#1e1e1e]">
         <div class="container px-6 md:px-8">
           <div class="flex flex-col items-center justify-center space-y-4 text-center">
-            <h2 class="text-3xl font-bold tracking-tighter sm:text-4xl text-[#0a1929] dark:text-white">Nuestros Planes</h2>
+            <h3 class="text-3xl font-bold tracking-tighter sm:text-4xl text-[#0a1929] dark:text-white">Nuestros Planes</h3>
             <p class="text-muted-foreground md:text-lg">Elige la solución que mejor se adapte al tamaño de tu operación agrícola.</p>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-6xl mt-12 mx-auto">
@@ -302,7 +302,7 @@
         <div class="container px-4 md:px-6 relative z-10">
           <div class="grid lg:grid-cols-2 gap-16 items-center">
             <div class="space-y-8">
-              <h2 class="text-4xl md:text-5xl font-extrabold tracking-tight leading-tight text-white">¿Listo para transformar su operación?</h2>
+              <h3 class="text-4xl md:text-5xl font-extrabold tracking-tight leading-tight text-white">¿Listo para transformar su operación?</h3>
               <p class="text-gray-300 text-lg md:text-xl">Únase a cientos de agricultores que ya han digitalizado y asegurado sus bitácoras con la tecnología de ConAgri.</p>
               
               <div class="space-y-5 pt-4">
@@ -310,14 +310,14 @@
                   <v-icon color="primary" size="28" class="mr-4">mdi-email</v-icon>
                   <div>
                     <p class="text-xs text-gray-400 font-semibold text-uppercase">Correo Directo</p>
-                    <p class="text-base font-medium">contacto@conespacio.org</p>
+                    <p class="text-sm font-medium">contacto@conespacio.org</p>
                   </div>
                 </div>
                 <div class="flex items-center text-gray-200 bg-white/5 p-4 rounded-lg border border-white/10">
                   <v-icon color="primary" size="28" class="mr-4">mdi-headset</v-icon>
                   <div>
                     <p class="text-xs text-gray-400 font-semibold text-uppercase">Soporte Técnico</p>
-                    <p class="text-base font-medium">Asistencia prioritaria para integración</p>
+                    <p class="text-sm font-medium">Asistencia prioritaria para integración</p>
                   </div>
                 </div>
               </div>

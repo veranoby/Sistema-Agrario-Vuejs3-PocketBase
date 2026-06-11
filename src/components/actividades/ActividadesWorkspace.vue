@@ -223,7 +223,7 @@ const handleRequestSingleExecution = async (programacion) => {
     const programacionesStore = useProgramacionesStore()
     const success = await programacionesStore.prepareForBitacoraEntryFromProgramacion(programacion)
     if (success) {
-      router.push({ name: 'Dashboard de Inicio' })
+      router.push({ name: 'Bitácora' })
     } else {
       uiFeedbackStore.showSnackbar(
         'No se pudo preparar la entrada de bitácora desde la programación.',

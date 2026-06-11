@@ -1,7 +1,15 @@
 <template>
-  <div class="embedded-bitacora-list">
-    <h3 v-if="title" class="text-h6 mb-2">{{ title }}</h3>
-    
+  <div class="embedded-bitacora-calendar">
+    <div class="d-flex align-center justify-space-between mb-2">
+      <h3 v-if="title" class="text-h6 font-weight-bold">{{ title }}</h3>
+      
+      <div v-if="!isLoading" class="d-flex align-center bg-grey-lighten-4 rounded-pill px-2 py-1">
+        <v-btn icon="mdi-chevron-left" size="x-small" variant="text" color="primary" @click="prevMonth"></v-btn>
+        <span class="text-body-2 font-weight-medium px-3 text-capitalize">{{ formattedCurrentMonth }}</span>
+        <v-btn icon="mdi-chevron-right" size="x-small" variant="text" color="primary" @click="nextMonth"></v-btn>
+      </div>
+    </div>
+
     <div v-if="isLoading" class="text-center pa-4">
       <v-progress-circular indeterminate color="primary" size="small"></v-progress-circular>
       <p class="text-caption">Cargando bitácora...</p>
@@ -12,54 +20,43 @@
       <span class="text-caption">Error: {{ error.message || error }}</span>
     </v-alert>
 
-    <div v-if="!isLoading && entriesToShow.length === 0 && !error" class="text-center pa-4">
-      <p class="text-caption">No hay entradas de bitácora recientes para mostrar.</p>
-    </div>
+    <v-card v-if="!isLoading" outlined class="border border-grey-lighten-3 rounded-lg overflow-hidden">
+      <BitacoraCalendar 
+        :current-date="currentDate" 
+        :entries="entriesToShow" 
+        @day-click="handleDayClick"
+        @entry-click="handleEntryClick"
+      />
+    </v-card>
 
-    <div v-if="!isLoading && entriesToShow.length > 0">
-      <v-list lines="one" density="compact">
-        <template v-for="(entry, index) in entriesToShow" :key="entry.id">
-          <v-list-item @click="expandedEntryId = expandedEntryId === entry.id ? null : entry.id" class="pa-0">
-            <v-row no-gutters align="center">
-              <v-col cols="auto" class="pr-2">
-                 <v-chip size="small" :color="estadoColor(entry.estado_ejecucion)" label>{{ entry.estado_ejecucion }}</v-chip>
-              </v-col>
-              <v-col>
-                <div class="text-subtitle-2 text-truncate">
-                  {{ getSafe(() => entry.expand.actividad_realizada.nombre, 'Actividad Desconocida') }}
-                </div>
-                <div class="text-caption grey--text text--darken-1">
-                  {{ formatDate(entry.fecha_ejecucion) }}
-                </div>
-              </v-col>
-              <v-col cols="auto">
-                <v-btn icon variant="text" size="small">
-                  <v-icon>{{ expandedEntryId === entry.id ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
-                </v-btn>
-              </v-col>
-            </v-row>
-          </v-list-item>
-          <v-expand-transition>
-            <div v-show="expandedEntryId === entry.id">
-              <BitacoraEntryCard :entry="entry" class="my-2 elevation-1" />
-            </div>
-          </v-expand-transition>
-          <v-divider v-if="index < entriesToShow.length - 1" class="my-1"></v-divider>
-        </template>
-      </v-list>
-    </div>
-
-    <div v-if="!isLoading && totalMatchingEntries > itemLimit && entriesToShow.length > 0" class="text-center mt-3">
+    <div v-if="!isLoading && totalMatchingEntries > 0 && entriesToShow.length > 0" class="text-center mt-3">
       <v-btn 
         variant="text" 
         color="primary" 
         size="small"
         @click="navigateToFullBitacora"
       >
-        Ver Todas ({{ totalMatchingEntries }})
+        Ver Todas en Vista General ({{ totalMatchingEntries }})
         <v-icon end>mdi-arrow-right</v-icon>
       </v-btn>
     </div>
+
+    <!-- Entry Details Dialog -->
+    <v-dialog v-model="showEntryDetailDialog" max-width="600px">
+      <v-card v-if="selectedEntryForDetail">
+        <v-card-title class="d-flex justify-space-between align-center px-4 pt-4 pb-2">
+          <span class="text-subtitle-1 font-weight-bold">Detalle de Bitácora</span>
+          <v-btn icon="mdi-close" variant="text" @click="showEntryDetailDialog = false" size="small"></v-btn>
+        </v-card-title>
+        <v-card-text class="pa-4 pt-0">
+          <BitacoraEntryCard 
+            :entry="selectedEntryForDetail" 
+            @edit="handleEdit"
+            @delete="handleDelete"
+          />
+        </v-card-text>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -67,7 +64,9 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useBitacoraStore } from '@/stores/bitacoraStore';
-import { formatDate } from '@/utils/formatters';
+import { addMonths, subMonths, format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import BitacoraCalendar from './BitacoraCalendar.vue';
 import BitacoraEntryCard from './BitacoraEntryCard.vue';
 
 const props = defineProps({
@@ -79,7 +78,7 @@ const props = defineProps({
     type: String,
     default: null,
   },
-  itemLimit: {
+  itemLimit: { // Note: Calendar shows full month, this prop is now mostly obsolete, kept for compatibility if needed elsewhere
     type: Number,
     default: 5,
   },
@@ -89,48 +88,69 @@ const props = defineProps({
   }
 });
 
+const emit = defineEmits(['edit', 'delete']);
+
 const router = useRouter();
 const bitacoraStore = useBitacoraStore();
 
 const isLoading = ref(false);
 const error = ref(null);
-const allMatchingEntries = ref([]);
-const expandedEntryId = ref(null); // To expand one card at a time
 
-// Helper to safely access nested properties
-const getSafe = (fn, defaultValue = '') => {
-  try {
-    return fn() || defaultValue;
-  } catch (e) {
-    return defaultValue;
+const currentDate = ref(new Date());
+const showEntryDetailDialog = ref(false);
+const selectedEntryForDetail = ref(null);
+
+const formattedCurrentMonth = computed(() => {
+  return format(currentDate.value, 'MMMM yyyy', { locale: es }).replace(/^\w/, (c) => c.toUpperCase());
+});
+
+function prevMonth() {
+  currentDate.value = subMonths(currentDate.value, 1);
+}
+
+function nextMonth() {
+  currentDate.value = addMonths(currentDate.value, 1);
+}
+
+function handleDayClick(date) {
+  // Option to do something when clicking empty day
+}
+
+function handleEntryClick(entry) {
+  selectedEntryForDetail.value = entry;
+  showEntryDetailDialog.value = true;
+}
+
+function handleEdit(entry) {
+  showEntryDetailDialog.value = false;
+  emit('edit', entry);
+}
+
+function handleDelete(entry) {
+  showEntryDetailDialog.value = false;
+  emit('delete', entry);
+}
+
+const allMatchingEntries = computed(() => {
+  if (props.siembraId) {
+    return bitacoraStore.getEnrichedBitacoraBySiembra(props.siembraId);
+  } else if (props.actividadId) {
+    return bitacoraStore.getEnrichedBitacoraByActividadRealizada(props.actividadId);
+  } else {
+    return bitacoraStore.getEnrichedBitacoraEntries;
   }
-};
+});
 
 const fetchData = async () => {
   isLoading.value = true;
   error.value = null;
   try {
-    // Ensure bitacora store is initialized (it handles its own fetching logic)
-    if(bitacoraStore.bitacoraEntries.length === 0 || !bitacoraStore.lastSync) { // Basic check
+    if(bitacoraStore.bitacoraEntries.length === 0 || !bitacoraStore.lastSync) {
         await bitacoraStore.init();
     }
-
-    let entriesSource;
-    if (props.siembraId) {
-      // Assumes getEnrichedBitacoraBySiembra getter returns sorted (newest first)
-      entriesSource = bitacoraStore.getEnrichedBitacoraBySiembra(props.siembraId);
-    } else if (props.actividadId) {
-      // Assumes getEnrichedBitacoraByActividadRealizada getter returns sorted (newest first)
-      entriesSource = bitacoraStore.getEnrichedBitacoraByActividadRealizada(props.actividadId);
-    } else {
-      // Default to all entries if no specific filter, sorted by most recent
-      entriesSource = bitacoraStore.getEnrichedBitacoraEntries;
-    }
-    allMatchingEntries.value = entriesSource || [];
-
-  } catch (e) {
-    console.error('Error fetching bitacora for embedded list:', e);
-    error.value = e;
+  } catch (err) {
+    console.error('Error fetching bitacora entries:', err);
+    error.value = err;
   } finally {
     isLoading.value = false;
   }
@@ -138,64 +158,32 @@ const fetchData = async () => {
 
 onMounted(fetchData);
 
-// Watch for prop changes to refetch data if necessary
 watch(() => [props.siembraId, props.actividadId], () => {
   fetchData();
 });
 
-// Watch for changes in the store itself
-watch(() => bitacoraStore.bitacoraEntries, () => {
-  // Re-evaluate the source based on current props when store changes
-  if (props.siembraId) {
-    allMatchingEntries.value = bitacoraStore.getEnrichedBitacoraBySiembra(props.siembraId) || [];
-  } else if (props.actividadId) {
-    allMatchingEntries.value = bitacoraStore.getEnrichedBitacoraByActividadRealizada(props.actividadId) || [];
-  } else {
-    allMatchingEntries.value = bitacoraStore.getEnrichedBitacoraEntries || [];
-  }
-}, { deep: true });
-
 const entriesToShow = computed(() => {
-  return allMatchingEntries.value.slice(0, props.itemLimit);
+  return allMatchingEntries.value;
 });
 
 const totalMatchingEntries = computed(() => {
     return allMatchingEntries.value.length;
 });
 
-const estadoColor = (estado) => {
-  switch (estado?.toLowerCase()) {
-    case 'completado': return 'green-lighten-1';
-    case 'en_progreso': return 'blue-lighten-1';
-    case 'planificada': return 'orange-lighten-1';
-    case 'cancelada': return 'red-lighten-1';
-    default: return 'grey-lighten-1';
-  }
-};
-
 function navigateToFullBitacora() {
   const query = {};
   if (props.siembraId) query.siembraId = props.siembraId;
   if (props.actividadId) query.actividadId = props.actividadId;
-  // Assuming your main bitacora view is at '/bitacora' route
-  // And it can accept siembraId/actividadId as query params for pre-filtering
   router.push({ path: '/bitacora', query }); 
 }
 
 </script>
 
 <style scoped>
-.embedded-bitacora-list {
-  border: 1px solid #e0e0e0; /* Vuetify's grey.lighten-2 */
+.embedded-bitacora-calendar {
+  border: 1px solid #e0e0e0;
   border-radius: 4px;
   padding: 8px;
-}
-.v-list-item {
-  cursor: pointer;
-}
-.text-truncate {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  background-color: white;
 }
 </style>

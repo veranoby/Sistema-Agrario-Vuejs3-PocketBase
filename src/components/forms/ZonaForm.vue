@@ -6,7 +6,7 @@
           {{ modoEdicion ? $t('zones.edit') : $t('zones.create') }} {{ tipoZonaActual?.nombre }}
           <template v-if="siembraContext">
             <v-icon size="small" class="mx-2">mdi-chevron-right</v-icon>
-            <span class="text-subtitle-2 opacity-80">{{ siembraContext.nombre }}</span>
+            <span class="text-md opacity-80">{{ siembraContext.nombre }}</span>
           </template>
         </v-toolbar-title>
         <v-spacer></v-spacer>
@@ -163,7 +163,7 @@
             <!-- Section: Metrics -->
             <div class="mb-6 p-4 bg-grey-lighten-5 rounded-lg border">
               <div class="d-flex justify-space-between align-center mb-3">
-                <div class="text-subtitle-2 font-weight-bold d-flex align-center">
+                <div class="text-md font-weight-bold d-flex align-center">
                   <v-icon start color="primary" size="small">mdi-chart-line</v-icon>
                   Métricas y Atributos
                 </div>
@@ -258,7 +258,7 @@
 
             <!-- Section: Mi Info (Editor) -->
             <div class="mt-4 p-4 bg-grey-lighten-5 rounded-lg border">
-              <div class="text-subtitle-2 font-weight-bold mb-2 d-flex align-center">
+              <div class="text-md font-weight-bold mb-2 d-flex align-center">
                 <v-icon start color="amber-darken-2" size="small">mdi-note-text-outline</v-icon>
                 Notas y Detalles Adicionales
               </div>
@@ -273,7 +273,7 @@
 
             <!-- Section: BPA Compliance (Moved to Left Column) -->
             <div class="mt-4 p-4 bg-grey-lighten-5 rounded-lg border" v-if="zonaLocal.tipos_zonas">
-              <div class="text-subtitle-2 font-weight-bold mb-4 d-flex align-center">
+              <div class="text-md font-weight-bold mb-4 d-flex align-center">
                 <v-icon start color="green-darken-2" size="small">mdi-shield-check-outline</v-icon>
                 Seguimiento de BPA
               </div>
@@ -332,7 +332,7 @@
           <div class="lg:col-span-7 flex flex-col">
             <!-- GPS & Map Header -->
             <div class="mb-4">
-              <div class="text-subtitle-2 font-weight-bold mb-2 d-flex align-center">
+              <div class="text-md font-weight-bold mb-2 d-flex align-center">
                 <v-icon start color="blue" size="small">mdi-map-marker-path</v-icon>
                 Geometría y Ubicación (GIS)
               </div>
@@ -442,7 +442,7 @@
 
               <!-- Vértices de polígono editables (post-dibujo) -->
               <div v-if="polygonVertices.length > 0" class="mt-4 p-4 bg-grey-lighten-4 rounded-lg border">
-                <div class="text-subtitle-2 font-weight-bold mb-3 d-flex align-center">
+                <div class="text-md font-weight-bold mb-3 d-flex align-center">
                   <v-icon start color="blue" size="small">mdi-shape-polygon-plus</v-icon>
                   Vértices del polígono ({{ polygonVertices.length }})
                 </div>

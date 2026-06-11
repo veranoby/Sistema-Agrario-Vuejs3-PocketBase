@@ -146,7 +146,7 @@ export const emailService = {
   }) {
     const html = `
       <div style="font-family: Arial, sans-serif; padding: 20px;">
-        <h2>Reporte Generado</h2>
+        <h3>Reporte Generado</h3>
         <p>Adjunto encontrará el reporte solicitado: <strong>${subject}</strong></p>
         <p><strong>Tipo:</strong> ${reportType}</p>
         <p><strong>Fecha:</strong> ${new Date().toLocaleDateString()}</p>
@@ -182,7 +182,7 @@ export const emailService = {
   async sendVerificationEmail({ to, verificationUrl }) {
     const html = `
       <div style="font-family: Arial, sans-serif; padding: 20px;">
-        <h2>Verifica tu Email</h2>
+        <h3>Verifica tu Email</h3>
         <p>Gracias por registrarte en ConAgri.</p>
         <p>Por favor verifica tu email haciendo clic en el siguiente enlace:</p>
         <p>
@@ -220,7 +220,7 @@ export const emailService = {
   async sendPasswordReset({ to, resetUrl }) {
     const html = `
       <div style="font-family: Arial, sans-serif; padding: 20px;">
-        <h2>Restablecer Contraseña</h2>
+        <h3>Restablecer Contraseña</h3>
         <p>Has solicitado restablecer tu contraseña en ConAgri.</p>
         <p>Haz clic en el siguiente enlace para establecer una nueva contraseña:</p>
         <p>

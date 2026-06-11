@@ -22,7 +22,7 @@
       <!-- Header -->
       <v-toolbar color="green-darken-3" dark density="comfortable">
         <v-icon start class="ml-3">mdi-robot-outline</v-icon>
-        <v-toolbar-title class="font-weight-bold text-body-1">Asistente IA</v-toolbar-title>
+        <v-toolbar-title class="font-weight-bold  ">Asistente IA</v-toolbar-title>
         <v-spacer />
         <!-- Badge de key -->
         <v-chip
@@ -67,7 +67,7 @@
         <!-- Loading -->
         <div v-if="loading" class="d-flex flex-column align-center justify-center py-10">
           <v-progress-circular indeterminate color="green-darken-2" size="56" width="5" />
-          <p class="mt-4 text-body-2 text-grey-darken-1">Analizando con IA...</p>
+          <p class="mt-4 text-smtext-grey-darken-1">Analizando con IA...</p>
         </div>
 
         <!-- Error -->
@@ -92,7 +92,7 @@
                 <v-icon color="green-darken-3" size="18" class="mr-2 mt-1">mdi-clipboard-text-outline</v-icon>
                 <span class="text-caption font-weight-bold text-primary-3 text-uppercase">Diagnóstico</span>
               </div>
-              <p class="text-body-2 text-grey-darken-3 mb-0" style="line-height:1.6">
+              <p class="text-smtext-grey-darken-3 mb-0" style="line-height:1.6">
                 {{ result.diagnostico }}
               </p>
             </v-card-text>
@@ -164,7 +164,7 @@
         <!-- Estado vacío -->
         <div v-else class="d-flex flex-column align-center justify-center py-10 text-center">
           <v-icon size="72" color="grey-lighten-2">mdi-robot-happy-outline</v-icon>
-          <p class="mt-4 text-body-2 text-grey-darken-1 px-4">
+          <p class="mt-4 text-smtext-grey-darken-1 px-4">
             Analiza el contexto actual y obtén recomendaciones accionables.
           </p>
         </div>

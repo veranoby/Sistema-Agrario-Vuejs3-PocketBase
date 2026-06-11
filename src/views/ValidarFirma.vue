@@ -8,8 +8,8 @@
           <div class="d-inline-flex align-center justify-center rounded-circle bg-primary-5 pa-3 mb-3 shadow-soft">
             <v-icon size="40" color="primary">mdi-shield-check</v-icon>
           </div>
-          <h2 class="text-h4 font-weight-black text-primary-4 text-tracking-tight">ConAgri Oráculo</h2>
-          <p class="text-subtitle-2 text-grey-darken-1 mt-1">Plataforma Pública de Validación Criptográfica</p>
+          <h3 class="text-h4 font-weight-black text-primary-4 text-tracking-tight">ConAgri Oráculo</h3>
+          <p class="text-md text-grey-darken-1 mt-1">Plataforma Pública de Validación Criptográfica</p>
         </div>
 
         <!-- Main Content Card -->
@@ -28,7 +28,7 @@
               ></v-progress-circular>
             </div>
             <h3 class="text-h6 font-weight-bold text-grey-darken-3">Consultando el Oráculo</h3>
-            <p class="text-body-2 text-grey-darken-1 mt-2">
+            <p class="text-smtext-grey-darken-1 mt-2">
               Verificando firma digital y validez del hash SHA-256 en la base inmutable...
             </p>
           </v-card-text>
@@ -39,7 +39,7 @@
               <v-icon size="64" color="error">mdi-shield-alert-outline</v-icon>
             </div>
             
-            <h3 class="text-h5 font-weight-black text-red-darken-4 mb-3">Firma Digital Inválida</h3>
+            <h3 class="text-md font-weight-black text-red-darken-4 mb-3">Firma Digital Inválida</h3>
             
             <v-alert
               type="error"
@@ -50,7 +50,7 @@
               {{ errorMessage }}
             </v-alert>
 
-            <p class="text-body-2 text-grey-darken-2 mb-8">
+            <p class="text-smtext-grey-darken-2 mb-8">
               Este hash no está registrado en el oráculo público o el documento asociado ha sufrido modificaciones, lo que invalida su integridad criptográfica.
             </p>
 
@@ -77,7 +77,7 @@
               <div class="d-inline-flex justify-center align-center rounded-circle bg-primary-5 border-success-glow pa-4 mb-3 scale-up">
                 <v-icon size="64" color="primary">mdi-check-decagram</v-icon>
               </div>
-              <h3 class="text-h5 font-weight-black text-primary-4">DOCUMENTO AUTÉNTICO</h3>
+              <h3 class="text-md font-weight-black text-primary-4">DOCUMENTO AUTÉNTICO</h3>
               <v-chip color="primary" size="small" class="font-weight-bold px-4 mt-2" variant="flat">
                 Verificación Exitosa
               </v-chip>
@@ -93,7 +93,7 @@
                 </div>
                 <div>
                   <span class="text-caption text-grey font-weight-bold uppercase-tracking">Hacienda Productora</span>
-                  <div class="text-body-1 font-weight-black text-grey-darken-3">{{ verificationData.hacienda || 'No especificada' }}</div>
+                  <div class="  font-weight-black text-grey-darken-3">{{ verificationData.hacienda || 'No especificada' }}</div>
                 </div>
               </div>
 
@@ -103,7 +103,7 @@
                 </div>
                 <div>
                   <span class="text-caption text-grey font-weight-bold uppercase-tracking">Actividad Certificada</span>
-                  <div class="text-body-1 font-weight-black text-grey-darken-3">{{ verificationData.actividad || 'No especificada' }}</div>
+                  <div class="  font-weight-black text-grey-darken-3">{{ verificationData.actividad || 'No especificada' }}</div>
                 </div>
               </div>
 
@@ -113,7 +113,7 @@
                 </div>
                 <div>
                   <span class="text-caption text-grey font-weight-bold uppercase-tracking">Responsable Técnico</span>
-                  <div class="text-body-1 font-weight-black text-grey-darken-3">{{ verificationData.operario || 'No especificado' }}</div>
+                  <div class="  font-weight-black text-grey-darken-3">{{ verificationData.operario || 'No especificado' }}</div>
                 </div>
               </div>
 
@@ -123,7 +123,7 @@
                 </div>
                 <div>
                   <span class="text-caption text-grey font-weight-bold uppercase-tracking">Fecha de Ejecución</span>
-                  <div class="text-body-1 font-weight-bold text-grey-darken-3">{{ formatDateTime(verificationData.fecha_ejecucion) }}</div>
+                  <div class="  font-weight-bold text-grey-darken-3">{{ formatDateTime(verificationData.fecha_ejecucion) }}</div>
                 </div>
               </div>
 
@@ -133,7 +133,7 @@
                 </div>
                 <div>
                   <span class="text-caption text-grey font-weight-bold uppercase-tracking">Sello de Tiempo de Firma</span>
-                  <div class="text-body-1 font-weight-bold text-grey-darken-3">{{ formatDateTime(verificationData.timestamp) }}</div>
+                  <div class="  font-weight-bold text-grey-darken-3">{{ formatDateTime(verificationData.timestamp) }}</div>
                 </div>
               </div>
             </div>

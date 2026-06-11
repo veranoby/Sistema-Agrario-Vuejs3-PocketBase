@@ -1,7 +1,7 @@
 <template>
   <v-container fluid class="logs-viewer">
     <div class="d-flex justify-space-between align-center mb-4">
-      <h2 class="text-h5">Visor de Logs del Sistema</h2>
+      <h3 class="text-md">Visor de Logs del Sistema</h3>
       <div>
         <v-btn
           color="secondary"
@@ -102,7 +102,7 @@
         <v-card color="blue-grey-lighten-5">
           <v-card-text class="text-center">
             <div class="text-h4">{{ totalLogs }}</div>
-            <div class="text-subtitle-2 text-grey">Total Logs</div>
+            <div class="text-md text-grey">Total Logs</div>
           </v-card-text>
         </v-card>
       </v-col>
@@ -110,7 +110,7 @@
         <v-card color="green-lighten-5">
           <v-card-text class="text-center">
             <div class="text-h4 text-primary">{{ infoCount }}</div>
-            <div class="text-subtitle-2 text-grey">INFO</div>
+            <div class="text-md text-grey">INFO</div>
           </v-card-text>
         </v-card>
       </v-col>
@@ -118,7 +118,7 @@
         <v-card color="orange-lighten-5">
           <v-card-text class="text-center">
             <div class="text-h4 text-orange">{{ warningCount }}</div>
-            <div class="text-subtitle-2 text-grey">WARNING</div>
+            <div class="text-md text-grey">WARNING</div>
           </v-card-text>
         </v-card>
       </v-col>
@@ -126,7 +126,7 @@
         <v-card color="red-lighten-5">
           <v-card-text class="text-center">
             <div class="text-h4 text-red">{{ errorCount }}</div>
-            <div class="text-subtitle-2 text-grey">ERROR</div>
+            <div class="text-md text-grey">ERROR</div>
           </v-card-text>
         </v-card>
       </v-col>

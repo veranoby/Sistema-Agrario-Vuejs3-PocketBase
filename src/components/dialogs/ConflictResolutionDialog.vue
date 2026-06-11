@@ -8,7 +8,7 @@
     <v-card class="rounded-lg">
       <v-card-title class="pa-4 bg-error-lighten-5 flex items-center border-b">
         <v-icon start color="error" size="28" class="mr-3">mdi-alert-octagon</v-icon>
-        <span class="text-h5 font-weight-bold">Conflictos de Sincronización</span>
+        <span class="text-md font-weight-bold">Conflictos de Sincronización</span>
         <v-spacer />
         <v-chip color="error" variant="flat" size="small" class="font-weight-bold">
           {{ safeConflicts.length }} {{ safeConflicts.length === 1 ? 'conflicto' : 'conflictos' }}

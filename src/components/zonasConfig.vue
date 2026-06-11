@@ -56,7 +56,47 @@
 
     <main class="flex-1 py-2">
       <v-container class=" border-2 py-0 px-0">
+        <div v-if="!zonasStore.loading && (!zonasStore.zonas || zonasStore.zonas.length === 0)" class="pa-4 w-full">
+          <v-row justify="center">
+            <v-col cols="12" md="10">
+              <v-card class="pa-6 text-center rounded-xl elevation-0 border bg-surface mt-4 mb-4">
+                <v-icon size="48" color="primary" class="mb-3">mdi-map-marker-off</v-icon>
+                <h3 class="text-md font-weight-bold mb-1">Fase 2: Zonas de la Hacienda</h3>
+                <p class="text-smtext-medium-emphasis mb-6">
+                  Aún no tienes zonas registradas. Dibuja tus lotes para indicar dónde se aplicarán las labores.
+                </p>
+                
+                <v-timeline align="start" side="end" density="compact" class="text-left mt-4 mb-4">
+                  <v-timeline-item dot-color="success" size="small">
+                    <template v-slot:icon><v-icon color="white" size="small">mdi-check</v-icon></template>
+                    <div class="mb-1">
+                      <div class="  font-weight-bold text-success">Fase 1: Siembras</div>
+                      <div class="text-caption text-medium-emphasis">Se recomienda tener la siembra creada previamente.</div>
+                    </div>
+                  </v-timeline-item>
+
+                  <v-timeline-item dot-color="primary" size="small">
+                    <div class="mb-1">
+                      <div class="  font-weight-bold">Fase 2: Zonas (Estás aquí)</div>
+                      <div class="text-caption text-medium-emphasis">Dibuja tus lotes en el mapa.</div>
+                    </div>
+                    <v-btn size="small" variant="flat" color="primary" class="mt-2" @click="abrirDialogoCrear(tiposZonas[0])" v-if="canCreate">Nueva Zona</v-btn>
+                  </v-timeline-item>
+
+                  <v-timeline-item dot-color="grey-lighten-2" size="small">
+                    <div class="mb-1">
+                      <div class="  font-weight-bold text-grey">Siguiente: Programaciones</div>
+                      <div class="text-caption text-medium-emphasis">Configura y planifica qué hacer sobre estas zonas.</div>
+                    </div>
+                  </v-timeline-item>
+                </v-timeline>
+              </v-card>
+            </v-col>
+          </v-row>
+        </div>
+
         <v-tabs
+          v-show="zonasStore.zonas && zonasStore.zonas.length > 0"
           v-model="tab"
           bg-color="#6380a247"
           slider-color="primary"
@@ -74,7 +114,7 @@
           </v-tab>
         </v-tabs>
 
-        <v-tabs-window v-model="tab">
+        <v-tabs-window v-model="tab" v-show="zonasStore.zonas && zonasStore.zonas.length > 0">
           <v-tabs-window-item
             v-for="tipoZona in tiposZonas"
             :key="tipoZona.id"

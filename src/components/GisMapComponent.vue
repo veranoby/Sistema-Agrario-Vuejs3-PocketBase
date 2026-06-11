@@ -264,7 +264,7 @@ export default defineComponent({
               fillOpacity: 0.15,
               interactive: false
             })
-            .bindTooltip(props2.nombre || 'Zona', { sticky: true })
+            .bindTooltip(props2.nombre || 'Zona', { permanent: true, direction: 'center', className: 'zone-label-permanent' })
             .addTo(referenceLayerGroup)
           } else if (geom.type === 'Point') {
             L.circleMarker([geom.coordinates[1], geom.coordinates[0]], {
@@ -275,7 +275,7 @@ export default defineComponent({
               fillOpacity: 0.6,
               interactive: false
             })
-            .bindTooltip(props2.nombre || 'Zona', { sticky: true })
+            .bindTooltip(props2.nombre || 'Zona', { permanent: true, direction: 'center', className: 'zone-label-permanent' })
             .addTo(referenceLayerGroup)
           }
         }
@@ -571,7 +571,7 @@ export default defineComponent({
 
         const setupLayer = (layer, props) => {
           if (props.nombre) {
-            layer.bindTooltip(props.nombre, { permanent: false, direction: 'top', offset: [0, -10] });
+            layer.bindTooltip(props.nombre, { permanent: true, direction: 'center', className: 'zone-label-permanent' });
             
             let popup = `<div class="pa-1"><strong>${props.nombre}</strong>`;
             if (props.tipoNombre) popup += `<br/><span class="text-caption">Tipo: ${props.tipoNombre}</span>`;
@@ -626,9 +626,9 @@ export default defineComponent({
         popupContent += `</div>`
 
         layer.bindTooltip(feature.properties.nombre, { 
-          permanent: false, 
-          direction: 'top',
-          offset: [0, -10]
+          permanent: true, 
+          direction: 'center',
+          className: 'zone-label-permanent'
         })
         layer.bindPopup(popupContent)
       }
@@ -697,7 +697,7 @@ export default defineComponent({
 
       // Añadir tooltip para POI
       if (feature.properties?.source === 'zone-point' && feature.properties.nombre) {
-        marker.bindTooltip(feature.properties.nombre, { permanent: false, direction: 'top' });
+        marker.bindTooltip(feature.properties.nombre, { permanent: true, direction: 'center', className: 'zone-label-permanent' });
       }
 
       return marker;
@@ -817,5 +817,18 @@ export default defineComponent({
 :deep(.clear-leaflet-bg) {
   background: transparent !important;
   border: none !important;
+}
+
+:deep(.zone-label-permanent) {
+  background-color: rgba(255, 255, 255, 0.85) !important;
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2) !important;
+  color: #1a1a1a !important;
+  font-weight: 700 !important;
+  font-size: 0.65rem;
+  border-radius: 4px;
+  padding: 1px 4px;
+  white-space: nowrap;
+  pointer-events: none; /* Permite clicks a través de la etiqueta hacia el polígono */
 }
 </style>

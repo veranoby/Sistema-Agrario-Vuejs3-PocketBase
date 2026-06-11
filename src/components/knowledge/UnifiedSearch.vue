@@ -1,7 +1,7 @@
 <template>
   <v-container fluid class="unified-search">
-    <h2 class="text-h5 mb-4">Búsqueda Unificada de Conocimiento</h2>
-    <p class="text-body-1 text-grey mb-6">
+    <h3 class="text-md mb-4">Búsqueda Unificada de Conocimiento</h3>
+    <p class="  text-grey mb-6">
       Busca en todas las entidades del sistema: siembras, programaciones, actividades, tipos de actividades y más.
     </p>
 

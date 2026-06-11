@@ -110,6 +110,7 @@
               :actividad-preview="selectedActividadDetalles"
               v-model:observaciones="formData.notas"
               v-model:metricasSeleccionadas="metricasSeleccionadas"
+              v-model:metricasValues="formData.metricas_values"
               class="ml-2"
             />
           </div>
@@ -141,7 +142,7 @@
                     <v-chip color="primary" size="small" variant="flat" class="text-white">
                       {{ getNombreInsumo(insumo.item) }}
                     </v-chip>
-                    <span class="text-subtitle-2 font-weight-medium text-primary-4">
+                    <span class="text-md font-weight-medium text-primary-4">
                       Cantidad: {{ insumo.cantidad }} {{ getUnidadInsumo(insumo.item) }}
                     </span>
                   </div>
@@ -529,13 +530,30 @@ onMounted(async () => {
       populateFormForEdit();
     } else if (modoOrdenTrabajo.value && programacionesStore.pendingBitacoraFromProgramacionData) {
       const pendingData = programacionesStore.pendingBitacoraFromProgramacionData;
-      formData.actividad_realizada_id = pendingData.actividadRealizadaId;
-      const dt = new Date(pendingData.fechaEjecucion);
-      formData.fecha_ejecucion = `${pendingData.fechaEjecucion}T${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
-      formData.notas = pendingData.observacionesPreload;
-      formData.programacion_origen_id = props.programacionId;
-      formData.siembras_ids = pendingData.siembraAsociadaId ? [pendingData.siembraAsociadaId] : [];
+      
+      const actividadId = pendingData.actividadRealizadaId || pendingData.actividad_realizada_id;
+      formData.actividad_realizada_id = actividadId;
+      
       isPrefillingMetrics.value = true;
+
+      if (actividadId) {
+        await loadActividadDetails(actividadId);
+      }
+
+      if (pendingData.fechaEjecucion || pendingData.fecha_ejecucion) {
+        const dateStr = pendingData.fechaEjecucion || pendingData.fecha_ejecucion;
+        const dt = new Date(dateStr);
+        if (!isNaN(dt.getTime())) {
+          formData.fecha_ejecucion = `${dateStr.split('T')[0]}T${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
+        }
+      }
+      
+      formData.notas = pendingData.observacionesPreload || '';
+      formData.programacion_origen_id = props.programacionId;
+      
+      const siembraId = pendingData.siembraAsociadaId || pendingData.siembra_asociada_id;
+      formData.siembras_ids = siembraId ? [siembraId] : [];
+      
     } else {
       programacionesStore.clearPendingBitacoraData();
     }
@@ -643,6 +661,9 @@ watch(selectedActividadDetalles, (newDetails) => {
           if (Object.prototype.hasOwnProperty.call(formData.metricas_values, key) || 
               (selectedActividadDetalles.value?.metricas && Object.prototype.hasOwnProperty.call(selectedActividadDetalles.value.metricas, key)) ) {
             formData.metricas_values[key] = pendingMetricas[key];
+            if (!metricasSeleccionadas.value.includes(key)) {
+              metricasSeleccionadas.value.push(key);
+            }
           }
         }
       }

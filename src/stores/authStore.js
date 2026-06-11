@@ -232,7 +232,7 @@ export const useAuthStore = defineStore('auth', {
         }
       }, 2000)
 
-      this.refreshTimer = setInterval(debouncedRefresh, 2 * 60 * 1000) // cada 2 min
+      this.refreshTimer = setInterval(debouncedRefresh, 15 * 60 * 1000) // cada 15 min (tokens PB duran 14 días)
     },
 
     stopRefreshTimer() {
@@ -488,7 +488,7 @@ export const useAuthStore = defineStore('auth', {
       this.user = record
       this.token = authProvider.authStore.token
       this.isLoggedIn = true
-      this.subscribeToSessionEvents()
+      // this.subscribeToSessionEvents() // Desactivado por ERR_HTTP2_PROTOCOL_ERROR (Proxy Buffering)
     },
 
     setUser(record) {

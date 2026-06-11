@@ -69,9 +69,62 @@
       <v-container>
         <!-- Grid de Siembras con Cards Enriquecidas -->
         <v-row class="mb-6">
-          <v-alert v-if="siembras.length === 0" type="info" class="mx-4">
-            {{ $t('sowings.no_sowings_registered') }}
-          </v-alert>
+          <v-col v-if="siembras.length === 0" cols="12" md="10" offset-md="1">
+            <v-card class="pa-6 text-center rounded-xl elevation-0 border bg-surface">
+              <v-icon size="48" color="primary" class="mb-3">mdi-sprout-outline</v-icon>
+              <h3 class="text-md font-weight-bold mb-1">Estructura tu trazabilidad</h3>
+              <p class="text-smtext-medium-emphasis mb-6">
+                El flujo de información exacto requiere 3 pasos fundamentales.
+              </p>
+              
+              <v-timeline align="start" side="end" density="compact" class="text-left mt-4 mb-4">
+                <!-- Paso 1 -->
+                <v-timeline-item :dot-color="siembras.length > 0 ? 'success' : 'primary'" size="small">
+                  <template v-slot:icon v-if="siembras.length > 0">
+                    <v-icon color="white" size="small">mdi-check</v-icon>
+                  </template>
+                  <div class="mb-1">
+                    <div class="  font-weight-bold" :class="{'text-success': siembras.length > 0}">
+                      1. Fase 1: Tu Primera Siembra
+                    </div>
+                    <div class="text-caption text-medium-emphasis">
+                      El "qué". Crea el concepto general de tu cultivo.
+                    </div>
+                  </div>
+                  <v-btn v-if="siembras.length === 0" size="small" variant="flat" color="primary" class="mt-2" @click="abrirDialogCreacion">
+                    Crear Siembra
+                  </v-btn>
+                </v-timeline-item>
+
+                <!-- Paso 2 -->
+                <v-timeline-item :dot-color="siembras.length > 0 ? 'primary' : 'grey-lighten-2'" size="small">
+                  <div class="mb-1">
+                    <div class="  font-weight-bold" :class="{'text-grey': siembras.length === 0}">
+                      2. Fase 2: Zonas y Actividades
+                    </div>
+                    <div class="text-caption text-medium-emphasis">
+                      El "dónde" y "cómo". Dibuja los lotes y define las labores asociadas a la siembra.
+                    </div>
+                  </div>
+                  <v-btn v-if="siembras.length > 0" size="small" variant="outlined" color="primary" class="mt-2" to="/zonas">
+                    Configurar Zonas
+                  </v-btn>
+                </v-timeline-item>
+
+                <!-- Paso 3 -->
+                <v-timeline-item dot-color="grey-lighten-2" size="small">
+                  <div>
+                    <div class="  font-weight-bold text-grey">
+                      3. Fase 3: Control y Bitácora
+                    </div>
+                    <div class="text-caption text-medium-emphasis">
+                      El "cuándo". Genera programaciones para el control diario.
+                    </div>
+                  </div>
+                </v-timeline-item>
+              </v-timeline>
+            </v-card>
+          </v-col>
 
           <v-col v-for="siembra in siembras" :key="siembra.id" cols="12" sm="6" md="4" lg="3">
             <v-card

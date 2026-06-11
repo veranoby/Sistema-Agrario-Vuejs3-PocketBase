@@ -29,6 +29,7 @@
           <FormularioMetricas
             :metricas-disponibles="metricasDisponibles"
             v-model="metricasSeleccionadas"
+            v-model:metricasValues="metricasValues"
           />
 
           <!-- Auto-generated Observations Preview (REMOVED as per latest instruction) -->
@@ -71,10 +72,11 @@ const props = defineProps({
   fechasSeleccionadas: { type: Array, default: () => [] },
   observaciones: { type: String, default: '' },
   metricasSeleccionadas: { type: Array, default: () => [] },
+  metricasValues: { type: Object, default: () => ({}) },
   isSingleEntry: { type: Boolean, default: false }
 });
 
-const emit = defineEmits(['update:observaciones', 'update:metricasSeleccionadas']);
+const emit = defineEmits(['update:observaciones', 'update:metricasSeleccionadas', 'update:metricasValues']);
 
 const form = ref(null);
 const observacionesAdicionales = ref(props.observaciones);
@@ -82,6 +84,11 @@ const observacionesAdicionales = ref(props.observaciones);
 const metricasSeleccionadas = computed({
   get: () => props.metricasSeleccionadas,
   set: (value) => emit('update:metricasSeleccionadas', value)
+});
+
+const metricasValues = computed({
+  get: () => props.metricasValues,
+  set: (value) => emit('update:metricasValues', value)
 });
 
 watch(() => props.observaciones, (newValue) => {

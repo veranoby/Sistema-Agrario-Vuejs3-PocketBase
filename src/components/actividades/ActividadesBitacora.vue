@@ -1,6 +1,6 @@
 <template>
-  <v-card class="bitacora-embedded-section" elevation="2">
-    <v-card-title class="d-flex justify-space-between align-center text-body-1">
+  <v-card  elevation="2">
+    <v-card-title class="d-flex justify-space-between align-center  ">
       <span>{{ t('activity_workspace.recent_log') }}</span>
       <v-btn
         size="small"
@@ -39,9 +39,3 @@ const openNewBitacoraEntryDialog = () => {
   emit('open-new-bitacora-entry-dialog')
 }
 </script>
-
-<style scoped>
-.bitacora-embedded-section {
-  background: white;
-}
-</style>

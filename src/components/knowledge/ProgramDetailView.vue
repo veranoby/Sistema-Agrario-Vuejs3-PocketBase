@@ -58,7 +58,7 @@
               >
                 <div class="d-flex justify-space-between align-center">
                   <div>
-                    <p class="text-subtitle-2 font-weight-bold">
+                    <p class="text-md font-weight-bold">
                       {{ formatDate(ejecucion.fecha) }}
                     </p>
                     <p class="text-caption text-grey">

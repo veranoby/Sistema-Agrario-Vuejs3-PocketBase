@@ -2,7 +2,7 @@
   <div class="flex flex-col border-1 m-5 px-6 pb-0 pt-4 bg-dinamico shadow-md hover:shadow-xl rounded-lg border">
     <div class="flex items-center justify-between mb-4">
       <div>
-        <h2 class="text-l font-bold">{{ t('plan_management.current_plan') }}</h2>
+        <h3 class="text-l font-bold">{{ t('plan_management.current_plan') }}</h3>
         <div class="text-caption text-grey">Gestiona tu suscripción y módulos</div>
       </div>
       <div class="flex items-center gap-2">
@@ -162,7 +162,7 @@
             <div v-if="pendingRequest" class="text-center py-6">
                 <v-icon color="warning" size="64" class="mb-4">mdi-clock-outline</v-icon>
                 <h3 class="text-h6">Solicitud en Proceso</h3>
-                <p class="text-body-1 mt-2">
+                <p class="  mt-2">
                     Ya tienes una solicitud de mejora de plan en estado pendiente.
                     Por favor, espera la revisión administrativa.
                 </p>
@@ -206,7 +206,7 @@
           <v-window-item :value="2">
             <div class="mb-4">
               <h3 class="text-h6 mb-1">Personaliza tu experiencia</h3>
-              <p class="text-body-2 text-grey">Selecciona los módulos adicionales que deseas activar según tus necesidades operativas.</p>
+              <p class="text-smtext-grey">Selecciona los módulos adicionales que deseas activar según tus necesidades operativas.</p>
             </div>
             
             <v-row>
@@ -237,7 +237,7 @@
                   
                   <div v-if="selectedModulesData.length > 0" class="mb-2 mt-4">
                     <div class="text-caption text-grey mb-2 uppercase font-weight-bold">Módulos Adicionales:</div>
-                    <div v-for="m in selectedModulesData" :key="m.id" class="d-flex justify-space-between pl-2 mb-2 text-body-2 bg-grey-lighten-5 pa-2 rounded border border-dashed">
+                    <div v-for="m in selectedModulesData" :key="m.id" class="d-flex justify-space-between pl-2 mb-2 text-smbg-grey-lighten-5 pa-2 rounded border border-dashed">
                       <span>• {{ m.name }}</span>
                       <span class="font-weight-bold">${{ m.price_monthly }}.00</span>
                     </div>
@@ -271,11 +271,11 @@
               <v-col cols="12" md="6">
                 <h3 class="text-h6 mb-4">Finalizar Pago</h3>
                 <div class="bg-white pa-4 rounded-lg mb-4 border border-dashed">
-                  <div class="text-subtitle-2 font-weight-bold mb-2 flex items-center">
+                  <div class="text-md font-weight-bold mb-2 flex items-center">
                     <v-icon start color="primary" size="small">mdi-bank</v-icon>
                     Instrucciones Bancarias
                   </div>
-                  <div class="text-body-2 whitespace-pre-wrap text-grey-darken-2" v-html="bankInstructions"></div>
+                  <div class="text-smwhitespace-pre-wrap text-grey-darken-2" v-html="bankInstructions"></div>
                 </div>
 
                 <v-file-input

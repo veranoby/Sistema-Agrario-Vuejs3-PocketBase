@@ -1,7 +1,7 @@
 <template>
   <v-container fluid class="admin-exports">
-    <h2 class="text-h5 mb-4">Exportaciones de Datos</h2>
-    <p class="text-body-1 text-grey mb-6">
+    <h3 class="text-md mb-4">Exportaciones de Datos</h3>
+    <p class="  text-grey mb-6">
       Exporta datos del sistema a formato Markdown para alimentar IAs externas y generar manuales.
     </p>
 
@@ -15,7 +15,7 @@
               <v-icon size="40" color="primary" class="mr-3">mdi-account-group</v-icon>
               <h3 class="text-h6">Usuarios</h3>
             </div>
-            <p class="text-body-2 text-grey mb-3">
+            <p class="text-smtext-grey mb-3">
               Exporta todos los usuarios con sus roles, haciendas asignadas y estado.
             </p>
             <v-divider class="my-3" />
@@ -42,7 +42,7 @@
               <v-icon size="40" color="secondary" class="mr-3">mdi-barn</v-icon>
               <h3 class="text-h6">Haciendas</h3>
             </div>
-            <p class="text-body-2 text-grey mb-3">
+            <p class="text-smtext-grey mb-3">
               Exporta todas las haciendas con configuración, planes y módulos activos.
             </p>
             <v-divider class="my-3" />
@@ -69,7 +69,7 @@
               <v-icon size="40" color="primary" class="mr-3">mdi-check-all</v-icon>
               <h3 class="text-h6">Tipos de Actividades</h3>
             </div>
-            <p class="text-body-2 text-grey mb-3">
+            <p class="text-smtext-grey mb-3">
               Exporta catálogo completo de tipos de actividades con métricas BPA.
             </p>
             <v-divider class="my-3" />
@@ -96,7 +96,7 @@
               <v-icon size="40" color="info" class="mr-3">mdi-map-marker</v-icon>
               <h3 class="text-h6">Tipos de Zonas</h3>
             </div>
-            <p class="text-body-2 text-grey mb-3">
+            <p class="text-smtext-grey mb-3">
               Exporta catálogo de tipos de zonas utilizadas en el sistema.
             </p>
             <v-divider class="my-3" />
@@ -123,7 +123,7 @@
               <v-icon size="40" color="purple" class="mr-3">mdi-book-open-page-variant</v-icon>
               <h3 class="text-h6">Knowledge Hub Completo</h3>
             </div>
-            <p class="text-body-2 text-grey mb-3">
+            <p class="text-smtext-grey mb-3">
               Exporta TODO el conocimiento del sistema en un solo archivo Markdown estructurado.
             </p>
             <v-divider class="my-3" />

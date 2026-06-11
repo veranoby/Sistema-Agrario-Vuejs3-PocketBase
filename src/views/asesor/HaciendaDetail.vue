@@ -12,7 +12,7 @@
                   Expediente de {{ hacienda?.nombre || 'Hacienda' }}
                 </h1>
               </div>
-              <p class="text-subtitle-1 text-grey-darken-1 pl-12">
+              <p class="  text-grey-darken-1 pl-12">
                 Revisa bitácoras de campo, zonas geográficas y formula recetas técnicas personalizadas.
               </p>
             </div>
@@ -52,7 +52,7 @@
             <!-- Left Column: Packages List -->
             <v-col cols="12" md="4" v-if="!mobile || !selectedPackage">
               <v-card class="elevation-2 rounded-lg border border-grey-lighten-3 h-100 d-flex flex-column" style="max-height: 600px;">
-                <v-card-title class="bg-grey-lighten-4 py-3 px-4 text-subtitle-1 font-weight-bold text-grey-darken-3">
+                <v-card-title class="bg-grey-lighten-4 py-3 px-4   font-weight-bold text-grey-darken-3">
                   Paquetes Recibidos
                 </v-card-title>
                 
@@ -125,10 +125,10 @@
                 <v-card-text class="pa-5 overflow-y-auto" style="max-height: 550px;">
                   <!-- Notas Hacienda -->
                   <div class="mb-4">
-                    <span class="text-subtitle-2 font-weight-bold text-primary-4 d-block mb-1">
+                    <span class="text-md font-weight-bold text-primary-4 d-block mb-1">
                       Mensaje / Notas del Agricultor:
                     </span>
-                    <p class="text-body-2 bg-grey-lighten-4 pa-3 rounded text-grey-darken-3 whitespace-pre-line italic">
+                    <p class="text-smbg-grey-lighten-4 pa-3 rounded text-grey-darken-3 whitespace-pre-line italic">
                       "{{ selectedPackage.notas_hacienda || 'Sin notas aclaratorias' }}"
                     </p>
                   </div>
@@ -137,13 +137,13 @@
 
                   <!-- Siembras Relacionadas -->
                   <div class="mb-4">
-                    <span class="text-subtitle-2 font-weight-bold text-primary-4 d-block mb-2">
+                    <span class="text-md font-weight-bold text-primary-4 d-block mb-2">
                       Siembras Compartidas:
                     </span>
                     <v-card variant="outlined" class="rounded-lg border-grey-lighten-2 pa-3">
                       <div class="d-flex align-center justify-space-between flex-wrap gap-2">
                         <div>
-                          <div class="text-subtitle-2 font-weight-bold">{{ packageSiembra?.nombre || 'Cargando Siembra...' }}</div>
+                          <div class="text-md font-weight-bold">{{ packageSiembra?.nombre || 'Cargando Siembra...' }}</div>
                           <div class="text-caption text-grey">
                             Variedad: {{ packageSiembra?.variedad || 'N/A' }} | Tipo: {{ packageSiembra?.tipo }}
                           </div>
@@ -157,7 +157,7 @@
 
                   <!-- Zonas -->
                   <div class="mb-4">
-                    <span class="text-subtitle-2 font-weight-bold text-primary-4 d-block mb-2">
+                    <span class="text-md font-weight-bold text-primary-4 d-block mb-2">
                       Zonas Geográficas Relacionadas ({{ packageZonas.length }}):
                     </span>
                     <div class="d-flex flex-wrap gap-2" v-if="packageZonas.length > 0">
@@ -179,7 +179,7 @@
 
                   <!-- Bitacoras -->
                   <div>
-                    <span class="text-subtitle-2 font-weight-bold text-primary-4 d-block mb-2">
+                    <span class="text-md font-weight-bold text-primary-4 d-block mb-2">
                       Entradas de Bitácora de Campo ({{ packageBitacoras.length }}):
                     </span>
                     <v-expansion-panels variant="accordion" v-if="packageBitacoras.length > 0">
@@ -207,7 +207,7 @@
                             </v-col>
                           </v-row>
                           <v-divider class="my-2"></v-divider>
-                          <div class="text-body-2 mt-2">
+                          <div class="text-smmt-2">
                             <strong>Métricas de Trabajo:</strong>
                             <pre class="bg-grey-lighten-4 pa-2 rounded mt-1 overflow-x-auto text-caption">{{ entry.metricas || 'Sin métricas registradas' }}</pre>
                           </div>
@@ -237,7 +237,7 @@
           <div v-if="recetas.length === 0" class="text-center py-12">
             <v-icon icon="mdi-file-document-outline" size="64" color="grey-lighten-1" class="mb-3"></v-icon>
             <h3 class="text-h6 text-grey-darken-2 font-weight-bold">No has emitido recetas aún</h3>
-            <p class="text-body-2 text-grey mt-1">
+            <p class="text-smtext-grey mt-1">
               Haz clic en "Crear Receta" para emitir recomendaciones fitosanitarias.
             </p>
           </div>
@@ -247,7 +247,7 @@
               <v-card class="elevation-3 rounded-lg overflow-hidden border border-grey-lighten-3">
                 <div :class="['py-3 px-4 text-white d-flex align-center justify-space-between', getRecipeHeaderBg(receta.estado)]">
                   <div>
-                    <h3 class="text-subtitle-1 font-weight-bold mb-0">{{ receta.titulo || 'Receta Agrícola' }}</h3>
+                    <h3 class="  font-weight-bold mb-0">{{ receta.titulo || 'Receta Agrícola' }}</h3>
                     <span class="text-caption opacity-90">Emitida: {{ formatDate(receta.created) }}</span>
                   </div>
                   <v-chip size="small" :color="getRecipeStatusColor(receta.estado)" variant="flat" class="text-white font-weight-bold">
@@ -259,13 +259,13 @@
                   <v-row class="mb-2">
                     <v-col cols="6" class="py-1">
                       <span class="text-caption text-grey d-block">Siembra</span>
-                      <span class="text-body-2 font-weight-medium text-primary-4">
+                      <span class="text-smfont-weight-medium text-primary-4">
                         {{ getSiembraName(receta.siembra_id) }}
                       </span>
                     </v-col>
                     <v-col cols="6" class="py-1">
                       <span class="text-caption text-grey d-block">Blanco Biológico</span>
-                      <span class="text-body-2 font-weight-medium">
+                      <span class="text-smfont-weight-medium">
                         {{ receta.blanco_biologico || 'N/A' }}
                       </span>
                     </v-col>
@@ -274,14 +274,14 @@
                   <v-divider class="my-2"></v-divider>
 
                   <div class="mb-3">
-                    <p class="text-body-2 mb-1"><strong>Producto:</strong> {{ receta.producto_recomendado || 'N/A' }}</p>
+                    <p class="text-smmb-1"><strong>Producto:</strong> {{ receta.producto_recomendado || 'N/A' }}</p>
                     <p class="text-body-2"><strong>Ingrediente Activo:</strong> {{ receta.ingrediente_activo || 'N/A' }}</p>
                     <p class="text-body-2"><strong>Dosis:</strong> {{ receta.dosis }} {{ receta.unidad_dosis }}<span v-if="receta.phi_dias"> | <strong>PHI:</strong> {{ receta.phi_dias }}d</span><span v-if="receta.rei_horas"> | <strong>REI:</strong> {{ receta.rei_horas }}h</span></p>
                   </div>
 
                   <div>
                     <span class="text-caption text-grey d-block">Instrucciones Técnicas:</span>
-                    <p class="text-body-2 bg-grey-lighten-4 pa-3 rounded text-grey-darken-3 whitespace-pre-line italic">
+                    <p class="text-smbg-grey-lighten-4 pa-3 rounded text-grey-darken-3 whitespace-pre-line italic">
                       "{{ receta.observaciones_tecnicas || 'Sin instrucciones adicionales' }}"
                     </p>
                   </div>

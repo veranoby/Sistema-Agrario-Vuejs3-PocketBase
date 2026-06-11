@@ -340,7 +340,7 @@ const guardarProgramacion = async () => {
   try {
     const data = {
       ...form.value,
-      // frecuencia_personalizada is already an object in form.value if relevant
+      actividades: form.value.actividadSeleccionadaId ? [form.value.actividadSeleccionadaId] : []
     }
 
     if (form.value.frecuencia === 'personalizada') {

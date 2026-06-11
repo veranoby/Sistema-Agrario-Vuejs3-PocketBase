@@ -12,7 +12,7 @@
                   Buzón del Asesor Técnico
                 </h1>
               </div>
-              <p class="text-subtitle-1 text-grey-darken-1 pl-12" v-if="asesor">
+              <p class="  text-grey-darken-1 pl-12" v-if="asesor">
                 Asesor: <strong>{{ asesor.name }} {{ asesor.lastname }}</strong> | Nro. Colegiatura: {{ asesor.parsedInfo?.numero_colegiatura || 'N/A' }}
               </p>
             </div>
@@ -55,7 +55,7 @@
           <div v-else-if="recetas.length === 0" class="text-center py-12">
             <v-icon icon="mdi-file-document-outline" size="64" color="grey-lighten-1" class="mb-3"></v-icon>
             <h3 class="text-h6 text-grey-darken-2 font-weight-bold">No has recibido recetas</h3>
-            <p class="text-body-2 text-grey mt-1">
+            <p class="text-smtext-grey mt-1">
               Envía un paquete de evaluación para que tu asesor pueda recetarte actividades profesionales.
             </p>
           </div>
@@ -66,7 +66,7 @@
                 <!-- Recipe Header -->
                 <div :class="['py-3 px-4 text-white d-flex align-center justify-space-between', getRecipeHeaderBg(receta.estado)]">
                   <div>
-                    <h3 class="text-subtitle-1 font-weight-bold mb-0">{{ receta.titulo || 'Receta Agrícola' }}</h3>
+                    <h3 class="  font-weight-bold mb-0">{{ receta.titulo || 'Receta Agrícola' }}</h3>
                     <span class="text-caption opacity-90">
                       Fecha: {{ formatDate(receta.created) }}
                     </span>
@@ -81,13 +81,13 @@
                   <v-row class="mb-2">
                     <v-col cols="6" class="py-1">
                       <span class="text-caption text-grey d-block">Siembra Relacionada</span>
-                      <span class="text-body-2 font-weight-medium text-primary-4">
+                      <span class="text-smfont-weight-medium text-primary-4">
                         {{ getSiembraName(receta.siembra_id) }}
                       </span>
                     </v-col>
                     <v-col cols="6" class="py-1">
                       <span class="text-caption text-grey d-block">Blanco Biológico</span>
-                      <span class="text-body-2 font-weight-medium">
+                      <span class="text-smfont-weight-medium">
                         {{ receta.blanco_biologico || 'N/A' }}
                       </span>
                     </v-col>
@@ -97,13 +97,13 @@
 
                   <div class="mb-3">
                     <span class="text-caption text-grey d-block">Prescripción Técnica</span>
-                    <p class="text-body-2 mb-1"><strong>Producto:</strong> {{ receta.producto_recomendado || 'N/A' }}</p>
+                    <p class="text-smmb-1"><strong>Producto:</strong> {{ receta.producto_recomendado || 'N/A' }}</p>
                     <p class="text-body-2"><strong>Dosis:</strong> {{ receta.dosis }} {{ receta.unidad_dosis }}<span v-if="receta.phi_dias"> | <strong>PHI:</strong> {{ receta.phi_dias }}d</span><span v-if="receta.rei_horas"> | <strong>REI:</strong> {{ receta.rei_horas }}h</span></p>
                   </div>
 
                   <div class="mb-3">
                     <span class="text-caption text-grey d-block">Instrucciones Técnicas</span>
-                    <p class="text-body-2 bg-grey-lighten-4 pa-3 rounded text-grey-darken-3 whitespace-pre-line italic">
+                    <p class="text-smbg-grey-lighten-4 pa-3 rounded text-grey-darken-3 whitespace-pre-line italic">
                       "{{ receta.observaciones_tecnicas || 'Sin instrucciones adicionales' }}"
                     </p>
                   </div>
@@ -151,7 +151,7 @@
           <div v-else-if="paquetes.length === 0" class="text-center py-12">
             <v-icon icon="mdi-package-variant-outline" size="64" color="grey-lighten-1" class="mb-3"></v-icon>
             <h3 class="text-h6 text-grey-darken-2 font-weight-bold">No has enviado paquetes</h3>
-            <p class="text-body-2 text-grey mt-1">
+            <p class="text-smtext-grey mt-1">
               Envía tus bitácoras y zonas de siembra para que el asesor pueda revisar las recetas.
             </p>
           </div>
@@ -161,7 +161,7 @@
               <v-card class="elevation-2 rounded-lg border border-grey-lighten-3">
                 <v-card-text class="pt-4">
                   <div class="d-flex justify-space-between align-center mb-3">
-                    <span class="text-subtitle-2 font-weight-bold text-primary-3">
+                    <span class="text-md font-weight-bold text-primary-3">
                       Paquete de Evaluación
                     </span>
                     <v-chip size="small" :color="paquete.estado === 'enviado' ? 'orange' : 'teal'" variant="flat" class="text-white">
@@ -190,7 +190,7 @@
 
                   <div>
                     <span class="text-caption text-grey d-block">Notas Enviadas</span>
-                    <p class="text-body-2 italic text-grey-darken-2">
+                    <p class="text-smitalic text-grey-darken-2">
                       "{{ paquete.notas_hacienda || 'Sin notas adicionales' }}"
                     </p>
                   </div>
@@ -209,7 +209,7 @@
           Aprobar y Programar Actividad
         </v-card-title>
         <v-card-text class="pa-6">
-          <p class="text-body-2 text-grey-darken-2 mb-4">
+          <p class="text-smtext-grey-darken-2 mb-4">
             Al aprobar esta receta, se creará automáticamente una nueva <strong>Programación de Trabajo</strong> en tu calendario agrícola.
           </p>
 
@@ -252,7 +252,7 @@
           Rechazar Receta Técnica
         </v-card-title>
         <v-card-text class="pa-6">
-          <p class="text-body-2 text-grey-darken-2 mb-4">
+          <p class="text-smtext-grey-darken-2 mb-4">
             Por favor, explica el motivo por el cual rechazas esta prescripción técnica para que el asesor pueda emitir una nueva versión.
           </p>
 

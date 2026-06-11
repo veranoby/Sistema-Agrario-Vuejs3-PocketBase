@@ -7,7 +7,7 @@
       <v-card-text class="pt-4">
         <v-form ref="form" v-model="isValid" @submit.prevent="submit">
           <!-- User Details -->
-          <h3 class="text-subtitle-1 font-weight-bold mb-2">Datos del Usuario</h3>
+          <h3 class="  font-weight-bold mb-2">Datos del Usuario</h3>
           <v-row>
             <v-col cols="12" md="6">
               <v-text-field
@@ -113,7 +113,7 @@
           <v-divider class="mb-4"></v-divider>
 
           <!-- Roles y Estados -->
-          <h3 class="text-subtitle-1 font-weight-bold mb-2">Configuración de Acceso</h3>
+          <h3 class="  font-weight-bold mb-2">Configuración de Acceso</h3>
           <v-row>
             <v-col cols="12" md="6">
               <span class="text-caption">Rol</span>
@@ -137,7 +137,7 @@
 
           <!-- Hacienda Details -->
           <template v-if="formData.role !== USER_ROLES.ASESOR">
-            <h3 class="text-subtitle-1 font-weight-bold mb-2">Vinculación de Hacienda</h3>
+            <h3 class="  font-weight-bold mb-2">Vinculación de Hacienda</h3>
             <v-row v-if="isEditing || formData.role === USER_ROLES.OPERADOR || formData.role === USER_ROLES.AUDITOR">
               <v-col cols="12">
                 <v-select

@@ -52,14 +52,14 @@ routerAdd("POST", "/api/ext/alerts/send", (e) => {
         html += header("linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%)", "[ALERTA]", "Notificacion de Emergencia")
         html += `<div style="background: #ffffff; padding: 20px; border: 1px solid #e1e1e1; border-top: none; border-radius: 0 0 10px 10px;">`
         html += `<div style="background: #fff5f5; padding: 20px; border-radius: 8px; text-align: center;">`
-        html += `<h2 style="color: #d32f2f;">Atencion Inmediata Requerida</h2>`
-        html += (data && data.emergency_type === 'subscription_expiry') 
+        html += `<h3 style="color: #d32f2f;">Atencion Inmediata Requerida</h3>`
+        html += (data && data.emergency_type === 'subscription_expiry')
           ? `<p style="font-size: 14px;">Su suscripción expirará en <strong>${data.days_remaining} días</strong>. Por favor, actualice su plan para evitar la suspensión del servicio.</p>`
           : (data && data.emergency_type === 'bpa_risk')
-          ? `<p style="font-size: 14px;">Se han detectado <strong>${data.critical_count} zonas</strong> con estado BPA crítico (menor al 50%). Se recomienda inspección urgente.</p>`
-          : (data && data.emergency_type === 'bodega_stock')
-          ? `<p style="font-size: 14px;">El insumo <strong>${data.item_name}</strong> ha alcanzado un nivel de stock crítico: <strong>${data.stock_actual}</strong> (Mínimo requerido: ${data.stock_minimo}). Por favor, reponga el inventario lo antes posible.</p>`
-          : `<p style="font-size: 14px;">Se ha detectado un evento crítico que requiere su atención en el sistema.</p>`
+            ? `<p style="font-size: 14px;">Se han detectado <strong>${data.critical_count} zonas</strong> con estado BPA crítico (menor al 50%). Se recomienda inspección urgente.</p>`
+            : (data && data.emergency_type === 'bodega_stock')
+              ? `<p style="font-size: 14px;">El insumo <strong>${data.item_name}</strong> ha alcanzado un nivel de stock crítico: <strong>${data.stock_actual}</strong> (Mínimo requerido: ${data.stock_minimo}). Por favor, reponga el inventario lo antes posible.</p>`
+              : `<p style="font-size: 14px;">Se ha detectado un evento crítico que requiere su atención en el sistema.</p>`
         html += `</div></div>`
 
       } else if (type === "recordatorio") {
@@ -152,13 +152,13 @@ routerAdd("POST", "/api/ext/alerts/send", (e) => {
 
     let resendApiKey = "";
     try {
-        const configRecord = $app.dao().findFirstRecordByData("system_config", "key", "resend_api_key");
-        resendApiKey = configRecord.get("value");
+      const configRecord = $app.dao().findFirstRecordByData("system_config", "key", "resend_api_key");
+      resendApiKey = configRecord.get("value");
     } catch (err) {
-        // Record not found
+      // Record not found
     }
     if (!resendApiKey) {
-        resendApiKey = $os.getenv("RESEND_API_KEY");
+      resendApiKey = $os.getenv("RESEND_API_KEY");
     }
     const resendFromEmail = $os.getenv("RESEND_FROM_EMAIL") || "noreply@conagri.com"
     const frontendUrl = $os.getenv("FRONTEND_URL") || "http://localhost:5173"

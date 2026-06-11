@@ -129,31 +129,89 @@
     </v-row>
 
     <v-row v-if="!isLoading && displayedEntries.length === 0 && !error">
-      <v-col cols="12">
-        <v-alert type="info" class="text-center">
-          {{ $t('bitacora.no_entries') }}
-        </v-alert>
+      <v-col cols="12" md="10" offset-md="1" class="mt-4">
+        <v-card class="pa-6 text-center rounded-xl elevation-0 border bg-surface">
+          <v-icon size="48" color="primary" class="mb-3">mdi-book-open-variant</v-icon>
+          <h3 class="text-md font-weight-bold mb-1">Fase 3: Control y Bitácora</h3>
+          <p class="text-smtext-medium-emphasis mb-6">
+            Aún no hay entradas en el Libro Diario. La Bitácora es el resultado de la ejecución de las fases anteriores.
+          </p>
+          
+          <v-timeline align="start" side="end" density="compact" class="text-left mt-4 mb-4">
+            <v-timeline-item dot-color="success" size="small">
+              <template v-slot:icon><v-icon color="white" size="small">mdi-check</v-icon></template>
+              <div class="mb-1">
+                <div class="  font-weight-bold text-success">Fase 1 y 2: Estructura</div>
+                <div class="text-caption text-medium-emphasis">Las siembras, zonas y actividades ya deben estar configuradas.</div>
+              </div>
+            </v-timeline-item>
+
+            <v-timeline-item dot-color="success" size="small">
+              <template v-slot:icon><v-icon color="white" size="small">mdi-check</v-icon></template>
+              <div class="mb-1">
+                <div class="  font-weight-bold text-success">Fase 3: Programaciones</div>
+                <div class="text-caption text-medium-emphasis">Planifica tus labores para que se ejecuten a tiempo.</div>
+              </div>
+            </v-timeline-item>
+
+            <v-timeline-item dot-color="primary" size="small">
+              <div class="mb-1">
+                <div class="  font-weight-bold">Bitácora (Estás aquí)</div>
+                <div class="text-caption text-medium-emphasis">Al completarse una programación o reportar una actividad, se generará una entrada inmutable aquí.</div>
+              </div>
+              <v-btn size="small" variant="flat" color="primary" class="mt-2" @click="showNewEntryDialog = true">Registrar Entrada Manual</v-btn>
+            </v-timeline-item>
+          </v-timeline>
+        </v-card>
       </v-col>
     </v-row>
 
-    <v-row v-if="!isLoading && displayedEntries.length > 0">
-      <v-col
-        v-for="entry in displayedEntries"
-        :key="entry.id"
-        cols="12"
-        md="6" 
-        lg="4" 
-      >
-        <BitacoraEntryCard :entry="entry" />
+    <v-row v-if="!isLoading" class="mb-4">
+      <v-col cols="12">
+        <v-card outlined>
+          <v-card-title class="d-flex align-center justify-space-between pb-0">
+            <h3 class="text-h6 font-weight-bold">
+              {{ formattedCurrentMonth }}
+            </h3>
+            <div>
+              <v-btn icon="mdi-chevron-left" variant="text" @click="prevMonth"></v-btn>
+              <v-btn variant="text" @click="goToToday" class="mx-2">Hoy</v-btn>
+              <v-btn icon="mdi-chevron-right" variant="text" @click="nextMonth"></v-btn>
+            </div>
+          </v-card-title>
+          <v-card-text>
+            <BitacoraCalendar 
+              :current-date="currentDate" 
+              :entries="filteredEntries" 
+              @day-click="handleDayClick"
+              @entry-click="handleEntryClick"
+            />
+          </v-card-text>
+        </v-card>
       </v-col>
     </v-row>
     
-    <v-row v-if="!isLoading && displayedEntries.length > 0 && paginatedEntries.length < filteredEntries.length" class="mt-4">
-        <v-col class="text-center">
-            <v-btn @click="loadMore" color="primary">Cargar Más</v-btn>
-        </v-col>
-    </v-row>
+    <div v-if="!isLoading && displayedEntries.length === 0" class="text-center pa-4 text-medium-emphasis">
+      No hay registros en este mes.
     </div>
+    </div>
+
+    <!-- Entry Details Dialog -->
+    <v-dialog v-model="showEntryDetailDialog" max-width="600px" @keydown.esc="showEntryDetailDialog = false">
+      <v-card v-if="selectedEntryForDetail">
+        <v-card-title class="d-flex justify-space-between align-center px-4 pt-4 pb-2">
+          <span>Detalle de Bitácora</span>
+          <v-btn icon="mdi-close" variant="text" @click="showEntryDetailDialog = false" size="small"></v-btn>
+        </v-card-title>
+        <v-card-text class="pa-4 pt-0">
+          <BitacoraEntryCard 
+            :entry="selectedEntryForDetail" 
+            @edit="abrirEdicion"
+            @delete="confirmarBorrado"
+          />
+        </v-card-text>
+      </v-card>
+    </v-dialog>
 
     <v-dialog
       v-model="showNewEntryDialog"
@@ -164,7 +222,9 @@
     >
       <BitacoraEntryForm
         v-if="showNewEntryDialog"
-        @close="showNewEntryDialog = false"
+        :entryToEdit="entryToEdit"
+        :programacionId="pendingProgramacionId"
+        @close="cerrarDialogoFormulario"
         @save="handleBitacoraCreated"
       />
     </v-dialog>
@@ -180,12 +240,15 @@ import { useSiembrasStore } from '@/stores/siembrasStore'; // For filter
 import { useActividadesStore } from '@/stores/actividadesStore'; // For filter
 // No hay store separado para tipos, están en actividadesStore.tiposActividades
 import BitacoraEntryCard from './BitacoraEntryCard.vue'; // Import the new card component
+import BitacoraCalendar from './BitacoraCalendar.vue'; // Import the calendar component
 import { pdfExporter } from '@/utils/exporters/pdfExporter';
 import { excelExporter } from '@/utils/exporters/excelExporter';
 import { useUiFeedbackStore } from '@/stores/uiFeedbackStore';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/stores/authStore';
 import { useI18n } from 'vue-i18n';
+import { addMonths, subMonths, format, isSameMonth } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 const bitacoraStore = useBitacoraStore();
 const haciendaStore = useHaciendaStore();
@@ -200,6 +263,13 @@ const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore);
 const exportingPDF = ref(false);
 const exportingExcel = ref(false);
 const showNewEntryDialog = ref(false);
+const entryToEdit = ref(null);
+const pendingProgramacionId = ref(null);
+
+const showEntryDetailDialog = ref(false);
+const selectedEntryForDetail = ref(null);
+
+const currentDate = ref(new Date());
 
 const isLoading = ref(false);
 const error = ref(null);
@@ -207,10 +277,35 @@ const error = ref(null);
 // Filters
 const filterSiembraId = ref(null);
 const filterActividadId = ref(null);
-const filterDate = ref(null); // Store date as YYYY-MM-DD string
+const filterDate = ref(null); // Keep as secondary filter if needed, though calendar is already monthly
 
-const itemsPerPage = ref(9); // Number of cards to load initially and per "load more"
+const itemsPerPage = ref(9); // Unused in calendar view, but kept for compatibility
 const currentPage = ref(1);
+
+const formattedCurrentMonth = computed(() => {
+  return format(currentDate.value, 'MMMM yyyy', { locale: es }).replace(/^\w/, (c) => c.toUpperCase());
+});
+
+function prevMonth() {
+  currentDate.value = subMonths(currentDate.value, 1);
+}
+
+function nextMonth() {
+  currentDate.value = addMonths(currentDate.value, 1);
+}
+
+function goToToday() {
+  currentDate.value = new Date();
+}
+
+function handleDayClick(date) {
+  // Can be used to open form pre-filled with date
+}
+
+function handleEntryClick(entry) {
+  selectedEntryForDetail.value = entry;
+  showEntryDetailDialog.value = true;
+}
 
 // Ensure dependent stores are initialized for filters
 onMounted(async () => {
@@ -228,6 +323,14 @@ onMounted(async () => {
     // Init bitacoraStore (loads from localStorage or fetches)
     // The store itself handles not re-fetching if data is recent via its `lastSync`
     await bitacoraStore.init(); 
+
+    // Auto-open form if we come from programaciones
+    const { useProgramacionesStore } = await import('@/stores/programaciones/programacionesStore');
+    const programacionesStore = useProgramacionesStore();
+    if (programacionesStore.pendingBitacoraFromProgramacionData) {
+      pendingProgramacionId.value = programacionesStore.pendingBitacoraFromProgramacionData.programacion_origen || programacionesStore.pendingBitacoraFromProgramacionData.programacionId;
+      showNewEntryDialog.value = true;
+    }
 
   } catch (e) {
     console.error('Error initializing BitacoraView or dependent stores:', e);
@@ -287,8 +390,29 @@ function loadMore() {
     currentPage.value += 1;
 }
 
-async function handleBitacoraCreated() {
+function abrirEdicion(entry) {
+  showEntryDetailDialog.value = false;
+  entryToEdit.value = entry;
+  showNewEntryDialog.value = true;
+}
+
+function cerrarDialogoFormulario() {
   showNewEntryDialog.value = false;
+  entryToEdit.value = null;
+  pendingProgramacionId.value = null;
+}
+
+async function confirmarBorrado(entry) {
+  if (confirm('¿Está seguro de eliminar esta entrada?')) {
+     await bitacoraStore.deleteBitacoraEntry(entry.id);
+     showEntryDetailDialog.value = false;
+     await bitacoraStore.refreshPage();
+     uiFeedbackStore.showSnackbar('Entrada eliminada', 'success');
+  }
+}
+
+async function handleBitacoraCreated() {
+  cerrarDialogoFormulario();
   await bitacoraStore.refreshPage();
 }
 

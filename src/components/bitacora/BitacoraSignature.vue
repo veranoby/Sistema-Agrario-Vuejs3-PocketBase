@@ -1,6 +1,6 @@
 <template>
   <div class="bitacora-signature-container d-flex flex-col gap-3 my-4">
-    <div class="text-subtitle-1 font-weight-bold mb-1 text-grey-darken-3 d-flex align-center">
+    <div class="  font-weight-bold mb-1 text-grey-darken-3 d-flex align-center">
       <v-icon color="primary" class="mr-2">mdi-draw-pen</v-icon>
       Firma del Operador / Responsable
     </div>

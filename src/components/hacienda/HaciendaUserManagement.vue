@@ -1,6 +1,6 @@
 <template>
   <div class="bg-dinamico border-1 m-5 mt-0 px-4 py-4 shadow-md hover:shadow-xl">
-    <h2 class="text-xl font-bold mb-4">{{ t('user_management.my_users') }}</h2>
+    <h3 class="text-xl font-bold mb-4">{{ t('user_management.my_users') }}</h3>
 
     <v-alert
       v-if="showLimitBanner"
@@ -162,7 +162,7 @@
             
             <!-- Columna Derecha: Reactivar -->
             <v-col cols="12" md="5" class="pa-4 bg-grey-lighten-4">
-              <h2 class="mb-4 text-grey-darken-2">Usuarios Disponibles (Inactivos)</h2>
+              <h3 class="mb-4 text-grey-darken-2">Usuarios Disponibles (Inactivos)</h3>
               <v-list bg-color="transparent" class="pa-0">
                 <template v-if="inactivosDisponibles.length">
                   <v-list-item

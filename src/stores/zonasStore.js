@@ -59,6 +59,14 @@ export const useZonasStore = defineStore('zonas', {
       return state.zonas.find((z) => z.id === id)
     },
 
+    // Retorna el nombre del tipo de zona usando tiposZonas[] (evita depender de expand)
+    getTipoZonaNombreByZonaId: (state) => (zonaId) => {
+      const zona = state.zonas.find((z) => z.id === zonaId)
+      if (!zona?.tipos_zonas) return ''
+      const tipo = state.tiposZonas.find((t) => t.id === zona.tipos_zonas)
+      return tipo?.nombre?.toUpperCase() || ''
+    },
+
     // Pagination getters
     hasNextPage: (state) => state.currentPage < state.totalPages,
     hasPrevPage: (state) => state.currentPage > 1

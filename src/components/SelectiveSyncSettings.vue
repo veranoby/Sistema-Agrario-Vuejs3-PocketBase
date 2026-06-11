@@ -26,7 +26,7 @@
           <v-row>
             <v-col cols="12">
               <h3 class="text-h6 mb-3">Configuración por Colección</h3>
-              <p class="text-body-2 text-grey-darken-1 mb-4">
+              <p class="text-smtext-grey-darken-1 mb-4">
                 Configure qué datos sincronizar y con qué prioridad
               </p>
             </v-col>

@@ -53,7 +53,7 @@
             v-for="(grupo, nombreSiembra) in groupedProgramaciones.siembras"
             :key="'siembra-' + nombreSiembra"
           >
-            <v-card-title class="font-bold text-sm text-white p-2 pb-1">
+            <v-card-title class="font-bold text-sm bg-green-lighten-4 p-2 pb-1">
               <v-chip color="light-green" size="small" variant="flat" class="mr-2">
                 <v-icon class="mr-2 text-white">mdi-sprout</v-icon>
                 <span
@@ -91,7 +91,7 @@
             v-for="(grupo, nombreActividad) in groupedProgramaciones.actividades"
             :key="'actividad-' + nombreActividad"
           >
-            <v-card-title class="font-bold text-sm text-white p-2 pb-1 bg-cyan-darken-1">
+            <v-card-title class="font-bold text-sm p-2 pb-1 bg-cyan-lighten-4">
               <v-icon left>mdi-tools</v-icon>
               <router-link
                 :to="{ name: 'Ver Actividad', params: { id: grupo[0].actividades[0] } }"
@@ -113,16 +113,41 @@
             />
           </v-col>
 
-          <v-alert
-            v-if="
-              !programacionesStore.loading &&
-              programacionesStore.programacionesPorHacienda.length === 0
-            "
-            type="info"
-            class="mt-4"
-          >
-            {{ t('schedules.no_schedules') }}
-          </v-alert>
+          <v-col v-if="!programacionesStore.loading && programacionesStore.programacionesPorHacienda?.length === 0" cols="12" md="10" offset-md="1" class="mt-4">
+            <v-card class="pa-6 text-center rounded-xl elevation-0 border bg-surface">
+              <v-icon size="48" color="primary" class="mb-3">mdi-calendar-alert</v-icon>
+              <h3 class="text-md font-weight-bold mb-1">Fase 3: Control y Programación</h3>
+              <p class="text-smtext-medium-emphasis mb-6">
+                Aún no tienes programaciones. Asegúrate de haber completado las fases anteriores para poder planificar tus labores.
+              </p>
+              
+              <v-timeline align="start" side="end" density="compact" class="text-left mt-4 mb-4">
+                <v-timeline-item dot-color="success" size="small">
+                  <template v-slot:icon><v-icon color="white" size="small">mdi-check</v-icon></template>
+                  <div class="mb-1">
+                    <div class="  font-weight-bold text-success">Fase 1 y 2: Estructura</div>
+                    <div class="text-caption text-medium-emphasis">Se espera que ya existan Siembras, Zonas y Actividades.</div>
+                  </div>
+                </v-timeline-item>
+
+                <v-timeline-item dot-color="primary" size="small">
+                  <div class="mb-1">
+                    <div class="  font-weight-bold">Fase 3: Programaciones (Estás aquí)</div>
+                    <div class="text-caption text-medium-emphasis">Programa las actividades a ejecutar.</div>
+                  </div>
+                  <v-btn v-if="actividadesStore.actividades?.length > 0" size="small" variant="flat" color="primary" class="mt-2" @click="openNuevaProgramacion">Crear Programación</v-btn>
+                  <v-btn v-else size="small" variant="outlined" color="primary" class="mt-2" to="/actividades">Ir a crear Actividades</v-btn>
+                </v-timeline-item>
+
+                <v-timeline-item dot-color="grey-lighten-2" size="small">
+                  <div class="mb-1">
+                    <div class="  font-weight-bold text-grey">Siguiente: Bitácora</div>
+                    <div class="text-caption text-medium-emphasis">Al reportar una programación, se guardará en tu Libro Diario.</div>
+                  </div>
+                </v-timeline-item>
+              </v-timeline>
+            </v-card>
+          </v-col>
         </v-row>
       </v-container>
     </main>
@@ -230,7 +255,9 @@ const handleGuardado = () => {
 }
 
 const handleRequestSingleExecution = async (programacion) => {
-  await programacionesStore.prepareForBitacoraEntryFromProgramacion(programacion)
-  router.push({ name: 'Dashboard de Inicio' })
+  const success = await programacionesStore.prepareForBitacoraEntryFromProgramacion(programacion)
+  if (success) {
+    router.push({ name: 'Bitácora' })
+  }
 }
 </script>

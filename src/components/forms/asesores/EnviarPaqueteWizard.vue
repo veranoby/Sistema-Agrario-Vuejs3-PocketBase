@@ -7,7 +7,7 @@
           <v-icon icon="mdi-package-variant-closed" size="28"></v-icon>
           <span class="text-h6 font-weight-bold">Enviar Paquete de Evaluación</span>
         </div>
-        <span class="text-subtitle-2 text-primary-4" v-if="asesor">
+        <span class="text-md text-primary-4" v-if="asesor">
           Asesor: {{ asesor.name }} {{ asesor.lastname }}
         </span>
         <v-btn icon="mdi-close" variant="text" color="white" density="compact" @click="close"></v-btn>
@@ -19,7 +19,7 @@
           <template v-slot:item.1>
             <div class="py-4">
               <h3 class="text-h6 font-weight-bold text-primary-3 mb-2">Paso 1: Selecciona la Siembra</h3>
-              <p class="text-body-2 text-grey-darken-1 mb-4">
+              <p class="text-smtext-grey-darken-1 mb-4">
                 Elige la siembra activa que deseas compartir con el asesor para su análisis.
               </p>
 
@@ -31,7 +31,7 @@
               <!-- Empty Siembras -->
               <div v-else-if="activeSiembras.length === 0" class="text-center py-6">
                 <v-icon icon="mdi-alert-circle-outline" size="48" color="grey"></v-icon>
-                <p class="text-body-1 text-grey-darken-2 mt-2">No tienes siembras activas en esta hacienda.</p>
+                <p class="  text-grey-darken-2 mt-2">No tienes siembras activas en esta hacienda.</p>
               </div>
 
               <!-- Siembras List -->
@@ -46,7 +46,7 @@
                   <v-card-text class="d-flex align-center py-3 px-4">
                     <v-radio :value="siembra.id" color="primary" class="mr-3"></v-radio>
                     <div class="flex-grow-1">
-                      <div class="font-weight-bold text-primary-4 text-subtitle-1">{{ siembra.nombre }}</div>
+                      <div class="font-weight-bold text-primary-4  ">{{ siembra.nombre }}</div>
                       <div class="d-flex gap-4 mt-1 text-caption text-grey-darken-1">
                         <span><strong>Variedad:</strong> {{ siembra.variedad || 'N/A' }}</span>
                         <span><strong>Tipo:</strong> {{ siembra.tipo }}</span>
@@ -63,7 +63,7 @@
           <template v-slot:item.2>
             <div class="py-4">
               <h3 class="text-h6 font-weight-bold text-primary-3 mb-1">Paso 2: Selecciona Zonas y Bitácoras</h3>
-              <p class="text-body-2 text-grey-darken-1 mb-4">
+              <p class="text-smtext-grey-darken-1 mb-4">
                 Elige qué zonas geográficas y qué entradas de bitácora quieres incluir en este paquete.
               </p>
 
@@ -77,7 +77,7 @@
                 <v-col cols="12" md="6">
                   <v-card variant="outlined" class="rounded-lg h-100 border-grey-lighten-2">
                     <v-card-title class="bg-grey-lighten-4 py-2 px-4 d-flex align-center justify-space-between">
-                      <span class="text-subtitle-1 font-weight-bold text-grey-darken-3">Zonas Geográficas</span>
+                      <span class="  font-weight-bold text-grey-darken-3">Zonas Geográficas</span>
                       <v-checkbox-btn
                         v-model="allZonasSelected"
                         color="primary"
@@ -102,7 +102,7 @@
                       >
                         <template v-slot:label>
                           <div class="d-flex flex-column">
-                            <span class="text-body-2 font-weight-medium">{{ zona.nombre }}</span>
+                            <span class="text-smfont-weight-medium">{{ zona.nombre }}</span>
                             <span class="text-caption text-grey">{{ zona.tipo || 'Sin Tipo' }}</span>
                           </div>
                         </template>
@@ -115,7 +115,7 @@
                 <v-col cols="12" md="6">
                   <v-card variant="outlined" class="rounded-lg h-100 border-grey-lighten-2">
                     <v-card-title class="bg-grey-lighten-4 py-2 px-4 d-flex align-center justify-space-between">
-                      <span class="text-subtitle-1 font-weight-bold text-grey-darken-3">Entradas de Bitácora</span>
+                      <span class="  font-weight-bold text-grey-darken-3">Entradas de Bitácora</span>
                       <v-checkbox-btn
                         v-model="allBitacorasSelected"
                         color="primary"
@@ -140,7 +140,7 @@
                       >
                         <template v-slot:label>
                           <div class="d-flex flex-column">
-                            <span class="text-body-2 font-weight-medium text-truncate" style="max-width: 250px;">
+                            <span class="text-smfont-weight-medium text-truncate" style="max-width: 250px;">
                               {{ entry.expand?.actividad_realizada?.nombre || 'Actividad' }}
                             </span>
                             <span class="text-caption text-grey">
@@ -159,7 +159,7 @@
           <template v-slot:item.3>
             <div class="py-4">
               <h3 class="text-h6 font-weight-bold text-primary-3 mb-2">Paso 3: Confirmación y Notas</h3>
-              <p class="text-body-2 text-grey-darken-1 mb-4">
+              <p class="text-smtext-grey-darken-1 mb-4">
                 Revisa el resumen de la información que vas a empaquetar y agrega notas aclaratorias para el asesor técnico.
               </p>
 
@@ -167,7 +167,7 @@
               <v-card class="bg-primary-5 border-teal-lighten-3 border mb-4 rounded-lg">
                 <v-card-text class="py-3 px-4">
                   <div class="font-weight-bold text-primary-4 mb-2">Resumen del Paquete</div>
-                  <v-row class="text-body-2 text-grey-darken-3">
+                  <v-row class="text-smtext-grey-darken-3">
                     <v-col cols="12" sm="4">
                       <strong>Siembra:</strong> {{ getSiembraName(selectedSiembraId) }}
                     </v-col>

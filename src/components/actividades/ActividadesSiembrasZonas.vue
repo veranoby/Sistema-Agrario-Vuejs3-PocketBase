@@ -1,9 +1,9 @@
 <template>
   <div class="siembra-info mt-0 p-0">
     <v-card-title class="headline d-flex justify-between">
-      <h2 class="text-md font-bold mt-2">
+      <h3 class=" text-sm font-bold mt-2">
         <span v-if="actividadInfo.siembras.length > 0">{{ t('activity_workspace.associated_sowings') }}</span>
-      </h2>
+      </h3>
       <v-btn
         v-if="canEdit"
         size="small"
@@ -34,12 +34,12 @@
         >
         </v-chip>
       </div>
-      <h2
+      <h3
         v-if="actividadInfo.zonas && actividadInfo.zonas.length > 0"
         class="text-l font-bold mt-2 mb-2"
       >
         {{ t('activity_workspace.other_associated_zones') }}
-      </h2>
+      </h3>
 
       <div class="flex flex-wrap">
         <v-chip
@@ -50,7 +50,7 @@
           :text="
             zonasStore.getZonaById(zonasId)?.nombre.toUpperCase() +
             ' - ' +
-            zonasStore.getZonaById(zonasId)?.expand?.tipos_zonas?.nombre.toUpperCase()
+            zonasStore.getTipoZonaNombreByZonaId(zonasId)
           "
           pill
           color="blue-lighten-3"

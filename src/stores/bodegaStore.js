@@ -37,6 +37,12 @@ export const useBodegaStore = defineStore('bodega', {
 
   actions: {
     async init() {
+      const haciendaStore = useHaciendaStore()
+      // Solo inicializar si el módulo está activo (evita requests 400 a colecciones no disponibles)
+      if (!haciendaStore.isModuleActive('kardex_bodega')) {
+        logger.debug('[bodegaStore] Módulo kardex_bodega no activo, omitiendo init.')
+        return false
+      }
       try {
         await this.cargarItems()
         return true
@@ -49,6 +55,13 @@ export const useBodegaStore = defineStore('bodega', {
     async cargarItems() {
       const syncStore = useSyncStore()
       const haciendaStore = useHaciendaStore()
+
+      // Guard: no ejecutar si el módulo no está pagado/activo
+      if (!haciendaStore.isModuleActive('kardex_bodega')) {
+        logger.debug('[bodegaStore] cargarItems omitido: módulo kardex_bodega inactivo.')
+        return []
+      }
+
       this.loading = true
 
       try {
@@ -77,6 +90,13 @@ export const useBodegaStore = defineStore('bodega', {
         syncStore.saveToLocalStorage('bodega_items', JSON.parse(JSON.stringify(this.items)))
         return this.items
       } catch (error) {
+        // Error 400 significa colección no disponible (módulo no pagado/desactivado en servidor)
+        // Silenciar como warning en lugar de mostrar error en UI
+        if (error?.status === 400 || error?.response?.code === 400) {
+          logger.warn('[bodegaStore] cargarItems: colección bodega_items no disponible (400). Módulo inactivo en servidor.')
+          this.items = []
+          return []
+        }
         handleError(error, 'Error al cargar inventario de bodega')
         throw error
       } finally {

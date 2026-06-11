@@ -1,7 +1,7 @@
 <template>
   <v-container fluid class="activities-catalog">
     <div class="d-flex justify-space-between align-center mb-4">
-      <h2 class="text-h5">Catálogo de Tipos de Actividades</h2>
+      <h3 class="text-md">Catálogo de Tipos de Actividades</h3>
       <v-btn color="primary" prepend-icon="mdi-download" @click="exportCatalog">
         Exportar MD
       </v-btn>
@@ -58,14 +58,14 @@
               </v-chip>
             </div>
 
-            <p class="text-body-2 text-grey mb-3">
+            <p class="text-smtext-grey mb-3">
               {{ actividad.descripcion || 'Sin descripción' }}
             </p>
 
             <v-divider class="my-2" />
 
             <div v-if="actividad.metricas_bpa?.length" class="mb-2">
-              <p class="text-subtitle-2 mb-1">
+              <p class="text-md mb-1">
                 <v-icon size="small" start>mdi-clipboard-check</v-icon>
                 Métricas BPA
               </p>

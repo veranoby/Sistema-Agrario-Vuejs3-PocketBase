@@ -20,7 +20,7 @@
           <v-card-text class="text-center py-6">
             <v-icon size="64" color="primary" class="mb-4">mdi-chart-timeline-variant</v-icon>
             <h3 class="text-h6 mb-2">Analytics</h3>
-            <p class="text-subtitle-2 text-medium-emphasis">
+            <p class="text-md text-medium-emphasis">
               Métricas de usuarios, crecimiento y estadísticas generales
             </p>
           </v-card-text>
@@ -37,7 +37,7 @@
           <v-card-text class="text-center py-6">
             <v-icon size="64" color="primary" class="mb-4">mdi-chart-pie</v-icon>
             <h3 class="text-h6 mb-2">Métricas de Uso</h3>
-            <p class="text-subtitle-2 text-medium-emphasis">
+            <p class="text-md text-medium-emphasis">
               Análisis de uso por hacienda y tipo de actividad
             </p>
           </v-card-text>
@@ -54,7 +54,7 @@
           <v-card-text class="text-center py-6">
             <v-icon size="64" color="info" class="mb-4">mdi-database-search</v-icon>
             <h3 class="text-h6 mb-2">Data Mining</h3>
-            <p class="text-subtitle-2 text-medium-emphasis">
+            <p class="text-md text-medium-emphasis">
               Consultas avanzadas y exportación de datos
             </p>
           </v-card-text>
@@ -67,7 +67,7 @@
 
     <v-row>
       <v-col cols="12">
-        <h2 class="text-h5 mb-4">Accesos Directos</h2>
+        <h3 class="text-md mb-4">Accesos Directos</h3>
       </v-col>
 
       <v-col cols="12" sm="6" md="3">

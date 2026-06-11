@@ -67,7 +67,7 @@ function getAlertSubject(type) {
 function buildAlertTemplate(type, data) {
   return `
     <div style="font-family: Arial, sans-serif; padding: 20px;">
-      <h2>${getAlertSubject(type)}</h2>
+      <h3>${getAlertSubject(type)}</h3>
       <p><strong>Tipo:</strong> ${type}</p>
       <p><strong>Fecha:</strong> ${new Date().toLocaleDateString()}</p>
       <pre>${JSON.stringify(data, null, 2)}</pre>

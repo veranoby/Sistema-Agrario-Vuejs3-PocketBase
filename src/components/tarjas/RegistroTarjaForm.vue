@@ -65,7 +65,7 @@
                 {{ getInitials(currentUser?.name) }}
               </v-avatar>
               <div>
-                <div class="font-weight-bold text-body-1 text-grey-darken-4">
+                <div class="font-weight-bold   text-grey-darken-4">
                   {{ currentUser?.name }}
                 </div>
                 <div class="text-caption text-grey-darken-1">

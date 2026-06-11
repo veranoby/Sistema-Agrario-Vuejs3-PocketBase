@@ -14,10 +14,10 @@
 
             <!-- Manuales Especializados -->
             <section>
-              <h2 class="text-2xl font-bold mb-6 text-primary flex items-center">
+              <h3 class="text-2xl font-bold mb-6 text-primary flex items-center">
                 <v-icon color="primary" class="mr-2">mdi-book-open-page-variant</v-icon>
                 Manuales Especializados
-              </h2>
+              </h3>
               <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <router-link to="/manuales/ai_assistant_premium" target="_blank" class="flex items-center p-4 border border-green-100 dark:border-[#333] bg-white dark:bg-[#1e1e1e] rounded-lg shadow-sm hover:-translate-y-1 hover:shadow-md transition-all text-decoration-none">
                   <v-icon color="primary" class="mr-3" size="32">mdi-robot</v-icon>
@@ -66,55 +66,63 @@
 
             <!-- Guía Rápida de Uso -->
             <section class="mt-12">
-              <h2 class="text-2xl font-bold mb-6 text-primary flex items-center">
+              <h3 class="text-2xl font-bold mb-6 text-primary flex items-center">
                 <v-icon color="primary" class="mr-2">mdi-lightning-bolt</v-icon>
-                Guía Rápida de Uso
-              </h2>
+                Guía Rápida: Flujo de Trabajo
+              </h3>
               <div class="grid md:grid-cols-2 gap-6">
-                <div class="rounded-lg border border-green-100 dark:border-[#333] bg-white dark:bg-[#1e1e1e] p-6 shadow-sm">
-                  <h3 class="text-lg font-bold text-primary mb-2">1. Configuración Inicial</h3>
+                <!-- Fase 1 -->
+                <div class="rounded-lg border border-green-100 dark:border-[#333] bg-white dark:bg-[#1e1e1e] p-6 shadow-sm relative overflow-hidden">
+                  <div class="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
+                  <h3 class="text-lg font-bold text-primary mb-2">Fase 1: Siembras</h3>
                   <ul class="list-disc pl-5 space-y-2 text-sm text-muted-foreground dark:text-gray-300 mb-4">
-                    <li>Registre su cuenta y acceda al panel.</li>
-                    <li>Navegue a <strong>Zonas</strong> y dibuje los lotes de su hacienda en el mapa Leaflet.</li>
-                    <li>Invite colaboradores asignando roles: <em>Operador</em> o <em>Auditor</em>.</li>
+                    <li>El primer paso indispensable en ConAgri es crear la <strong>Siembra</strong> o proyecto agrícola principal.</li>
+                    <li>Este paso define el <em>"qué"</em> se va a cultivar o gestionar, estableciendo la base para la trazabilidad de toda la operación.</li>
                   </ul>
                 </div>
-                <div class="rounded-lg border border-green-100 dark:border-[#333] bg-white dark:bg-[#1e1e1e] p-6 shadow-sm">
-                  <h3 class="text-lg font-bold text-primary mb-2">2. Operación Diaria</h3>
+
+                <!-- Fase 2 -->
+                <div class="rounded-lg border border-green-100 dark:border-[#333] bg-white dark:bg-[#1e1e1e] p-6 shadow-sm relative overflow-hidden">
+                  <div class="absolute top-0 left-0 w-1 h-full bg-teal-500"></div>
+                  <h3 class="text-lg font-bold text-primary mb-2">Fase 2: Zonas y Actividades</h3>
                   <ul class="list-disc pl-5 space-y-2 text-sm text-muted-foreground dark:text-gray-300 mb-4">
-                    <li>Cree <strong>Siembras</strong> vinculadas a los lotes dibujados.</li>
-                    <li>Registre <strong>Actividades</strong> finalizadas por sus operadores.</li>
-                    <li>Firme criptográficamente (RSA) cada registro para el Libro Diario.</li>
+                    <li>Con la siembra creada, dibuje los lotes en <strong>Zonas</strong> (el <em>"dónde"</em>).</li>
+                    <li>Luego registre las <strong>Actividades</strong> estandarizadas (el <em>"cómo"</em>, ej. fertilización, poda).</li>
+                    <li>Asocie las zonas y actividades a su siembra inicial para armar la estructura operativa.</li>
                   </ul>
-                  <router-link to="/manuales/operacion_diaria" target="_blank" class="text-sm font-bold text-primary hover:underline flex items-center"><v-icon size="16" class="mr-1">mdi-book-open</v-icon> Ver Manual</router-link>
+                  <router-link to="/manuales/operacion_diaria" target="_blank" class="text-sm font-bold text-primary hover:underline flex items-center"><v-icon size="16" class="mr-1">mdi-book-open</v-icon> Manual de Operación Diaria</router-link>
                 </div>
-                <div class="rounded-lg border border-green-100 dark:border-[#333] bg-white dark:bg-[#1e1e1e] p-6 shadow-sm">
-                  <h3 class="text-lg font-bold text-primary mb-2">3. Programaciones y Bitácora</h3>
+
+                <!-- Fase 3 -->
+                <div class="rounded-lg border border-green-100 dark:border-[#333] bg-white dark:bg-[#1e1e1e] p-6 shadow-sm relative overflow-hidden">
+                  <div class="absolute top-0 left-0 w-1 h-full bg-orange-500"></div>
+                  <h3 class="text-lg font-bold text-primary mb-2">Fase 3: Control y Bitácora</h3>
                   <ul class="list-disc pl-5 space-y-2 text-sm text-muted-foreground dark:text-gray-300 mb-4">
-                    <li>Agende aplicaciones y labores futuras en <strong>Programaciones</strong>.</li>
-                    <li>Al ejecutarlas, estas alimentan automáticamente su <strong>Libro Diario (Bitácora)</strong>.</li>
-                    <li>La Bitácora es su respaldo inmutable para cumplir con reportes BPA.</li>
+                    <li>Cree <strong>Programaciones</strong> definiendo el <em>"cuándo"</em> ejecutar las actividades planeadas sobre las zonas de la siembra.</li>
+                    <li>Al reportar una programación ejecutada, se firmará criptográficamente y pasará de forma inmutable a su <strong>Libro Diario (Bitácora)</strong>.</li>
                   </ul>
-                  <router-link to="/manuales/programaciones_bitacora" target="_blank" class="text-sm font-bold text-primary hover:underline flex items-center"><v-icon size="16" class="mr-1">mdi-book-open</v-icon> Ver Manual</router-link>
+                  <router-link to="/manuales/programaciones_bitacora" target="_blank" class="text-sm font-bold text-primary hover:underline flex items-center"><v-icon size="16" class="mr-1">mdi-book-open</v-icon> Manual de Control</router-link>
                 </div>
-                <div class="rounded-lg border border-green-100 dark:border-[#333] bg-white dark:bg-[#1e1e1e] p-6 shadow-sm">
-                  <h3 class="text-lg font-bold text-primary mb-2">4. Finanzas Básicas</h3>
+
+                <!-- Extras -->
+                <div class="rounded-lg border border-green-100 dark:border-[#333] bg-white dark:bg-[#1e1e1e] p-6 shadow-sm relative overflow-hidden">
+                  <div class="absolute top-0 left-0 w-1 h-full bg-blue-grey-500"></div>
+                  <h3 class="text-lg font-bold text-primary mb-2">Métricas y Finanzas</h3>
                   <ul class="list-disc pl-5 space-y-2 text-sm text-muted-foreground dark:text-gray-300 mb-4">
-                    <li>Acceda a <strong>Finanzas</strong> para registrar gastos operativos diarios.</li>
-                    <li>Genere reportes básicos para entender dónde se concentra el gasto.</li>
-                    <li>Conozca la salud financiera básica de su campaña agrícola.</li>
+                    <li>Con la Bitácora alimentándose sola, acceda a <strong>Métricas</strong> para analizar eficiencia y rendimientos.</li>
+                    <li>Use <strong>Finanzas</strong> para registrar los costos operativos de su hacienda.</li>
+                    <li>Genere reportes de control global listos para BPA.</li>
                   </ul>
-                  <router-link to="/manuales/finanzas_basicas" target="_blank" class="text-sm font-bold text-primary hover:underline flex items-center"><v-icon size="16" class="mr-1">mdi-book-open</v-icon> Ver Manual</router-link>
                 </div>
               </div>
             </section>
 
             <!-- FAQ Integrado -->
             <section class="mt-12">
-              <h2 class="text-2xl font-bold mb-6 text-primary flex items-center">
+              <h3 class="text-2xl font-bold mb-6 text-primary flex items-center">
                 <v-icon color="primary" class="mr-2">mdi-frequently-asked-questions</v-icon>
                 Preguntas Frecuentes
-              </h2>
+              </h3>
               
               <v-expansion-panels variant="accordion" class="rounded-lg overflow-hidden border border-green-100 dark:border-[#333]">
                 <v-expansion-panel

@@ -30,7 +30,7 @@
     <v-row class="px-4 mb-4">
       <v-col cols="12">
         <v-card flat rounded="lg" class="pa-4 soft-green-filter elevation-0 mb-2">
-          <div class="text-subtitle-1 mb-3 font-weight-bold text-blue-grey-darken-3">
+          <div class="  mb-3 font-weight-bold text-blue-grey-darken-3">
             <v-icon color="primary" class="mr-2">mdi-filter-variant</v-icon>Filtros Globales
           </div>
           <v-row>
@@ -85,7 +85,7 @@
           <template v-slot:activator="{ props }">
             <v-card v-bind="props" flat rounded="lg" class="pa-4 text-center kpi-card">
               <div class=" font-weight-bold text-uppercase">Rendimiento Total</div>
-              <div class="text-h5 font-weight-black text-primary mt-2 fluid-kpi-value">{{ totalCosecha.toFixed(1) }} kg</div>
+              <div class="text-md font-weight-black text-primary mt-2 fluid-kpi-value">{{ totalCosecha.toFixed(1) }} kg</div>
               <div class="text-caption text-grey mt-1">Eficiencia: {{ rendimientoPlanta.toFixed(2) }} kg/planta</div>
             </v-card>
           </template>
@@ -96,7 +96,7 @@
           <template v-slot:activator="{ props }">
             <v-card v-bind="props" flat rounded="lg" class="pa-4 text-center kpi-card">
               <div class=" font-weight-bold text-uppercase">Consumo Hídrico</div>
-              <div class="text-h5 font-weight-black text-info mt-2 fluid-kpi-value">{{ totalAgua.toFixed(1) }} m³</div>
+              <div class="text-md font-weight-black text-info mt-2 fluid-kpi-value">{{ totalAgua.toFixed(1) }} m³</div>
               <div class="text-caption text-grey mt-1">Métrica: volumen_agua_utilizada</div>
             </v-card>
           </template>
@@ -107,7 +107,7 @@
           <template v-slot:activator="{ props }">
             <v-card v-bind="props" flat rounded="lg" class="pa-4 text-center kpi-card">
               <div class=" font-weight-bold text-uppercase">Efic. Hídrica</div>
-              <div class="text-h5 font-weight-black text-blue-darken-3 mt-2 fluid-kpi-value">{{ eficienciaHidrica }}</div>
+              <div class="text-md font-weight-black text-blue-darken-3 mt-2 fluid-kpi-value">{{ eficienciaHidrica }}</div>
               <div class="text-caption text-grey mt-1">kg / m³</div>
             </v-card>
           </template>
@@ -118,7 +118,7 @@
           <template v-slot:activator="{ props }">
             <v-card v-bind="props" flat rounded="lg" class="pa-4 text-center kpi-card">
               <div class=" font-weight-bold text-uppercase">Insumos Total</div>
-              <div class="text-h5 font-weight-black text-warning mt-2 fluid-kpi-value">{{ totalInsumos.toFixed(1) }} L/kg</div>
+              <div class="text-md font-weight-black text-warning mt-2 fluid-kpi-value">{{ totalInsumos.toFixed(1) }} L/kg</div>
               <div class="text-caption text-grey mt-1">Métrica: dosis_aplicada</div>
             </v-card>
           </template>
@@ -129,7 +129,7 @@
           <template v-slot:activator="{ props }">
             <v-card v-bind="props" flat rounded="lg" class="pa-4 text-center kpi-card">
               <div class=" font-weight-bold text-uppercase">Carga Química</div>
-              <div class="text-h5 font-weight-black text-deep-orange-darken-2 mt-2 fluid-kpi-value">{{ cargaQuimica }}</div>
+              <div class="text-md font-weight-black text-deep-orange-darken-2 mt-2 fluid-kpi-value">{{ cargaQuimica }}</div>
               <div class="text-caption text-grey mt-1">L/kg por planta</div>
             </v-card>
           </template>
@@ -140,7 +140,7 @@
           <template v-slot:activator="{ props }">
             <v-card v-bind="props" flat rounded="lg" class="pa-4 text-center kpi-card">
               <div class=" font-weight-bold text-uppercase">Indice Salud</div>
-              <div class="text-h5 font-weight-black text-error mt-2 fluid-kpi-value">{{ indiceSaludAvg.toFixed(1) }} / 3.0</div>
+              <div class="text-md font-weight-black text-error mt-2 fluid-kpi-value">{{ indiceSaludAvg.toFixed(1) }} / 3.0</div>
               <div class="text-caption text-grey mt-1">Métrica: nivel_afectacion</div>
             </v-card>
           </template>

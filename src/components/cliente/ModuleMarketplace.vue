@@ -2,8 +2,8 @@
   <v-container fluid class="module-marketplace">
     <div class="d-flex justify-space-between align-center mb-6">
       <div>
-        <h2 class="text-h4 mb-2">Mercado de Módulos</h2>
-        <p class="text-body-1 text-grey">
+        <h3 class="text-h4 mb-2">Mercado de Módulos</h3>
+        <p class="  text-grey">
           Personaliza tu suscripción activando módulos según tus necesidades
         </p>
       </div>

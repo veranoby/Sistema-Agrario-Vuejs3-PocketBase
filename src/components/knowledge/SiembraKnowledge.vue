@@ -171,7 +171,7 @@
                 size="small"
               >
                 <div>
-                  <p class="text-subtitle-2 font-weight-bold">{{ prog.actividad_nombre }}</p>
+                  <p class="text-md font-weight-bold">{{ prog.actividad_nombre }}</p>
                   <p class="text-caption text-grey">{{ formatDate(prog.fecha_programada) }}</p>
                 </div>
               </v-timeline-item>

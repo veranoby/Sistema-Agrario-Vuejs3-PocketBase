@@ -4,11 +4,11 @@
     <v-divider></v-divider>
     <v-row>
       <v-col cols="6">
-        <h2>Productos no terminados</h2>
+        <h3>Productos no terminados</h3>
         <v-data-table :headers="headersNoTerminados" :items="productosNoTerminados" />
       </v-col>
       <v-col cols="6">
-        <h2>Productos ya terminados</h2>
+        <h3>Productos ya terminados</h3>
         <v-data-table :headers="headersTerminados" :items="productosTerminados" />
       </v-col>
     </v-row>

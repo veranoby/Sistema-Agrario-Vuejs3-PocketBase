@@ -49,22 +49,19 @@
 
       <main role="main" aria-labelledby="dashboard-welcome-title" class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-8 p-6">
         <div class="bg-card text-card-foreground">
-          <v-btn
-            block
-            sm:inline-flex
-            size="small"
-            variant="flat"
-            
-            color="#6380a247"
-            prepend-icon="mdi-plus"
-            @click="recordatoriosStore.abrirNuevoRecordatorio"
-            class="min-w-[210px] mt-0 m-1 mb-4"
-            aria-label="Crear nuevo recordatorio"
-          >
-            {{ t('dashboard.new_reminder') }}
-          </v-btn>
-
-          <RecordatorioForm
+          <div class="d-flex align-center justify-space-between mb-4 mt-2 px-2 border-b pb-2">
+            <div class="  font-weight-bold text-medium-emphasis">Recordatorios</div>
+            <v-btn
+              size="small"
+              variant="text"
+              color="primary"
+              prepend-icon="mdi-plus"
+              @click="recordatoriosStore.abrirNuevoRecordatorio"
+              aria-label="Crear nuevo recordatorio"
+            >
+              Nuevo
+            </v-btn>
+          </div>          <RecordatorioForm
             :model-value="recordatoriosStore.dialog"
             @update:modelValue="recordatoriosStore.dialog = $event"
             :recordatorio="recordatoriosStore.recordatorioEdit"
@@ -98,7 +95,56 @@
         </div>
 
         <div class=" bg-card text-card-foreground shadow-sm" aria-label="Secciones de acción">
+          <!-- Funnel de Acción Inicial (UI/UX Refinado) -->
+          <v-alert
+            v-if="siembrasStore.siembras?.length === 0"
+            color="indigo-darken-2"
+            variant="tonal"
+            icon="mdi-sprout"
+            border="start"
+            class="mb-4 rounded-lg"
+          >
+            <div class="d-flex align-center justify-space-between flex-wrap gap-4">
+              <div class="text-body-2">
+                <span class="font-weight-bold">Fase 1: Siembras.</span> Aún no tienes siembras. Crea el concepto general de tu proyecto para iniciar la trazabilidad.
+              </div>
+              <v-btn size="small" variant="elevated" color="indigo-darken-2" class="font-weight-bold" to="/siembras">
+                Crear Siembra
+              </v-btn>
+            </div>
+          </v-alert>
+          
+          <v-alert
+            v-else-if="siembrasStore.siembras?.length > 0 && programacionesStore.programacionesPorHacienda?.length === 0"
+            color="orange-darken-2"
+            variant="tonal"
+            icon="mdi-calendar-plus"
+            border="start"
+            class="mb-4 rounded-lg"
+          >
+            <div class="d-flex align-center justify-space-between flex-wrap gap-4">
+              <div class="text-body-2">
+                <span class="font-weight-bold">Fase 3: Control.</span> Tienes siembras activas pero sin programación futura. Planifica tus labores.
+              </div>
+              <v-btn size="small" variant="elevated" color="orange-darken-2" class="font-weight-bold" to="/programaciones">
+                Planificar
+              </v-btn>
+            </div>
+          </v-alert>
+
           <!-- SECCIÓN: Programaciones Vencidas (Nuevo) -->
+          <div class="d-flex align-center justify-space-between mb-4 mt-2 px-2 border-b pb-2">
+            <div class="  font-weight-bold text-medium-emphasis">Programaciones</div>
+            <v-btn
+              size="small"
+              variant="text"
+              color="primary"
+              to="/programaciones"
+            >
+              Ver Todas
+            </v-btn>
+          </div>
+
           <v-card v-if="programacionesVencidas.length" class="bg-dinamico p-4 rounded-lg" color="transparent" flat>
             <v-card-title class="px-0 pb-4 d-flex align-center">
               <v-icon start color="error">mdi-clock-alert-outline</v-icon>
@@ -127,34 +173,12 @@
               Ver todas las programaciones
             </v-btn>
           </v-card>
+          
+          <div v-else class="px-4 py-6 text-center rounded-lg mb-4 bg-transparent">
+            <v-icon color="grey-lighten-1" size="32" class="mb-2">mdi-calendar-check</v-icon>
+            <div class="text-smtext-medium-emphasis">No tienes programaciones pendientes para hoy.</div>
+          </div>
 
-          <v-card v-if="recentBitacoras.length" class="mt-4">
-            <v-card-title>
-              <v-icon start>mdi-shield-check</v-icon>
-              {{ t('dashboard.signature_audit') }}
-            </v-card-title>
-
-            <v-card-text>
-              <v-list density="compact">
-                <v-list-item v-for="b in recentBitacoras" :key="b.id">
-                  <template v-slot:prepend>
-                    <v-icon :color="b.signature ? 'success' : 'warning'">
-                      {{ b.signature ? 'mdi-check-circle' : 'mdi-alert-circle' }}
-                    </v-icon>
-                  </template>
-                  <v-list-item-title>
-                    {{ b.expand?.actividad_realizada?.nombre || t('dashboard.no_activity') }}
-                  </v-list-item-title>
-
-                  <v-list-item-subtitle>
-                    {{ new Date(b.created).toLocaleString() }}
-                    {{ b.signature ? '✓ ' + t('dashboard.signed') : '⚠ ' + t('dashboard.unsigned') }}
-                  </v-list-item-subtitle>
-
-                </v-list-item>
-              </v-list>
-            </v-card-text>
-          </v-card>
         </div>
 
 
@@ -416,7 +440,10 @@ async function loadWithTraditionalMethod() {
 }
 
 async function handleRequestSingleExecution(programacion) {
-  await programacionesStore.prepareForBitacoraEntryFromProgramacion(programacion)
+  const success = await programacionesStore.prepareForBitacoraEntryFromProgramacion(programacion)
+  if (success) {
+    router.push({ name: 'Bitácora' })
+  }
 }
 
 async function exportReport(format = 'json') {

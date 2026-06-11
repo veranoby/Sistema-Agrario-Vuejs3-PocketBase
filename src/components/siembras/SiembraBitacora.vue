@@ -1,5 +1,5 @@
 <template>
-  <v-card class="bitacora-embedded-section mb-4" elevation="2">
+  <v-card class="mb-4" elevation="2">
     <v-card-title class="d-flex justify-space-between align-center">
       <span>{{ t('sowing_workspace.recent_log') }}</span>
       <v-btn
@@ -42,9 +42,3 @@ const openNewBitacoraEntryDialog = () => {
   emit('open-new-bitacora-entry-dialog')
 }
 </script>
-
-<style scoped>
-.bitacora-embedded-section {
-  background: white;
-}
-</style>

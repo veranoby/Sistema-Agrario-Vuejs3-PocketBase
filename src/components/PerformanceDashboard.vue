@@ -2,7 +2,7 @@
   <v-container fluid class="pa-4 pa-sm-6">
     <div class="flex items-center mb-6">
       <v-icon color="primary" class="mr-3">mdi-chart-line</v-icon>
-      <h2 class="text-h4 font-weight-bold">Rendimiento de Sincronización</h2>
+      <h3 class="text-h4 font-weight-bold">Rendimiento de Sincronización</h3>
     </div>
     
     <!-- Resumen general -->

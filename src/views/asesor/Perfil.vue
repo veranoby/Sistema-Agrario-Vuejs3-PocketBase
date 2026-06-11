@@ -4,11 +4,11 @@
       <!-- Header Estandarizado -->
       <div class="profile-container mt-0 ml-0 mb-4">
         <div>
-          <h3 class="profile-title text-h6 sm:text-h5 font-weight-bold mb-1" style="color: var(--color_titulo)">
+          <h3 class="profile-title text-h6 sm:text-md font-weight-bold mb-1" style="color: var(--color_titulo)">
             <v-icon icon="mdi-account-circle" color="primary" size="32" class="mr-2"></v-icon>
             Mi Perfil Profesional
           </h3>
-          <p class="text-subtitle-2 sm:text-subtitle-1 text-grey-darken-1" style="margin-top: 8px;">
+          <p class="text-md sm:  text-grey-darken-1" style="margin-top: 8px;">
             Administra tus especialidades, provincias de cobertura y biografía corta para darte a conocer en el directorio de haciendas.
           </p>
         </div>
@@ -203,7 +203,7 @@
                 <input ref="avatarInput" type="file" class="d-none" accept="image/*" @change="onAvatarChange">
 
                 <div class="overflow-hidden">
-                  <h3 class="text-subtitle-1 font-weight-bold text-truncate mb-0">
+                  <h3 class="  font-weight-bold text-truncate mb-0">
                     {{ name }} {{ lastname }}
                   </h3>
                   <span class="text-caption text-indigo-lighten-5 d-block">
@@ -283,7 +283,7 @@
                   <v-icon :color="subscriptionActive ? 'primary' : 'warning'" class="mr-2">
                     {{ subscriptionActive ? 'mdi-check-decagram' : 'mdi-alert-circle-outline' }}
                   </v-icon>
-                  <h3 class="text-subtitle-1 font-weight-bold" :class="subscriptionActive ? 'text-primary' : 'text-warning'">
+                  <h3 class="  font-weight-bold" :class="subscriptionActive ? 'text-primary' : 'text-warning'">
                     Estado de Suscripción
                   </h3>
                 </div>
@@ -382,7 +382,7 @@
             <v-col cols="12" sm="6">
               <div class="bg-indigo-lighten-5 pa-3 rounded-lg border border-indigo-lighten-3 h-100">
                 <div class="text-caption text-indigo-darken-2 font-weight-bold mb-1">Período de Activación (Estimado)</div>
-                <div class="text-body-2 text-indigo-darken-4 font-weight-medium">
+                <div class="text-smtext-indigo-darken-4 font-weight-medium">
                   {{ new Date().toLocaleDateString() }} - {{ new Date(Date.now() + 30*24*60*60*1000).toLocaleDateString() }}
                 </div>
               </div>
@@ -391,8 +391,8 @@
 
           <v-divider class="my-4"></v-divider>
 
-          <h3 class="text-subtitle-1 font-weight-bold text-indigo-darken-4 mb-2">Instrucciones Bancarias</h3>
-          <p class="text-body-2 text-grey-darken-2 mb-4">
+          <h3 class="  font-weight-bold text-indigo-darken-4 mb-2">Instrucciones Bancarias</h3>
+          <p class="text-smtext-grey-darken-2 mb-4">
             Para desbloquear tu portafolio y aparecer en el directorio de búsqueda, realiza el pago mensual de $5 USD y sube el comprobante.
           </p>
           

@@ -16,7 +16,7 @@
         </template>
 
         <div class="flex flex-col gap-1">
-          <span class="text-subtitle-2 font-weight-bold">{{ alert.message }}</span>
+          <span class="text-md font-weight-bold">{{ alert.message }}</span>
           <span class="text-caption opacity-90">
             Actual: {{ formatAlertValue(alert.currentValue) }} | 
             Umbral: {{ formatAlertValue(alert.threshold) }}

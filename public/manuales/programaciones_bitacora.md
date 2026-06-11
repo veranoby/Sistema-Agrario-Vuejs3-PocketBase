@@ -2,15 +2,19 @@
 
 La Bitácora es su **respaldo inmutable para cumplir con reportes BPA** y el reflejo fiel de la actividad agrícola de su hacienda.
 
-## 1. La Relación Esencial: Siembra -> Actividad -> Bitácora
-La Bitácora no se alimenta de datos al azar. Funciona a través de una cadena de valor central:
-- Usted tiene una **Siembra** registrada en una zona específica.
-- En esa siembra, usted ejecuta una **Actividad**.
-- Al completarse y firmarse, esa actividad se convierte en una entrada inamovible en su **Bitácora**.
+## 1. La Evolución: De la Siembra a la Bitácora mediante Programaciones
+El sistema está diseñado con un flujo de trabajo claro: se inicia con una Siembra, definiendo primero sus **Zonas** y luego sus **Actividades**.
 
-**¿Cómo apoyan las Zonas y las Programaciones?**
-- **Las Zonas** otorgan validez geográfica (las auditorías BPA exigen saber la ubicación exacta donde se aplicó un insumo o labor).
-- **Las Programaciones** permiten planificar las actividades con anticipación. Al ejecutarse una programación, el sistema genera automáticamente la actividad y la transfiere a la bitácora sin doble digitación, garantizando un flujo continuo y estructurado de información.
+**Entonces, ¿por qué existen las Programaciones?**
+¡Porque son la evolución de un recordatorio de una actividad para generar una bitácora!
+
+**Recomendación de Flujo de Trabajo:**
+Después de hacer las zonas de una siembra y definir las actividades sobre esas zonas/siembra, se recomienda **preparar Programaciones**. De esta manera, uno siempre sabrá cuándo hay que chequear cierta tarea, y podrá ingresarla correspondientemente a la bitácora.
+
+La cadena de valor para su respaldo es la siguiente:
+- Usted tiene una **Siembra** en una o varias Zonas.
+- Prepara una **Programación** como recordatorio de una Actividad que debe hacerse sobre esa zona.
+- Al ejecutar y reportar la labor, el sistema genera la entrada y la transfiere a la **Bitácora** de forma inmutable, con su validez geográfica garantizada.
 
 ## 2. Agendar Labores (Programaciones)
 **¿Qué puede hacer?**

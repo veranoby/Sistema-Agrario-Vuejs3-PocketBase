@@ -22,7 +22,8 @@ export const useHaciendaStore = defineStore('hacienda', {
     mi_hacienda: null,
     haciendaUsers: [],
     baseImageUrl: '',
-    loading: false
+    loading: false,
+    _lastFetchedAt: 0  // timestamp del último fetch exitoso (para TTL)
   }),
 
   getters: {
@@ -187,49 +188,59 @@ export const useHaciendaStore = defineStore('hacienda', {
         return this.mi_hacienda
       }
 
-      // Idempotencia: si ya está cargado con el mismo ID y no se fuerza refresco, no re-fetch
-      if (this.mi_hacienda?.id === haciendaId && !this.loading && !forceRefresh) {
+      const syncStore = useSyncStore()
+
+      // Offline: usar caché local sin ir al servidor
+      if (!syncStore.isOnline) {
+        if (this.mi_hacienda?.id === haciendaId) return this.mi_hacienda
+        const localHacienda = await syncStore.loadFromLocalStorage('mi_hacienda')
+        if (localHacienda) {
+          this.mi_hacienda = localHacienda
+          this.baseImageUrl = await syncStore.loadFromLocalStorage('baseImageUrl') || ''
+        }
         return this.mi_hacienda
       }
 
-      const syncStore = useSyncStore()
-      this.loading = true
-
-      // Solo usar caché local si NO se fuerza refresh y NO hay datos en memoria
-      if (!forceRefresh && !this.mi_hacienda) {
-        const mi_haciendaLocal = await syncStore.loadFromLocalStorage('mi_hacienda')
-        if (mi_haciendaLocal) {
-          this.mi_hacienda = mi_haciendaLocal
-          this.baseImageUrl = await syncStore.loadFromLocalStorage('baseImageUrl') || ''
-          this.loading = false
-          return this.mi_hacienda
-        }
+      // Online con TTL: evitar re-fetch si los datos son recientes (< 10 min)
+      // y no se fuerza refresco (ej: al guardar cambios en el perfil)
+      const HACIENDA_TTL_MS = 10 * 60 * 1000
+      if (
+        !forceRefresh &&
+        this.mi_hacienda?.id === haciendaId &&
+        this._lastFetchedAt > 0 &&
+        Date.now() - this._lastFetchedAt < HACIENDA_TTL_MS
+      ) {
+        return this.mi_hacienda
       }
 
-      try {
-        if (syncStore.isOnline) {
-          this.mi_hacienda = await pb.collection('Haciendas').getOne(haciendaId, {
-            expand: 'plan'
-          })
-          this.baseImageUrl = pb.baseUrl + '/api/files'
+      this.loading = true
 
-          await syncStore.saveToLocalStorage('mi_hacienda', this.mi_hacienda)
-          await syncStore.saveToLocalStorage('baseImageUrl', this.baseImageUrl)
-        } else {
-          const localHacienda = localStorage.getItem('mi_hacienda')
-          if (localHacienda) {
-            this.mi_hacienda = JSON.parse(localHacienda)
-            this.baseImageUrl = localStorage.getItem('baseImageUrl') || ''
-          }
-        }
+      try {
+        this.mi_hacienda = await pb.collection('Haciendas').getOne(haciendaId, {
+          expand: 'plan'
+        })
+        this.baseImageUrl = pb.baseUrl + '/api/files'
+        this._lastFetchedAt = Date.now()
+
+        await syncStore.saveToLocalStorage('mi_hacienda', this.mi_hacienda)
+        await syncStore.saveToLocalStorage('baseImageUrl', this.baseImageUrl)
       } catch (error) {
-        handleError(error, 'Error cargando información de hacienda')
-        const uiFeedbackStore = useUiFeedbackStore()
-        uiFeedbackStore.showSnackbar('Error al cargar la hacienda. Intenta recargar.', 'error')
-        throw error
+        // Si falla el fetch, usar caché como fallback
+        const cachedHacienda = await syncStore.loadFromLocalStorage('mi_hacienda')
+        if (cachedHacienda) {
+          this.mi_hacienda = cachedHacienda
+          this.baseImageUrl = await syncStore.loadFromLocalStorage('baseImageUrl') || ''
+        } else {
+          handleError(error, 'Error cargando información de hacienda')
+          const uiFeedbackStore = useUiFeedbackStore()
+          uiFeedbackStore.showSnackbar('Error al cargar la hacienda. Intenta recargar.', 'error')
+          throw error
+        }
       } finally {
         this.loading = false
       }
+
+      return this.mi_hacienda
     },
 
     async fetchHaciendaUsers() {

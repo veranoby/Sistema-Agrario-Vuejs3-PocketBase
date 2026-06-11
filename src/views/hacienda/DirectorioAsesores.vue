@@ -83,8 +83,8 @@
 
       <div v-else-if="asesoresStore.asesores.length === 0" class="text-center py-12">
         <v-icon icon="mdi-account-question-outline" size="80" color="grey-lighten-1" class="mb-4"></v-icon>
-        <h3 class="text-h5 text-grey-darken-2 font-weight-bold">No se encontraron asesores</h3>
-        <p class="text-subtitle-1 text-grey-darken-1 mt-1">Prueba a ajustar los criterios de búsqueda o filtros.</p>
+        <h3 class="text-md text-grey-darken-2 font-weight-bold">No se encontraron asesores</h3>
+        <p class="  text-grey-darken-1 mt-1">Prueba a ajustar los criterios de búsqueda o filtros.</p>
       </div>
 
       <!-- Grid de Asesores -->
@@ -97,50 +97,55 @@
           md="4"
           lg="3"
         >
-          <v-card class="h-100 d-flex flex-column elevation-3 hover-card rounded-lg overflow-hidden">
-            <!-- Header Card Gradient -->
-            <div class="bg-gradient-teal py-4 px-4 text-white d-flex align-center gap-3 position-relative">
-              <v-avatar size="56" class="border border-white border-2 elevation-2">
-                <v-img :src="getAvatar(asesor)" alt="Avatar">
-                  <template v-slot:placeholder>
-                    <div class="d-flex align-center justify-center bg-primary-1 text-h6 font-weight-bold fill-height text-white">
-                      {{ getInitials(asesor) }}
-                    </div>
-                  </template>
-                </v-img>
-              </v-avatar>
-              <div class="overflow-hidden">
-                <h3 class="text-subtitle-1 font-weight-bold text-truncate mb-0">
-                  {{ asesor.name }} {{ asesor.lastname }}
-                </h3>
-                <span class="text-caption text-primary-5 d-block">
-                  Reg: {{ asesor.parsedInfo?.numero_colegiatura || 'N/A' }}
-                </span>
+          <v-card class="h-100 d-flex flex-column border rounded-xl overflow-hidden bg-surface" elevation="0">
+            <!-- Header Elegante -->
+            <div class="position-relative">
+              <!-- Banner superior sutil (adaptable a oscuro/claro) -->
+              <div class="w-100" style="height: 60px; background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.15) 0%, rgba(var(--v-theme-primary), 0.05) 100%);"></div>
+              
+              <div class="px-4 position-relative d-flex align-end" style="margin-top: -30px; gap: 12px;">
+                <v-avatar size="64" class="border bg-surface elevation-1">
+                  <v-img :src="getAvatar(asesor)" alt="Avatar">
+                    <template v-slot:placeholder>
+                      <div class="d-flex align-center justify-center bg-primary-lighten-4 text-h6 font-weight-bold fill-height text-primary">
+                        {{ getInitials(asesor) }}
+                      </div>
+                    </template>
+                  </v-img>
+                </v-avatar>
+                <div class="pb-1 overflow-hidden flex-grow-1">
+                  <h3 class="  font-weight-bold text-truncate mb-0 text-high-emphasis">
+                    {{ asesor.name }} {{ asesor.lastname }}
+                  </h3>
+                  <div class="text-caption text-medium-emphasis text-truncate">
+                    Reg: {{ asesor.parsedInfo?.numero_colegiatura || 'N/A' }}
+                  </div>
+                </div>
               </div>
             </div>
 
             <!-- Body Card -->
-            <v-card-text class="flex-grow-1 pt-4 pb-1">
+            <v-card-text class="flex-grow-1 pt-4 pb-2">
               <!-- Especialidades -->
               <div class="mb-3">
-                <div class="text-caption font-weight-bold text-grey-darken-1 mb-1">Especialidades:</div>
+                <div class="text-caption font-weight-bold text-medium-emphasis mb-1">Especialidades:</div>
                 <div class="d-flex flex-wrap gap-1">
                   <v-chip
                     v-for="(spec, idx) in limitItems(asesor.parsedInfo?.especialidades, 3)"
                     :key="spec"
                     size="x-small"
-                    color="teal-darken-1"
-                    variant="flat"
-                    class="font-weight-medium text-white"
+                    color="teal"
+                    variant="tonal"
+                    class="font-weight-medium"
                   >
                     {{ spec }}
                   </v-chip>
                   <v-chip
                     v-if="asesor.parsedInfo?.especialidades?.length > 3"
                     size="x-small"
-                    color="teal-lighten-4"
-                    variant="flat"
-                    class="font-weight-bold text-primary-3"
+                    color="teal"
+                    variant="outlined"
+                    class="font-weight-bold"
                   >
                     +{{ asesor.parsedInfo.especialidades.length - 3 }}
                   </v-chip>
@@ -149,24 +154,24 @@
 
               <!-- Cobertura -->
               <div class="mb-3">
-                <div class="text-caption font-weight-bold text-grey-darken-1 mb-1">Zonas Cobertura:</div>
+                <div class="text-caption font-weight-bold text-medium-emphasis mb-1">Zonas Cobertura:</div>
                 <div class="d-flex flex-wrap gap-1">
                   <v-chip
                     v-for="zone in limitItems(asesor.parsedInfo?.zonas_cobertura, 2)"
                     :key="zone"
                     size="x-small"
-                    color="blue-darken-1"
-                    variant="flat"
-                    class="font-weight-medium text-white"
+                    color="blue"
+                    variant="tonal"
+                    class="font-weight-medium"
                   >
                     {{ zone }}
                   </v-chip>
                   <v-chip
                     v-if="asesor.parsedInfo?.zonas_cobertura?.length > 2"
                     size="x-small"
-                    color="blue-lighten-4"
-                    variant="flat"
-                    class="font-weight-bold text-blue-darken-3"
+                    color="blue"
+                    variant="outlined"
+                    class="font-weight-bold"
                   >
                     +{{ asesor.parsedInfo.zonas_cobertura.length - 2 }}
                   </v-chip>
@@ -175,7 +180,7 @@
 
               <!-- Bio -->
               <div>
-                <p class="text-caption text-grey-darken-2 italic-bio">
+                <p class="text-caption text-medium-emphasis font-italic" style="line-height: 1.3;">
                   "{{ truncateText(asesor.parsedInfo?.bio_corta, 110) }}"
                 </p>
               </div>
@@ -183,7 +188,7 @@
 
             <!-- Acciones Card -->
             <v-divider></v-divider>
-            <v-card-actions class="px-4 py-3 bg-grey-lighten-5">
+            <v-card-actions class="px-4 py-3">
               <v-btn
                 v-if="getEstado(asesor.id) === 'ninguna'"
                 block
@@ -200,8 +205,8 @@
                 v-else-if="getEstado(asesor.id) === 'pendiente'"
                 block
                 disabled
-                color="orange-darken-1"
-                variant="outlined"
+                color="orange"
+                variant="tonal"
                 class="font-weight-bold"
                 prepend-icon="mdi-clock-outline"
               >
@@ -211,8 +216,8 @@
               <v-btn
                 v-else-if="getEstado(asesor.id) === 'activa'"
                 block
-                color="teal-darken-2"
-                variant="outlined"
+                color="teal"
+                variant="tonal"
                 class="font-weight-bold"
                 prepend-icon="mdi-card-account-mail"
                 @click="verAsesor(asesor)"
@@ -223,9 +228,9 @@
               <v-btn
                 v-else-if="getEstado(asesor.id) === 'revocada'"
                 block
-                color="grey-darken-1"
-                variant="flat"
-                class="font-weight-bold text-white"
+                color="grey"
+                variant="tonal"
+                class="font-weight-bold"
                 prepend-icon="mdi-refresh"
                 @click="reconectar(asesor.id)"
               >

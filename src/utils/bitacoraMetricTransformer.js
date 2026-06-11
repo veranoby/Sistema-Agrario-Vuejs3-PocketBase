@@ -6,6 +6,17 @@
 import { logger } from '@/utils/logger'
 import { format as formatDate } from 'date-fns'
 
+const safeFormatDate = (val) => {
+  if (!val) return val;
+  try {
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return val;
+    return formatDate(d, 'dd MMM yyyy');
+  } catch (e) {
+    return val;
+  }
+};
+
 /**
  * Mapeo de transformaciones específicas por tipo de actividad
  * Define cómo se transforman las métricas crudas en formato legible
@@ -38,7 +49,7 @@ const TRANSFORM_RULES = {
       fecha_siembra: (val, metrica) => ({
         key: 'fecha_siembra',
         label: 'Fecha de Siembra',
-        value: formatDate(val, 'dd MMM yyyy'),
+        value: safeFormatDate(val),
         unit: null,
         category: 'fechas'
       }),
@@ -79,7 +90,7 @@ const TRANSFORM_RULES = {
       fecha_cosecha: (val, metrica) => ({
         key: 'fecha_cosecha',
         label: 'Fecha de Cosecha',
-        value: formatDate(val, 'dd MMM yyyy'),
+        value: safeFormatDate(val),
         unit: null,
         category: 'fechas'
       }),
@@ -127,7 +138,7 @@ const TRANSFORM_RULES = {
       fecha_aplicacion: (val, metrica) => ({
         key: 'fecha_aplicacion',
         label: 'Fecha de Aplicación',
-        value: formatDate(val, 'dd MMM yyyy'),
+        value: safeFormatDate(val),
         unit: null,
         category: 'fechas'
       }),
@@ -175,7 +186,7 @@ const TRANSFORM_RULES = {
       fecha_monitoreo: (val, metrica) => ({
         key: 'fecha_monitoreo',
         label: 'Fecha de Monitoreo',
-        value: formatDate(val, 'dd MMM yyyy'),
+        value: safeFormatDate(val),
         unit: null,
         category: 'fechas'
       }),
@@ -223,7 +234,7 @@ const TRANSFORM_RULES = {
       fecha_riego: (val, metrica) => ({
         key: 'fecha_riego',
         label: 'Fecha de Riego',
-        value: formatDate(val, 'dd MMM yyyy'),
+        value: safeFormatDate(val),
         unit: null,
         category: 'fechas'
       }),
@@ -271,7 +282,7 @@ const TRANSFORM_RULES = {
       fecha_fertilizacion: (val, metrica) => ({
         key: 'fecha_fertilizacion',
         label: 'Fecha de Fertilizacion',
-        value: formatDate(val, 'dd MMM yyyy'),
+        value: safeFormatDate(val),
         unit: null,
         category: 'fechas'
       }),
@@ -312,7 +323,7 @@ const TRANSFORM_RULES = {
       fecha_labranza: (val, metrica) => ({
         key: 'fecha_labranza',
         label: 'Fecha de Labranza',
-        value: formatDate(val, 'dd MMM yyyy'),
+        value: safeFormatDate(val),
         unit: null,
         category: 'fechas'
       })
@@ -346,7 +357,7 @@ const TRANSFORM_RULES = {
       fecha_poda: (val, metrica) => ({
         key: 'fecha_poda',
         label: 'Fecha de Poda',
-        value: formatDate(val, 'dd MMM yyyy'),
+        value: safeFormatDate(val),
         unit: null,
         category: 'fechas'
       })
@@ -399,7 +410,7 @@ export function transformMetricasByTipo(metricas, tipoActividad, formatoReporte 
   }
 
   // Procesar cada métrica
-  for (const [key, metrica] of Object.entries(metricas)) {
+  for (const [key, metrica] of Object.entries(metricas || {})) {
     const valor = metrica?.valor !== undefined ? metrica.valor : metrica
 
     // Aplicar transformación específica si existe
@@ -430,7 +441,7 @@ export function transformMetricasByTipo(metricas, tipoActividad, formatoReporte 
   }
 
   // Ordenar categorías según orden predefinido
-  const sortedCategories = Object.entries(transformed.byCategory)
+  const sortedCategories = Object.entries(transformed.byCategory || {})
     .sort((a, b) => {
       const orderA = METRIC_CATEGORIES[a[0]]?.order || 999
       const orderB = METRIC_CATEGORIES[b[0]]?.order || 999
@@ -459,7 +470,7 @@ function transformMetricasGenericas(metricas) {
     summary: ''
   }
 
-  for (const [key, metrica] of Object.entries(metricas)) {
+  for (const [key, metrica] of Object.entries(metricas || {})) {
     const valor = metrica?.valor !== undefined ? metrica.valor : metrica
     const item = {
       key: key,
@@ -514,7 +525,7 @@ export function generateObservacionesFromMetricas(metricas, formatoReporte) {
   })
 
   const unmappedLines = []
-  for (const [key, metrica] of Object.entries(metricas)) {
+  for (const [key, metrica] of Object.entries(metricas || {})) {
     if (!mappedKeys.has(key)) {
       const desc = metrica?.descripcion || key
       const val = metrica?.valor !== undefined ? metrica.valor : 'N/A'
@@ -541,7 +552,7 @@ export function flattenMetricas(metricasTransformadas) {
 
   // Si es un objeto de métricas crudas, extraer valores
   const flattened = {}
-  for (const [key, metrica] of Object.entries(metricasTransformadas)) {
+  for (const [key, metrica] of Object.entries(metricasTransformadas || {})) {
     if (typeof metrica === 'object' && metrica !== null && 'valor' in metrica) {
       flattened[key] = metrica.valor
     } else {

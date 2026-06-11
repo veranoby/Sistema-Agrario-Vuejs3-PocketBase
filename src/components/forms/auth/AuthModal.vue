@@ -383,7 +383,7 @@
 
       <v-card-text class="pt-6">
         <div v-if="!passwordResetSent">
-          <p class="text-body-1 mb-4">
+          <p class="  mb-4">
             {{ t('auth.recover_password_instructions') }}
           </p>
 
@@ -422,8 +422,8 @@
 
         <div v-else class="text-center py-6">
           <v-icon color="primary" size="64" class="mb-4">mdi-email-check-outline</v-icon>
-          <h3 class="text-h5 mb-2">{{ t('auth.email_sent_title') }}</h3>
-          <p class="text-body-1 mb-6">
+          <h3 class="text-md mb-2">{{ t('auth.email_sent_title') }}</h3>
+          <p class="  mb-6">
             {{ t('auth.email_sent_message', { email: resetEmail }) }}
           </p>
           <v-btn color="primary" @click="forgotPasswordDialog = false"> {{ t('auth.got_it') }} </v-btn>

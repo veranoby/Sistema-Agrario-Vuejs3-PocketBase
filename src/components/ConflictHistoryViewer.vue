@@ -72,7 +72,7 @@
               <div v-if="filteredChanges.length === 0" class="text-center pa-8">
                 <v-icon size="64" color="grey-lighten-1">mdi-history</v-icon>
                 <p class="text-h6 mt-4 text-grey-darken-1">No hay cambios registrados</p>
-                <p class="text-body-2 text-grey-darken-2">
+                <p class="text-smtext-grey-darken-2">
                   Los cambios aparecerán aquí cuando modifiques datos localmente
                 </p>
               </div>
@@ -129,7 +129,7 @@
               <div v-if="conflictResolutions.length === 0" class="text-center pa-8">
                 <v-icon size="64" color="grey-lighten-1">mdi-merge</v-icon>
                 <p class="text-h6 mt-4 text-grey-darken-1">No hay conflictos resueltos</p>
-                <p class="text-body-2 text-grey-darken-2">
+                <p class="text-smtext-grey-darken-2">
                   Las resoluciones de conflictos aparecerán aquí cuando se sincronicen datos con conflictos
                 </p>
               </div>

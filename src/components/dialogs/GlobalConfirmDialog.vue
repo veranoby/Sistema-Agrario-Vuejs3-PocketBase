@@ -3,12 +3,12 @@
     <v-card class="rounded-lg">
       <v-toolbar :color="uiStore.confirm.color" dark flat density="compact">
         <v-icon start class="ml-4">{{ uiStore.confirm.icon }}</v-icon>
-        <v-toolbar-title class="text-subtitle-1 font-weight-bold">
+        <v-toolbar-title class="  font-weight-bold">
           {{ uiStore.confirm.title }}
         </v-toolbar-title>
       </v-toolbar>
 
-      <v-card-text class="pa-6 text-body-1">
+      <v-card-text class="pa-6  ">
         <div class="d-flex align-center">
           <div class="flex-grow-1">{{ uiStore.confirm.message }}</div>
         </div>

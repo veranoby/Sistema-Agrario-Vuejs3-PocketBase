@@ -1,7 +1,7 @@
 <template>
   <v-container fluid class="users-management">
     <div class="d-flex justify-space-between align-center mb-4">
-      <h2 class="text-h5">Gestión de Usuarios</h2>
+      <h3 class="text-md">Gestión de Usuarios</h3>
       <v-btn v-role="'USERS_MANAGE'" color="primary" prepend-icon="mdi-plus" @click="openCreateDialog">
         Nuevo Usuario
       </v-btn>

@@ -1,16 +1,16 @@
 <template>
   <v-container fluid class="superadmin-suscripciones">
-    <h2 class="text-h5 mb-4">Gestión de Suscripciones</h2>
+    <h3 class="text-md mb-4">Gestión de Suscripciones</h3>
 
     <v-card class="mb-4">
       <v-toolbar color="transparent" density="compact">
         <v-btn icon="mdi-chevron-left" variant="text" @click="prevMonth"></v-btn>
-        <v-toolbar-title class="text-subtitle-1 font-weight-bold text-center">
+        <v-toolbar-title class="  font-weight-bold text-center">
           {{ monthName }} {{ currentYear }}
         </v-toolbar-title>
         <v-btn icon="mdi-chevron-right" variant="text" @click="nextMonth"></v-btn>
         <v-spacer></v-spacer>
-        <div class="mr-4 text-subtitle-2 font-weight-bold text-primary">
+        <div class="mr-4 text-md font-weight-bold text-primary">
           Ingreso Mensual: ${{ totalMensual.toFixed(2) }}
         </div>
         <v-btn color="primary" variant="outlined" size="small" class="mr-2" @click="exportToExcel">

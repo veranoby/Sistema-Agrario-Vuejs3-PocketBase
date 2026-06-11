@@ -621,7 +621,7 @@
         "file": "src/components/dialogs/ConfirmationDialog.vue",
         "count": 1,
         "samples": [
-          "<v-card-title class=\"text-h5\""
+          "<v-card-title class=\"text-md\""
         ]
       },
       {
@@ -637,7 +637,7 @@
         "file": "src/components/dialogs/GlobalConfirmDialog.vue",
         "count": 2,
         "samples": [
-          "<v-card-text class=\"pa-6 text-body-1\"",
+          "<v-card-text class=\"pa-6  \"",
           "<v-card-actions class=\"pa-4 bg-grey-lighten-5\""
         ]
       },
@@ -656,7 +656,7 @@
         "samples": [
           "<v-col cols=\"12\" md=\"2\" class=\"d-flex align-center\"",
           "<v-card-title class=\"bg-primary text-white\"",
-          "<v-card-title class=\"text-subtitle-1\""
+          "<v-card-title class=\" \""
         ]
       },
       {
@@ -743,7 +743,7 @@
         "file": "src/components/actividades/ActividadesBitacora.vue",
         "count": 1,
         "samples": [
-          "<v-card-title class=\"d-flex justify-space-between align-center text-body-1\""
+          "<v-card-title class=\"d-flex justify-space-between align-center  \""
         ]
       },
       {
@@ -898,7 +898,7 @@
         "file": "src/components/cliente/CostSummary.vue",
         "count": 1,
         "samples": [
-          "<v-card-title class=\"text-h5\""
+          "<v-card-title class=\"text-md\""
         ]
       },
       {
@@ -1156,7 +1156,7 @@
         "samples": [
           "<v-btn\n                color=\"teal\"\n                variant=\"flat\"\n                class=\"font-weight-bold text-white rounded-lg px-4\"",
           "<v-card class=\"elevation-2 rounded-lg border border-grey-lighten-3 h-100 d-flex flex-column\"",
-          "<v-card-title class=\"bg-grey-lighten-4 py-3 px-4 text-subtitle-1 font-weight-bold text-grey-darken-3\""
+          "<v-card-title class=\"bg-grey-lighten-4 py-3 px-4   font-weight-bold text-grey-darken-3\""
         ]
       },
       {

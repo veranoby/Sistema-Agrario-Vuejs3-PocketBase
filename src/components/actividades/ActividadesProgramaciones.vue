@@ -1,9 +1,9 @@
 <template>
   <div class="siembra-info mt-4 p-0">
     <v-card-title class="headline d-flex justify-between">
-      <h2 class="text-md font-bold mt-2">
+      <h3 class=" text-sm font-bold mt-2">
         <span>{{ t('activity_workspace.schedules') }}</span>
-      </h2>
+      </h3>
       <v-btn
         size="small"
         color="green-lighten-2"

@@ -1,5 +1,5 @@
 <template>
-  <v-dialog v-model="dialogVisible" persistent max-width="900px">
+  <v-dialog v-model="dialogVisible" persistent max-width="1100px" max-height="80vh" scrollable>
     <div class="grid grid-cols-2 gap-2 p-0 m-2 bg-white">
       <v-card>
         <v-toolbar color="primary" dark density="compact">
@@ -11,17 +11,27 @@
           <v-spacer></v-spacer>
         </v-toolbar>
 
-        <v-card-text class="ml-4 mr-4">
+        <v-card-text class="ml-4 mr-4" style="max-height: 55vh; overflow-y: auto;">
           <v-chip-group column color="green-darken-4" multiple :model-value="selectedSiembras"
             @update:model-value="$emit('update:selected-siembras', $event)">
-            <v-chip
+            <v-tooltip
               v-for="siembra in siembras"
               :key="siembra.id"
-              :text="`${siembra.nombre}-${siembra.tipo}`"
-              :value="siembra.id"
-              filter
-              density="compact"
-            ></v-chip>
+              :text="`${siembra.nombre} - ${siembra.tipo}`"
+              location="top"
+            >
+              <template #activator="{ props: tooltipProps }">
+                <v-chip
+                  v-bind="tooltipProps"
+                  :value="siembra.id"
+                  filter
+                  density="compact"
+                  class="chip-truncate"
+                >
+                  {{ `${siembra.nombre}-${siembra.tipo}` }}
+                </v-chip>
+              </template>
+            </v-tooltip>
           </v-chip-group>
         </v-card-text>
       </v-card>
@@ -35,19 +45,29 @@
           <v-spacer></v-spacer>
         </v-toolbar>
 
-        <v-card-text class="ml-4 mr-4">
+        <v-card-text class="ml-4 mr-4" style="max-height: 55vh; overflow-y: auto;">
           <v-chip-group color="blue-darken-4" column multiple :model-value="selectedZonas"
             @update:model-value="$emit('update:selected-zonas', $event)">
-            <v-chip
+            <v-tooltip
               v-for="zona in filteredZonas"
               :key="zona.id"
-              :text="`${zona.nombre}(${getZonaTipoNombre(zona.id)})`"
-              :value="zona.id"
-              filter
-              size="small"
-              density="compact"
-              pill
-            ></v-chip>
+              :text="`${zona.nombre} (${getZonaTipoNombre(zona.id)})`"
+              location="top"
+            >
+              <template #activator="{ props: tooltipProps }">
+                <v-chip
+                  v-bind="tooltipProps"
+                  :value="zona.id"
+                  filter
+                  size="small"
+                  density="compact"
+                  pill
+                  class="chip-truncate"
+                >
+                  {{ `${zona.nombre} (${getZonaTipoNombre(zona.id)})` }}
+                </v-chip>
+              </template>
+            </v-tooltip>
           </v-chip-group>
         </v-card-text>
         <v-card-actions>
@@ -119,13 +139,30 @@ watch(dialogVisible, (newVal) => {
 })
 
 const getZonaTipoNombre = (zonaId) => {
-  const zona = zonasStore.getZonaById(zonaId)
-  return zona?.expand?.tipos_zonas?.nombre.toUpperCase() || ''
+  return zonasStore.getTipoZonaNombreByZonaId(zonaId)
 }
 </script>
 
 <style scoped>
 .grid {
   display: grid;
+}
+
+/* Chips con texto truncado — nowrap evita wrap de 2 líneas, ellipsis muestra que hay más */
+.chip-truncate {
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* El contenido interno del chip también debe truncarse */
+.chip-truncate :deep(.v-chip__content) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
 }
 </style>

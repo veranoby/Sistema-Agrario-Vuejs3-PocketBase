@@ -7,7 +7,7 @@
     
     <div class="ml-8 flex flex-col gap-3">
       <div v-for="pregunta in preguntas" :key="pregunta.id" class="d-flex flex-column mb-2">
-        <span class="text-body-2 font-weight-medium mb-2">{{ pregunta.pregunta }}</span>
+        <span class="text-smfont-weight-medium mb-2">{{ pregunta.pregunta }}</span>
         <div class="d-flex gap-2">
           <v-chip
             :color="respuestas[pregunta.id] === true ? 'success' : 'grey-lighten-2'"

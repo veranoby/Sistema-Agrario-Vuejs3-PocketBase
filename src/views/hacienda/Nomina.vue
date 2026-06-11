@@ -242,14 +242,14 @@
               <v-table class="payroll-table" v-if="!mobile">
                 <thead>
                   <tr>
-                    <th class="text-left font-weight-bold text-subtitle-2">Operario</th>
-                    <th class="text-center font-weight-bold text-subtitle-2" style="width: 110px;">Días Trab.</th>
-                    <th class="text-center font-weight-bold text-subtitle-2" style="width: 110px;">Jornal ($)</th>
-                    <th class="text-right font-weight-bold text-subtitle-2">Subtotal Jornal</th>
-                    <th class="text-left font-weight-bold text-subtitle-2">Cosechas (Destajo)</th>
-                    <th class="text-right font-weight-bold text-subtitle-2">Subtotal Destajo</th>
-                    <th class="text-center font-weight-bold text-subtitle-2" style="width: 110px;">Ajustes ($)</th>
-                    <th class="text-right font-weight-bold text-subtitle-2 font-weight-black">Total Neto</th>
+                    <th class="text-left font-weight-bold text-md">Operario</th>
+                    <th class="text-center font-weight-bold text-md" style="width: 110px;">Días Trab.</th>
+                    <th class="text-center font-weight-bold text-md" style="width: 110px;">Jornal ($)</th>
+                    <th class="text-right font-weight-bold text-md">Subtotal Jornal</th>
+                    <th class="text-left font-weight-bold text-md">Cosechas (Destajo)</th>
+                    <th class="text-right font-weight-bold text-md">Subtotal Destajo</th>
+                    <th class="text-center font-weight-bold text-md" style="width: 110px;">Ajustes ($)</th>
+                    <th class="text-right font-weight-bold text-md font-weight-black">Total Neto</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -340,7 +340,7 @@
                     <v-avatar color="green-lighten-4" size="32" class="text-primary-4 font-weight-bold">
                       {{ getInitials(row.operario_nombre) }}
                     </v-avatar>
-                    <span class="font-weight-bold text-subtitle-1">{{ row.operario_nombre }}</span>
+                    <span class="font-weight-bold  ">{{ row.operario_nombre }}</span>
                   </div>
                   <v-row dense>
                     <v-col cols="6">
@@ -439,8 +439,8 @@
         <v-row v-else class="my-10 justify-center">
           <v-col cols="12" md="6" class="text-center">
             <v-icon size="80" color="grey-lighten-1" class="mb-4">mdi-calculator-variant_outline</v-icon>
-            <h3 class="text-h5 font-weight-bold text-grey-darken-3 mb-2">No hay nómina cargada</h3>
-            <p class="text-body-1 text-grey-darken-1 mb-4">
+            <h3 class="text-md font-weight-bold text-grey-darken-3 mb-2">No hay nómina cargada</h3>
+            <p class="  text-grey-darken-1 mb-4">
               Seleccione un rango de fechas de arriba y haga clic en "Generar" para construir el borrador de la semana.
             </p>
           </v-col>
@@ -618,7 +618,7 @@
                 :key="item.operario_id"
                 class="mb-3 bg-grey-lighten-4 rounded-lg mx-2 border pb-3 pt-2"
               >
-                <div class="font-weight-bold text-subtitle-1 mb-2">{{ item.operario_nombre }}</div>
+                <div class="font-weight-bold   mb-2">{{ item.operario_nombre }}</div>
                 <v-btn-toggle
                   v-model="item.tipo_jornada"
                   color="green-darken-3"

@@ -1,7 +1,7 @@
 <template>
   <div class="siembra-info mt-2 p-2">
     <v-card-title class="headline d-flex justify-between">
-      <h2 class="text-md font-bold mt-2">{{ t('activity_workspace.reminders') }}</h2>
+      <h3 class=" text-sm font-bold mt-2">{{ t('activity_workspace.reminders') }}</h3>
       <v-btn
         size="small"
         color="green-lighten-2"

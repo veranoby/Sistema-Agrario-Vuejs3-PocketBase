@@ -20,7 +20,7 @@
                 <li>
                   <div class="flex items-center">
                     <v-icon>mdi-chevron-right</v-icon>
-                    <span class="ml-1 text-sm font-extrabold text-gray-600" aria-current="page">
+                    <span class="ml-1 text-sm font-extrabold" aria-current="page">
                       {{ actividadInfo.nombre }}
                     </span>
                   </div>

@@ -11,7 +11,7 @@
     <v-spacer></v-spacer>
 
     <template v-slot:append>
-      <div class="d-flex align-center gap-1 sm:gap-2 text-sm sm:text-base">
+      <div class="d-flex align-center gap-1 sm:gap-2 text-sm sm:text-sm">
         <v-btn
           text
           size="small"

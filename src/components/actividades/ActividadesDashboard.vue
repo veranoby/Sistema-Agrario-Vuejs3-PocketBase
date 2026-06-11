@@ -43,9 +43,40 @@
     <main class="flex-1 py-2">
       <v-container>
         <v-row>
-          <v-alert v-if="!actividades?.length" type="info" class="mt-4">
-            {{ t('activities.no_activities') }}
-          </v-alert>
+          <v-col v-if="!actividades?.length" cols="12" md="10" offset-md="1" class="mt-4">
+            <v-card class="pa-6 text-center rounded-xl elevation-0 border bg-surface">
+              <v-icon size="48" color="primary" class="mb-3">mdi-gesture-tap-button</v-icon>
+              <h3 class="text-md font-weight-bold mb-1">Fase 2: Zonas y Actividades</h3>
+              <p class="text-smtext-medium-emphasis mb-6">
+                Aún no tienes actividades registradas. Configura las labores ("el qué se hace") para asociarlas a tus siembras y zonas.
+              </p>
+              
+              <v-timeline align="start" side="end" density="compact" class="text-left mt-4 mb-4">
+                <v-timeline-item dot-color="success" size="small">
+                  <template v-slot:icon><v-icon color="white" size="small">mdi-check</v-icon></template>
+                  <div class="mb-1">
+                    <div class="  font-weight-bold text-success">Fase 1: Siembras</div>
+                    <div class="text-caption text-medium-emphasis">Se recomienda haber creado previamente el proyecto de siembra.</div>
+                  </div>
+                </v-timeline-item>
+
+                <v-timeline-item dot-color="primary" size="small">
+                  <div class="mb-1">
+                    <div class="  font-weight-bold">Fase 2: Actividades (Estás aquí)</div>
+                    <div class="text-caption text-medium-emphasis">Registra las labores a ejecutar en las zonas (ej. fertilización, riego).</div>
+                  </div>
+                  <v-btn size="small" variant="flat" color="primary" class="mt-2" @click="NuevaActividad">Crear Actividad</v-btn>
+                </v-timeline-item>
+
+                <v-timeline-item dot-color="grey-lighten-2" size="small">
+                  <div class="mb-1">
+                    <div class="  font-weight-bold text-grey">Siguiente: Fase 3 (Programaciones)</div>
+                    <div class="text-caption text-medium-emphasis">Programa estas actividades en el calendario.</div>
+                  </div>
+                </v-timeline-item>
+              </v-timeline>
+            </v-card>
+          </v-col>
 
           <v-col
             v-for="actividad in actividades"

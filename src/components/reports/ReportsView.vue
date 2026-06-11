@@ -3,7 +3,7 @@
     <div class="d-flex justify-space-between align-center mb-6">
       <div>
         <h1 class="text-h4">Reportes</h1>
-        <p class="text-subtitle-2 text-medium-emphasis">
+        <p class="text-md text-medium-emphasis">
           Generación y programación de reportes automáticos
         </p>
       </div>
@@ -28,7 +28,7 @@
                 dot-color="primary"
                 size="small"
               >
-                <div class="text-subtitle-2">{{ getTemplateName(item.templateId) }}</div>
+                <div class="text-md">{{ getTemplateName(item.templateId) }}</div>
                 <div class="">
                   {{ formatDate(item.generatedAt) }}
                 </div>
@@ -39,7 +39,7 @@
               </v-timeline-item>
 
               <v-timeline-item v-if="reportStore.getHistory.length === 0" dot-color="grey">
-                <div class="text-subtitle-2 text-medium-emphasis">
+                <div class="text-md text-medium-emphasis">
                   Sin historial de reportes
                 </div>
               </v-timeline-item>

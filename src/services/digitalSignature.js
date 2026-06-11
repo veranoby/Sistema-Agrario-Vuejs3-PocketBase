@@ -123,7 +123,7 @@ export class DigitalSignature {
       id: 'user-key-pair',
       publicKey: Array.from(new Uint8Array(publicKey)),
       privateKey: Array.from(new Uint8Array(privateKey))
-    })
+    }, 'user-key-pair')
 
     logger.info('[DigitalSignature] Claves guardadas en IndexedDB')
   }

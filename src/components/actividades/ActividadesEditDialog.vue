@@ -33,7 +33,7 @@
                 v-if="tipoActividadActual?.metricas?.metricas"
               >
                 <v-card-title class="headline d-flex justify-between">
-                  <h2 class="text-xl font-bold mt-2">{{ t('activity_workspace.metrics') }}</h2>
+                  <h3 class="text-xl font-bold mt-2">{{ t('activity_workspace.metrics') }}</h3>
                   <v-btn
                     size="small"
                     color="green-lighten-2"
@@ -260,7 +260,7 @@
 
           <div class="siembra-info mt-4">
             <v-card-title class="headline">
-              <h2 class="text-xl font-bold mt-2">{{ t('activity_workspace.bpa_tracking') }}</h2>
+              <h3 class="text-xl font-bold mt-2">{{ t('activity_workspace.bpa_tracking') }}</h3>
             </v-card-title>
             <v-card-text>
               <div class="grid grid-cols-3 gap-2">

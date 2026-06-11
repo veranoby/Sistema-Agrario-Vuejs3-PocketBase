@@ -28,8 +28,8 @@
           <!-- Estado de éxito -->
           <div v-else-if="resetSuccess" class="text-center py-6">
             <v-icon color="primary" size="64" class="mb-4">mdi-check-circle-outline</v-icon>
-            <h3 class="text-h5 mb-2">{{ t('auth.password_reset_success_title') }}</h3>
-            <p class="text-body-1 mb-6">
+            <h3 class="text-md mb-2">{{ t('auth.password_reset_success_title') }}</h3>
+            <p class="  mb-6">
               {{ t('auth.password_reset_success_message') }}
             </p>
             <v-btn color="primary" to="/" block>{{ t('auth.login') }}</v-btn>
@@ -37,7 +37,7 @@
 
           <!-- Formulario de reset -->
           <v-form v-else @submit.prevent="handlePasswordReset" ref="resetForm">
-            <p class="text-body-1 mb-4">
+            <p class="  mb-4">
               {{ t('auth.enter_new_password') }}
             </p>
 

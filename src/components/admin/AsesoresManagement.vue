@@ -1,6 +1,6 @@
 <template>
   <v-container fluid class="asesores-management">
-    <h2 class="text-h5 mb-4">Gestión de Asesores Técnicos</h2>
+    <h3 class="text-md mb-4">Gestión de Asesores Técnicos</h3>
 
     <v-row>
       <!-- Listado de Asesores -->
@@ -57,7 +57,7 @@
           <v-card-text class="pt-4">
             <!-- Información del Perfil del Asesor (Info JSON parseada) -->
             <div class="mb-4 bg-grey-lighten-4 p-3 rounded-lg border">
-              <h3 class="text-subtitle-1 font-weight-bold mb-2">Información del Asesor</h3>
+              <h3 class="  font-weight-bold mb-2">Información del Asesor</h3>
               <v-row density="compact">
                 <v-col cols="12" sm="6">
                   <strong>Colegiatura:</strong> {{ parsedInfo.numero_colegiatura || 'N/A' }}
@@ -70,7 +70,7 @@
                 </v-col>
                 <v-col cols="12" v-if="parsedInfo.bio_corta">
                   <strong>Bio:</strong> 
-                  <p class="text-body-2 text-grey-darken-2 mt-1">{{ parsedInfo.bio_corta }}</p>
+                  <p class="text-smtext-grey-darken-2 mt-1">{{ parsedInfo.bio_corta }}</p>
                 </v-col>
               </v-row>
             </div>

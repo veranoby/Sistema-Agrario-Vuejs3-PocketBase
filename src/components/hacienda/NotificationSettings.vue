@@ -1,9 +1,9 @@
 <template>
   <div class="bg-dinamico border-1 m-5 mt-4 px-4 py-4 shadow-md hover:shadow-xl rounded-lg">
-    <h2 class="text-xl font-bold mb-4">
+    <h3 class="text-xl font-bold mb-4">
       <v-icon color="primary" class="mr-2">mdi-bell-ring-outline</v-icon>
       {{ t('notifications.title') }}
-    </h2>
+    </h3>
     <p class="text-xs text-gray-600 mb-6">
       {{ t('notifications.subtitle') }}
     </p>

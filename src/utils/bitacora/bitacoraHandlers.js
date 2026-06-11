@@ -374,6 +374,7 @@ const HANDLERS_REGISTRY = {
   monitoreo: new MonitoreoHandler(),
   riego: new RiegoHandler(),
   fertilizacion: new FertilizacionHandler(),
+  fertilizacion_y_nutricion: new FertilizacionHandler(),
   labranza: new GenericHandler('labranza'),
   poda: new GenericHandler('poda')
 }

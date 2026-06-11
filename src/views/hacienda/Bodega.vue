@@ -258,7 +258,7 @@
     <v-dialog v-model="modalItemOpen" max-width="600px">
       <v-card class="rounded-lg elevation-5">
         <v-card-title class="bg-gradient-teal text-white py-4 px-6">
-          <span class="text-h5 font-weight-bold">
+          <span class="text-md font-weight-bold">
             {{ editMode ? 'Editar Insumo' : 'Registrar Nuevo Insumo' }}
           </span>
         </v-card-title>
@@ -366,11 +366,11 @@
     <v-dialog v-model="modalMovOpen" max-width="500px">
       <v-card class="rounded-lg elevation-5">
         <v-card-title class="bg-gradient-teal text-white py-4 px-6">
-          <span class="text-h5 font-weight-bold">Ajuste de Stock</span>
+          <span class="text-md font-weight-bold">Ajuste de Stock</span>
         </v-card-title>
 
         <v-card-text class="pt-6 px-6">
-          <div class="mb-4 text-subtitle-1">
+          <div class="mb-4  ">
             Insumo: <strong class="text-primary-3">{{ selectedItem?.nombre }}</strong>
             <span class="text-caption text-grey d-block">Stock Actual: {{ selectedItem?.stock_actual }} {{ selectedItem?.unidad }}</span>
           </div>

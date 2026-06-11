@@ -92,16 +92,15 @@ export const useProgramacionesStore = defineStore('programaciones', {
       const hoyNormalizado = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate())
 
       return state.programaciones.filter((p) => {
-        const fechaEjecucion =
-          p.frecuencia === FREQUENCY_TYPES.FECHA_ESPECIFICA
-            ? new Date(p.frecuencia_personalizada?.fecha)
-            : new Date(p.proxima_ejecucion)
+        const dateStr = p.frecuencia === FREQUENCY_TYPES.FECHA_ESPECIFICA
+          ? p.frecuencia_personalizada?.fecha
+          : p.proxima_ejecucion
 
-        const fechaEjecucionNormalizada = new Date(
-          fechaEjecucion.getFullYear(),
-          fechaEjecucion.getMonth(),
-          fechaEjecucion.getDate()
-        )
+        if (!dateStr) return false
+
+        const datePart = dateStr.split('T')[0].split(' ')[0]
+        const [year, month, day] = datePart.split('-').map(Number)
+        const fechaEjecucionNormalizada = new Date(year, month - 1, day)
 
         return fechaEjecucionNormalizada.getTime() === hoyNormalizado.getTime()
       })
@@ -109,13 +108,20 @@ export const useProgramacionesStore = defineStore('programaciones', {
 
     programacionesPendientes: (state) => {
       const hoy = new Date()
+      const hoyNormalizado = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate())
+      
       return state.programaciones.filter((p) => {
-        const fechaEjecucion =
-          p.frecuencia === FREQUENCY_TYPES.FECHA_ESPECIFICA
-            ? new Date(p.frecuencia_personalizada?.fecha)
-            : new Date(p.proxima_ejecucion)
+        const dateStr = p.frecuencia === FREQUENCY_TYPES.FECHA_ESPECIFICA
+          ? p.frecuencia_personalizada?.fecha
+          : p.proxima_ejecucion
 
-        return isBefore(fechaEjecucion, hoy)
+        if (!dateStr) return false
+
+        const datePart = dateStr.split('T')[0].split(' ')[0]
+        const [year, month, day] = datePart.split('-').map(Number)
+        const fechaEjecucionNormalizada = new Date(year, month - 1, day)
+
+        return fechaEjecucionNormalizada.getTime() < hoyNormalizado.getTime()
       })
     }
   },
@@ -295,16 +301,15 @@ export const useProgramacionesStore = defineStore('programaciones', {
         proximaEjecucion = fechaActual
       }
 
-      const enrichedData = {
-        ...nuevaProgramacion,
-        hacienda: haciendaStore.mi_hacienda?.id,
-        version: this.version,
-        ultima_ejecucion: null,
-        actividades: nuevaProgramacion.actividadesSeleccionadas,
-        siembras: await this.obtenerSiembrasRelacionadas(
-          nuevaProgramacion.actividadesSeleccionadas
-        ),
-        proxima_ejecucion: proximaEjecucion,
+        const acts = nuevaProgramacion.actividades || nuevaProgramacion.actividadesSeleccionadas || []
+        const enrichedData = {
+          ...nuevaProgramacion,
+          hacienda: haciendaStore.mi_hacienda?.id,
+          version: this.version,
+          ultima_ejecucion: null,
+          actividades: acts,
+          siembras: await this.obtenerSiembrasRelacionadas(acts),
+          proxima_ejecucion: proximaEjecucion,
         created: fechaActual
       }
 
@@ -463,7 +468,7 @@ export const useProgramacionesStore = defineStore('programaciones', {
       const siembras = new Set()
 
       const missingIds = []
-      for (const id of actividadesIds) {
+      for (const id of (actividadesIds || [])) {
         const actividad = actividadesStore.actividades.find(a => a.id === id)
         if (actividad?.siembras) {
           actividad.siembras.forEach((siembraId) => siembras.add(siembraId))

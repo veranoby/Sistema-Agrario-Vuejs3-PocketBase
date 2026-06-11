@@ -178,7 +178,7 @@ const EMAIL_TEMPLATES = {
     color: "#43a047",
     content: (data, frontendUrl) => `<div style="background: #ffffff; ${CSS.boxPadding}; border: 1px solid #e1e1e1; border-top: none; border-radius: 0 0 10px 10px;">
       <h3 style="color: #43a047; border-bottom: 2px solid #e8f5e9; padding-bottom: 5px;">✅ Logros de la Semana Pasada</h3>
-      ${data.summary?.past?.length > 0 
+      ${data.summary?.past?.length > 0
         ? `<ul style="${CSS.smallFontSize}; color: #555;">` + data.summary.past.map(log => `<li>${new Date(log.fecha).toLocaleDateString()}: Actividad registrada</li>`).join('') + `</ul>`
         : `<p style="${CSS.smallFontSize}; color: #999;">No se registraron actividades completadas.</p>`
       }
@@ -203,13 +203,13 @@ const EMAIL_TEMPLATES = {
     color: "#d32f2f",
     content: (data) => `<div style="background: #ffffff; ${CSS.boxPadding}; border: 1px solid #e1e1e1; border-top: none; border-radius: 0 0 10px 10px;">
       <div style="background: #fff5f5; ${CSS.boxPadding}; border: 1px solid #ffcdd2; border-radius: 8px; text-align: center;">
-        <h2 style="color: #d32f2f; margin-top: 0;">Atención Inmediata Requerida</h2>
-        ${data.emergency_type === 'subscription_expiry' 
-          ? `<p style="${CSS.baseFontSize};">Su suscripción expirará en <strong>${data.days_remaining} días</strong>. Por favor, actualice su plan para evitar la suspensión del servicio.</p>`
-          : data.emergency_type === 'bpa_risk'
+        <h3 style="color: #d32f2f; margin-top: 0;">Atención Inmediata Requerida</h3>
+        ${data.emergency_type === 'subscription_expiry'
+        ? `<p style="${CSS.baseFontSize};">Su suscripción expirará en <strong>${data.days_remaining} días</strong>. Por favor, actualice su plan para evitar la suspensión del servicio.</p>`
+        : data.emergency_type === 'bpa_risk'
           ? `<p style="${CSS.baseFontSize};">Se han detectado <strong>${data.critical_count} zonas</strong> con estado BPA crítico (menor al 50%). Se recomienda inspección urgente.</p>`
           : `<p style="${CSS.baseFontSize};">Se ha detectado un evento crítico que requiere su atención en el sistema.</p>`
-        }
+      }
       </div>
     </div>`
   }
@@ -311,7 +311,7 @@ routerAdd("POST", "/api/modulos/:id/activate", (e) => {
 
   // ── Validación de inputs ──
   if (!haciendaId) return e.json(HTTP_STATUS.BAD_REQUEST, { error: "haciendaId required" })
-  if (!moduloId)   return e.json(HTTP_STATUS.BAD_REQUEST, { error: "moduloId required" })
+  if (!moduloId) return e.json(HTTP_STATUS.BAD_REQUEST, { error: "moduloId required" })
 
   // ── Validación de rol: solo superadmin puede activar módulos ──
   const caller = info.authRecord
@@ -1780,7 +1780,7 @@ routerAdd("POST", "/api/ai/chat", (e) => {
       $app.dao().filter("id = {:id}", { id: haciendaId })
     )
     aiConfig = hacienda ? hacienda.get("ai_config") : null
-  } catch (_) {}
+  } catch (_) { }
 
   if (!aiConfig || !aiConfig.auth_token) {
     const settings = getSettings()
@@ -1807,7 +1807,7 @@ routerAdd("POST", "/api/ai/chat", (e) => {
         $app.dao().filter("key = {:key}", { key: rateLimitKey })
       )
       usageToday = paramRecord ? parseInt(paramRecord.get("value") || "0") : 0
-    } catch (_) {}
+    } catch (_) { }
 
     const dailyLimit = 20
     if (usageToday >= dailyLimit) {

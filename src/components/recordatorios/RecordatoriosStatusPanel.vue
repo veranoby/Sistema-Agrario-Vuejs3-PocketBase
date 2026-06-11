@@ -6,7 +6,7 @@
         <v-icon>mdi-bell-outline</v-icon>
       </v-badge>
 
-      <v-toolbar-title class="font-weight-bold text-base" :style="`color: ${color}`">
+      <v-toolbar-title class="font-weight-bold text-sm" :style="`color: ${color}`">
         {{ title }}
       </v-toolbar-title>
     </v-toolbar>

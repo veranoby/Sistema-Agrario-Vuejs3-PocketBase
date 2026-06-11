@@ -153,23 +153,27 @@ export const useNominaStore = defineStore('nomina', {
       try {
         // 1. Obtener operarios desde la plantilla (solo activos)
         const operarios = await pb.collection('plantilla_nomina').getFullList({
-          filter: `hacienda="${haciendaId}" && activo=true`
+          filter: `hacienda="${haciendaId}" && activo=true`,
+          fields: 'id,nombre,cargo,salario_base,tipo_pago,hacienda'
         })
 
         // 2. Obtener bitácora del rango (para fallback)
         const bitacoraList = await pb.collection('bitacora').getFullList({
-          filter: `hacienda="${haciendaId}" && fecha >= "${semanaInicio}T00:00:00.000Z" && fecha <= "${semanaFin}T23:59:59.999Z"`
+          filter: `hacienda="${haciendaId}" && fecha >= "${semanaInicio}T00:00:00.000Z" && fecha <= "${semanaFin}T23:59:59.999Z"`,
+          fields: 'id,fecha,trabajadores_involucrados,actividades,hacienda'
         })
 
         // 3. Obtener asistencia formal del rango
         const asistenciaList = await pb.collection('nomina_asistencia').getFullList({
-          filter: `hacienda="${haciendaId}" && fecha >= "${semanaInicio}T00:00:00.000Z" && fecha <= "${semanaFin}T23:59:59.999Z"`
+          filter: `hacienda="${haciendaId}" && fecha >= "${semanaInicio}T00:00:00.000Z" && fecha <= "${semanaFin}T23:59:59.999Z"`,
+          fields: 'id,fecha,operario,tipo_jornada,horas,hacienda'
         })
 
         // 4. Obtener tarjas del rango
         const tarjasList = await pb.collection('tarjas').getFullList({
           filter: `hacienda="${haciendaId}" && fecha >= "${semanaInicio}T00:00:00.000Z" && fecha <= "${semanaFin}T23:59:59.999Z"`,
-          expand: 'operario'
+          expand: 'operario',
+          fields: 'id,fecha,operario,cantidad,actividad,hacienda,expand'
         })
 
         // Crear mapa de fechas de la semana (YYYY-MM-DD)
@@ -309,17 +313,20 @@ export const useNominaStore = defineStore('nomina', {
         // Traer operarios activos
         const operarios = await pb.collection('plantilla_nomina').getFullList({
           filter: `hacienda="${haciendaId}" && activo=true`,
-          sort: 'nombre'
+          sort: 'nombre',
+          fields: 'id,nombre,cargo,salario_base,tipo_pago,hacienda'
         })
 
         // Traer asistencias guardadas para este día
         const asistencias = await pb.collection('nomina_asistencia').getFullList({
-          filter: `hacienda="${haciendaId}" && fecha >= "${fechaStr}T00:00:00.000Z" && fecha <= "${fechaStr}T23:59:59.999Z"`
+          filter: `hacienda="${haciendaId}" && fecha >= "${fechaStr}T00:00:00.000Z" && fecha <= "${fechaStr}T23:59:59.999Z"`,
+          fields: 'id,fecha,operario,tipo_jornada,horas,hacienda'
         })
 
         // Traer bitácoras del día para autollenado mágico si no hay asistencia guardada
         const bitacoras = await pb.collection('bitacora').getFullList({
-          filter: `hacienda="${haciendaId}" && fecha >= "${fechaStr}T00:00:00.000Z" && fecha <= "${fechaStr}T23:59:59.999Z"`
+          filter: `hacienda="${haciendaId}" && fecha >= "${fechaStr}T00:00:00.000Z" && fecha <= "${fechaStr}T23:59:59.999Z"`,
+          fields: 'id,fecha,trabajadores_involucrados,actividades,hacienda'
         })
 
         const registros = operarios.map(op => {

@@ -159,7 +159,7 @@
                         <v-icon color="green-darken-3">mdi-basket</v-icon>
                       </v-avatar>
                     </template>
-                    <v-list-item-title class="font-weight-bold text-subtitle-2">{{ getOperarioNombre(item) }}</v-list-item-title>
+                    <v-list-item-title class="font-weight-bold text-md">{{ getOperarioNombre(item) }}</v-list-item-title>
                     <v-list-item-subtitle class="text-caption text-grey-darken-1 d-flex flex-column">
                       <span>{{ formatFecha(item.fecha) }} &bull; {{ getSiembraNombre(item) }}</span>
                       <span class="d-flex align-center gap-1 mt-1">
@@ -181,7 +181,7 @@
                     </v-list-item-subtitle>
                     <template v-slot:append>
                       <div class="d-flex flex-column align-end">
-                        <div class="font-weight-bold text-subtitle-1 text-primary-3">
+                        <div class="font-weight-bold   text-primary-3">
                           {{ item.cantidad }} {{ item.tipo_unidad }}
                         </div>
                         <div v-if="item.cantidad_merma" class="text-caption text-red-darken-3">

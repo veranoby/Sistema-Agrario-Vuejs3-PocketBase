@@ -144,32 +144,32 @@ const navigationLinks = computed(() => {
   }
 
   const links = [
-    { id: 1, to: '/dashboard', icon: 'mdi-view-dashboard', label: t('sidebar.dashboard') },
-    { id: 2, to: '/siembras', icon: 'mdi-sprout', label: t('sidebar.sowings') },
-    { id: 3, to: '/actividades', icon: 'mdi-gesture-tap-button', label: t('sidebar.activities') },
-    { id: 4, to: '/programaciones', icon: 'mdi-alarm-check', label: t('sidebar.schedules') },
-    { id: 5, to: '/bitacora', icon: 'mdi-book-open-variant', label: t('sidebar.bitacora') },
-    { id: 6, to: '/zonas', icon: 'mdi-map', label: t('sidebar.zones') }
+    { id: 1, to: '/dashboard', icon: 'mdi-view-dashboard', label: t('sidebar.dashboard'), group: 'Inicio' },
+    { id: 2, to: '/siembras', icon: 'mdi-sprout', label: t('sidebar.sowings'), group: 'Fase 1: Siembras' },
+    { id: 6, to: '/zonas', icon: 'mdi-map', label: t('sidebar.zones'), group: 'Fase 2: Zonas y Actividades' },
+    { id: 3, to: '/actividades', icon: 'mdi-gesture-tap-button', label: t('sidebar.activities'), group: 'Fase 2: Zonas y Actividades' },
+    { id: 4, to: '/programaciones', icon: 'mdi-alarm-check', label: t('sidebar.schedules'), group: 'Fase 3: Control' },
+    { id: 5, to: '/bitacora', icon: 'mdi-book-open-variant', label: t('sidebar.bitacora'), group: 'Fase 3: Control' }
   ]
 
   if (haciendaStore.isModuleActive('tarjas_campo')) {
-    links.push({ id: 12, to: '/hacienda/tarjas', icon: 'mdi-dolly', label: 'Cosechas (Tarjas)' })
+    links.push({ id: 12, to: '/hacienda/tarjas', icon: 'mdi-dolly', label: 'Cosechas (Tarjas)', group: 'Operación' })
   }
 
   if (role !== USER_ROLES.OPERADOR) {
-    links.push({ id: 7, to: '/metricas', icon: 'mdi-chart-areaspline', label: t('sidebar.metrics') })
-    links.push({ id: 8, to: '/finanzas', icon: 'mdi-cash-multiple', label: t('sidebar.finances') })
-    links.push({ id: 9, to: '/recordatorios', icon: 'mdi-alarm-light-outline', label: t('sidebar.reminders') })
-    links.push({ id: 10, to: '/hacienda/directorio-asesores', icon: 'mdi-account-search', label: 'Asesores' })
+    links.push({ id: 7, to: '/metricas', icon: 'mdi-chart-areaspline', label: t('sidebar.metrics'), group: 'Análisis' })
+    links.push({ id: 8, to: '/finanzas', icon: 'mdi-cash-multiple', label: t('sidebar.finances'), group: 'Análisis' })
+    links.push({ id: 9, to: '/recordatorios', icon: 'mdi-alarm-light-outline', label: t('sidebar.reminders'), group: 'Extra' })
+    links.push({ id: 10, to: '/hacienda/directorio-asesores', icon: 'mdi-account-search', label: 'Asesores', group: 'Extra' })
     if (haciendaStore.isModuleActive('kardex_bodega')) {
-      links.push({ id: 11, to: '/hacienda/bodega', icon: 'mdi-warehouse', label: 'Bodega' })
+      links.push({ id: 11, to: '/hacienda/bodega', icon: 'mdi-warehouse', label: 'Bodega', group: 'Operación' })
     }
     if (haciendaStore.isModuleActive('nomina_express')) {
-      links.push({ id: 13, to: '/hacienda/nomina', icon: 'mdi-file-percent', label: 'Nómina Express' })
+      links.push({ id: 13, to: '/hacienda/nomina', icon: 'mdi-file-percent', label: 'Nómina Express', group: 'Operación' })
     }
     if (role === USER_ROLES.ADMINISTRADOR && haciendaStore.isModuleActive('costo_por_hectarea')) {
-      links.push({ id: 14, to: '/hacienda/dashboard', icon: 'mdi-chart-bar', label: 'Dashboard Gerencial' })
-      links.push({ id: 15, to: '/hacienda/rentabilidad', icon: 'mdi-matrix', label: 'Rentabilidad Siembras' })
+      links.push({ id: 14, to: '/hacienda/dashboard', icon: 'mdi-chart-bar', label: 'Dashboard Gerencial', group: 'Gerencia' })
+      links.push({ id: 15, to: '/hacienda/rentabilidad', icon: 'mdi-matrix', label: 'Rentabilidad Siembras', group: 'Gerencia' })
     }
   }
 
@@ -177,6 +177,8 @@ const navigationLinks = computed(() => {
 })
 
 let checkInterval = null
+let lastFocusRefresh = 0
+const FOCUS_REFRESH_COOLDOWN_MS = 5 * 60 * 1000 // 5 min — evita requests en cada cambio de tab
 
 const handleLoginSuccess = () => {
   showAuthModal.value = false
@@ -298,20 +300,24 @@ const handleVisibilityChange = () => {
 }
 
 const refreshTokenIfNeeded = async () => {
-  if (authStore.isLoggedIn) {
-    try {
-      // Forzar siempre la validación al recuperar el foco para detectar doble sesión
-      const syncStore = useSyncStore()
-      if (syncStore.isOnline) {
-        await authStore.refreshToken(true) // Pasar true para forzar
-      }
-    } catch (error) {
-       // console.error('[APP] Error en refreshTokenIfNeeded:', error)
-      const syncStore = useSyncStore()
-      const rememberMe = syncStore.loadFromLocalStorage('rememberMe')
-      if (rememberMe) {
-        authStore.showLoginDialog = true
-      }
+  if (!authStore.isLoggedIn) return
+
+  // Cooldown: máx 1 refresh de token cada 5 min por foco/visibilidad
+  const now = Date.now()
+  if (now - lastFocusRefresh < FOCUS_REFRESH_COOLDOWN_MS) return
+  lastFocusRefresh = now
+
+  try {
+    // Validar sesión al recuperar foco para detectar doble sesión
+    const syncStore = useSyncStore()
+    if (syncStore.isOnline) {
+      await authStore.refreshToken(true)
+    }
+  } catch (error) {
+    const syncStore = useSyncStore()
+    const rememberMe = syncStore.loadFromLocalStorage('rememberMe')
+    if (rememberMe) {
+      authStore.showLoginDialog = true
     }
   }
 }

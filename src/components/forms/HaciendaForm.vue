@@ -266,7 +266,7 @@
       <!-- RIGHT COLUMN: GIS Visualization (7/12) -->
       <div class="lg:col-span-7 flex flex-col gap-4">
         <v-card variant="flat" class="border pa-4 rounded-lg bg-grey-lighten-5 h-full">
-          <div class="text-subtitle-2 font-weight-bold mb-4 d-flex align-center">
+          <div class="text-md font-weight-bold mb-4 d-flex align-center">
             <v-icon start color="blue" class="mr-2">mdi-map-marker-path</v-icon>
             Geometría y Ubicación (GIS)
           </div>
@@ -339,7 +339,7 @@
 
           <!-- Vértices del Polígono -->
           <div v-if="polygonVertices.length > 0" class="mt-4 p-4 bg-white rounded-lg border shadow-sm">
-            <div class="text-subtitle-2 font-weight-bold mb-3 d-flex align-center">
+            <div class="text-md font-weight-bold mb-3 d-flex align-center">
               <v-icon start color="blue" size="small" class="mr-2">mdi-shape-polygon-plus</v-icon>
               Vértices del perímetro ({{ polygonVertices.length }})
             </div>

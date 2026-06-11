@@ -36,7 +36,7 @@
         </v-chip>
 
         <v-chip
-          v-if="esUrgente"
+          v-if="esUrgente && (complianceState === 'ACUMULADO' || complianceState === 'VENCIDO')"
           size="x-small"
           variant="flat"
           color="error"
@@ -73,7 +73,7 @@
       </div>
 
       <!-- Row 4: action buttons -->
-      <div v-if="showBatchExecutionButton || showSingleExecutionButton" class="d-flex gap-2">
+      <div v-if="showBatchExecutionButton || showSingleExecutionButton || (programacion.estado === 'activo' && canEdit)" class="d-flex gap-2 align-center">
         <v-btn
           v-if="showBatchExecutionButton"
           variant="tonal"
@@ -85,7 +85,7 @@
           :aria-label="`Registrar ${ejecucionesPendientes} acumulados`"
         >
           <v-icon start size="15">mdi-playlist-check</v-icon>
-          {{ ejecucionesPendientes }} acumulados
+          {{ ejecucionesPendientes }} Acumulados
         </v-btn>
 
         <v-btn
@@ -101,7 +101,8 @@
         />
 
         <v-btn
-          v-if="showSingleExecutionButton"
+          v-if="programacion.estado === 'activo' && canEdit"
+
           variant="tonal"
           color="primary"
           size="small"
@@ -111,9 +112,22 @@
           :aria-label="`Registrar cumplimiento`"
         >
           <v-icon start size="15">mdi-check-circle-outline</v-icon>
-          Registrar
+          Registrar en Bitacora
         </v-btn>
-      </div>
+
+        <!-- Acceso rápido a bitácora: siempre visible para programaciones activas 
+        <v-btn
+          v-if="showSingleExecutionButton"
+          variant="tonal"
+          color="success"
+          size="small"
+          density="comfortable"
+          @click="handleRegistrarCumplimiento"
+          :aria-label="`Abrir bitácora para esta programación`"
+        >
+          <v-icon start size="15">mdi-notebook-edit-outline</v-icon>
+          Registro Simple
+        </v-btn>-->      </div>
 
     </v-card-text>
 
@@ -283,48 +297,41 @@ const esUrgente = computed(() => ejecucionesPendientes.value > 0)
 
 const hoy = new Date()
 const debeEjecutarHoy = computed(() => {
-  // Si es fecha específica, comparar directamente con hoy
-  if (props.programacion.frecuencia === 'fecha_especifica') {
-    // Asegurarnos de que la fecha existe y es válida
-    const fechaStr = props.programacion.frecuencia_personalizada?.fecha
-    if (!fechaStr) return false
+  const dateStr = props.programacion.frecuencia === 'fecha_especifica'
+    ? props.programacion.frecuencia_personalizada?.fecha
+    : props.programacion.proxima_ejecucion
 
-    // Parsear la fecha usando UTC para evitar problemas de zona horaria
-    const [year, month, day] = fechaStr.split('-').map(Number)
-    const fechaEspecifica = new Date(year, month - 1, day) // month es 0-based en JS
+  if (!dateStr) return false
 
-    const hoyNormalizado = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate())
-    const fechaEspecificaNormalizada = new Date(
-      fechaEspecifica.getFullYear(),
-      fechaEspecifica.getMonth(),
-      fechaEspecifica.getDate()
-    )
-
-    return fechaEspecificaNormalizada.getTime() === hoyNormalizado.getTime()
-  }
-
-  // Para otras frecuencias, usar la próxima ejecución
-  const proximaEjecucion = new Date(props.programacion.proxima_ejecucion)
+  const datePart = dateStr.split('T')[0].split(' ')[0]
+  const [year, month, day] = datePart.split('-').map(Number)
+  
   const hoyNormalizado = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate())
-  const proximaEjecucionNormalizada = new Date(
-    proximaEjecucion.getFullYear(),
-    proximaEjecucion.getMonth(),
-    proximaEjecucion.getDate()
-  )
+  const fechaEjecucionNormalizada = new Date(year, month - 1, day)
 
-  return proximaEjecucionNormalizada.getTime() === hoyNormalizado.getTime()
+  return fechaEjecucionNormalizada.getTime() === hoyNormalizado.getTime()
 })
 
 const canExecuteSingle = computed(() => {
   if (props.programacion.estado !== 'activo') {
     return false
   }
-  const proximaEjecucionDate = new Date(props.programacion.proxima_ejecucion)
-  // Gracefully handle invalid dates: if proxima_ejecucion is invalid, proximaIsValid will be false.
-  const proximaIsValid = isValid(proximaEjecucionDate)
 
-  // Condition: isPastDue OR debeEjecutarHoy OR hasPending
-  const isPastDue = proximaIsValid && isBefore(proximaEjecucionDate, new Date())
+  const dateStr = props.programacion.frecuencia === 'fecha_especifica'
+    ? props.programacion.frecuencia_personalizada?.fecha
+    : props.programacion.proxima_ejecucion
+
+  let isPastDue = false
+  if (dateStr) {
+    const datePart = dateStr.split('T')[0].split(' ')[0]
+    const [year, month, day] = datePart.split('-').map(Number)
+    
+    const hoyNormalizado = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate())
+    const fechaEjecucionNormalizada = new Date(year, month - 1, day)
+    
+    isPastDue = isBefore(fechaEjecucionNormalizada, hoyNormalizado)
+  }
+
   const hasPending = ejecucionesPendientes.value > 0
 
   return isPastDue || debeEjecutarHoy.value || hasPending

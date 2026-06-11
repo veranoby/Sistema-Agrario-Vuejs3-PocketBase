@@ -84,8 +84,8 @@
 
               <v-col cols="12" sm="6" md="3" class="d-flex align-center justify-center">
                 <div class="text-center">
-                  <div class="text-subtitle-2">{{ t('finance.total_of_the_month') }}</div>
-                  <div class="text-h5 mb-2">{{ formatCurrency(finanzaStore.totalMes) }}</div>
+                  <div class="text-md">{{ t('finance.total_of_the_month') }}</div>
+                  <div class="text-md mb-2">{{ formatCurrency(finanzaStore.totalMes) }}</div>
 
                   <div class="d-flex flex-wrap gap-1 justify-center" v-if="finanzaStore.totalesPorUsuario.length > 0">
                     <v-chip
@@ -462,14 +462,14 @@
                       </v-icon>
                     </v-avatar>
                   </template>
-                  <v-list-item-title class="font-weight-bold text-subtitle-2">{{ item.razon_social || item.categoria }}</v-list-item-title>
+                  <v-list-item-title class="font-weight-bold text-md">{{ item.razon_social || item.categoria }}</v-list-item-title>
                   <v-list-item-subtitle class="text-caption text-grey-darken-1 d-flex flex-column">
                     <span>{{ formatDate(item.fecha) }} &bull; {{ item.costo }}</span>
                     <span class="text-truncate">{{ item.detalle }}</span>
                   </v-list-item-subtitle>
                   <template v-slot:append>
                     <div class="text-right">
-                      <div class="font-weight-bold text-subtitle-1" :class="item.monto < 0 ? 'text-red' : 'text-primary'">
+                      <div class="font-weight-bold  " :class="item.monto < 0 ? 'text-red' : 'text-primary'">
                         {{ formatCurrency(item.monto) }}
                       </div>
                     </div>
@@ -501,7 +501,7 @@
 
     <v-dialog v-model="confirmDeleteDialog" max-width="400">
       <v-card>
-        <v-card-title class="text-h5">{{ t('finance.confirm_delete') }}</v-card-title>
+        <v-card-title class="text-md">{{ t('finance.confirm_delete') }}</v-card-title>
         <v-card-text>
           {{ t('finance.confirm_delete_text') }}
         </v-card-text>

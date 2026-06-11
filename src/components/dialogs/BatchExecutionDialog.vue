@@ -22,7 +22,7 @@
             <v-icon color="primary" class="mr-2">mdi-calendar-multiselect</v-icon>
             <h4 class="">Selección de Fechas</h4>
           </div>
-          <p class="text-body-2 text-grey-darken-1 mb-6 ml-8">Seleccione las fechas de cumplimiento que desea registrar en la bitácora.</p>
+          <p class="text-smtext-grey-darken-1 mb-6 ml-8">Seleccione las fechas de cumplimiento que desea registrar en la bitácora.</p>
 
           <!-- Selection Summary and Batch Controls -->
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
@@ -72,7 +72,7 @@
                   density="compact"
                   class="mr-2"
                 />
-                <span class="text-body-2 font-weight-medium">{{ formatFecha(fecha) }}</span>
+                <span class="text-smfont-weight-medium">{{ formatFecha(fecha) }}</span>
               </div>
             </v-card>
           </div>
@@ -89,6 +89,7 @@
               :fechas-seleccionadas="selectedFechas"
               v-model:observaciones="observacionesAdicionales"
               v-model:metricasSeleccionadas="metricasSeleccionadas"
+              v-model:metricasValues="metricasValues"
               class="ml-2"
             />
 
@@ -156,14 +157,14 @@
       <v-card class="rounded-lg">
         <v-toolbar color="warning" dark flat density="compact">
           <v-icon class="ml-4 mr-2">mdi-alert</v-icon>
-          <v-toolbar-title class="text-subtitle-1 font-weight-bold">Atención: Selección Incompleta</v-toolbar-title>
+          <v-toolbar-title class="  font-weight-bold">Atención: Selección Incompleta</v-toolbar-title>
         </v-toolbar>
         <v-card-text class="pa-6 text-center">
           <v-avatar color="warning-lighten-4" size="64" class="mb-4">
             <v-icon color="warning" size="32">mdi-history-remove</v-icon>
           </v-avatar>
-          <p class="text-body-1 font-weight-bold mb-2">¿Deseas descartar las fechas no seleccionadas?</p>
-          <p class="text-body-2 text-grey-darken-1">
+          <p class="  font-weight-bold mb-2">¿Deseas descartar las fechas no seleccionadas?</p>
+          <p class="text-smtext-grey-darken-1">
             Has seleccionado <strong>{{ selectedFechas.length }}</strong> de <strong>{{ pendingFechas.length }}</strong> fechas pendientes. 
             Las fechas no seleccionadas serán <strong>borradas del historial</strong> sin ser ingresadas a la bitácora.
           </p>
@@ -221,10 +222,11 @@ const selectedFechas = ref([]);
 const actividadDetalle = ref(null);
 const observacionesAdicionales = ref('');
 const metricasSeleccionadas = ref([]);
-const showWarningDialog = ref(false);
-
+const metricasValues = ref({});
 const bpa_respuestas = ref({});
 const signature = ref(null);
+const showWarningDialog = ref(false);
+
 const uiFeedbackStore = useUiFeedbackStore();
 
 const preguntasBpa = computed(() => {
@@ -347,6 +349,7 @@ const executeBatch = async (cleanup = false) => {
       observacionesAdicionales: observacionesAdicionales.value,
       siembraId: siembraId,
       metricasSeleccionadas: metricasSeleccionadas.value,
+      metricasValues: metricasValues.value,
       signature: signature.value,
       bpa_respuestas: bpa_respuestas.value,
       cleanup: cleanup

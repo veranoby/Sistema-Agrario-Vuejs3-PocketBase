@@ -1,6 +1,6 @@
 <template>
   <v-card>
-    <v-card-title class="text-h5">
+    <v-card-title class="text-md">
       Resumen de Suscripción
       <v-btn icon="mdi-close" variant="text" size="small" @click="$emit('close')" />
     </v-card-title>
@@ -44,18 +44,18 @@
           
           <div class="d-flex justify-space-between mb-2">
             <span class="text-h6">Total Mensual</span>
-            <span class="text-h5 font-weight-bold text-primary">${{ totalMonthly.toFixed(2) }}</span>
+            <span class="text-md font-weight-bold text-primary">${{ totalMonthly.toFixed(2) }}</span>
           </div>
 
           <!-- Comparativa Anual -->
           <v-alert type="success" density="compact" class="mt-3" variant="tonal">
             <div class="d-flex justify-space-between align-center">
               <div>
-                <p class="text-subtitle-2 font-weight-bold mb-1">Plan Anual</p>
+                <p class="text-md font-weight-bold mb-1">Plan Anual</p>
                 <p class="text-caption">${{ totalYearly.toFixed(2) }}/año (${{ (totalYearly / 12).toFixed(2) }}/mes)</p>
               </div>
               <div class="text-right">
-                <p class="text-subtitle-2 font-weight-bold text-primary">Ahorras ${{ annualSavings.toFixed(2) }}</p>
+                <p class="text-md font-weight-bold text-primary">Ahorras ${{ annualSavings.toFixed(2) }}</p>
                 <p class="text-caption">({{ savingsPercent }}%)</p>
               </div>
             </div>

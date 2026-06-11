@@ -3,7 +3,7 @@
     <v-container class=" border-4" v-if="isOpen">
       <v-col cols="12">
         <v-card>
-          <v-card-title> <h2 class="text-2xl font-bold">CONFIRME SU EMAIL..</h2></v-card-title>
+          <v-card-title> <h3 class="text-2xl font-bold">CONFIRME SU EMAIL..</h3></v-card-title>
           <v-card-text>
             <v-form @submit.prevent="confirmEmail">
               <v-text-field
@@ -32,7 +32,7 @@
     <v-container class=" border-4" v-else>
       <v-col cols="12">
         <v-card>
-          <v-card-title class="text-h5"> GRACIAS POR CONFIRMAR SU REGISTRO </v-card-title>
+          <v-card-title class="text-md"> GRACIAS POR CONFIRMAR SU REGISTRO </v-card-title>
           <v-card-text>Proceda por favor a ingresar al sistema.. </v-card-text>
         </v-card>
       </v-col>

@@ -2,13 +2,19 @@
 
 El objetivo final de ConAgri es mantener un **Libro Diario óptimo para certificaciones BPA (Buenas Prácticas Agrícolas)** y brindarle un seguimiento exacto de *qué está pasando, en dónde y por qué* en su hacienda. La operación diaria es el primer paso para lograrlo.
 
-## 1. La Relación Fundamental: Siembra -> Zonas -> Actividades
-Para que su Libro Diario tenga sentido y precisión, el sistema utiliza una jerarquía clara:
-- **Siembra**: Es el proyecto general (Ej: "Tomate Ciclo 1").
-- **Zonas (Lotes)**: Son los espacios físicos georreferenciados en el mapa donde ocurre la siembra.
-- **Actividades**: Son las labores específicas (riego, fertilización) que se aplican a esa siembra y, por ende, a las zonas asociadas.
+## 1. La Relación Fundamental: El concepto de "Siembra" (Zonas + Actividades)
+Para que su Libro Diario tenga sentido y precisión, el flujo de trabajo inicia siempre con la idea de una **"Siembra"**.
+Una Siembra se compone idealmente de la relación entre sus **Zonas** y sus **Actividades**.
 
-Al crear actividades vinculadas a una siembra, el sistema sabe exactamente en qué coordenada (zona) está trabajando, lo que es vital para cualquier auditoría.
+**Recomendación de Flujo de Trabajo:**
+1. **Primero, defina las Zonas:** Identifique los espacios físicos donde trabajará.
+2. **Segundo, defina las Actividades de las Siembras:** Configure las labores específicas.
+
+Esta estructura es la base de la plataforma: **toda actividad (lo que se hace) debe ser reportada en la bitácora, y ¿dónde se hacen estas actividades? ¡Sobre las zonas!**
+
+Esto nos permite construir la siguiente jerarquía de opciones:
+- Crear recordatorios sobre Zonas o Actividades.
+- Crear ingresos directos a Bitácoras (el reporte de lo ejecutado).
 
 ## 2. Creación de Siembras
 **¿Qué puede hacer?**

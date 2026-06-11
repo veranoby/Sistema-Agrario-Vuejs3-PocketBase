@@ -1,7 +1,7 @@
 <template>
   <v-container fluid class="haciendas-management">
     <div class="d-flex justify-space-between align-center mb-4">
-      <h2 class="text-h5">Gestión de Haciendas</h2>
+      <h3 class="text-md">Gestión de Haciendas</h3>
       <v-btn v-role="'HACIENDAS_MANAGE'" color="primary" prepend-icon="mdi-plus" @click="openCreateDialog">
         Nueva Hacienda
       </v-btn>
@@ -63,7 +63,7 @@
               </v-chip>
             </div>
 
-            <p class="text-body-2 text-grey mb-2" v-html="hacienda.info || hacienda.descripcion || 'Sin descripción'"></p>
+            <p class="text-smtext-grey mb-2" v-html="hacienda.info || hacienda.descripcion || 'Sin descripción'"></p>
 
             <v-divider class="my-2" />
 
@@ -127,7 +127,7 @@
         </v-card-title>
         <v-card-text class="pt-4">
           <v-form ref="haciendaForm" v-model="formValid" @submit.prevent="saveHacienda">
-            <h3 class="text-subtitle-1 font-weight-bold mb-2">Información Principal</h3>
+            <h3 class="  font-weight-bold mb-2">Información Principal</h3>
             <v-row>
               <v-col cols="12" md="6">
                 <v-text-field
@@ -211,7 +211,7 @@
 
             <v-divider class="my-4"></v-divider>
 
-            <h3 class="text-subtitle-1 font-weight-bold mb-2">Configuración y Estado</h3>
+            <h3 class="  font-weight-bold mb-2">Configuración y Estado</h3>
             <v-row>
               <v-col cols="12" md="6">
                 <span class="text-caption">Estado</span>
@@ -233,7 +233,7 @@
 
             <template v-if="editingHacienda">
               <v-divider class="my-4"></v-divider>
-              <h3 class="text-subtitle-1 font-weight-bold mb-2">Suscripción y Módulos</h3>
+              <h3 class="  font-weight-bold mb-2">Suscripción y Módulos</h3>
               <v-row>
                 <v-col cols="12" md="6">
                   <span class="text-caption">Plan</span>
@@ -367,7 +367,7 @@
             <!-- Columna Derecha: Tablas de Operación -->
             <v-col cols="12" md="8">
               <v-card variant="outlined" class="mb-4">
-                <v-card-title class="text-subtitle-1">Vinculaciones Asesor</v-card-title>
+                <v-card-title class=" ">Vinculaciones Asesor</v-card-title>
                 <v-data-table
                   :headers="[{ title: 'Asesor', key: 'asesorName' }, { title: 'Acciones', key: 'actions', align: 'end' }]"
                   :items="relaciones.vinculaciones"
@@ -386,7 +386,7 @@
               </v-card>
 
               <v-card variant="outlined" class="mb-4">
-                <v-card-title class="text-subtitle-1">Paquetes de Evaluación</v-card-title>
+                <v-card-title class=" ">Paquetes de Evaluación</v-card-title>
                 <v-data-table
                   :headers="[{ title: 'Título', key: 'titulo' }, { title: 'Estado', key: 'estado' }, { title: 'Acciones', key: 'actions', align: 'end' }]"
                   :items="relaciones.paquetes"
@@ -402,7 +402,7 @@
               </v-card>
 
               <v-card variant="outlined">
-                <v-card-title class="text-subtitle-1">Recetas</v-card-title>
+                <v-card-title class=" ">Recetas</v-card-title>
                 <v-data-table
                   :headers="[{ title: 'Código', key: 'codigo' }, { title: 'Asesor', key: 'asesorName' }, { title: 'Acciones', key: 'actions', align: 'end' }]"
                   :items="relaciones.recetas"

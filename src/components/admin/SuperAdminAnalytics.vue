@@ -31,7 +31,7 @@
                   </v-avatar>
                   <div>
                     <div class="text-h4">{{ stats.totalUsers }}</div>
-                    <div class="text-subtitle-2 text-medium-emphasis">Total Usuarios</div>
+                    <div class="text-md text-medium-emphasis">Total Usuarios</div>
                   </div>
                 </div>
               </v-card-text>
@@ -47,7 +47,7 @@
                   </v-avatar>
                   <div>
                     <div class="text-h4">{{ stats.totalHaciendas }}</div>
-                    <div class="text-subtitle-2 text-medium-emphasis">Total Haciendas</div>
+                    <div class="text-md text-medium-emphasis">Total Haciendas</div>
                   </div>
                 </div>
               </v-card-text>
@@ -63,7 +63,7 @@
                   </v-avatar>
                   <div>
                     <div class="text-h4">{{ stats.activeUsers }}</div>
-                    <div class="text-subtitle-2 text-medium-emphasis">Usuarios Activos</div>
+                    <div class="text-md text-medium-emphasis">Usuarios Activos</div>
                   </div>
                 </div>
               </v-card-text>
@@ -79,7 +79,7 @@
                   </v-avatar>
                   <div>
                     <div class="text-h4">{{ stats.growthRate }}%</div>
-                    <div class="text-subtitle-2 text-medium-emphasis">Crecimiento Mensual</div>
+                    <div class="text-md text-medium-emphasis">Crecimiento Mensual</div>
                   </div>
                 </div>
               </v-card-text>
@@ -266,7 +266,7 @@
                 <v-card variant="tonal" color="primary">
                   <v-card-text class="text-center">
                     <div class="text-h3 font-weight-bold">{{ totalActividades }}</div>
-                    <div class="text-subtitle-2">Total Actividades</div>
+                    <div class="text-md">Total Actividades</div>
                   </v-card-text>
                 </v-card>
               </v-col>
@@ -275,7 +275,7 @@
                 <v-card variant="tonal" color="primary">
                   <v-card-text class="text-center">
                     <div class="text-h3 font-weight-bold">{{ topHaciendas.length }}</div>
-                    <div class="text-subtitle-2">Haciendas Activas</div>
+                    <div class="text-md">Haciendas Activas</div>
                   </v-card-text>
                 </v-card>
               </v-col>
@@ -284,7 +284,7 @@
                 <v-card variant="tonal" color="info">
                   <v-card-text class="text-center">
                     <div class="text-h3 font-weight-bold">{{ Object.keys(moduleUsage).length }}</div>
-                    <div class="text-subtitle-2">Tipos de Actividad</div>
+                    <div class="text-md">Tipos de Actividad</div>
                   </v-card-text>
                 </v-card>
               </v-col>
