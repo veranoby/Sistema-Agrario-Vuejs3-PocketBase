@@ -372,10 +372,13 @@ export const useActividadesStore = defineStore('actividades', {
           this.buildActivityLookup()
         }
 
-        let actividad = this.activityLookupMap.get(id)
+        // Si se solicita expand, no usar caché local (no tiene relaciones resueltas)
+        // Solo usar caché cuando NO se necesitan relaciones expandidas
+        const needsExpand = !!options.expand
+        const actividad = needsExpand ? null : this.activityLookupMap.get(id)
 
         if (actividad) {
-          const actividadCompleta = {
+          return {
             ...actividad,
             datos_bpa: actividad.datos_bpa || [],
             metricas: actividad.metricas || {},
@@ -383,8 +386,6 @@ export const useActividadesStore = defineStore('actividades', {
             zonas: actividad.zonas || [],
             expand: actividad.expand || {}
           }
-
-          return actividadCompleta
         }
 
         const syncStore = useSyncStore()
@@ -401,6 +402,19 @@ export const useActividadesStore = defineStore('actividades', {
           syncStore.saveToLocalStorage('actividades', JSON.parse(JSON.stringify(this.actividades)));
           this.buildActivityLookup()
           return record
+        }
+
+        // Offline: si está en caché local, retornarla aunque sin expand
+        const cachedActividad = this.activityLookupMap.get(id)
+        if (cachedActividad) {
+          return {
+            ...cachedActividad,
+            datos_bpa: cachedActividad.datos_bpa || [],
+            metricas: cachedActividad.metricas || {},
+            siembras: cachedActividad.siembras || [],
+            zonas: cachedActividad.zonas || [],
+            expand: cachedActividad.expand || {}
+          }
         }
 
         throw new Error('Actividad no encontrada y sin conexión')

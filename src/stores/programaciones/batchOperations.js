@@ -26,22 +26,20 @@ import { transformMetricasByTipo } from '@/utils/bitacoraMetricTransformer'
 export async function prepareBitacoraEntryData(programacion, actividadesStore) {
   try {
     if (!programacion || !programacion.actividades || programacion.actividades.length === 0) {
-      logger.error('[batchOperations] No activities found in the programacion object.')
+      logger.error('[batchOperations] No activities found in the programacion object. programacion:', JSON.stringify(programacion))
       return null
     }
 
     const primaryActivityId = programacion.actividades[0]
-    let actividad = actividadesStore.actividades.find(a => a.id === primaryActivityId)
+    logger.debug(`[batchOperations] Buscando actividad: ${primaryActivityId}`)
 
-    if (!actividad) {
-      try {
-        logger.warn(`[batchOperations] Activity ${primaryActivityId} not found in store, attempting fetch.`)
-        actividad = await actividadesStore.fetchActividadById(primaryActivityId, { expand: 'tipo_actividades' })
-      } catch (error) {
-        logger.error(`[batchOperations] Error fetching activity ${primaryActivityId}:`, error)
-        handleError(error, `Error fetching activity ${primaryActivityId}`)
-        return null
-      }
+    // Siempre hacer fetch con expand para garantizar tipo_actividades resuelto
+    let actividad = null
+    try {
+      actividad = await actividadesStore.fetchActividadById(primaryActivityId, { expand: 'tipo_actividades' })
+    } catch (fetchError) {
+      logger.error(`[batchOperations] Error fetching activity ${primaryActivityId}:`, fetchError?.message || fetchError)
+      return null
     }
 
     if (!actividad) {
@@ -49,26 +47,35 @@ export async function prepareBitacoraEntryData(programacion, actividadesStore) {
       return null
     }
 
-    // ENHANCED: Obtener tipo de actividad y usar handler especializado
-    let tipoActividad = null
+    logger.debug('[batchOperations] Actividad obtenida:', {
+      id: actividad.id,
+      tipo_actividades: actividad.tipo_actividades,
+      expand_tipo: actividad.expand?.tipo_actividades
+    })
+
+    // Obtener tipo de actividad — normalizar si es Array
     let tipoActividadId = Array.isArray(actividad.tipo_actividades) 
       ? actividad.tipo_actividades[0] 
       : actividad.tipo_actividades
 
-    if (tipoActividadId) {
-      // Cargar tipos si no están cargados
+    let tipoActividad = null
+
+    // Primero intentar desde expand (ya resuelto por PocketBase)
+    if (actividad.expand?.tipo_actividades) {
+      tipoActividad = Array.isArray(actividad.expand.tipo_actividades)
+        ? actividad.expand.tipo_actividades[0]
+        : actividad.expand.tipo_actividades
+    }
+
+    // Fallback: buscar en el store de tipos
+    if (!tipoActividad && tipoActividadId) {
       if (actividadesStore.tiposActividades.length === 0) {
         await actividadesStore.cargarTiposActividades()
       }
       tipoActividad = actividadesStore.tiposActividades.find(ta => ta.id === tipoActividadId)
     }
 
-    // Si expand no tiene tipo, buscar directamente
-    if (!tipoActividad && actividad.expand?.tipo_actividades) {
-      tipoActividad = Array.isArray(actividad.expand.tipo_actividades)
-        ? actividad.expand.tipo_actividades[0]
-        : actividad.expand.tipo_actividades
-    }
+    logger.debug('[batchOperations] tipoActividad resuelto:', tipoActividad?.nombre || tipoActividadId || 'NINGUNO')
 
     // Obtener handler especializado para este tipo
     const handler = await getHandlerForTipo(
@@ -76,7 +83,7 @@ export async function prepareBitacoraEntryData(programacion, actividadesStore) {
       actividadesStore
     )
 
-    // ENHANCED: Usar handler para preparar datos del formulario
+    // Usar handler para preparar datos del formulario
     const prefillDataObject = await handler.prepareFormData(programacion, actividad)
 
     // Validar datos preparados usando el handler
@@ -90,7 +97,7 @@ export async function prepareBitacoraEntryData(programacion, actividadesStore) {
     logger.debug('[batchOperations] Prepared data for Bitacora Entry:', prefillDataObject)
     return prefillDataObject
   } catch (error) {
-    logger.error('[batchOperations] Error preparing bitacora entry data:', error?.stack || error)
+    logger.error('[batchOperations] Error preparing bitacora entry data:', error?.message, error?.stack)
     return null
   }
 }
