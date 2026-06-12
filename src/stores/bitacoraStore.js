@@ -15,6 +15,46 @@ import { differenceInDays, format } from 'date-fns'
 import { autocompleteBitacora } from '@/services/aiService'
 import eventBus, { EVENTS } from '@/utils/eventBus'
 
+// Helpers de Mapeo Backend <-> Frontend
+function mapToFrontend(entry) {
+  if (!entry) return entry;
+  const mapped = { ...entry };
+  
+  if (mapped.fecha) mapped.fecha_ejecucion = mapped.fecha;
+  if (mapped.actividades) mapped.actividad_realizada = mapped.actividades;
+  if (mapped.estado) mapped.estado_ejecucion = mapped.estado;
+  if (mapped.programaciones) mapped.programacion_origen = mapped.programaciones;
+  if (mapped.user_created) mapped.user_responsable = mapped.user_created;
+
+  if (mapped.expand && mapped.expand.actividades) {
+    mapped.expand.actividad_realizada = mapped.expand.actividades;
+  }
+  if (mapped.expand && mapped.expand.programaciones) {
+    mapped.expand.programacion_origen = mapped.expand.programaciones;
+  }
+  if (mapped.expand && mapped.expand.user_created) {
+    mapped.expand.user_responsable = mapped.expand.user_created;
+  }
+  
+  return mapped;
+}
+
+function mapToBackend(entryData) {
+  const payload = { ...entryData };
+  
+  if (payload.fecha_ejecucion) { payload.fecha = payload.fecha_ejecucion; delete payload.fecha_ejecucion; }
+  if (payload.actividad_realizada) { payload.actividades = payload.actividad_realizada; delete payload.actividad_realizada; }
+  if (payload.estado_ejecucion) { payload.estado = payload.estado_ejecucion; delete payload.estado_ejecucion; }
+  if (payload.programacion_origen) { payload.programaciones = payload.programacion_origen; delete payload.programacion_origen; }
+  if (payload.user_responsable) { payload.user_created = payload.user_responsable; delete payload.user_responsable; }
+  
+  // Clean up fields not in DB to prevent errors
+  delete payload.fotos;
+  delete payload.trabajadores_involucrados;
+  
+  return payload;
+}
+
 export const useBitacoraStore = defineStore('bitacora', {
   state: () => ({
     bitacoraEntries: [],
@@ -110,7 +150,6 @@ export const useBitacoraStore = defineStore('bitacora', {
       const syncStore = useSyncStore();
       const haciendaStore = useHaciendaStore();
 
-      // CORRECTO: Usar await para loadFromLocalStorage
       const localData = await syncStore.loadFromLocalStorage('bitacoraEntries');
       if (localData && Array.isArray(localData)) {
         this.bitacoraEntries = localData;
@@ -141,7 +180,7 @@ export const useBitacoraStore = defineStore('bitacora', {
       return pb.collection('bitacora').getFullList({
         filter: `siembras ~ "${siembraId}"`,
         sort: '-created'
-      })
+      }).then(list => list.map(mapToFrontend))
     },
 
     async fetchBitacorasByProgramacion(programacionId) {
@@ -150,9 +189,9 @@ export const useBitacoraStore = defineStore('bitacora', {
         return this.bitacoraEntries.filter(e => e.programacion_origen === programacionId)
       }
       return pb.collection('bitacora').getFullList({
-        filter: `programacion_origen = "${programacionId}"`,
+        filter: `programaciones = "${programacionId}"`,
         sort: '-created'
-      }).catch(() => [])
+      }).then(list => list.map(mapToFrontend)).catch(() => [])
     },
 
     async cargarBitacoraEntries(haciendaId) {
@@ -180,16 +219,16 @@ export const useBitacoraStore = defineStore('bitacora', {
           filterParts.push(`siembras ~ "${filters.siembras}"`);
         }
         if (filters.programacion_origen) {
-          filterParts.push(`programacion_origen="${filters.programacion_origen}"`);
+          filterParts.push(`programaciones="${filters.programacion_origen}"`);
         }
         if (filters.actividad_realizada) {
-          filterParts.push(`actividad_realizada="${filters.actividad_realizada}"`);
+          filterParts.push(`actividades="${filters.actividad_realizada}"`);
         }
         if (filters.fecha_desde) {
-          filterParts.push(`fecha_ejecucion>"${filters.fecha_desde}"`);
+          filterParts.push(`fecha>"${filters.fecha_desde}"`);
         }
         if (filters.fecha_hasta) {
-          filterParts.push(`fecha_ejecucion<"${filters.fecha_hasta}"`);
+          filterParts.push(`fecha<"${filters.fecha_hasta}"`);
         }
         
         const filterString = filterParts.join(' && ');
@@ -197,7 +236,7 @@ export const useBitacoraStore = defineStore('bitacora', {
         const result = await pb.collection('bitacora').getList(page, perPage, {
           filter: filterString,
           sort: '-created',
-          expand: "actividad_realizada,actividad_realizada.tipo_actividades,siembras"
+          expand: "actividades,actividades.tipo_actividades,siembras,zonas,programaciones,user_created"
         });
         
         this.pagination = {
@@ -210,7 +249,7 @@ export const useBitacoraStore = defineStore('bitacora', {
         
         this.filters = { ...this.filters, ...filters };
         
-        const entries = result.items.map(entry => ({...entry, _isTemp: false }));
+        const entries = result.items.map(entry => ({...mapToFrontend(entry), _isTemp: false }));
         
         if (page === 1) {
           this.bitacoraEntries = entries;
@@ -219,7 +258,6 @@ export const useBitacoraStore = defineStore('bitacora', {
         }
         
         this.lastSync = Date.now();
-        // CORRECTO: Sanitizar con JSON.parse(JSON.stringify()) para IndexedDB
         syncStore.saveToLocalStorage('bitacoraEntries', JSON.parse(JSON.stringify(this.bitacoraEntries)));
         logger.debug(`[BITACORA_STORE] Fetched page ${page}: ${entries.length} items (Total: ${result.totalItems})`);
         
@@ -341,11 +379,13 @@ export const useBitacoraStore = defineStore('bitacora', {
           return null;
       }
 
+      const backendPayload = mapToBackend(fullEntryData);
+
       if (!syncStore.isOnline) {
         logger.debug('[BITACORA_STORE] Offline mode: Creating temporary entry.');
         const tempId = syncStore.generateTempId();
         const tempEntry = {
-          ...fullEntryData,
+          ...mapToFrontend(backendPayload),
           id: tempId,
           created: new Date().toISOString(),
           updated: new Date().toISOString(),
@@ -354,10 +394,9 @@ export const useBitacoraStore = defineStore('bitacora', {
         this.applySyncedCreate(tempId, tempEntry);
 
         await syncStore.queueOperation({
-
           type: 'create',
           collection: 'bitacora',
-          data: fullEntryData,
+          data: backendPayload,
           tempId: tempId,
         });
         logger.debug('[BITACORA_STORE] Temporary entry created and queued:', tempEntry);
@@ -370,21 +409,22 @@ export const useBitacoraStore = defineStore('bitacora', {
       logger.debug('[BITACORA_STORE] Online mode: Creating entry directly on PocketBase.');
       this.isLoading = true;
       try {
-        const record = await pb.collection('bitacora').create(fullEntryData, {
-          expand: "actividad_realizada,actividad_realizada.tipo_actividades,siembras"
+        const record = await pb.collection('bitacora').create(backendPayload, {
+          expand: "actividades,actividades.tipo_actividades,siembras,zonas,programaciones,user_created"
         });
         
-        this.applySyncedCreate(record.id, record);
+        const mappedRecord = mapToFrontend(record);
+        this.applySyncedCreate(mappedRecord.id, mappedRecord);
         
-        logger.debug('[BITACORA_STORE] Entry created on PocketBase (expanded) and added to store:', record);
+        logger.debug('[BITACORA_STORE] Entry created on PocketBase (expanded) and added to store:', mappedRecord);
 
-        if (record) {
-          await handler.postProcess(record, { actividadesStore })
+        if (mappedRecord) {
+          await handler.postProcess(mappedRecord, { actividadesStore })
         }
 
         eventBus.emit(EVENTS.BITACORA_UPDATED);
 
-        return record;
+        return mappedRecord;
       } catch (error) {
         handleError(error, 'Error creando entrada de bitácora en PocketBase');
         return null;
@@ -393,13 +433,13 @@ export const useBitacoraStore = defineStore('bitacora', {
       }
     },
 
-
     
     async updateBitacoraEntry(id, dataToUpdate) {
         const syncStore = useSyncStore();
         logger.debug(`[BITACORA_STORE] Attempting to update entry ${id}:`, dataToUpdate);
 
         const index = this.bitacoraEntries.findIndex(entry => entry.id === id);
+        const backendPayload = mapToBackend(dataToUpdate);
 
         if (!syncStore.isOnline) {
             logger.debug('[BITACORA_STORE] Offline mode: Queuing update.');
@@ -409,7 +449,7 @@ export const useBitacoraStore = defineStore('bitacora', {
                 type: 'update',
                 collection: 'bitacora',
                 id: id,
-                data: dataToUpdate,
+                data: backendPayload,
             });
             return index !== -1 ? this.bitacoraEntries[index] : null;
         }
@@ -417,10 +457,11 @@ export const useBitacoraStore = defineStore('bitacora', {
         logger.debug('[BITACORA_STORE] Online mode: Updating entry directly on PocketBase.');
         this.isLoading = true;
         try {
-            const record = await pb.collection('bitacora').update(id, dataToUpdate);
-            this.applySyncedUpdate(id, record);
+            const record = await pb.collection('bitacora').update(id, backendPayload);
+            const mappedRecord = mapToFrontend(record);
+            this.applySyncedUpdate(id, mappedRecord);
             eventBus.emit(EVENTS.BITACORA_UPDATED);
-            return record;
+            return mappedRecord;
         } catch (error) {
             handleError(error, `Error actualizando entrada de bitácora ${id} en PocketBase`);
             return null;

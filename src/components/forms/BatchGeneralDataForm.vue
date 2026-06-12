@@ -7,7 +7,7 @@
           <v-icon color="primary" class="mr-2">mdi-leaf</v-icon>
           <div class="flex flex-col">
             <h4 class=" leading-tight">{{ actividadPreview.nombre }}</h4>
-            <span class="text-caption text-grey-darken-1 font-weight-medium">
+            <span class="text-xs text-grey-darken-1 font-weight-medium">
               {{ actividadPreview.expand?.tipo_actividades?.nombre || 'Tipo no disponible' }}
             </span>
           </div>
@@ -22,7 +22,7 @@
           <!-- Date Range Display (Only for Batch) -->
           <div v-if="!isSingleEntry && fechasSeleccionadas.length > 0" class="bg-blue-grey-lighten-5 pa-2 px-4 rounded-pill d-inline-flex align-center mb-6">
             <v-icon size="16" color="blue-grey-darken-2" class="mr-2">mdi-calendar-range</v-icon>
-            <span class="text-caption  text-blue-grey-darken-3">Rango: {{ formatDateRange() }}</span>
+            <span class="text-xs  text-blue-grey-darken-3">Rango: {{ formatDateRange() }}</span>
           </div>
 
           <!-- Selectable Metrics Section -->
@@ -99,10 +99,12 @@ const metricasValues = computed({
 const metricasDisponibles = computed(() => {
   if (!props.actividadPreview?.metricas) return [];
   return Object.entries(props.actividadPreview.metricas)
-    .filter(([_, m]) => m.valor !== null && m.valor !== undefined && m.valor !== '')
     .map(([key, metrica]) => ({
       key,
       descripcion: metrica.descripcion || key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      tipo: metrica.tipo || 'text',
+      opciones: metrica.opciones || [],
+      requerido: metrica.requerido || false,
       valor: metrica.valor,
       unidad: metrica.unidad || ''
     }));

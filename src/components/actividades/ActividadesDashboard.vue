@@ -56,14 +56,14 @@
                   <template v-slot:icon><v-icon color="white" size="small">mdi-check</v-icon></template>
                   <div class="mb-1">
                     <div class="  font-weight-bold text-success">Fase 1: Siembras</div>
-                    <div class="text-caption text-medium-emphasis">Se recomienda haber creado previamente el proyecto de siembra.</div>
+                    <div class="text-xs text-medium-emphasis">Se recomienda haber creado previamente el proyecto de siembra.</div>
                   </div>
                 </v-timeline-item>
 
                 <v-timeline-item dot-color="primary" size="small">
                   <div class="mb-1">
                     <div class="  font-weight-bold">Fase 2: Actividades (Estás aquí)</div>
-                    <div class="text-caption text-medium-emphasis">Registra las labores a ejecutar en las zonas (ej. fertilización, riego).</div>
+                    <div class="text-xs text-medium-emphasis">Registra las labores a ejecutar en las zonas (ej. fertilización, riego).</div>
                   </div>
                   <v-btn size="small" variant="flat" color="primary" class="mt-2" @click="NuevaActividad">Crear Actividad</v-btn>
                 </v-timeline-item>
@@ -71,7 +71,7 @@
                 <v-timeline-item dot-color="grey-lighten-2" size="small">
                   <div class="mb-1">
                     <div class="  font-weight-bold text-grey">Siguiente: Fase 3 (Programaciones)</div>
-                    <div class="text-caption text-medium-emphasis">Programa estas actividades en el calendario.</div>
+                    <div class="text-xs text-medium-emphasis">Programa estas actividades en el calendario.</div>
                   </div>
                 </v-timeline-item>
               </v-timeline>

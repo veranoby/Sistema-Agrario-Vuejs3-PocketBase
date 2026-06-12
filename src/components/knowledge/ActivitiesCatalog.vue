@@ -84,7 +84,7 @@
               </v-chip-group>
             </div>
 
-            <p class="text-caption text-grey">
+            <p class="text-xs text-grey">
               Creado: {{ formatDate(actividad.created) }}
             </p>
           </v-card-text>

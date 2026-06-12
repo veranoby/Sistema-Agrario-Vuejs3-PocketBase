@@ -71,14 +71,14 @@
                     <template v-slot:icon><v-icon color="white" size="small">mdi-check</v-icon></template>
                     <div class="mb-1">
                       <div class="  font-weight-bold text-success">Fase 1: Siembras</div>
-                      <div class="text-caption text-medium-emphasis">Se recomienda tener la siembra creada previamente.</div>
+                      <div class="text-xs text-medium-emphasis">Se recomienda tener la siembra creada previamente.</div>
                     </div>
                   </v-timeline-item>
 
                   <v-timeline-item dot-color="primary" size="small">
                     <div class="mb-1">
                       <div class="  font-weight-bold">Fase 2: Zonas (Estás aquí)</div>
-                      <div class="text-caption text-medium-emphasis">Dibuja tus lotes en el mapa.</div>
+                      <div class="text-xs text-medium-emphasis">Dibuja tus lotes en el mapa.</div>
                     </div>
                     <v-btn size="small" variant="flat" color="primary" class="mt-2" @click="abrirDialogoCrear(tiposZonas[0])" v-if="canCreate">Nueva Zona</v-btn>
                   </v-timeline-item>
@@ -86,7 +86,7 @@
                   <v-timeline-item dot-color="grey-lighten-2" size="small">
                     <div class="mb-1">
                       <div class="  font-weight-bold text-grey">Siguiente: Programaciones</div>
-                      <div class="text-caption text-medium-emphasis">Configura y planifica qué hacer sobre estas zonas.</div>
+                      <div class="text-xs text-medium-emphasis">Configura y planifica qué hacer sobre estas zonas.</div>
                     </div>
                   </v-timeline-item>
                 </v-timeline>

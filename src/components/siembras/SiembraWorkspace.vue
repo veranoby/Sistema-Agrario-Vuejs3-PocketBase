@@ -21,7 +21,7 @@
         <v-card class="mb-4 overflow-hidden border">
           <v-toolbar density="compact" flat color="grey-lighten-4">
             <v-icon start size="small" class="ml-2">mdi-map-marker-radius</v-icon>
-            <span class="text-caption font-weight-bold">Mapa de Áreas de Siembra (Lotes)</span>
+            <span class="text-xs font-weight-bold">Mapa de Áreas de Siembra (Lotes)</span>
             <v-spacer></v-spacer>
           </v-toolbar>
           <v-card-text class="pa-0">
@@ -31,7 +31,7 @@
               :initialGeoJSON="siembraFeatureCollection"
               style="height: 350px;"
             />
-            <div v-else class="pa-4 text-center text-caption text-grey">
+            <div v-else class="pa-4 text-center text-xs text-grey">
               No hay áreas dibujadas para esta siembra
             </div>
           </v-card-text>
@@ -91,7 +91,7 @@
     <!-- Edit Siembra Dialog -->
     <v-dialog
       v-model="editSiembraDialog"
-      max-width="800px"
+      max-width="1000px"
       persistent
       transition="dialog-bottom-transition"
       scrollable
@@ -280,7 +280,7 @@
     />
 
     <!-- Bitacora Form Dialog -->
-    <v-dialog v-model="showBitacoraFormDialog" max-width="800px" persistent scrollable>
+    <v-dialog v-model="showBitacoraFormDialog" max-width="1000px" persistent scrollable>
       <BitacoraEntryForm
         v-if="showBitacoraFormDialog"
         :siembraIdContext="siembraId"

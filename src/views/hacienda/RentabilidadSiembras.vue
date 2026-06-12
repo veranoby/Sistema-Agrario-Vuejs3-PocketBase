@@ -16,7 +16,7 @@
                   {{ t('dashboard.hacienda') }}: {{ mi_hacienda?.name }}
                 </v-chip>
               </h3>
-              <p class="text-caption text-grey-darken-3 mt-1">
+              <p class="text-xs text-grey-darken-3 mt-1">
                 Análisis financiero detallado por lote/cultivo: cruce de costos de insumos, mano de obra y ganancias estimadas.
               </p>
             </div>
@@ -81,7 +81,7 @@
             <!-- Siembra Column -->
             <template #[`item.nombre`]="{ item }">
               <div class="font-weight-bold text-primary-4">{{ item.nombre }}</div>
-              <div class="text-caption text-grey-darken-1 text-capitalize">{{ item.tipo }}</div>
+              <div class="text-xs text-grey-darken-1 text-capitalize">{{ item.tipo }}</div>
             </template>
 
             <!-- Area Column -->

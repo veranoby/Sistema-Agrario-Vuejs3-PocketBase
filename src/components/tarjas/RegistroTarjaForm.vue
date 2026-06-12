@@ -26,14 +26,14 @@
             variant="tonal"
             density="compact"
             icon="mdi-cloud-off-outline"
-            class="mb-4 text-caption rounded-lg"
+            class="mb-4 text-xs rounded-lg"
           >
             Modo offline activo. El registro se guardará localmente y se sincronizará automáticamente al detectar conexión.
           </v-alert>
 
           <!-- Campo Operario (Solo editable por admin, autocompletado y bloqueado para operadores) -->
           <div class="mb-4">
-            <label class="text-caption font-weight-bold text-grey-darken-2 d-block mb-1">
+            <label class="text-xs font-weight-bold text-grey-darken-2 d-block mb-1">
               Operario / Jornalero
             </label>
             <v-select
@@ -53,7 +53,7 @@
               <template v-slot:item="{ props, item }">
                 <v-list-item v-bind="props" :title="item.raw.name" :subtitle="item.raw.email">
                   <template v-slot:prepend>
-                    <v-avatar size="32" color="green-lighten-4" class="text-primary-3 font-weight-bold text-caption">
+                    <v-avatar size="32" color="green-lighten-4" class="text-primary-3 font-weight-bold text-xs">
                       {{ getInitials(item.raw.name) }}
                     </v-avatar>
                   </template>
@@ -68,7 +68,7 @@
                 <div class="font-weight-bold   text-grey-darken-4">
                   {{ currentUser?.name }}
                 </div>
-                <div class="text-caption text-grey-darken-1">
+                <div class="text-xs text-grey-darken-1">
                   Usuario Activo (Operador)
                 </div>
               </div>
@@ -77,7 +77,7 @@
 
           <!-- Selector de Siembra Activa -->
           <div class="mb-4">
-            <label class="text-caption font-weight-bold text-grey-darken-2 d-block mb-1">
+            <label class="text-xs font-weight-bold text-grey-darken-2 d-block mb-1">
               Siembra / Lote de Cosecha
             </label>
             <v-select
@@ -97,7 +97,7 @@
 
           <!-- Fecha de Labor -->
           <div class="mb-4">
-            <label class="text-caption font-weight-bold text-grey-darken-2 d-block mb-1">
+            <label class="text-xs font-weight-bold text-grey-darken-2 d-block mb-1">
               Fecha de Registro
             </label>
             <v-text-field
@@ -116,7 +116,7 @@
             <!-- Tipo de Unidad -->
             <v-col cols="6" class="py-0">
               <div class="mb-4">
-                <label class="text-caption font-weight-bold text-grey-darken-2 d-block mb-1">
+                <label class="text-xs font-weight-bold text-grey-darken-2 d-block mb-1">
                   Unidad
                 </label>
                 <v-select
@@ -134,7 +134,7 @@
             <!-- Cantidad Cosechada -->
             <v-col cols="6" class="py-0">
               <div class="mb-4">
-                <label class="text-caption font-weight-bold text-grey-darken-2 d-block mb-1">
+                <label class="text-xs font-weight-bold text-grey-darken-2 d-block mb-1">
                   Cantidad (Bruta)
                 </label>
                 <v-text-field
@@ -157,7 +157,7 @@
             <!-- Merma -->
             <v-col cols="12" class="py-0">
               <div class="mb-4">
-                <label class="text-caption font-weight-bold text-grey-darken-2 d-block mb-1">
+                <label class="text-xs font-weight-bold text-grey-darken-2 d-block mb-1">
                   Cantidad de Merma (Descarte)
                 </label>
                 <v-text-field

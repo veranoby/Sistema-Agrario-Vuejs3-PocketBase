@@ -105,7 +105,7 @@
             class="mb-4 rounded-lg"
           >
             <div class="d-flex align-center justify-space-between flex-wrap gap-4">
-              <div class="text-body-2">
+              <div class="text-md">
                 <span class="font-weight-bold">Fase 1: Siembras.</span> Aún no tienes siembras. Crea el concepto general de tu proyecto para iniciar la trazabilidad.
               </div>
               <v-btn size="small" variant="elevated" color="indigo-darken-2" class="font-weight-bold" to="/siembras">
@@ -123,7 +123,7 @@
             class="mb-4 rounded-lg"
           >
             <div class="d-flex align-center justify-space-between flex-wrap gap-4">
-              <div class="text-body-2">
+              <div class="text-md">
                 <span class="font-weight-bold">Fase 3: Control.</span> Tienes siembras activas pero sin programación futura. Planifica tus labores.
               </div>
               <v-btn size="small" variant="elevated" color="orange-darken-2" class="font-weight-bold" to="/programaciones">
@@ -215,6 +215,7 @@
 
 <script setup>
 import { onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useAuthStore } from '@/stores/authStore'
@@ -249,6 +250,7 @@ const uiFeedbackStore = useUiFeedbackStore()
 const syncStore = useSyncStore()
 const notificationStore = useNotificationStore()
 const programacionesStore = useProgramacionesStore()
+const router = useRouter()
 
 const recentBitacoras = computed(() => {
   return bitacoraStore.bitacoraEntries.slice(0, 5)

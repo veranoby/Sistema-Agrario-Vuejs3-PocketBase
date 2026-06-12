@@ -17,7 +17,7 @@
                   {{ t('dashboard.hacienda') }}: {{ mi_hacienda?.name }}
                 </v-chip>
               </h3>
-              <p class="text-caption text-grey-darken-3 mt-1">
+              <p class="text-xs text-grey-darken-3 mt-1">
                 Control de inventarios, alerta por stock mínimo y registro histórico de movimientos en campo y bodega.
               </p>
             </div>
@@ -218,7 +218,7 @@
                 <!-- Item Column -->
                 <template #[`item.expand.item`]="{ item }">
                   <span class="font-weight-bold">{{ item.expand?.item?.nombre || 'Insumo Eliminado' }}</span>
-                  <span v-if="item.expand?.item?.codigo_sar" class="text-caption text-grey d-block">
+                  <span v-if="item.expand?.item?.codigo_sar" class="text-xs text-grey d-block">
                     SAR: {{ item.expand?.item?.codigo_sar }}
                   </span>
                 </template>
@@ -236,7 +236,7 @@
                     <v-chip size="x-small" color="teal-lighten-4" class="text-primary-3 font-weight-medium">
                       Bitácora Campo
                     </v-chip>
-                    <span class="text-caption text-grey d-block">ID: {{ item.bitacora }}</span>
+                    <span class="text-xs text-grey d-block">ID: {{ item.bitacora }}</span>
                   </div>
                   <v-chip v-else size="x-small" color="blue-lighten-4" class="text-blue-darken-3 font-weight-medium">
                     Manual/Administración
@@ -372,7 +372,7 @@
         <v-card-text class="pt-6 px-6">
           <div class="mb-4  ">
             Insumo: <strong class="text-primary-3">{{ selectedItem?.nombre }}</strong>
-            <span class="text-caption text-grey d-block">Stock Actual: {{ selectedItem?.stock_actual }} {{ selectedItem?.unidad }}</span>
+            <span class="text-xs text-grey d-block">Stock Actual: {{ selectedItem?.stock_actual }} {{ selectedItem?.unidad }}</span>
           </div>
 
           <v-form ref="formMov" v-model="formMovValid">

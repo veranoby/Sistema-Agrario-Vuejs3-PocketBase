@@ -63,7 +63,7 @@
                 <h3 class="text-h6 font-weight-bold text-truncate mb-0">
                   {{ hacienda.nombre }}
                 </h3>
-                <span class="text-caption text-indigo-lighten-4 d-block">
+                <span class="text-xs text-indigo-lighten-4 d-block">
                   Ubicación: {{ hacienda.provincia || 'Ecuador' }}
                 </span>
               </div>
@@ -82,7 +82,7 @@
               <div class="d-flex align-center mb-3">
                 <v-icon icon="mdi-account" color="indigo" class="mr-2"></v-icon>
                 <div>
-                  <span class="text-caption text-grey d-block">Propietario / Administrador</span>
+                  <span class="text-xs text-grey d-block">Propietario / Administrador</span>
                   <span class="text-smfont-weight-medium">{{ hacienda.ownerName || 'N/A' }}</span>
                 </div>
               </div>
@@ -90,21 +90,21 @@
               <div class="d-flex align-center mb-3">
                 <v-icon icon="mdi-email" color="indigo" class="mr-2"></v-icon>
                 <div>
-                  <span class="text-caption text-grey d-block">Email de Contacto</span>
-                  <span class="text-body-2">{{ hacienda.ownerEmail || 'N/A' }}</span>
+                  <span class="text-xs text-grey d-block">Email de Contacto</span>
+                  <span class="text-md">{{ hacienda.ownerEmail || 'N/A' }}</span>
                 </div>
               </div>
 
               <div class="d-flex align-center mb-3" v-if="hacienda.superficie">
                 <v-icon icon="mdi-texture" color="indigo" class="mr-2"></v-icon>
                 <div>
-                  <span class="text-caption text-grey d-block">Superficie Total</span>
-                  <span class="text-body-2">{{ hacienda.superficie }} Hectáreas</span>
+                  <span class="text-xs text-grey d-block">Superficie Total</span>
+                  <span class="text-md">{{ hacienda.superficie }} Hectáreas</span>
                 </div>
               </div>
 
               <div class="mt-4 pt-2 border-t border-grey-lighten-4 d-flex justify-space-between align-center">
-                <span class="text-caption font-weight-bold text-grey-darken-1">Paquetes Compartidos:</span>
+                <span class="text-xs font-weight-bold text-grey-darken-1">Paquetes Compartidos:</span>
                 <v-chip size="small" color="indigo-lighten-4" class="text-indigo-darken-4 font-weight-bold">
                   {{ hacienda.totalPackages }} en total
                 </v-chip>
@@ -144,13 +144,13 @@
                 <div class="bg-orange-darken-2 py-4 px-5 text-white d-flex align-center justify-space-between">
                   <div>
                     <h3 class="text-h6 font-weight-bold text-truncate mb-0">{{ req.nombre }}</h3>
-                    <span class="text-caption text-orange-lighten-4 d-block">Solicitud de Conexión</span>
+                    <span class="text-xs text-orange-lighten-4 d-block">Solicitud de Conexión</span>
                   </div>
                 </div>
                 <v-card-text class="flex-grow-1 pt-4 pb-2">
                   <div class="d-flex align-center mb-3">
                     <v-icon icon="mdi-account" color="orange" class="mr-2"></v-icon>
-                    <div><span class="text-caption text-grey d-block">Propietario</span><span class="text-sm font-weight-medium">{{ req.ownerName }}</span></div>
+                    <div><span class="text-xs text-grey d-block">Propietario</span><span class="text-sm font-weight-medium">{{ req.ownerName }}</span></div>
                   </div>
                 </v-card-text>
                 <v-divider></v-divider>

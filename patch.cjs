@@ -35,13 +35,13 @@ hl = hl.replace('</v-row>\n    </div>\n  </v-container>', `</v-row>
                 <div class="bg-orange-darken-2 py-4 px-5 text-white d-flex align-center justify-space-between">
                   <div>
                     <h3 class="text-h6 font-weight-bold text-truncate mb-0">{{ req.nombre }}</h3>
-                    <span class="text-caption text-orange-lighten-4 d-block">Solicitud de Conexión</span>
+                    <span class="text-xs text-orange-lighten-4 d-block">Solicitud de Conexión</span>
                   </div>
                 </div>
                 <v-card-text class="flex-grow-1 pt-4 pb-2">
                   <div class="d-flex align-center mb-3">
                     <v-icon icon="mdi-account" color="orange" class="mr-2"></v-icon>
-                    <div><span class="text-caption text-grey d-block">Propietario</span><span class="text-sm font-weight-medium">{{ req.ownerName }}</span></div>
+                    <div><span class="text-xs text-grey d-block">Propietario</span><span class="text-sm font-weight-medium">{{ req.ownerName }}</span></div>
                   </div>
                 </v-card-text>
                 <v-divider></v-divider>

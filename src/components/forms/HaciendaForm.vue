@@ -273,7 +273,7 @@
 
           <!-- GPS Controls -->
           <div class="mb-4 bg-white p-3 rounded-lg border">
-            <div class="text-caption font-weight-bold mb-2">Marcador Central (GPS)</div>
+            <div class="text-xs font-weight-bold mb-2">Marcador Central (GPS)</div>
             <div class="flex flex-wrap gap-4 items-center">
               <div class="grid grid-cols-2 gap-2 flex-grow-1" style="min-width: 200px;">
                 <v-text-field
@@ -309,7 +309,7 @@
                 AUTO
               </v-btn>
             </div>
-            <div v-if="gpsError" class="mt-2 text-caption text-error d-flex align-center">
+            <div v-if="gpsError" class="mt-2 text-xs text-error d-flex align-center">
               <v-icon start size="small">mdi-alert</v-icon>
               {{ gpsError }}
             </div>
@@ -319,7 +319,7 @@
           <div class="border rounded-lg overflow-hidden elevation-1 bg-white">
             <v-toolbar density="compact" flat color="grey-lighten-4">
               <v-icon start size="x-small" class="ml-2">mdi-draw-polygon</v-icon>
-              <span class="text-caption font-weight-bold">Delimitación de Hacienda</span>
+              <span class="text-xs font-weight-bold">Delimitación de Hacienda</span>
               <v-spacer></v-spacer>
             </v-toolbar>
             

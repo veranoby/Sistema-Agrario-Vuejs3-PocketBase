@@ -15,7 +15,7 @@
             {{ modoOrdenTrabajo ? 'Orden de Trabajo' : 'Entrada Libre' }}
           </v-chip>
         </div>
-        <div v-if="contextSubtitle" class="text-caption opacity-80 leading-none mt-1">
+        <div v-if="contextSubtitle" class="text-xs opacity-80 leading-none mt-1">
           {{ contextSubtitle }}
         </div>
       </div>
@@ -35,27 +35,30 @@
             </div>
             
             <div class="ml-8 grid grid-cols-1 gap-4">
-              <v-text-field
-                v-model="formData.fecha_ejecucion"
-                label="Fecha y Hora de Ejecución"
-                type="datetime-local"
-                :rules="[rules.required]"
-                variant="outlined"
-                density="compact"
-                prepend-inner-icon="mdi-calendar-clock"
-                class="rounded-lg"
-              ></v-text-field>
+              <!-- Fila 1: Fecha y Estado -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <v-text-field
+                  v-model="formData.fecha_ejecucion"
+                  label="Fecha y Hora de Ejecución"
+                  type="datetime-local"
+                  :rules="[rules.required]"
+                  variant="outlined"
+                  density="compact"
+                  prepend-inner-icon="mdi-calendar-clock"
+                  class="rounded-lg"
+                ></v-text-field>
 
-              <v-select
-                v-model="formData.estado_ejecucion"
-                :items="['planificada', 'en_progreso', 'completado', 'cancelada']"
-                label="Estado"
-                :rules="[rules.required]"
-                variant="outlined"
-                density="compact"
-                prepend-inner-icon="mdi-progress-check"
-                class="rounded-lg"
-              ></v-select>
+                <v-select
+                  v-model="formData.estado_ejecucion"
+                  :items="['planificada', 'activa', 'completada', 'cancelada']"
+                  label="Estado"
+                  :rules="[rules.required]"
+                  variant="outlined"
+                  density="compact"
+                  prepend-inner-icon="mdi-progress-check"
+                  class="rounded-lg"
+                ></v-select>
+              </div>
 
               <v-autocomplete
                 v-model="formData.actividad_realizada_id"
@@ -94,12 +97,19 @@
             </div>
           </div>
 
-          <!-- SECCIÓN 2: Siembras Involucradas (Checklist Inteligente) -->
-          <div class="bg-dinamico p-4 rounded-lg">
+          <!-- SECCIÓN 2: Siembras y Zonas Involucradas (Checklist Inteligente) -->
+          <div v-if="selectedActividadDetalles || props.siembraIdContext" class="bg-dinamico p-4 rounded-lg">
             <SiembraSelectorList
               v-model="formData.siembras_ids"
               :available-ids="relevantSiembraIds"
               class="ml-8"
+            />
+            
+            <ZonaSelectorList
+              v-model="formData.zonas_ids"
+              :available-ids="relevantZonaIds"
+              :selected-siembras="formData.siembras_ids"
+              class="ml-8 mt-4"
             />
           </div>
 
@@ -201,64 +211,67 @@
                   ></v-btn>
                 </div>
               </div>
-              <div v-if="insumosConsumidos.length === 0" class="text-caption text-grey-darken-1 mt-2">
+              <div v-if="insumosConsumidos.length === 0" class="text-xs text-grey-darken-1 mt-2">
                 * Opcional: Agregue insumos de bodega consumidos en esta labor.
               </div>
             </div>
           </div>
-          <!-- SECCIÓN 5: Evidencia Fotográfica -->
-          <div class="bg-dinamico p-4 rounded-lg border border-blue-lighten-4">
-            <div class="flex items-center mb-4">
-              <v-icon color="blue" class="mr-2">mdi-camera</v-icon>
-              <h4 class="font-weight-bold text-blue-darken-3">Fotografía / Evidencia</h4>
-            </div>
-            <div class="ml-8">
-              <v-file-input
-                v-model="formData.fotos"
-                accept="image/*"
-                label="Tomar o adjuntar foto"
-                prepend-icon=""
-                prepend-inner-icon="mdi-camera-plus"
-                variant="outlined"
-                density="compact"
-                multiple
-                chips
-                color="blue"
-                class="rounded-lg mb-2"
-                @change="handleFotosUpload"
-              >
-                <template v-slot:selection="{ fileNames }">
-                  <template v-for="fileName in fileNames" :key="fileName">
-                    <v-chip size="small" color="blue" class="mr-2">
-                      {{ fileName }}
-                    </v-chip>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- SECCIÓN 5: Evidencia Fotográfica -->
+            <div class="bg-dinamico p-4 rounded-lg border border-blue-lighten-4">
+              <div class="flex items-center mb-4">
+                <v-icon color="blue" class="mr-2">mdi-camera</v-icon>
+                <h4 class="font-weight-bold text-blue-darken-3">Fotografía / Evidencia</h4>
+              </div>
+              <div class="ml-8">
+                <v-file-input
+                  v-model="formData.fotos"
+                  accept="image/*"
+                  label="Tomar o adjuntar foto"
+                  prepend-icon=""
+                  prepend-inner-icon="mdi-camera-plus"
+                  variant="outlined"
+                  density="compact"
+                  multiple
+                  chips
+                  color="blue"
+                  class="rounded-lg mb-2"
+                  @change="handleFotosUpload"
+                >
+                  <template v-slot:selection="{ fileNames }">
+                    <template v-for="fileName in fileNames" :key="fileName">
+                      <v-chip size="small" color="blue" class="mr-2">
+                        {{ fileName }}
+                      </v-chip>
+                    </template>
                   </template>
-                </template>
-              </v-file-input>
-              <div v-if="isCompressing" class="d-flex align-center mt-2">
-                <v-progress-circular indeterminate size="20" color="blue" class="mr-2"></v-progress-circular>
-                <span class="text-caption text-blue-darken-2">Comprimiendo imágenes para envío rápido...</span>
+                </v-file-input>
+                <div v-if="isCompressing" class="d-flex align-center mt-2">
+                  <v-progress-circular indeterminate size="20" color="blue" class="mr-2"></v-progress-circular>
+                  <span class="text-xs text-blue-darken-2">Comprimiendo imágenes para envío rápido...</span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- SECCIÓN 6: Firma Digital -->
-          <div v-if="formData.estado_ejecucion === 'completado'" class="mt-4 border-t pt-4">
-            <v-alert
-              v-if="haciendaStore.isModuleActive('pdf_bpa') && !formData.signature"
-              type="info"
-              variant="tonal"
-              color="teal-darken-2"
-              class="mb-4"
-            >
-              El módulo PDF BPA requiere firma del operador. Por favor firme antes de guardar para generar el certificado.
-            </v-alert>
-            <BitacoraSignature
-              :existing-signature="formData.signature"
-              :data-to-sign="computedDataToSign"
-              @signed="onSignatureCaptured"
-              :require-drawing="!isEditMode"
-            />
+            <!-- SECCIÓN 6: Firma Digital -->
+            <div v-if="formData.estado_ejecucion === 'completada'" class="bg-dinamico p-4 rounded-lg border border-teal-lighten-4">
+              <v-alert
+                v-if="haciendaStore.isModuleActive('pdf_bpa') && !formData.signature"
+                type="info"
+                variant="tonal"
+                color="teal-darken-2"
+                class="mb-4"
+              >
+                El módulo PDF BPA requiere firma del operador. Por favor firme antes de guardar para generar el certificado.
+              </v-alert>
+              <BitacoraSignature
+                :existing-signature="formData.signature"
+                :data-to-sign="computedDataToSign"
+                @signed="onSignatureCaptured"
+                :require-drawing="!isEditMode"
+              />
+            </div>
           </div>
         </div>
       </v-form>
@@ -297,6 +310,7 @@ import imageCompression from 'browser-image-compression';
 import { useActividadesStore } from '@/stores/actividadesStore';
 import { useSiembrasStore } from '@/stores/siembrasStore';
 import { useBitacoraStore } from '@/stores/bitacoraStore';
+import { useZonasStore } from '@/stores/zonasStore';
 import { useProgramacionesStore } from '@/stores/programaciones';
 import { useUiFeedbackStore } from '@/stores/uiFeedbackStore';
 import { handleError } from '@/utils/errorHandler';
@@ -305,6 +319,7 @@ import { useBodegaStore } from '@/stores/bodegaStore';
 import { useNominaStore } from '@/stores/nominaStore';
 import { useBodegaMovimientosStore } from '@/stores/bodegaMovimientosStore';
 import SiembraSelectorList from './SiembraSelectorList.vue';
+import ZonaSelectorList from './ZonaSelectorList.vue';
 import BatchGeneralDataForm from './BatchGeneralDataForm.vue';
 import BpaChecklist from '../bitacora/BpaChecklist.vue';
 import BitacoraSignature from '../bitacora/BitacoraSignature.vue';
@@ -333,6 +348,7 @@ const emit = defineEmits(['close', 'save']);
 const actividadesStore = useActividadesStore();
 const siembrasStore = useSiembrasStore();
 const bitacoraStore = useBitacoraStore();
+const zonasStore = useZonasStore();
 const programacionesStore = useProgramacionesStore();
 const uiFeedbackStore = useUiFeedbackStore();
 const haciendaStore = useHaciendaStore();
@@ -353,9 +369,10 @@ const selectedActividadDetalles = ref(null);
 const defaultFormData = () => ({
   fecha_ejecucion: new Date().toISOString().substring(0, 16),
   actividad_realizada_id: props.actividadIdContext || null,
-  estado_ejecucion: 'completado',
+  estado_ejecucion: 'completada',
   notas: '',
   siembras_ids: props.siembraIdContext ? [props.siembraIdContext] : [],
+  zonas_ids: [],
   metricas_values: {},
   programacion_origen_id: null,
   bpa_respuestas: {},
@@ -411,6 +428,16 @@ const formTitle = computed(() => isEditMode.value ? 'Editar Entrada' : 'Nueva En
 const relevantSiembraIds = computed(() => {
   if (props.siembraIdContext) return [props.siembraIdContext];
   if (selectedActividadDetalles.value?.siembras) return selectedActividadDetalles.value.siembras;
+  return null;
+});
+
+const relevantZonaIds = computed(() => {
+  if (selectedActividadDetalles.value?.zonas) return selectedActividadDetalles.value.zonas;
+  if (props.siembraIdContext) {
+    return zonasStore.zonas
+      .filter(z => z.siembra === props.siembraIdContext)
+      .map(z => z.id);
+  }
   return null;
 });
 
@@ -551,9 +578,6 @@ onMounted(async () => {
       formData.notas = pendingData.observacionesPreload || '';
       formData.programacion_origen_id = props.programacionId;
       
-      const siembraId = pendingData.siembraAsociadaId || pendingData.siembra_asociada_id;
-      formData.siembras_ids = siembraId ? [siembraId] : [];
-      
     } else {
       programacionesStore.clearPendingBitacoraData();
     }
@@ -608,7 +632,7 @@ async function loadActividadDetails(actividadId) {
 function initializeMetricasValues() {
   const newMetricasValues = {};
   try {
-    if (!selectedActividadDetalles.value?.metricas || typeof selectedActividadDetalles.value.metricas !== 'object') {
+    if (!selectedActividadDetalles.value?.metricas || typeof selectedActividadDetalles.value.metricas !== 'object' || selectedActividadDetalles.value.metricas === null) {
       formData.metricas_values = {};
       return;
     }
@@ -686,7 +710,7 @@ function populateFormForEdit() {
   const entry = props.entryToEdit;
   formData.fecha_ejecucion = entry.fecha_ejecucion ? new Date(entry.fecha_ejecucion).toISOString().substring(0, 16) : new Date().toISOString().substring(0, 16);
   formData.actividad_realizada_id = typeof entry.actividad_realizada === 'string' ? entry.actividad_realizada : entry.expand?.actividad_realizada?.id;
-  formData.estado_ejecucion = entry.estado_ejecucion || 'completado';
+  formData.estado_ejecucion = entry.estado_ejecucion || 'completada';
   formData.notas = entry.notas || '';
   formData.signature = entry.signature || null;
   formData.trabajadores_involucrados = entry.trabajadores_involucrados || [];
@@ -700,16 +724,24 @@ function populateFormForEdit() {
     formData.siembras_ids = [];
   }
   
+  formData.bpa_respuestas = entry.bpa_respuestas || {};
+  
   if (formData.actividad_realizada_id) {
     loadActividadDetails(formData.actividad_realizada_id).then(() => {
       if (entry.metricas && typeof entry.metricas === 'object') {
         formData.metricas_values = { ...entry.metricas };
+        metricasSeleccionadas.value = Object.keys(entry.metricas);
       } else {
         formData.metricas_values = {};
+        metricasSeleccionadas.value = [];
       }
+      
+      formData.zonas_ids = entry.zonas || [];
     });
   } else {
      formData.metricas_values = {};
+     metricasSeleccionadas.value = [];
+     formData.zonas_ids = [];
   }
 }
 
@@ -722,7 +754,7 @@ async function submitForm() {
 
   isSubmitting.value = true;
   try {
-    if (formData.estado_ejecucion === 'completado' && !formData.signature) {
+    if (formData.estado_ejecucion === 'completada' && !formData.signature) {
       uiFeedbackStore.showSnackbar('Es obligatorio firmar la bitácora antes de guardar.', 'error');
       isSubmitting.value = false;
       return;
@@ -741,6 +773,7 @@ async function submitForm() {
       estado_ejecucion: formData.estado_ejecucion,
       notas: formData.notas.trim(),
       siembras: formData.siembras_ids,
+      zonas: formData.zonas_ids,
       metricas: filteredMetricas,
       bpa_respuestas: formData.bpa_respuestas,
       signature: formData.signature,
@@ -748,9 +781,13 @@ async function submitForm() {
       fotos: formData.fotos
     };
 
+    let success = false;
     if (isEditMode.value) {
-      await bitacoraStore.updateBitacoraEntry(props.entryToEdit.id, dataToSubmit);
-      uiFeedbackStore.showSnackbar('Entrada de bitácora actualizada con éxito.', 'success');
+      const updated = await bitacoraStore.updateBitacoraEntry(props.entryToEdit.id, dataToSubmit);
+      if (updated) {
+        uiFeedbackStore.showSnackbar('Entrada de bitácora actualizada con éxito.', 'success');
+        success = true;
+      }
     } else {
       console.log('[BitacoraForm] Modo:', modoOrdenTrabajo.value ? 'A (Orden de Trabajo)' : 'B (Entrada Libre)');
       // Include programacion_origen_id if present for new entries
@@ -759,43 +796,49 @@ async function submitForm() {
       }
       const createdRecord = await bitacoraStore.crearBitacoraEntry(dataToSubmit);
       
-      if (createdRecord && createdRecord.id && showBodegaSection.value && insumosConsumidos.value.length > 0) {
-        for (const insumo of insumosConsumidos.value) {
+      if (createdRecord) {
+        success = true;
+        if (createdRecord.id && showBodegaSection.value && insumosConsumidos.value.length > 0) {
+          for (const insumo of insumosConsumidos.value) {
+            try {
+              await bodegaMovimientosStore.registrarMovimiento({
+                item: insumo.item,
+                tipo: 'egreso',
+                cantidad: insumo.cantidad,
+                bitacora: createdRecord.id,
+                notas: `Consumo en campo para la actividad: ${selectedActividadDetalles.value?.nombre || 'Bitácora'}`,
+                costo_unitario_aplicado: bodegaStore.getItemById(insumo.item)?.costo_promedio_ponderado
+              });
+            } catch (movError) {
+              console.error('[BitacoraEntryForm] Error registrando movimiento de bodega:', movError);
+              uiFeedbackStore.showSnackbar('Entrada guardada pero falló el descuento de inventario', 'warning');
+            }
+          }
+        }
+        
+        uiFeedbackStore.showSnackbar('Nueva entrada de bitácora guardada con éxito.', 'success');
+
+        // After successful bitacora entry creation, finalize programacion execution if applicable
+        if (formData.programacion_origen_id) {
           try {
-            await bodegaMovimientosStore.registrarMovimiento({
-              item: insumo.item,
-              tipo: 'egreso',
-              cantidad: insumo.cantidad,
-              bitacora: createdRecord.id,
-              notas: `Consumo en campo para la actividad: ${selectedActividadDetalles.value?.nombre || 'Bitácora'}`,
-              costo_unitario_aplicado: bodegaStore.getItemById(insumo.item)?.costo_promedio_ponderado
+            // formData.fecha_ejecucion is in YYYY-MM-DDTHH:mm format from the input
+            // finalizeProgramacionExecution expects YYYY-MM-DD, so we split it.
+            const fechaSinHora = formData.fecha_ejecucion.split('T')[0];
+            await programacionesStore.finalizeProgramacionExecution({
+              programacionId: formData.programacion_origen_id,
+              fechaEjecucionReal: fechaSinHora 
             });
-          } catch (movError) {
-            console.error('[BitacoraEntryForm] Error registrando movimiento de bodega:', movError);
-            uiFeedbackStore.showSnackbar('Entrada guardada pero falló el descuento de inventario', 'warning');
+            uiFeedbackStore.showSnackbar('Programación actualizada.', 'success');
+          } catch (progError) {
+            console.error('Error finalizing programacion execution:', progError);
+            uiFeedbackStore.showSnackbar('Error actualizando la programación asociada. La bitácora se guardó.', 'warning');
           }
         }
       }
-      
-      uiFeedbackStore.showSnackbar('Nueva entrada de bitácora guardada con éxito.', 'success');
-
-      // After successful bitacora entry creation, finalize programacion execution if applicable
-      if (formData.programacion_origen_id) {
-        try {
-          // formData.fecha_ejecucion is in YYYY-MM-DDTHH:mm format from the input
-          // finalizeProgramacionExecution expects YYYY-MM-DD, so we split it.
-          const fechaSinHora = formData.fecha_ejecucion.split('T')[0];
-          await programacionesStore.finalizeProgramacionExecution({
-            programacionId: formData.programacion_origen_id,
-            fechaEjecucionReal: fechaSinHora 
-          });
-          uiFeedbackStore.showSnackbar('Programación actualizada.', 'success');
-        } catch (progError) {
-          console.error('Error finalizing programacion execution:', progError);
-          // handleError(progError, 'Error actualizando la programación asociada'); // Optionally show another snackbar
-          uiFeedbackStore.showSnackbar('Error actualizando la programación asociada. La bitácora se guardó.', 'warning');
-        }
-      }
+    }
+    if (!success) {
+      isSubmitting.value = false;
+      return;
     }
     emit('save');
     closeDialog();

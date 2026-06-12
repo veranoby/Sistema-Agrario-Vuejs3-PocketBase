@@ -143,7 +143,7 @@
               
               <!-- Color de Zona -->
               <div class="col-span-12 mt-2">
-                <div class="text-caption font-weight-bold mb-1 d-flex align-center">
+                <div class="text-xs font-weight-bold mb-1 d-flex align-center">
                   <v-icon start color="primary" size="small">mdi-palette</v-icon>
                   Color en Mapa
                 </div>
@@ -287,16 +287,16 @@
                 >
                   <div class="d-flex align-start gap-3 mb-2">
                     <v-avatar size="24" color="primary" variant="tonal">
-                      <span class="text-caption font-weight-bold">{{ index + 1 }}</span>
+                      <span class="text-xs font-weight-bold">{{ index + 1 }}</span>
                     </v-avatar>
-                    <div class="text-caption font-weight-bold text-grey-darken-3 leading-tight">
+                    <div class="text-xs font-weight-bold text-grey-darken-3 leading-tight">
                       {{ pregunta.pregunta }}
                       <v-tooltip
                         v-if="pregunta.descripcion"
                         activator="parent"
                         location="top"
                       >
-                        <div class="text-caption pa-2">{{ pregunta.descripcion }}</div>
+                        <div class="text-xs pa-2">{{ pregunta.descripcion }}</div>
                       </v-tooltip>
                     </div>
                   </div>
@@ -318,7 +318,7 @@
                         color="primary"
                       >
                         <template v-slot:label>
-                          <span class="text-caption font-weight-medium">{{ opcion }}</span>
+                          <span class="text-xs font-weight-medium">{{ opcion }}</span>
                         </template>
                       </v-radio>
                     </div>
@@ -339,7 +339,7 @@
               
               <!-- GPS Editable Fields (alineado a HaciendaForm) -->
               <div class="mb-4">
-                <div class="text-caption font-weight-bold mb-2">Coordenadas GPS</div>
+                <div class="text-xs font-weight-bold mb-2">Coordenadas GPS</div>
                 <div class="flex flex-wrap gap-4 items-center">
                   <div class="grid grid-cols-2 gap-2 flex-grow-1" style="min-width: 200px;">
                     <v-text-field
@@ -410,7 +410,7 @@
               <div class="border rounded-lg overflow-hidden elevation-1 bg-white mt-4">
                 <v-toolbar density="compact" flat color="grey-lighten-4">
                   <v-icon start size="x-small" class="ml-2">mdi-draw-polygon</v-icon>
-                  <span class="text-caption font-weight-bold">
+                  <span class="text-xs font-weight-bold">
                     Modo: {{ drawMode === 'polygon' ? 'Dibujo de Polígono' : 'Marcador de Punto' }}
                   </span>
                   <v-spacer></v-spacer>
@@ -435,7 +435,7 @@
                 />
               </div>
 
-              <div v-if="gpsError" class="mt-2 text-caption text-error d-flex align-center">
+              <div v-if="gpsError" class="mt-2 text-xs text-error d-flex align-center">
                 <v-icon start size="small">mdi-alert</v-icon>
                 {{ gpsError }}
               </div>

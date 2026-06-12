@@ -47,7 +47,7 @@
           type="info"
           variant="tonal"
           density="compact"
-          class="mb-3 text-caption"
+          class="mb-3 text-xs"
           border="start"
         >
           Tokens usados hoy: <strong>{{ usageDisplay }}</strong>
@@ -90,7 +90,7 @@
             <v-card-text class="pa-4">
               <div class="d-flex align-start mb-2">
                 <v-icon color="green-darken-3" size="18" class="mr-2 mt-1">mdi-clipboard-text-outline</v-icon>
-                <span class="text-caption font-weight-bold text-primary-3 text-uppercase">Diagnóstico</span>
+                <span class="text-xs font-weight-bold text-primary-3 text-uppercase">Diagnóstico</span>
               </div>
               <p class="text-smtext-grey-darken-3 mb-0" style="line-height:1.6">
                 {{ result.diagnostico }}
@@ -100,7 +100,7 @@
 
           <!-- Action Cards -->
           <div v-if="result.acciones?.length" class="mb-4">
-            <p class="text-caption font-weight-bold text-grey-darken-1 text-uppercase mb-2">
+            <p class="text-xs font-weight-bold text-grey-darken-1 text-uppercase mb-2">
               Acciones propuestas
             </p>
 
@@ -120,7 +120,7 @@
                       <v-icon size="14" :color="actionIconColor(accion)" class="mr-1">
                         {{ actionIcon(accion.tipo) }}
                       </v-icon>
-                      <span class="text-caption font-weight-bold">{{ accion.titulo }}</span>
+                      <span class="text-xs font-weight-bold">{{ accion.titulo }}</span>
                       <v-chip
                         v-if="accion.tipo !== 'info'"
                         size="x-small"
@@ -131,7 +131,7 @@
                         {{ accion.prioridad }}
                       </v-chip>
                     </div>
-                    <p class="text-caption text-grey-darken-1 mb-0">{{ accion.descripcion }}</p>
+                    <p class="text-xs text-grey-darken-1 mb-0">{{ accion.descripcion }}</p>
                   </div>
                   <v-btn
                     v-if="accion.tipo !== 'info'"
@@ -154,7 +154,7 @@
           <v-card variant="flat" border rounded="lg" class="mb-4 pa-3" style="background:#fff9c4">
             <div class="d-flex align-start">
               <v-icon color="warning" size="16" class="mr-2 mt-1">mdi-alert-decagram</v-icon>
-              <p class="text-caption font-italic text-grey-darken-2 mb-0">
+              <p class="text-xs font-italic text-grey-darken-2 mb-0">
                 Valide con un técnico agrícola antes de tomar decisiones críticas.
               </p>
             </div>

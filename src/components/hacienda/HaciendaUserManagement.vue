@@ -179,7 +179,7 @@
                     </template>
                   </v-list-item>
                 </template>
-                <div v-else class="text-caption text-grey text-center mt-4">
+                <div v-else class="text-xs text-grey text-center mt-4">
                   No hay usuarios inactivos para este rol.
                 </div>
               </v-list>

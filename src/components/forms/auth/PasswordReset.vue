@@ -86,7 +86,7 @@
               rounded
               class="mb-2"
             ></v-progress-linear>
-            <p v-if="password" class="text-caption mb-4" :class="`text-${strengthColor}`">
+            <p v-if="password" class="text-xs mb-4" :class="`text-${strengthColor}`">
               {{ strengthLabel }}
             </p>
 

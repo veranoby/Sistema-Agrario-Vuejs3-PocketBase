@@ -140,8 +140,8 @@ export default defineComponent({
         centerCircleMarker.unbindPopup();
         centerCircleMarker.unbindTooltip();
         const popupContent = props.haciendaName 
-          ? `<div class="pa-1"><strong>${props.haciendaName}</strong><br/><span class="text-caption">Ubicación Principal (GPS)</span></div>`
-          : '<div class="pa-1"><strong>Centro de Hacienda</strong><br/><span class="text-caption">Ubicación Principal (GPS)</span></div>';
+          ? `<div class="pa-1"><strong>${props.haciendaName}</strong><br/><span class="text-xs">Ubicación Principal (GPS)</span></div>`
+          : '<div class="pa-1"><strong>Centro de Hacienda</strong><br/><span class="text-xs">Ubicación Principal (GPS)</span></div>';
         centerCircleMarker.bindPopup(popupContent);
         centerCircleMarker.bindTooltip(props.haciendaName || 'Centro de Hacienda', { permanent: false, direction: 'top' });
       } else {
@@ -163,8 +163,8 @@ export default defineComponent({
         }).addTo(map);
         
         const popupContent = props.haciendaName 
-          ? `<div class="pa-1"><strong>${props.haciendaName}</strong><br/><span class="text-caption">Ubicación Principal (GPS)</span></div>`
-          : '<div class="pa-1"><strong>Centro de Hacienda</strong><br/><span class="text-caption">Ubicación Principal (GPS)</span></div>';
+          ? `<div class="pa-1"><strong>${props.haciendaName}</strong><br/><span class="text-xs">Ubicación Principal (GPS)</span></div>`
+          : '<div class="pa-1"><strong>Centro de Hacienda</strong><br/><span class="text-xs">Ubicación Principal (GPS)</span></div>';
         centerCircleMarker.bindPopup(popupContent);
         centerCircleMarker.bindTooltip(props.haciendaName || 'Centro de Hacienda', { permanent: false, direction: 'top' });
       }
@@ -176,8 +176,8 @@ export default defineComponent({
         centerCircleMarker.unbindPopup();
         centerCircleMarker.unbindTooltip();
         const popupContent = newName 
-          ? `<div class="pa-1"><strong>${newName}</strong><br/><span class="text-caption">Ubicación Principal (GPS)</span></div>`
-          : '<div class="pa-1"><strong>Centro de Hacienda</strong><br/><span class="text-caption">Ubicación Principal (GPS)</span></div>';
+          ? `<div class="pa-1"><strong>${newName}</strong><br/><span class="text-xs">Ubicación Principal (GPS)</span></div>`
+          : '<div class="pa-1"><strong>Centro de Hacienda</strong><br/><span class="text-xs">Ubicación Principal (GPS)</span></div>';
         centerCircleMarker.bindPopup(popupContent);
         centerCircleMarker.bindTooltip(newName || 'Centro de Hacienda', { permanent: false, direction: 'top' });
       }
@@ -574,9 +574,9 @@ export default defineComponent({
             layer.bindTooltip(props.nombre, { permanent: true, direction: 'center', className: 'zone-label-permanent' });
             
             let popup = `<div class="pa-1"><strong>${props.nombre}</strong>`;
-            if (props.tipoNombre) popup += `<br/><span class="text-caption">Tipo: ${props.tipoNombre}</span>`;
-            if (props.estado) popup += `<br/><span class="text-caption">Estado: ${props.estado}</span>`;
-            if (props.area) popup += `<br/><span class="text-caption">Área: ${props.area} ha</span>`;
+            if (props.tipoNombre) popup += `<br/><span class="text-xs">Tipo: ${props.tipoNombre}</span>`;
+            if (props.estado) popup += `<br/><span class="text-xs">Estado: ${props.estado}</span>`;
+            if (props.area) popup += `<br/><span class="text-xs">Área: ${props.area} ha</span>`;
             popup += `</div>`;
             layer.bindPopup(popup);
           }
@@ -616,11 +616,11 @@ export default defineComponent({
           <strong>${feature.properties.nombre}</strong>`
         
         if (feature.properties.tipoNombre) {
-          popupContent += `<br/><span class="text-caption">Tipo: ${feature.properties.tipoNombre}</span>`
+          popupContent += `<br/><span class="text-xs">Tipo: ${feature.properties.tipoNombre}</span>`
         }
         
         if (feature.properties.estado) {
-          popupContent += `<br/><span class="text-caption">Estado: ${feature.properties.estado}</span>`
+          popupContent += `<br/><span class="text-xs">Estado: ${feature.properties.estado}</span>`
         }
         
         popupContent += `</div>`

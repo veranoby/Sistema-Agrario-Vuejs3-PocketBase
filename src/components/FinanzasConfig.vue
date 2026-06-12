@@ -463,7 +463,7 @@
                     </v-avatar>
                   </template>
                   <v-list-item-title class="font-weight-bold text-md">{{ item.razon_social || item.categoria }}</v-list-item-title>
-                  <v-list-item-subtitle class="text-caption text-grey-darken-1 d-flex flex-column">
+                  <v-list-item-subtitle class="text-xs text-grey-darken-1 d-flex flex-column">
                     <span>{{ formatDate(item.fecha) }} &bull; {{ item.costo }}</span>
                     <span class="text-truncate">{{ item.detalle }}</span>
                   </v-list-item-subtitle>

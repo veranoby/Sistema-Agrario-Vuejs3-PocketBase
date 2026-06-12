@@ -67,7 +67,7 @@
 
             <v-divider class="my-2" />
 
-            <div class="text-body-2">
+            <div class="text-md">
               <p><strong>Ubicación:</strong> {{ hacienda.location || hacienda.ubicacion || 'N/A' }}</p>
               <p><strong>Plan:</strong> {{ hacienda.plan?.name || hacienda.plan?.nombre || 'N/A' }}</p>
               <p><strong>Propietario/Admin:</strong> {{ getOwnerName(hacienda) }}</p>
@@ -214,7 +214,7 @@
             <h3 class="  font-weight-bold mb-2">Configuración y Estado</h3>
             <v-row>
               <v-col cols="12" md="6">
-                <span class="text-caption">Estado</span>
+                <span class="text-xs">Estado</span>
                 <v-radio-group v-model="formData.status" inline>
                   <v-radio label="Activa" value="active"></v-radio>
                   <v-radio label="Suspendida" value="suspended"></v-radio>
@@ -236,7 +236,7 @@
               <h3 class="  font-weight-bold mb-2">Suscripción y Módulos</h3>
               <v-row>
                 <v-col cols="12" md="6">
-                  <span class="text-caption">Plan</span>
+                  <span class="text-xs">Plan</span>
                 <v-radio-group v-model="formData.plan" inline>
                   <v-radio
                     v-for="plan in planesList"
@@ -247,7 +247,7 @@
                 </v-radio-group>
               </v-col>
               <v-col cols="12">
-                <span class="text-caption">Módulos Activos</span>
+                <span class="text-xs">Módulos Activos</span>
                 <v-row class="mt-1">
                   <v-col cols="12" sm="6" md="4" v-for="mod in modulosList" :key="mod.id">
                     <v-checkbox
@@ -257,7 +257,7 @@
                       density="compact"
                     >
                       <template v-slot:label>
-                        <span class="text-body-2">{{ mod.name || mod.nombre }}</span>
+                        <span class="text-md">{{ mod.name || mod.nombre }}</span>
                       </template>
                     </v-checkbox>
                   </v-col>
@@ -321,7 +321,7 @@
 
                   <v-list-item-subtitle>
 
-                    <div v-if="selectedHacienda?.status === 'suspended'" class="text-caption mt-1 text-error">
+                    <div v-if="selectedHacienda?.status === 'suspended'" class="text-xs mt-1 text-error">
                       Razón: {{ selectedHacienda?.suspension_reason || 'N/A' }}
                     </div>
                   </v-list-item-subtitle>
@@ -355,10 +355,10 @@
                         <template v-slot:prepend>
                           <v-icon icon="mdi-account-circle" color="primary" size="small" class="mr-2"></v-icon>
                         </template>
-                        <v-list-item-title class="text-body-2">{{ user.label }}</v-list-item-title>
+                        <v-list-item-title class="text-md">{{ user.label }}</v-list-item-title>
                       </v-list-item>
                     </v-list>
-                    <span v-else class="text-caption">Ninguno</span>
+                    <span v-else class="text-xs">Ninguno</span>
                   </v-list-item-subtitle>
                 </v-list-item>
               </v-list>

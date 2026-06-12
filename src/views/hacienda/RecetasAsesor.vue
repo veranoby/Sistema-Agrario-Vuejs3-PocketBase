@@ -67,7 +67,7 @@
                 <div :class="['py-3 px-4 text-white d-flex align-center justify-space-between', getRecipeHeaderBg(receta.estado)]">
                   <div>
                     <h3 class="  font-weight-bold mb-0">{{ receta.titulo || 'Receta Agrícola' }}</h3>
-                    <span class="text-caption opacity-90">
+                    <span class="text-xs opacity-90">
                       Fecha: {{ formatDate(receta.created) }}
                     </span>
                   </div>
@@ -80,13 +80,13 @@
                 <v-card-text class="flex-grow-1 pt-4">
                   <v-row class="mb-2">
                     <v-col cols="6" class="py-1">
-                      <span class="text-caption text-grey d-block">Siembra Relacionada</span>
+                      <span class="text-xs text-grey d-block">Siembra Relacionada</span>
                       <span class="text-smfont-weight-medium text-primary-4">
                         {{ getSiembraName(receta.siembra_id) }}
                       </span>
                     </v-col>
                     <v-col cols="6" class="py-1">
-                      <span class="text-caption text-grey d-block">Blanco Biológico</span>
+                      <span class="text-xs text-grey d-block">Blanco Biológico</span>
                       <span class="text-smfont-weight-medium">
                         {{ receta.blanco_biologico || 'N/A' }}
                       </span>
@@ -96,20 +96,20 @@
                   <v-divider class="my-2"></v-divider>
 
                   <div class="mb-3">
-                    <span class="text-caption text-grey d-block">Prescripción Técnica</span>
+                    <span class="text-xs text-grey d-block">Prescripción Técnica</span>
                     <p class="text-smmb-1"><strong>Producto:</strong> {{ receta.producto_recomendado || 'N/A' }}</p>
-                    <p class="text-body-2"><strong>Dosis:</strong> {{ receta.dosis }} {{ receta.unidad_dosis }}<span v-if="receta.phi_dias"> | <strong>PHI:</strong> {{ receta.phi_dias }}d</span><span v-if="receta.rei_horas"> | <strong>REI:</strong> {{ receta.rei_horas }}h</span></p>
+                    <p class="text-md"><strong>Dosis:</strong> {{ receta.dosis }} {{ receta.unidad_dosis }}<span v-if="receta.phi_dias"> | <strong>PHI:</strong> {{ receta.phi_dias }}d</span><span v-if="receta.rei_horas"> | <strong>REI:</strong> {{ receta.rei_horas }}h</span></p>
                   </div>
 
                   <div class="mb-3">
-                    <span class="text-caption text-grey d-block">Instrucciones Técnicas</span>
+                    <span class="text-xs text-grey d-block">Instrucciones Técnicas</span>
                     <p class="text-smbg-grey-lighten-4 pa-3 rounded text-grey-darken-3 whitespace-pre-line italic">
                       "{{ receta.observaciones_tecnicas || 'Sin instrucciones adicionales' }}"
                     </p>
                   </div>
 
                   <!-- Rejection Reason if applicable -->
-                  <div v-if="receta.estado === 'rechazada' && receta.motivo_rechazo" class="bg-red-lighten-5 border-red-lighten-3 border pa-3 rounded mb-2 text-red-darken-4 text-body-2">
+                  <div v-if="receta.estado === 'rechazada' && receta.motivo_rechazo" class="bg-red-lighten-5 border-red-lighten-3 border pa-3 rounded mb-2 text-red-darken-4 text-md">
                     <strong>Motivo de Rechazo:</strong> {{ receta.motivo_rechazo }}
                   </div>
                 </v-card-text>
@@ -169,10 +169,10 @@
                     </v-chip>
                   </div>
 
-                  <p class="text-caption text-grey mb-1">Enviado el: {{ formatDate(paquete.created) }}</p>
+                  <p class="text-xs text-grey mb-1">Enviado el: {{ formatDate(paquete.created) }}</p>
                   
                   <div class="mb-3">
-                    <span class="text-caption text-grey d-block">Resumen de Contenido</span>
+                    <span class="text-xs text-grey d-block">Resumen de Contenido</span>
                     <div class="d-flex flex-wrap gap-2 mt-1">
                       <v-chip size="x-small" color="teal-lighten-4" class="text-primary-4">
                         Siembra: {{ paquete.siembra_id ? '1' : '0' }}
@@ -189,7 +189,7 @@
                   <v-divider class="my-2"></v-divider>
 
                   <div>
-                    <span class="text-caption text-grey d-block">Notas Enviadas</span>
+                    <span class="text-xs text-grey d-block">Notas Enviadas</span>
                     <p class="text-smitalic text-grey-darken-2">
                       "{{ paquete.notas_hacienda || 'Sin notas adicionales' }}"
                     </p>

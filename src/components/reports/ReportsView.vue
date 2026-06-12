@@ -32,7 +32,7 @@
                 <div class="">
                   {{ formatDate(item.generatedAt) }}
                 </div>
-                <div class="text-caption">
+                <div class="text-xs">
                   <v-icon size="small">mdi-email</v-icon>
                   {{ item.recipients }} destinatarios
                 </div>

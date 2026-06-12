@@ -61,7 +61,7 @@
                     <p class="text-md font-weight-bold">
                       {{ formatDate(ejecucion.fecha) }}
                     </p>
-                    <p class="text-caption text-grey">
+                    <p class="text-xs text-grey">
                       {{ ejecucion.responsable || 'Sin responsable' }}
                     </p>
                   </div>

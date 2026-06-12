@@ -3,7 +3,7 @@
     <div class="flex items-center justify-between mb-4">
       <div>
         <h3 class="text-l font-bold">{{ t('plan_management.current_plan') }}</h3>
-        <div class="text-caption text-grey">Gestiona tu suscripción y módulos</div>
+        <div class="text-xs text-grey">Gestiona tu suscripción y módulos</div>
       </div>
       <div class="flex items-center gap-2">
         <v-chip :color="getPlanColor" variant="flat" size="small">
@@ -66,7 +66,7 @@
         </v-chip>
       </div>
       <!-- Sin módulos -->
-      <div v-else class="text-caption text-grey-darken-1 italic">
+      <div v-else class="text-xs text-grey-darken-1 italic">
         Sin módulos adicionales activos
       </div>
     </div>
@@ -96,10 +96,10 @@
               </v-chip>
           </template>
           <template v-slot:item.detalle="{ item }">
-             <div v-if="item.tipo === 'plan_upgrade'" class="text-caption">
+             <div v-if="item.tipo === 'plan_upgrade'" class="text-xs">
               <strong>Plan:</strong> {{ item.expand?.plan_solicitado?.nombre || '?' }}
             </div>
-            <div v-if="item.modulo_solicitado && item.modulo_solicitado !== '[]'" class="text-caption">
+            <div v-if="item.modulo_solicitado && item.modulo_solicitado !== '[]'" class="text-xs">
               <strong>Módulos:</strong> {{ parseModules(item.modulo_solicitado) }}
             </div>
           </template>
@@ -109,7 +109,7 @@
             </v-chip>
           </template>
           <template v-slot:item.monto_notas="{ item }">
-            <span class="text-caption text-grey-darken-2">{{ item.notas_admin || 'N/A' }}</span>
+            <span class="text-xs text-grey-darken-2">{{ item.notas_admin || 'N/A' }}</span>
           </template>
         </v-data-table>
       </v-card-text>
@@ -149,7 +149,7 @@
               size="small"
               fill-dot
             >
-              <div :class="['text-caption font-weight-bold mt-1 text-center', currentStep >= index + 1 ? 'text-primary' : 'text-grey']">
+              <div :class="['text-xs font-weight-bold mt-1 text-center', currentStep >= index + 1 ? 'text-primary' : 'text-grey']">
                 {{ stepName }}
               </div>
             </v-timeline-item>
@@ -236,7 +236,7 @@
                   </div>
                   
                   <div v-if="selectedModulesData.length > 0" class="mb-2 mt-4">
-                    <div class="text-caption text-grey mb-2 uppercase font-weight-bold">Módulos Adicionales:</div>
+                    <div class="text-xs text-grey mb-2 uppercase font-weight-bold">Módulos Adicionales:</div>
                     <div v-for="m in selectedModulesData" :key="m.id" class="d-flex justify-space-between pl-2 mb-2 text-smbg-grey-lighten-5 pa-2 rounded border border-dashed">
                       <span>• {{ m.name }}</span>
                       <span class="font-weight-bold">${{ m.price_monthly }}.00</span>
@@ -246,7 +246,7 @@
                   <v-divider class="my-4" />
 
                   <div class="mb-4">
-                    <div class="text-caption text-grey mb-2">CICLO DE FACTURACIÓN</div>
+                    <div class="text-xs text-grey mb-2">CICLO DE FACTURACIÓN</div>
                     <v-btn-toggle v-model="billingCycle" mandatory color="primary" density="compact" rounded="pill" class="w-full">
                       <v-btn value="monthly" class="flex-grow-1">Mensual</v-btn>
                       <v-btn value="yearly" class="flex-grow-1">Anual (-17%)</v-btn>
@@ -254,10 +254,10 @@
                   </div>
 
                   <div class="d-flex justify-space-between align-end mt-6">
-                    <div class="text-caption text-grey">TOTAL ESTIMADO</div>
+                    <div class="text-xs text-grey">TOTAL ESTIMADO</div>
                     <div class="text-right">
                       <div class="text-h4 font-weight-bold text-primary">${{ totalAmount.toFixed(2) }}</div>
-                      <div class="text-caption text-grey">{{ billingCycle === 'monthly' ? 'por mes' : 'total anual' }}</div>
+                      <div class="text-xs text-grey">{{ billingCycle === 'monthly' ? 'por mes' : 'total anual' }}</div>
                     </div>
                   </div>
                 </v-card>

@@ -146,7 +146,7 @@
 
                 <!-- Professional Bio -->
                 <v-col cols="12">
-                  <p class="text-caption mb-2 text-grey-darken-1">Breve Resumen Profesional / Biografía</p>
+                  <p class="text-xs mb-2 text-grey-darken-1">Breve Resumen Profesional / Biografía</p>
                   <div class="border rounded" style="min-height: 200px">
                     <QuillEditor
                       v-model:content="bioCorta"
@@ -183,7 +183,7 @@
               Vista Previa en Directorio
             </v-card-title>
             
-            <p class="text-caption text-grey-darken-1 mb-4">
+            <p class="text-xs text-grey-darken-1 mb-4">
               Así es como aparecerá tu perfil ante los administradores de haciendas en su buscador.
             </p>
 
@@ -206,7 +206,7 @@
                   <h3 class="  font-weight-bold text-truncate mb-0">
                     {{ name }} {{ lastname }}
                   </h3>
-                  <span class="text-caption text-indigo-lighten-5 d-block">
+                  <span class="text-xs text-indigo-lighten-5 d-block">
                     Reg: {{ numeroColegiatura || 'N/A' }}
                   </span>
                 </div>
@@ -215,7 +215,7 @@
               <v-card-text class="pt-4 pb-2">
                 <!-- Specialties -->
                 <div class="mb-3">
-                  <div class="text-caption font-weight-bold text-grey-darken-1 mb-1">Especialidades:</div>
+                  <div class="text-xs font-weight-bold text-grey-darken-1 mb-1">Especialidades:</div>
                   <div class="d-flex flex-wrap gap-1">
                     <v-chip
                       v-for="(spec, idx) in limitItems(selectedEspecialidades, 3)"
@@ -236,13 +236,13 @@
                     >
                       +{{ selectedEspecialidades.length - 3 }}
                     </v-chip>
-                    <span v-if="selectedEspecialidades.length === 0" class="text-caption text-grey italic">Ninguna seleccionada</span>
+                    <span v-if="selectedEspecialidades.length === 0" class="text-xs text-grey italic">Ninguna seleccionada</span>
                   </div>
                 </div>
 
                 <!-- Cobertura -->
                 <div class="mb-3">
-                  <div class="text-caption font-weight-bold text-grey-darken-1 mb-1">Zonas Cobertura:</div>
+                  <div class="text-xs font-weight-bold text-grey-darken-1 mb-1">Zonas Cobertura:</div>
                   <div class="d-flex flex-wrap gap-1">
                     <v-chip
                       v-for="zone in limitItems(selectedProvincias, 2)"
@@ -263,13 +263,13 @@
                     >
                       +{{ selectedProvincias.length - 2 }}
                     </v-chip>
-                    <span v-if="selectedProvincias.length === 0" class="text-caption text-grey italic">Ninguna seleccionada</span>
+                    <span v-if="selectedProvincias.length === 0" class="text-xs text-grey italic">Ninguna seleccionada</span>
                   </div>
                 </div>
 
                 <!-- Bio -->
                 <div>
-                  <p class="text-caption text-grey-darken-2 italic-bio">
+                  <p class="text-xs text-grey-darken-2 italic-bio">
                     "{{ truncateText(bioCorta, 110) }}"
                   </p>
                 </div>
@@ -288,7 +288,7 @@
                   </h3>
                 </div>
                 
-                <p v-if="subscriptionActive" class="text-caption mb-2" :style="{ opacity: 0.8 }">
+                <p v-if="subscriptionActive" class="text-xs mb-2" :style="{ opacity: 0.8 }">
                   Tu entorno profesional está activo. Las haciendas pueden vincularte a sus proyectos.
                 </p>
                 <v-alert
@@ -316,7 +316,7 @@
                   Ver Historial de Solicitudes
                 </v-btn>
                 <div v-else>
-                  <p class="text-caption text-warning mb-3">
+                  <p class="text-xs text-warning mb-3">
                     Tu entorno está en modo restringido. Para habilitar tu portafolio y ser visible para todas las haciendas, requieres activar tu plan profesional.
                   </p>
                   
@@ -332,7 +332,7 @@
                     Suscribirse ($5/mes)
                   </v-btn>
                   
-                  <v-alert v-else type="info" density="compact" variant="tonal" class="text-caption mt-2 mb-2">
+                  <v-alert v-else type="info" density="compact" variant="tonal" class="text-xs mt-2 mb-2">
                     Tienes una solicitud de pago pendiente de revisión.
                   </v-alert>
 
@@ -368,7 +368,7 @@
           <v-row>
             <v-col cols="12" sm="6">
               <div class="bg-grey-lighten-4 pa-3 rounded-lg border h-100">
-                <div class="text-caption text-grey-darken-1 font-weight-bold mb-1">Estado Actual</div>
+                <div class="text-xs text-grey-darken-1 font-weight-bold mb-1">Estado Actual</div>
                 <div class="d-flex align-center">
                   <v-icon :color="subscriptionActive ? 'green' : 'orange'" size="small" class="mr-1">
                     {{ subscriptionActive ? 'mdi-check-circle' : 'mdi-alert-circle' }}
@@ -381,7 +381,7 @@
             </v-col>
             <v-col cols="12" sm="6">
               <div class="bg-indigo-lighten-5 pa-3 rounded-lg border border-indigo-lighten-3 h-100">
-                <div class="text-caption text-indigo-darken-2 font-weight-bold mb-1">Período de Activación (Estimado)</div>
+                <div class="text-xs text-indigo-darken-2 font-weight-bold mb-1">Período de Activación (Estimado)</div>
                 <div class="text-smtext-indigo-darken-4 font-weight-medium">
                   {{ new Date().toLocaleDateString() }} - {{ new Date(Date.now() + 30*24*60*60*1000).toLocaleDateString() }}
                 </div>
@@ -464,7 +464,7 @@
               </v-chip>
             </template>
             <template v-slot:item.monto_notas="{ item }">
-              <span class="text-caption text-grey-darken-2">{{ item.notas_admin || 'N/A' }}</span>
+              <span class="text-xs text-grey-darken-2">{{ item.notas_admin || 'N/A' }}</span>
             </template>
           </v-data-table>
         </v-card-text>

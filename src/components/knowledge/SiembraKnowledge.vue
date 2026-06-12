@@ -81,7 +81,7 @@
               :color="actividadesProgress >= 80 ? 'success' : 'warning'"
               class="mb-3"
             />
-            <p class="text-body-2">
+            <p class="text-md">
               {{ actividadesRealizadas }} de {{ actividadesProgramadas }} actividades completadas
               ({{ actividadesProgress }}%)
             </p>
@@ -172,7 +172,7 @@
               >
                 <div>
                   <p class="text-md font-weight-bold">{{ prog.actividad_nombre }}</p>
-                  <p class="text-caption text-grey">{{ formatDate(prog.fecha_programada) }}</p>
+                  <p class="text-xs text-grey">{{ formatDate(prog.fecha_programada) }}</p>
                 </div>
               </v-timeline-item>
             </v-timeline>

@@ -32,11 +32,11 @@
       <v-card variant="outlined" class="mb-4">
         <v-card-text>
           <div class="d-flex justify-space-between mb-2">
-            <span class="text-body-2">Plan Base</span>
+            <span class="text-md">Plan Base</span>
             <span class="font-weight-medium">$10.00/mes</span>
           </div>
           <div class="d-flex justify-space-between mb-2">
-            <span class="text-body-2">Módulos ({{ modulosActivos.length }})</span>
+            <span class="text-md">Módulos ({{ modulosActivos.length }})</span>
             <span class="font-weight-medium">${{ modulesSubtotal.toFixed(2) }}/mes</span>
           </div>
           
@@ -52,11 +52,11 @@
             <div class="d-flex justify-space-between align-center">
               <div>
                 <p class="text-md font-weight-bold mb-1">Plan Anual</p>
-                <p class="text-caption">${{ totalYearly.toFixed(2) }}/año (${{ (totalYearly / 12).toFixed(2) }}/mes)</p>
+                <p class="text-xs">${{ totalYearly.toFixed(2) }}/año (${{ (totalYearly / 12).toFixed(2) }}/mes)</p>
               </div>
               <div class="text-right">
                 <p class="text-md font-weight-bold text-primary">Ahorras ${{ annualSavings.toFixed(2) }}</p>
-                <p class="text-caption">({{ savingsPercent }}%)</p>
+                <p class="text-xs">({{ savingsPercent }}%)</p>
               </div>
             </div>
           </v-alert>

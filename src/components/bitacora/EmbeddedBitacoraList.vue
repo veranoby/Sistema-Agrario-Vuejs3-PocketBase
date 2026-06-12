@@ -5,19 +5,19 @@
       
       <div v-if="!isLoading" class="d-flex align-center bg-grey-lighten-4 rounded-pill px-2 py-1">
         <v-btn icon="mdi-chevron-left" size="x-small" variant="text" color="primary" @click="prevMonth"></v-btn>
-        <span class="text-body-2 font-weight-medium px-3 text-capitalize">{{ formattedCurrentMonth }}</span>
+        <span class="text-md font-weight-medium px-3 text-capitalize">{{ formattedCurrentMonth }}</span>
         <v-btn icon="mdi-chevron-right" size="x-small" variant="text" color="primary" @click="nextMonth"></v-btn>
       </div>
     </div>
 
     <div v-if="isLoading" class="text-center pa-4">
       <v-progress-circular indeterminate color="primary" size="small"></v-progress-circular>
-      <p class="text-caption">Cargando bitácora...</p>
+      <p class="text-xs">Cargando bitácora...</p>
     </div>
 
     <v-alert v-if="!isLoading && error" type="warning" density="compact" variant="tonal">
       <template v-slot:prepend><v-icon size="small">mdi-alert-circle-outline</v-icon></template>
-      <span class="text-caption">Error: {{ error.message || error }}</span>
+      <span class="text-xs">Error: {{ error.message || error }}</span>
     </v-alert>
 
     <v-card v-if="!isLoading" outlined class="border border-grey-lighten-3 rounded-lg overflow-hidden">

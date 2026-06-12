@@ -50,7 +50,7 @@
             </v-avatar>
             <div>
               <div class="text-h6">{{ selectedAsesor.name }} {{ selectedAsesor.lastname }}</div>
-              <span class="text-caption">{{ selectedAsesor.email }}</span>
+              <span class="text-xs">{{ selectedAsesor.email }}</span>
             </div>
           </v-card-title>
 

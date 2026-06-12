@@ -80,23 +80,69 @@ export class DigitalSignature {
    * @returns {Promise<boolean>} True si la firma es válida
    */
   async verify(signedData) {
-    const { data, signature } = signedData
+    const { data, signature, publicKey } = signedData
 
-    if (!this.keyPair) {
-      await this.loadKeyPair()
+    let verifyKey;
+
+    if (publicKey) {
+      try {
+        const pubKeyArray = Uint8Array.from(atob(publicKey), c => c.charCodeAt(0));
+        verifyKey = await window.crypto.subtle.importKey(
+          'spki',
+          pubKeyArray.buffer,
+          { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+          true,
+          ['verify']
+        );
+      } catch (err) {
+        logger.warn('[DigitalSignature] Error importando publicKey del payload:', err);
+      }
     }
 
-    const encoder = new TextEncoder()
-    const dataBuffer = encoder.encode(JSON.stringify(data))
+    // Fallback: usar clave local si no hay publicKey en el payload
+    if (!verifyKey) {
+      if (!this.keyPair) {
+        try {
+          await this.loadKeyPair()
+        } catch (err) {
+          logger.warn('[DigitalSignature] No se puede verificar: sin publicKey en payload y sin claves locales');
+          return false;
+        }
+      }
+      verifyKey = this.keyPair.publicKey;
+    }
 
     const signatureArray = Uint8Array.from(atob(signature), c => c.charCodeAt(0))
 
-    const isValid = await window.crypto.subtle.verify(
-      'RSASSA-PKCS1-v1_5',
-      this.keyPair.publicKey,
-      signatureArray,
-      dataBuffer
-    )
+    // Helper to try verification with a specific stringified payload
+    const tryVerify = async (jsonString) => {
+      const encoder = new TextEncoder()
+      const dataBuffer = encoder.encode(jsonString)
+      return await window.crypto.subtle.verify(
+        'RSASSA-PKCS1-v1_5',
+        verifyKey,
+        signatureArray,
+        dataBuffer
+      )
+    }
+
+    // Try normal stringify first (preserves current order)
+    let isValid = await tryVerify(JSON.stringify(data))
+
+    // If it fails, try deterministic stringify (sorted keys) because DBs like SQLite JSON reorder keys
+    if (!isValid && typeof data === 'object' && data !== null) {
+      const sortedKeys = Object.keys(data).sort()
+      const sortedData = {}
+      sortedKeys.forEach(k => { sortedData[k] = data[k] })
+      isValid = await tryVerify(JSON.stringify(sortedData))
+    }
+    
+    // As a final fallback for the specific {hash, userId, timestamp} payload from BitacoraSignature
+    if (!isValid && data && data.hash && data.userId && data.timestamp) {
+      // Try the exact order that BitacoraSignature.vue uses: hash, userId, timestamp
+      const exactOrder = { hash: data.hash, userId: data.userId, timestamp: data.timestamp };
+      isValid = await tryVerify(JSON.stringify(exactOrder));
+    }
 
     logger.info(`[DigitalSignature] Verificación: ${isValid ? 'VÁLIDA' : 'INVÁLIDA'}`)
     return isValid

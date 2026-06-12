@@ -17,7 +17,7 @@
                   {{ t('dashboard.hacienda') }}: {{ mi_hacienda?.name }}
                 </v-chip>
               </h3>
-              <p class="text-caption text-grey-darken-3 mt-1">
+              <p class="text-xs text-grey-darken-3 mt-1">
                 Conciliación semanal de jornales, cosechas y destajos para el sábado de raya.
               </p>
             </div>
@@ -186,25 +186,25 @@
         <v-row class="mb-6" v-if="detallesBorrador.length > 0">
           <v-col cols="12" sm="6" md="3">
             <v-card class="rounded-lg bg-primary-3 text-white pa-4 shadow-sm">
-              <div class="text-caption font-weight-bold text-primary-3">TOTAL NETO A PAGAR</div>
+              <div class="text-xs font-weight-bold text-primary-3">TOTAL NETO A PAGAR</div>
               <div class="text-h4 font-weight-black mt-1">${{ totalNeto.toFixed(2) }}</div>
             </v-card>
           </v-col>
           <v-col cols="12" sm="6" md="3">
             <v-card class="rounded-lg bg-white pa-4 shadow-sm border">
-              <div class="text-caption font-weight-bold text-grey-darken-1">TOTAL EN JORNALES</div>
+              <div class="text-xs font-weight-bold text-grey-darken-1">TOTAL EN JORNALES</div>
               <div class="text-h4 font-weight-black mt-1 text-primary-4">${{ totalJornal.toFixed(2) }}</div>
             </v-card>
           </v-col>
           <v-col cols="12" sm="6" md="3">
             <v-card class="rounded-lg bg-white pa-4 shadow-sm border">
-              <div class="text-caption font-weight-bold text-grey-darken-1">TOTAL EN DESTAJOS</div>
+              <div class="text-xs font-weight-bold text-grey-darken-1">TOTAL EN DESTAJOS</div>
               <div class="text-h4 font-weight-black mt-1 text-primary-4">${{ totalDestajo.toFixed(2) }}</div>
             </v-card>
           </v-col>
           <v-col cols="12" sm="6" md="3">
             <v-card class="rounded-lg bg-white pa-4 shadow-sm border">
-              <div class="text-caption font-weight-bold text-grey-darken-1">TRABAJADORES</div>
+              <div class="text-xs font-weight-bold text-grey-darken-1">TRABAJADORES</div>
               <div class="text-h4 font-weight-black mt-1 text-grey-darken-4">{{ detallesBorrador.length }}</div>
             </v-card>
           </v-col>
@@ -307,7 +307,7 @@
                             {{ val }} {{ unit }}
                           </v-chip>
                         </template>
-                        <span v-if="!hasCosechas(row.cosechas)" class="text-caption text-grey">
+                        <span v-if="!hasCosechas(row.cosechas)" class="text-xs text-grey">
                           Sin cosechas
                         </span>
                       </div>
@@ -374,7 +374,7 @@
                     </v-col>
                   </v-row>
                   <div class="d-flex justify-space-between align-center mt-3 pt-3 border-t">
-                    <span class="text-caption text-grey-darken-1">Neto a pagar:</span>
+                    <span class="text-xs text-grey-darken-1">Neto a pagar:</span>
                     <span class="font-weight-black text-primary-4 text-h6">${{ row.total_neto.toFixed(2) }}</span>
                   </div>
                 </v-card>

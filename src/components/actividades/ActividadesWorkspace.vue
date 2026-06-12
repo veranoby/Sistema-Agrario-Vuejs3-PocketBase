@@ -102,7 +102,7 @@
     <!-- Bitacora Form -->
     <v-dialog
       v-model="showBitacoraFormDialogActividad"
-      max-width="800px"
+      max-width="1000px"
       persistent
       scrollable
       role="dialog"

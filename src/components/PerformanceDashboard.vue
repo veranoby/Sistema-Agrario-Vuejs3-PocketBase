@@ -11,7 +11,7 @@
         <v-card class="pa-4 text-center rounded-lg" elevation="2">
           <div class="text-overline text-grey-darken-1 mb-1">Operaciones Totales</div>
           <div class="text-h3 font-weight-bold mb-2">{{ metrics.operationCounts.total }}</div>
-          <div class="text-caption font-weight-bold" :class="operationTrend > 0 ? 'text-primary' : 'text-error'">
+          <div class="text-xs font-weight-bold" :class="operationTrend > 0 ? 'text-primary' : 'text-error'">
             <v-icon start size="14">{{ operationTrend > 0 ? 'mdi-trending-up' : 'mdi-trending-down' }}</v-icon>
             {{ operationTrend > 0 ? '+' : '' }}{{ operationTrend.toFixed(1) }}% <span class="text-grey">(1h)</span>
           </div>
@@ -34,7 +34,7 @@
         <v-card class="pa-4 text-center rounded-lg" elevation="2">
           <div class="text-overline text-grey-darken-1 mb-1">Cola Actual</div>
           <div class="text-h3 font-weight-bold mb-2">{{ metrics.queueStats.currentQueueSize }}</div>
-          <div class="text-caption text-grey">
+          <div class="text-xs text-grey">
             Máximo histórico: {{ metrics.queueStats.maxQueueSize }}
           </div>
         </v-card>
@@ -44,7 +44,7 @@
         <v-card class="pa-4 text-center rounded-lg" elevation="2">
           <div class="text-overline text-grey-darken-1 mb-1">Errores</div>
           <div class="text-h3 font-weight-bold mb-2 text-error">{{ metrics.errors.totalErrors }}</div>
-          <div class="text-caption text-grey truncate">
+          <div class="text-xs text-grey truncate">
             Último: {{ lastErrorTime }}
           </div>
         </v-card>
@@ -108,19 +108,19 @@
       <h3 class="text-h6 font-weight-bold mb-4">Métricas Técnicas</h3>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2">
         <div class="flex justify-between py-2 border-b border-grey-lighten-3">
-          <span class="text-grey-darken-1 text-body-2">Última sincronización</span>
+          <span class="text-grey-darken-1 text-md">Última sincronización</span>
           <span class="font-weight-medium">{{ lastSyncTime }}</span>
         </div>
         <div class="flex justify-between py-2 border-b border-grey-lighten-3">
-          <span class="text-grey-darken-1 text-body-2">Tiempo promedio / op</span>
+          <span class="text-grey-darken-1 text-md">Tiempo promedio / op</span>
           <span class="font-weight-medium">{{ averageOperationTime }}ms</span>
         </div>
         <div class="flex justify-between py-2 border-b border-grey-lighten-3">
-          <span class="text-grey-darken-1 text-body-2">Reintentos totales</span>
+          <span class="text-grey-darken-1 text-md">Reintentos totales</span>
           <span class="font-weight-medium">{{ metrics.operationCounts.retried }}</span>
         </div>
         <div class="flex justify-between py-2 border-b border-grey-lighten-3">
-          <span class="text-grey-darken-1 text-body-2">Tipos de error comunes</span>
+          <span class="text-grey-darken-1 text-md">Tipos de error comunes</span>
           <span class="font-weight-medium truncate ml-4" :title="commonErrorTypes">{{ commonErrorTypes }}</span>
         </div>
       </div>

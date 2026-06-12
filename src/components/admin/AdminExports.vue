@@ -19,7 +19,7 @@
               Exporta todos los usuarios con sus roles, haciendas asignadas y estado.
             </p>
             <v-divider class="my-3" />
-            <div class="text-body-2">
+            <div class="text-md">
               <p><strong>Campos:</strong> Email, nombre, rol, haciendas, estado</p>
               <p><strong>Formato:</strong> Markdown</p>
               <p><strong>Total:</strong> {{ stats.users }}</p>
@@ -46,7 +46,7 @@
               Exporta todas las haciendas con configuración, planes y módulos activos.
             </p>
             <v-divider class="my-3" />
-            <div class="text-body-2">
+            <div class="text-md">
               <p><strong>Campos:</strong> Nombre, ubicación, plan, módulos, usuarios</p>
               <p><strong>Formato:</strong> Markdown</p>
               <p><strong>Total:</strong> {{ stats.haciendas }}</p>
@@ -73,7 +73,7 @@
               Exporta catálogo completo de tipos de actividades con métricas BPA.
             </p>
             <v-divider class="my-3" />
-            <div class="text-body-2">
+            <div class="text-md">
               <p><strong>Campos:</strong> Nombre, descripción, categoría, métricas BPA</p>
               <p><strong>Formato:</strong> Markdown</p>
               <p><strong>Total:</strong> {{ stats.actividades }}</p>
@@ -100,7 +100,7 @@
               Exporta catálogo de tipos de zonas utilizadas en el sistema.
             </p>
             <v-divider class="my-3" />
-            <div class="text-body-2">
+            <div class="text-md">
               <p><strong>Campos:</strong> Nombre, descripción</p>
               <p><strong>Formato:</strong> Markdown</p>
               <p><strong>Total:</strong> {{ stats.zonas }}</p>
@@ -127,7 +127,7 @@
               Exporta TODO el conocimiento del sistema en un solo archivo Markdown estructurado.
             </p>
             <v-divider class="my-3" />
-            <div class="text-body-2">
+            <div class="text-md">
               <p><strong>Incluye:</strong> Usuarios, haciendas, siembras, actividades, programaciones</p>
               <p><strong>Formato:</strong> Markdown con índice</p>
               <p><strong>Total entidades:</strong> {{ stats.total }}</p>

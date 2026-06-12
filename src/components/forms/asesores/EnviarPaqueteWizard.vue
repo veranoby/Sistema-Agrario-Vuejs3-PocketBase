@@ -47,7 +47,7 @@
                     <v-radio :value="siembra.id" color="primary" class="mr-3"></v-radio>
                     <div class="flex-grow-1">
                       <div class="font-weight-bold text-primary-4  ">{{ siembra.nombre }}</div>
-                      <div class="d-flex gap-4 mt-1 text-caption text-grey-darken-1">
+                      <div class="d-flex gap-4 mt-1 text-xs text-grey-darken-1">
                         <span><strong>Variedad:</strong> {{ siembra.variedad || 'N/A' }}</span>
                         <span><strong>Tipo:</strong> {{ siembra.tipo }}</span>
                         <span><strong>Inicio:</strong> {{ formatDate(siembra.fecha_inicio) }}</span>
@@ -87,7 +87,7 @@
                       ></v-checkbox-btn>
                     </v-card-title>
                     <v-card-text class="pa-3 overflow-y-auto" style="max-height: 250px;">
-                      <div v-if="availableZonas.length === 0" class="text-center py-6 text-grey text-caption">
+                      <div v-if="availableZonas.length === 0" class="text-center py-6 text-grey text-xs">
                         No hay zonas vinculadas a esta siembra.
                       </div>
                       <v-checkbox
@@ -103,7 +103,7 @@
                         <template v-slot:label>
                           <div class="d-flex flex-column">
                             <span class="text-smfont-weight-medium">{{ zona.nombre }}</span>
-                            <span class="text-caption text-grey">{{ zona.tipo || 'Sin Tipo' }}</span>
+                            <span class="text-xs text-grey">{{ zona.tipo || 'Sin Tipo' }}</span>
                           </div>
                         </template>
                       </v-checkbox>
@@ -125,7 +125,7 @@
                       ></v-checkbox-btn>
                     </v-card-title>
                     <v-card-text class="pa-3 overflow-y-auto" style="max-height: 250px;">
-                      <div v-if="availableBitacoras.length === 0" class="text-center py-6 text-grey text-caption">
+                      <div v-if="availableBitacoras.length === 0" class="text-center py-6 text-grey text-xs">
                         No hay bitácoras vinculadas a esta siembra.
                       </div>
                       <v-checkbox
@@ -143,7 +143,7 @@
                             <span class="text-smfont-weight-medium text-truncate" style="max-width: 250px;">
                               {{ entry.expand?.actividad_realizada?.nombre || 'Actividad' }}
                             </span>
-                            <span class="text-caption text-grey">
+                            <span class="text-xs text-grey">
                               {{ formatDate(entry.fecha_ejecucion) }} - {{ entry.user_responsable ? 'Operador' : 'Sistema' }}
                             </span>
                           </div>

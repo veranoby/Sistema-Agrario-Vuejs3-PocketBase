@@ -65,14 +65,14 @@
             <v-expansion-panel-title>
               <v-icon start>mdi-filter-variant</v-icon>
               Filtros 
-              <span class="text-caption text-grey-darken-1 mt-1">
+              <span class="text-xs text-grey-darken-1 mt-1">
                 Todas las entradas registradas para la hacienda actual.
               </span>
 
             </v-expansion-panel-title>
             <v-expansion-panel-text>
               <v-row dense>
-                <v-col cols="12" md="4" class="mb-2">
+                <v-col cols="12" md="6" class="mb-2">
                   <v-select
                     v-model="filterSiembraId"
                     :items="siembrasForFilter"
@@ -84,7 +84,7 @@
                     hide-details
                   ></v-select>
                 </v-col>
-                <v-col cols="12" md="4" class="mb-2">
+                <v-col cols="12" md="6" class="mb-2">
                   <v-select
                     v-model="filterActividadId"
                     :items="actividadesForFilter"
@@ -95,16 +95,6 @@
                     dense
                     hide-details
                   ></v-select>
-                </v-col>
-                <v-col cols="12" md="4" class="mb-2">
-                  <v-text-field
-                    v-model="filterDate"
-                    label="Filtrar por Fecha (YYYY-MM-DD)"
-                    type="date"
-                    clearable
-                    dense
-                    hide-details
-                  ></v-text-field>
                 </v-col>
               </v-row>
             </v-expansion-panel-text>
@@ -142,7 +132,7 @@
               <template v-slot:icon><v-icon color="white" size="small">mdi-check</v-icon></template>
               <div class="mb-1">
                 <div class="  font-weight-bold text-success">Fase 1 y 2: Estructura</div>
-                <div class="text-caption text-medium-emphasis">Las siembras, zonas y actividades ya deben estar configuradas.</div>
+                <div class="text-xs text-medium-emphasis">Las siembras, zonas y actividades ya deben estar configuradas.</div>
               </div>
             </v-timeline-item>
 
@@ -150,14 +140,14 @@
               <template v-slot:icon><v-icon color="white" size="small">mdi-check</v-icon></template>
               <div class="mb-1">
                 <div class="  font-weight-bold text-success">Fase 3: Programaciones</div>
-                <div class="text-caption text-medium-emphasis">Planifica tus labores para que se ejecuten a tiempo.</div>
+                <div class="text-xs text-medium-emphasis">Planifica tus labores para que se ejecuten a tiempo.</div>
               </div>
             </v-timeline-item>
 
             <v-timeline-item dot-color="primary" size="small">
               <div class="mb-1">
                 <div class="  font-weight-bold">Bitácora (Estás aquí)</div>
-                <div class="text-caption text-medium-emphasis">Al completarse una programación o reportar una actividad, se generará una entrada inmutable aquí.</div>
+                <div class="text-xs text-medium-emphasis">Al completarse una programación o reportar una actividad, se generará una entrada inmutable aquí.</div>
               </div>
               <v-btn size="small" variant="flat" color="primary" class="mt-2" @click="showNewEntryDialog = true">Registrar Entrada Manual</v-btn>
             </v-timeline-item>
@@ -215,7 +205,7 @@
 
     <v-dialog
       v-model="showNewEntryDialog"
-      max-width="800px"
+      max-width="1000px"
       persistent
       scrollable
       @keydown.esc="showNewEntryDialog = false"
@@ -277,7 +267,6 @@ const error = ref(null);
 // Filters
 const filterSiembraId = ref(null);
 const filterActividadId = ref(null);
-const filterDate = ref(null); // Keep as secondary filter if needed, though calendar is already monthly
 
 const itemsPerPage = ref(9); // Unused in calendar view, but kept for compatibility
 const currentPage = ref(1);
@@ -355,14 +344,6 @@ const filteredEntries = computed(() => {
   if (filterActividadId.value) {
     entries = entries.filter(entry => entry.actividad_realizada === filterActividadId.value || entry.expand?.actividad_realizada?.id === filterActividadId.value);
   }
-  if (filterDate.value) {
-    entries = entries.filter(entry => {
-      if (!entry.fecha_ejecucion) return false;
-      // Compare only date part, ignoring time
-      const entryDate = entry.fecha_ejecucion.substring(0, 10);
-      return entryDate === filterDate.value;
-    });
-  }
   return entries;
 });
 
@@ -375,14 +356,17 @@ const paginatedEntries = computed(() => {
 const displayedEntries = computed(() => paginatedEntries.value);
 
 const siembrasForFilter = computed(() => {
-  return siembrasStore.siembras.map(s => ({ id: s.id, nombre: s.nombre }));
+  return siembrasStore.siembras.map(s => ({
+    id: s.id,
+    nombre: `${s.nombre} (${s.expand?.tipo_siembra?.nombre || 'Sin tipo'})`
+  }));
 });
 
 const actividadesForFilter = computed(() => {
   return actividadesStore.actividades.map(a => ({ id: a.id, nombre: a.nombre }));
 });
 
-watch([filterSiembraId, filterActividadId, filterDate], () => {
+watch([filterSiembraId, filterActividadId], () => {
     currentPage.value = 1; // Reset to first page on filter change
 });
 
@@ -453,7 +437,7 @@ async function exportToExcel() {
         filtros: {
           siembra: filterSiembraId.value,
           actividad: filterActividadId.value,
-          fecha: filterDate.value
+          fecha: currentDate.value
         }
       }
     );

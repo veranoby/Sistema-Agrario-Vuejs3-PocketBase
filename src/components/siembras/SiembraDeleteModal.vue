@@ -74,7 +74,7 @@
                 <template v-slot:prepend>
                   <v-icon :icon="item.icon" size="small" color="warning"></v-icon>
                 </template>
-                <v-list-item-title class="text-caption">
+                <v-list-item-title class="text-xs">
                   {{ item.count }} {{ item.label }}
                 </v-list-item-title>
               </v-list-item>
@@ -91,7 +91,7 @@
 
           <!-- Barrera de Seguridad -->
           <div v-if="requiresHardConfirmation" class="mt-8">
-            <div class="text-caption mb-2 text-medium-emphasis">
+            <div class="text-xs mb-2 text-medium-emphasis">
               Para confirmar la eliminación masiva ({{ totalImpact }} elementos), escribe <strong>ELIMINAR</strong>:
             </div>
             <v-text-field

@@ -7,7 +7,7 @@
       height="32"
     >
       <v-icon start size="small">{{ haciendaStore.daysUntilExpiration <= 0 ? 'mdi-alert-circle' : 'mdi-clock-outline' }}</v-icon>
-      <span class="text-caption text-sm-body-2">
+      <span class="text-xs text-sm-body-2">
         {{ haciendaStore.daysUntilExpiration <= 0 ? 'Suscripción expirada. Acceso limitado.' : `Tu suscripción expira en ${haciendaStore.daysUntilExpiration} días.` }}
       </span>
       <v-btn 

@@ -2,10 +2,10 @@
   <v-card class="mb-4" outlined>
     <v-card-title class="d-flex justify-space-between">
       <span>{{ actividadNombre }}</span>
-      <v-chip size="small" :color="estadoColor" label>{{ entry.estado_ejecucion }}</v-chip>
     </v-card-title>
     <v-card-subtitle>
-      {{ formatDate(entry.fecha_ejecucion) }}
+      <v-chip variant="flat" size="x-small" :color="estadoColor">{{ entry.estado_ejecucion }}</v-chip>
+      <v-chip size="x-small" :color="estadoColor" variant="flat"> {{ formatDate(entry.fecha_ejecucion) }}</v-chip>
       <span v-if="tipoActividadNombre"> | Tipo: {{ tipoActividadNombre }}</span>
     </v-card-subtitle>
 
@@ -13,22 +13,16 @@
 
     <v-card-text>
       <v-list dense>
-        <v-list-item v-if="siembraNombre">
-          <template v-slot:prepend><v-icon>mdi-sprout</v-icon></template>
-          <v-list-item-title>Siembra</v-list-item-title>
-          <v-list-item-subtitle>{{ siembraNombre }}</v-list-item-subtitle>
-        </v-list-item>
-
         <v-list-item v-if="responsableName">
           <template v-slot:prepend><v-icon>mdi-account</v-icon></template>
           <v-list-item-title>Responsable</v-list-item-title>
           <v-list-item-subtitle>{{ responsableName }}</v-list-item-subtitle>
         </v-list-item>
 
-        <v-list-item v-if="entry.programacion_origen">
+        <v-list-item v-if="programacionOrigenName">
           <template v-slot:prepend><v-icon>mdi-calendar-clock</v-icon></template>
           <v-list-item-title>Programación Origen</v-list-item-title>
-          <v-list-item-subtitle>{{ entry.programacion_origen }}</v-list-item-subtitle>
+          <v-list-item-subtitle>{{ programacionOrigenName }}</v-list-item-subtitle>
         </v-list-item>
 
         <v-list-item v-if="entry.notas">
@@ -38,9 +32,36 @@
         </v-list-item>
       </v-list>
 
-      <div v-if="formatoReporteColumnas && formatoReporteColumnas.length > 0 && entry.metricas" class="mt-3">
+      <!-- Tabla de Ubicación (Siembras y Zonas) -->
+      <div v-if="siembrasInvolucradas.length > 0 || zonasInvolucradas.length > 0" class="mt-3">
+        <h4 class="mb-1">Ubicación de Actividad:</h4>
+        <v-table dense class="text-xs">
+          <thead>
+            <tr>
+              <th class="text-left w-25">Tipo</th>
+              <th class="text-left">Elementos</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="siembrasInvolucradas.length > 0">
+              <td class="font-weight-medium">Siembras</td>
+              <td class="py-1">
+                <v-chip v-for="s in siembrasInvolucradas" :key="s" size="x-small" class="mr-1 my-1" color="green-darken-2" variant="flat">{{ s }}</v-chip>
+              </td>
+            </tr>
+            <tr v-if="zonasInvolucradas.length > 0">
+              <td class="font-weight-medium">Zonas</td>
+              <td class="py-1">
+                <v-chip v-for="z in zonasInvolucradas" :key="z" size="x-small" class="mr-1 my-1" color="primary" variant="tonal">{{ z }}</v-chip>
+              </td>
+            </tr>
+          </tbody>
+        </v-table>
+      </div>
+
+      <div v-if="validFormatoReporteColumnas && validFormatoReporteColumnas.length > 0 && entry.metricas" class="mt-3">
         <h4 class=" mb-1">Detalles de Actividad:</h4>
-        <v-table dense class="text-caption">
+        <v-table dense class="text-xs">
           <thead>
             <tr>
               <th class="text-left">Métrica</th>
@@ -48,7 +69,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="columna in formatoReporteColumnas" :key="columna.metrica || columna.nombre">
+            <tr v-for="columna in validFormatoReporteColumnas" :key="columna.metrica || columna.nombre">
               <td>{{ columna.nombre }}</td>
               <td>
                 <span v-if="getMetricaValue(columna.metrica) !== undefined">
@@ -63,11 +84,11 @@
           </tbody>
         </v-table>
       </div>
-      <div v-else-if="entry.metricas && Object.keys(entry.metricas).length > 0 && (!formatoReporteColumnas || formatoReporteColumnas.length === 0)" class="mt-3">
+      <div v-else-if="validUnstructuredMetricasKeys.length > 0 && (!validFormatoReporteColumnas || validFormatoReporteColumnas.length === 0)" class="mt-3">
          <h4 class=" mb-1">Metricas Registradas (sin formato):</h4>
          <v-list dense>
-            <v-list-item v-for="(value, key) in entry.metricas" :key="key">
-                 <v-list-item-title>{{ key }}: {{ value }}</v-list-item-title>
+            <v-list-item v-for="key in validUnstructuredMetricasKeys" :key="key">
+                 <v-list-item-title>{{ key }}: {{ entry.metricas[key] }}</v-list-item-title>
             </v-list-item>
          </v-list>
       </div>
@@ -95,7 +116,6 @@
       </v-btn>
       <v-btn v-if="canEdit" icon="mdi-pencil" size="small" variant="text" @click="$emit('edit', entry)" />
       <v-btn v-if="canDelete" icon="mdi-delete" size="small" variant="text" color="error" @click="$emit('delete', entry)" />
-      <v-chip variant="outlined" size="small" pill>ID: {{ entry.id }}</v-chip>
     </v-card-actions>
   </v-card>
 </template>
@@ -163,7 +183,26 @@ const getSafe = (fn, defaultValue = '') => {
 
 const actividadNombre = computed(() => getSafe(() => props.entry.expand.actividad_realizada.nombre, 'Actividad Desconocida'));
 const tipoActividadNombre = computed(() => getSafe(() => props.entry.expand.actividad_realizada.expand.tipo_actividades.nombre));
-const siembraNombre = computed(() => getSafe(() => props.entry.expand.siembra_asociada.nombre));
+
+const siembrasInvolucradas = computed(() => {
+  if (props.entry.expand?.siembras) {
+    return props.entry.expand.siembras.map(s => s.tipo ? `${s.nombre} (${s.tipo})` : s.nombre);
+  }
+  const oldSiembra = getSafe(() => props.entry.expand.siembra_asociada);
+  if (oldSiembra) {
+    return oldSiembra.tipo ? [`${oldSiembra.nombre} (${oldSiembra.tipo})`] : [oldSiembra.nombre];
+  }
+  return [];
+});
+
+const zonasInvolucradas = computed(() => {
+  if (props.entry.expand?.zonas) {
+    return props.entry.expand.zonas.map(z => z.nombre);
+  }
+  return [];
+});
+
+const programacionOrigenName = computed(() => getSafe(() => props.entry.expand.programacion_origen.descripcion, props.entry.programacion_origen));
 const responsableName = computed(() => getSafe(() => props.entry.expand.user_responsable.name, getSafe(() => props.entry.expand.user_responsable.username, 'No asignado')));
 
 const estadoColor = computed(() => {
@@ -191,6 +230,27 @@ function getMetricaValue(metricaKey) {
   return bitacoraMetricasValues.value[metricaKey];
 }
 
+const validFormatoReporteColumnas = computed(() => {
+  if (!formatoReporteColumnas.value || !formatoReporteColumnas.value.length) return [];
+  return formatoReporteColumnas.value.filter(columna => {
+    let val = getMetricaValue(columna.metrica);
+    if (val === undefined) {
+       if (columna.tipo === 'text' && props.entry.metricas && props.entry.metricas[columna.nombre]) {
+         val = props.entry.metricas[columna.nombre];
+       }
+    }
+    return val !== undefined && val !== null && val !== '' && String(val).trim().toUpperCase() !== 'N/A';
+  });
+});
+
+const validUnstructuredMetricasKeys = computed(() => {
+  if (!props.entry.metricas) return [];
+  return Object.keys(props.entry.metricas).filter(key => {
+    const val = props.entry.metricas[key];
+    return val !== undefined && val !== null && val !== '' && String(val).trim().toUpperCase() !== 'N/A';
+  });
+});
+
 function formatDate(dateString) {
   if (!dateString) return 'Fecha no disponible';
   try {
@@ -208,7 +268,7 @@ function formatDate(dateString) {
 .v-card-title span {
   word-break: break-word; /* Ensure long activity names wrap */
 }
-.text-caption { /* Vuetify utility, but ensure it's available or define if needed */
+.text-xs { /* Vuetify utility, but ensure it's available or define if needed */
     font-size: 0.75rem !important;
     line-height: 1.25rem;
 }

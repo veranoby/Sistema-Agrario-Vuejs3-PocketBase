@@ -32,7 +32,7 @@
         style="top: 0; left: 0; right: 0; bottom: 0; color: #9e9e9e; pointer-events: none;"
       >
         <v-icon size="36" color="grey-lighten-1">mdi-gesture-swipe</v-icon>
-        <span class="text-caption mt-1">Dibuje su firma en esta zona</span>
+        <span class="text-xs mt-1">Dibuje su firma en esta zona</span>
       </div>
     </div>
 
@@ -42,7 +42,7 @@
       class="existing-signature-preview border rounded-lg pa-3 bg-grey-lighten-4 d-flex flex-column align-center"
       style="max-width: 420px; width: 100%;"
     >
-      <div class="text-caption text-grey-darken-1 mb-2 font-weight-bold">Firma registrada físicamente:</div>
+      <div class="text-xs text-grey-darken-1 mb-2 font-weight-bold">Firma registrada físicamente:</div>
       <img 
         :src="existingSignature.trazo" 
         alt="Firma del operador"
@@ -328,11 +328,12 @@ async function handleSign() {
     const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
 
     // 4. Firmar el hash con clave privada RSA
-    const signatureObj = await digitalSignature.sign({
+    const dataToSign = {
       hash: hashHex,
       userId: authStore.user?.id,
       timestamp: new Date().toISOString()
-    })
+    }
+    const signatureObj = await digitalSignature.sign(dataToSign)
 
     // 5. Exportar la clave pública para amparar auditoría externa
     let publicKeyBase64 = ''
@@ -345,11 +346,12 @@ async function handleSign() {
     }
 
     const fullSignaturePayload = {
+      data: signatureObj.data, // <-- AÑADIDO: Requerido por digitalSignature.verify()
       hash: hashHex,
       trazo: trazoDataUrl,
       signature: signatureObj.signature,
       publicKey: publicKeyBase64,
-      timestamp: new Date().toISOString()
+      timestamp: signatureObj.data.timestamp // <-- CORREGIDO: Usar el mismo timestamp exacto
     }
 
     isSigned.value = true

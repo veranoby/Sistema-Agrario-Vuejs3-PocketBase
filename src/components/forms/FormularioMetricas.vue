@@ -46,7 +46,7 @@
               class="mr-2 mt-n1"
             />
             <div class="flex flex-col" @click="toggleMetricSelection(grupo.principal.key, grupo.unidad?.key)" style="cursor: pointer;">
-              <span class="text-body-2" :class="localSelection.includes(grupo.principal.key) ? 'text-primary font-weight-bold' : 'text-grey-darken-3'">
+              <span class="text-md" :class="localSelection.includes(grupo.principal.key) ? 'text-primary font-weight-bold' : 'text-grey-darken-3'">
                 {{ grupo.principal.descripcion }}
               </span>
             </div>
@@ -159,7 +159,7 @@
       class="mt-4 px-4 py-2 bg-blue-grey-lighten-5 rounded-lg d-inline-flex align-center border-l-4 border-blue-grey-lighten-2"
     >
       <v-icon size="16" color="blue-grey-darken-2" class="mr-2">mdi-information-outline</v-icon>
-      <span class="text-caption text-blue-grey-darken-3">
+      <span class="text-xs text-blue-grey-darken-3">
         {{ localSelection.length }} de {{ metricasDisponibles.length }} métricas seleccionadas para registro.
       </span>
     </div>

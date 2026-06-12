@@ -4,7 +4,7 @@
       <template v-for="group in groupedLinks" :key="group.name">
         <v-list-subheader
           v-if="group.name !== 'General' && group.name !== 'Inicio'"
-          class="text-caption font-weight-bold text-uppercase mt-2 mb-1 pl-2 text-primary"
+          class="text-xs font-weight-bold text-uppercase mt-2 mb-1 pl-2 text-primary"
           style="min-height: 24px; line-height: 24px;"
         >
           {{ group.name }}

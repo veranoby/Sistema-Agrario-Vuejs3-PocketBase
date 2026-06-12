@@ -126,14 +126,14 @@
                   <template v-slot:icon><v-icon color="white" size="small">mdi-check</v-icon></template>
                   <div class="mb-1">
                     <div class="  font-weight-bold text-success">Fase 1 y 2: Estructura</div>
-                    <div class="text-caption text-medium-emphasis">Se espera que ya existan Siembras, Zonas y Actividades.</div>
+                    <div class="text-xs text-medium-emphasis">Se espera que ya existan Siembras, Zonas y Actividades.</div>
                   </div>
                 </v-timeline-item>
 
                 <v-timeline-item dot-color="primary" size="small">
                   <div class="mb-1">
                     <div class="  font-weight-bold">Fase 3: Programaciones (Estás aquí)</div>
-                    <div class="text-caption text-medium-emphasis">Programa las actividades a ejecutar.</div>
+                    <div class="text-xs text-medium-emphasis">Programa las actividades a ejecutar.</div>
                   </div>
                   <v-btn v-if="actividadesStore.actividades?.length > 0" size="small" variant="flat" color="primary" class="mt-2" @click="openNuevaProgramacion">Crear Programación</v-btn>
                   <v-btn v-else size="small" variant="outlined" color="primary" class="mt-2" to="/actividades">Ir a crear Actividades</v-btn>
@@ -142,7 +142,7 @@
                 <v-timeline-item dot-color="grey-lighten-2" size="small">
                   <div class="mb-1">
                     <div class="  font-weight-bold text-grey">Siguiente: Bitácora</div>
-                    <div class="text-caption text-medium-emphasis">Al reportar una programación, se guardará en tu Libro Diario.</div>
+                    <div class="text-xs text-medium-emphasis">Al reportar una programación, se guardará en tu Libro Diario.</div>
                   </div>
                 </v-timeline-item>
               </v-timeline>

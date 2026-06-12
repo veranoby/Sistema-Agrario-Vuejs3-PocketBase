@@ -116,7 +116,7 @@
           <h3 class="  font-weight-bold mb-2">Configuración de Acceso</h3>
           <v-row>
             <v-col cols="12" md="6">
-              <span class="text-caption">Rol</span>
+              <span class="text-xs">Rol</span>
               <v-radio-group v-model="formData.role" inline>
                 <v-radio label="Admin" :value="USER_ROLES.ADMINISTRADOR"></v-radio>
                 <v-radio label="Auditor" :value="USER_ROLES.AUDITOR"></v-radio>
@@ -125,7 +125,7 @@
               </v-radio-group>
             </v-col>
             <v-col cols="12" md="6">
-              <span class="text-caption">Estado</span>
+              <span class="text-xs">Estado</span>
               <v-radio-group v-model="formData.status" inline>
                 <v-radio label="Activo" :value="USER_STATUS.ACTIVE"></v-radio>
                 <v-radio label="Suspendido" value="suspended"></v-radio>

@@ -54,7 +54,7 @@
               Este hash no está registrado en el oráculo público o el documento asociado ha sufrido modificaciones, lo que invalida su integridad criptográfica.
             </p>
 
-            <div class="text-caption text-grey bg-grey-lighten-4 pa-3 rounded-lg font-mono text-break mb-6">
+            <div class="text-xs text-grey bg-grey-lighten-4 pa-3 rounded-lg font-mono text-break mb-6">
               HASH CONSULTADO: <br>{{ currentHash || 'NINGUNO' }}
             </div>
 
@@ -92,7 +92,7 @@
                   <v-icon color="green-darken-3">mdi-home-map-marker</v-icon>
                 </div>
                 <div>
-                  <span class="text-caption text-grey font-weight-bold uppercase-tracking">Hacienda Productora</span>
+                  <span class="text-xs text-grey font-weight-bold uppercase-tracking">Hacienda Productora</span>
                   <div class="  font-weight-black text-grey-darken-3">{{ verificationData.hacienda || 'No especificada' }}</div>
                 </div>
               </div>
@@ -102,7 +102,7 @@
                   <v-icon color="green-darken-3">mdi-playlist-check</v-icon>
                 </div>
                 <div>
-                  <span class="text-caption text-grey font-weight-bold uppercase-tracking">Actividad Certificada</span>
+                  <span class="text-xs text-grey font-weight-bold uppercase-tracking">Actividad Certificada</span>
                   <div class="  font-weight-black text-grey-darken-3">{{ verificationData.actividad || 'No especificada' }}</div>
                 </div>
               </div>
@@ -112,7 +112,7 @@
                   <v-icon color="green-darken-3">mdi-account-check</v-icon>
                 </div>
                 <div>
-                  <span class="text-caption text-grey font-weight-bold uppercase-tracking">Responsable Técnico</span>
+                  <span class="text-xs text-grey font-weight-bold uppercase-tracking">Responsable Técnico</span>
                   <div class="  font-weight-black text-grey-darken-3">{{ verificationData.operario || 'No especificado' }}</div>
                 </div>
               </div>
@@ -122,7 +122,7 @@
                   <v-icon color="green-darken-3">mdi-calendar-clock</v-icon>
                 </div>
                 <div>
-                  <span class="text-caption text-grey font-weight-bold uppercase-tracking">Fecha de Ejecución</span>
+                  <span class="text-xs text-grey font-weight-bold uppercase-tracking">Fecha de Ejecución</span>
                   <div class="  font-weight-bold text-grey-darken-3">{{ formatDateTime(verificationData.fecha_ejecucion) }}</div>
                 </div>
               </div>
@@ -132,7 +132,7 @@
                   <v-icon color="green-darken-3">mdi-clock-check-outline</v-icon>
                 </div>
                 <div>
-                  <span class="text-caption text-grey font-weight-bold uppercase-tracking">Sello de Tiempo de Firma</span>
+                  <span class="text-xs text-grey font-weight-bold uppercase-tracking">Sello de Tiempo de Firma</span>
                   <div class="  font-weight-bold text-grey-darken-3">{{ formatDateTime(verificationData.timestamp) }}</div>
                 </div>
               </div>
@@ -144,15 +144,15 @@
             <div class="bg-primary-5 border border-green-lighten-3 pa-4 rounded-lg mb-6">
               <div class="d-flex align-center mb-1">
                 <v-icon color="primary" size="small" class="mr-1">mdi-key-variant</v-icon>
-                <span class="text-caption font-weight-black text-primary-4 uppercase-tracking">Integridad de Firma Criptográfica</span>
+                <span class="text-xs font-weight-black text-primary-4 uppercase-tracking">Integridad de Firma Criptográfica</span>
               </div>
-              <div class="text-caption font-mono text-grey-darken-2 text-break select-all mt-1">
+              <div class="text-xs font-mono text-grey-darken-2 text-break select-all mt-1">
                 {{ verificationData.hash }}
               </div>
             </div>
 
             <!-- Footer checks -->
-            <div class="d-flex flex-column gap-2 text-caption text-grey-darken-1 mb-8">
+            <div class="d-flex flex-column gap-2 text-xs text-grey-darken-1 mb-8">
               <div class="d-flex align-center">
                 <v-icon color="primary" size="16" class="mr-2">mdi-check-circle</v-icon>
                 Firma criptográfica generada con clave privada RSA verificada.
@@ -193,7 +193,7 @@
         </v-card>
 
         <!-- Technical disclaimer -->
-        <p class="text-center text-caption text-grey-darken-1 mt-6 px-4">
+        <p class="text-center text-xs text-grey-darken-1 mt-6 px-4">
           ConAgri utiliza criptografía asimétrica e infraestructura de clave pública local. Esta página garantiza la correspondencia matemática de las firmas sin almacenar archivos en servidores (Zero-Storage).
         </p>
 

@@ -2,7 +2,7 @@
   <div class="bitacora-calendar-container">
     <div class="calendar-grid">
       <!-- Headers -->
-      <div v-for="dayName in weekDaysNames" :key="dayName" class="calendar-header-cell text-center text-caption font-weight-bold grey--text">
+      <div v-for="dayName in weekDaysNames" :key="dayName" class="calendar-header-cell text-center text-xs font-weight-bold grey--text">
         {{ dayName }}
       </div>
 
@@ -17,7 +17,7 @@
         }"
         @click="$emit('day-click', day.date)"
       >
-        <div class="day-number text-caption" :class="{ 'font-weight-bold text-primary': day.isToday }">
+        <div class="day-number text-xs" :class="{ 'font-weight-bold text-primary': day.isToday }">
           {{ day.dayNumber }}
         </div>
         
@@ -25,9 +25,10 @@
           <v-chip
             v-for="entry in day.entries"
             :key="entry.id"
-            :color="estadoColor(entry.estado_ejecucion)"
+            :color="getActividadColor(entry)"
+            variant="flat"
             size="x-small"
-            class="mb-1 w-100 px-1 d-flex justify-start text-truncate"
+            class="mb-1 w-100 px-1 d-flex justify-start text-truncate text-white"
             @click.stop="$emit('entry-click', entry)"
           >
             <span class="text-truncate" style="max-width: 100%;">{{ getActividadNombre(entry) }}</span>
@@ -104,14 +105,21 @@ const getActividadNombre = (entry) => {
   return getSafe(() => entry.expand.actividad_realizada.nombre, 'Actividad Desconocida');
 };
 
-const estadoColor = (estado) => {
-  switch (estado?.toLowerCase()) {
-    case 'completado': return 'green';
-    case 'en_progreso': return 'blue';
-    case 'planificada': return 'orange';
-    case 'cancelada': return 'red';
-    default: return 'grey';
+const colorPalette = [
+  'red-darken-1', 'pink-darken-1', 'purple-darken-1', 'deep-purple-darken-1',
+  'indigo-darken-1', 'blue-darken-1', 'light-blue-darken-1', 'cyan-darken-1',
+  'teal-darken-1', 'green-darken-1', 'light-green-darken-1', 'lime-darken-2',
+  'amber-darken-3', 'orange-darken-3', 'deep-orange-darken-1', 'brown-darken-1'
+];
+
+const getActividadColor = (entry) => {
+  const name = getActividadNombre(entry);
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
+  const index = Math.abs(hash) % colorPalette.length;
+  return colorPalette[index];
 };
 </script>
 

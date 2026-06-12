@@ -53,7 +53,7 @@
           <v-card class="elevation-1 rounded-lg border h-100 pa-2">
             <v-card-text class="d-flex align-center justify-space-between pa-2">
               <div>
-                <span class="text-caption font-weight-bold text-grey-darken-1 d-block mb-1">COSTO OPERATIVO TOTAL</span>
+                <span class="text-xs font-weight-bold text-grey-darken-1 d-block mb-1">COSTO OPERATIVO TOTAL</span>
                 <span class="text-h6 font-weight-black text-primary-4">${{ formatNumber(totalCostos) }}</span>
               </div>
               <v-avatar color="teal-lighten-5" size="36">
@@ -68,7 +68,7 @@
           <v-card v-if="haciendaStore.isModuleActive('nomina_express')" class="elevation-1 rounded-lg border h-100 pa-2">
             <v-card-text class="d-flex align-center justify-space-between pa-2">
               <div>
-                <span class="text-caption font-weight-bold text-grey-darken-1 d-block mb-1">MANO DE OBRA (NÓMINA)</span>
+                <span class="text-xs font-weight-bold text-grey-darken-1 d-block mb-1">MANO DE OBRA (NÓMINA)</span>
                 <span class="text-h6 font-weight-black text-primary-4">${{ formatNumber(totalNomina) }}</span>
               </div>
               <v-avatar color="indigo-lighten-5" size="36">
@@ -78,7 +78,7 @@
           </v-card>
           <v-card v-else class="elevation-1 rounded-lg border h-100 bg-grey-lighten-4 d-flex align-center justify-center pa-2">
             <v-card-text class="text-center py-2">
-              <span class="text-caption d-block text-grey-darken-1"><v-icon size="small" class="mr-1">mdi-lock</v-icon>Activa Nómina Express</span>
+              <span class="text-xs d-block text-grey-darken-1"><v-icon size="small" class="mr-1">mdi-lock</v-icon>Activa Nómina Express</span>
             </v-card-text>
           </v-card>
         </v-col>
@@ -88,7 +88,7 @@
           <v-card v-if="haciendaStore.isModuleActive('kardex_bodega')" class="elevation-1 rounded-lg border h-100 pa-2">
             <v-card-text class="d-flex align-center justify-space-between pa-2">
               <div>
-                <span class="text-caption font-weight-bold text-grey-darken-1 d-block mb-1">INSUMOS CONSUMIDOS</span>
+                <span class="text-xs font-weight-bold text-grey-darken-1 d-block mb-1">INSUMOS CONSUMIDOS</span>
                 <span class="text-h6 font-weight-black text-primary-4">${{ formatNumber(totalBodega) }}</span>
               </div>
               <v-avatar color="amber-lighten-5" size="36">
@@ -98,7 +98,7 @@
           </v-card>
           <v-card v-else class="elevation-1 rounded-lg border h-100 bg-grey-lighten-4 d-flex align-center justify-center pa-2">
             <v-card-text class="text-center py-2">
-              <span class="text-caption d-block text-grey-darken-1"><v-icon size="small" class="mr-1">mdi-lock</v-icon>Activa Kardex Bodega</span>
+              <span class="text-xs d-block text-grey-darken-1"><v-icon size="small" class="mr-1">mdi-lock</v-icon>Activa Kardex Bodega</span>
             </v-card-text>
           </v-card>
         </v-col>
@@ -108,7 +108,7 @@
           <v-card class="elevation-1 rounded-lg border h-100 pa-2">
             <v-card-text class="d-flex align-center justify-space-between pa-2">
               <div>
-                <span class="text-caption font-weight-bold text-grey-darken-1 d-block mb-1">VOLUMEN COSECHA</span>
+                <span class="text-xs font-weight-bold text-grey-darken-1 d-block mb-1">VOLUMEN COSECHA</span>
                 <span class="text-h6 font-weight-black text-primary-4">{{ formatNumber(totalCosechaVolumen) }} un.</span>
               </div>
               <v-avatar color="teal-lighten-5" size="36">

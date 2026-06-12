@@ -31,13 +31,13 @@
       <v-progress-circular indeterminate color="primary" size="24" />
     </div>
 
-    <div v-else-if="siembrasToDisplay.length > 0" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <div v-else-if="siembrasToDisplay.length > 0" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
       <v-card
         v-for="siembra in siembrasToDisplay"
         :key="siembra.id"
         variant="flat"
-        class="transition-all rounded-lg bg-grey-lighten-4"
-        :class="{ 'bg-primary-5 elevation-1': modelValue.includes(siembra.id) }"
+        class="transition-all rounded-lg bg-grey-lighten-4 border border-transparent"
+        :class="{ 'elevation-1 bg-green-lighten-4 border-success': modelValue.includes(siembra.id) }"
         @click="toggleSelection(siembra.id)"
       >
         <v-card-text class="pa-3 flex items-center">
@@ -48,10 +48,10 @@
             class="mr-2"
           />
           <div class="flex flex-col">
-            <span class="text-body-2" :class="modelValue.includes(siembra.id) ? 'text-primary font-weight-bold' : 'text-grey-darken-3'">
+            <span class="text-md" :class="modelValue.includes(siembra.id) ? 'text-primary font-weight-bold' : 'text-grey-darken-3'">
               {{ siembra.nombre }}
             </span>
-            <span class="text-caption text-grey-darken-1">
+            <span class="text-xs text-grey-darken-1">
               {{ siembra.tipo }}
             </span>
           </div>
@@ -59,7 +59,7 @@
       </v-card>
     </div>
 
-    <div v-else class="text-caption text-grey-darken-1 pa-4 bg-grey-lighten-5 rounded-lg text-center">
+    <div v-else class="text-xs text-grey-darken-1 pa-4 bg-grey-lighten-5 rounded-lg text-center">
       <v-icon start size="16">mdi-information-outline</v-icon>
       No hay siembras disponibles para esta selección.
     </div>
@@ -67,7 +67,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useSiembrasStore } from '@/stores/siembrasStore';
 
 const props = defineProps({
@@ -91,9 +91,6 @@ const siembrasStore = useSiembrasStore();
 const loading = ref(false);
 
 const siembrasToDisplay = computed(() => {
-  if (props.availableIds) {
-    return siembrasStore.siembras.filter(s => props.availableIds.includes(s.id));
-  }
   return siembrasStore.siembras;
 });
 

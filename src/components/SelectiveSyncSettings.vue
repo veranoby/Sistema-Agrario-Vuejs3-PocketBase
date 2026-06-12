@@ -109,7 +109,7 @@
               />
             </v-col>
             <v-col cols="12" sm="6">
-              <div class="text-caption text-grey-darken-1">
+              <div class="text-xs text-grey-darken-1">
                 <v-icon size="small" class="mr-1">mdi-information</v-icon>
                 Los datos no inmediatos se sincronizan cada {{ Math.round(localConfig.deferredSyncInterval / 1000) }} segundos
               </div>
@@ -321,7 +321,7 @@ watch(() => localConfig.value.enabled, (newValue) => {
   transform: translateY(-1px);
 }
 
-.text-caption {
+.text-xs {
   line-height: 1.4;
 }
 

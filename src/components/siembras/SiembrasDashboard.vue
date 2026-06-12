@@ -87,7 +87,7 @@
                     <div class="  font-weight-bold" :class="{'text-success': siembras.length > 0}">
                       1. Fase 1: Tu Primera Siembra
                     </div>
-                    <div class="text-caption text-medium-emphasis">
+                    <div class="text-xs text-medium-emphasis">
                       El "qué". Crea el concepto general de tu cultivo.
                     </div>
                   </div>
@@ -102,7 +102,7 @@
                     <div class="  font-weight-bold" :class="{'text-grey': siembras.length === 0}">
                       2. Fase 2: Zonas y Actividades
                     </div>
-                    <div class="text-caption text-medium-emphasis">
+                    <div class="text-xs text-medium-emphasis">
                       El "dónde" y "cómo". Dibuja los lotes y define las labores asociadas a la siembra.
                     </div>
                   </div>
@@ -117,7 +117,7 @@
                     <div class="  font-weight-bold text-grey">
                       3. Fase 3: Control y Bitácora
                     </div>
-                    <div class="text-caption text-medium-emphasis">
+                    <div class="text-xs text-medium-emphasis">
                       El "cuándo". Genera programaciones para el control diario.
                     </div>
                   </div>
@@ -242,7 +242,7 @@
                   />
                   <div v-if="!siembrasGeoJSON && !mapLoading" class="map-overlay-empty d-flex flex-column align-center justify-center">
                     <v-icon size="48" color="grey-lighten-2" class="mb-2">mdi-map-off</v-icon>
-                    <div class="text-caption text-medium-emphasis">{{ $t('sowings.no_geometries_detected') }}</div>
+                    <div class="text-xs text-medium-emphasis">{{ $t('sowings.no_geometries_detected') }}</div>
                     <div class="text-xxs text-grey mt-1">{{ $t('sowings.requires_lote_zones') }}</div>
                   </div>
                 </div>

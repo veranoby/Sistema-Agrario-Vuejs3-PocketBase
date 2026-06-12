@@ -14,7 +14,7 @@
               <v-avatar start> <v-img :src="avatarHaciendaUrl" alt="Avatar de hacienda"></v-img> </v-avatar>
               {{ t('dashboard.hacienda') }}: {{ mi_hacienda.name }}
             </v-chip>
-              <p class="text-caption text-grey-darken-3 mt-1">
+              <p class="text-xs text-grey-darken-3 mt-1">
             <v-icon size="14" class="mr-1">mdi-information</v-icon>
             Fuente: Bitácoras - gráficos se basan en métricas estándar (cantidad_cosechada, volumen_agua_utilizada, dosis_aplicada, etc).
           </p>
@@ -86,7 +86,7 @@
             <v-card v-bind="props" flat rounded="lg" class="pa-4 text-center kpi-card">
               <div class=" font-weight-bold text-uppercase">Rendimiento Total</div>
               <div class="text-md font-weight-black text-primary mt-2 fluid-kpi-value">{{ totalCosecha.toFixed(1) }} kg</div>
-              <div class="text-caption text-grey mt-1">Eficiencia: {{ rendimientoPlanta.toFixed(2) }} kg/planta</div>
+              <div class="text-xs text-grey mt-1">Eficiencia: {{ rendimientoPlanta.toFixed(2) }} kg/planta</div>
             </v-card>
           </template>
         </v-tooltip>
@@ -97,7 +97,7 @@
             <v-card v-bind="props" flat rounded="lg" class="pa-4 text-center kpi-card">
               <div class=" font-weight-bold text-uppercase">Consumo Hídrico</div>
               <div class="text-md font-weight-black text-info mt-2 fluid-kpi-value">{{ totalAgua.toFixed(1) }} m³</div>
-              <div class="text-caption text-grey mt-1">Métrica: volumen_agua_utilizada</div>
+              <div class="text-xs text-grey mt-1">Métrica: volumen_agua_utilizada</div>
             </v-card>
           </template>
         </v-tooltip>
@@ -108,7 +108,7 @@
             <v-card v-bind="props" flat rounded="lg" class="pa-4 text-center kpi-card">
               <div class=" font-weight-bold text-uppercase">Efic. Hídrica</div>
               <div class="text-md font-weight-black text-blue-darken-3 mt-2 fluid-kpi-value">{{ eficienciaHidrica }}</div>
-              <div class="text-caption text-grey mt-1">kg / m³</div>
+              <div class="text-xs text-grey mt-1">kg / m³</div>
             </v-card>
           </template>
         </v-tooltip>
@@ -119,7 +119,7 @@
             <v-card v-bind="props" flat rounded="lg" class="pa-4 text-center kpi-card">
               <div class=" font-weight-bold text-uppercase">Insumos Total</div>
               <div class="text-md font-weight-black text-warning mt-2 fluid-kpi-value">{{ totalInsumos.toFixed(1) }} L/kg</div>
-              <div class="text-caption text-grey mt-1">Métrica: dosis_aplicada</div>
+              <div class="text-xs text-grey mt-1">Métrica: dosis_aplicada</div>
             </v-card>
           </template>
         </v-tooltip>
@@ -130,7 +130,7 @@
             <v-card v-bind="props" flat rounded="lg" class="pa-4 text-center kpi-card">
               <div class=" font-weight-bold text-uppercase">Carga Química</div>
               <div class="text-md font-weight-black text-deep-orange-darken-2 mt-2 fluid-kpi-value">{{ cargaQuimica }}</div>
-              <div class="text-caption text-grey mt-1">L/kg por planta</div>
+              <div class="text-xs text-grey mt-1">L/kg por planta</div>
             </v-card>
           </template>
         </v-tooltip>
@@ -141,7 +141,7 @@
             <v-card v-bind="props" flat rounded="lg" class="pa-4 text-center kpi-card">
               <div class=" font-weight-bold text-uppercase">Indice Salud</div>
               <div class="text-md font-weight-black text-error mt-2 fluid-kpi-value">{{ indiceSaludAvg.toFixed(1) }} / 3.0</div>
-              <div class="text-caption text-grey mt-1">Métrica: nivel_afectacion</div>
+              <div class="text-xs text-grey mt-1">Métrica: nivel_afectacion</div>
             </v-card>
           </template>
         </v-tooltip>

@@ -76,7 +76,7 @@
                         <v-list-item-title class="font-weight-bold text-primary-4">
                           Evaluación #{{ pkgsCount - idx }}
                         </v-list-item-title>
-                        <v-list-item-subtitle class="text-caption mt-1">
+                        <v-list-item-subtitle class="text-xs mt-1">
                           Enviado: {{ formatDate(pkg.created) }}
                         </v-list-item-subtitle>
 
@@ -96,7 +96,7 @@
                   
                   <div v-else class="text-center py-12 text-grey">
                     <v-icon icon="mdi-package-variant-outline" size="48" class="mb-2"></v-icon>
-                    <p class="text-body-2">No se han recibido paquetes.</p>
+                    <p class="text-md">No se han recibido paquetes.</p>
                   </div>
                 </v-card-text>
               </v-card>
@@ -144,7 +144,7 @@
                       <div class="d-flex align-center justify-space-between flex-wrap gap-2">
                         <div>
                           <div class="text-md font-weight-bold">{{ packageSiembra?.nombre || 'Cargando Siembra...' }}</div>
-                          <div class="text-caption text-grey">
+                          <div class="text-xs text-grey">
                             Variedad: {{ packageSiembra?.variedad || 'N/A' }} | Tipo: {{ packageSiembra?.tipo }}
                           </div>
                         </div>
@@ -172,7 +172,7 @@
                         {{ zona.nombre }} ({{ zona.tipo }})
                       </v-chip>
                     </div>
-                    <div class="text-caption text-grey italic" v-else>
+                    <div class="text-xs text-grey italic" v-else>
                       No se compartieron zonas en este paquete.
                     </div>
                   </div>
@@ -192,13 +192,13 @@
                             <span class="font-weight-bold text-grey-darken-3">
                               {{ entry.expand?.actividad_realizada?.nombre || 'Registro Actividad' }}
                             </span>
-                            <span class="text-caption text-grey">
+                            <span class="text-xs text-grey">
                               {{ formatDate(entry.fecha_ejecucion) }}
                             </span>
                           </div>
                         </v-expansion-panel-title>
                         <v-expansion-panel-text class="bg-grey-lighten-5 pt-3">
-                          <v-row class="text-caption text-grey-darken-3">
+                          <v-row class="text-xs text-grey-darken-3">
                             <v-col cols="6" class="py-1">
                               <strong>Responsable:</strong> {{ entry.user_responsable ? 'Operador Campo' : 'Sistema' }}
                             </v-col>
@@ -209,12 +209,12 @@
                           <v-divider class="my-2"></v-divider>
                           <div class="text-smmt-2">
                             <strong>Métricas de Trabajo:</strong>
-                            <pre class="bg-grey-lighten-4 pa-2 rounded mt-1 overflow-x-auto text-caption">{{ entry.metricas || 'Sin métricas registradas' }}</pre>
+                            <pre class="bg-grey-lighten-4 pa-2 rounded mt-1 overflow-x-auto text-xs">{{ entry.metricas || 'Sin métricas registradas' }}</pre>
                           </div>
                         </v-expansion-panel-text>
                       </v-expansion-panel>
                     </v-expansion-panels>
-                    <div class="text-caption text-grey italic" v-else>
+                    <div class="text-xs text-grey italic" v-else>
                       No se compartieron registros de bitácora en este paquete.
                     </div>
                   </div>
@@ -225,7 +225,7 @@
                 <div class="text-center text-primary-3">
                   <v-icon icon="mdi-gesture-tap-select" size="64" class="mb-2"></v-icon>
                   <h3 class="text-h6 font-weight-bold">Selecciona un paquete</h3>
-                  <p class="text-body-2">Elige un expediente de la izquierda para analizar sus bitácoras de campo.</p>
+                  <p class="text-md">Elige un expediente de la izquierda para analizar sus bitácoras de campo.</p>
                 </div>
               </div>
             </v-col>
@@ -248,7 +248,7 @@
                 <div :class="['py-3 px-4 text-white d-flex align-center justify-space-between', getRecipeHeaderBg(receta.estado)]">
                   <div>
                     <h3 class="  font-weight-bold mb-0">{{ receta.titulo || 'Receta Agrícola' }}</h3>
-                    <span class="text-caption opacity-90">Emitida: {{ formatDate(receta.created) }}</span>
+                    <span class="text-xs opacity-90">Emitida: {{ formatDate(receta.created) }}</span>
                   </div>
                   <v-chip size="small" :color="getRecipeStatusColor(receta.estado)" variant="flat" class="text-white font-weight-bold">
                     {{ getRecipeStatusLabel(receta.estado) }}
@@ -258,13 +258,13 @@
                 <v-card-text class="pt-4">
                   <v-row class="mb-2">
                     <v-col cols="6" class="py-1">
-                      <span class="text-caption text-grey d-block">Siembra</span>
+                      <span class="text-xs text-grey d-block">Siembra</span>
                       <span class="text-smfont-weight-medium text-primary-4">
                         {{ getSiembraName(receta.siembra_id) }}
                       </span>
                     </v-col>
                     <v-col cols="6" class="py-1">
-                      <span class="text-caption text-grey d-block">Blanco Biológico</span>
+                      <span class="text-xs text-grey d-block">Blanco Biológico</span>
                       <span class="text-smfont-weight-medium">
                         {{ receta.blanco_biologico || 'N/A' }}
                       </span>
@@ -275,19 +275,19 @@
 
                   <div class="mb-3">
                     <p class="text-smmb-1"><strong>Producto:</strong> {{ receta.producto_recomendado || 'N/A' }}</p>
-                    <p class="text-body-2"><strong>Ingrediente Activo:</strong> {{ receta.ingrediente_activo || 'N/A' }}</p>
-                    <p class="text-body-2"><strong>Dosis:</strong> {{ receta.dosis }} {{ receta.unidad_dosis }}<span v-if="receta.phi_dias"> | <strong>PHI:</strong> {{ receta.phi_dias }}d</span><span v-if="receta.rei_horas"> | <strong>REI:</strong> {{ receta.rei_horas }}h</span></p>
+                    <p class="text-md"><strong>Ingrediente Activo:</strong> {{ receta.ingrediente_activo || 'N/A' }}</p>
+                    <p class="text-md"><strong>Dosis:</strong> {{ receta.dosis }} {{ receta.unidad_dosis }}<span v-if="receta.phi_dias"> | <strong>PHI:</strong> {{ receta.phi_dias }}d</span><span v-if="receta.rei_horas"> | <strong>REI:</strong> {{ receta.rei_horas }}h</span></p>
                   </div>
 
                   <div>
-                    <span class="text-caption text-grey d-block">Instrucciones Técnicas:</span>
+                    <span class="text-xs text-grey d-block">Instrucciones Técnicas:</span>
                     <p class="text-smbg-grey-lighten-4 pa-3 rounded text-grey-darken-3 whitespace-pre-line italic">
                       "{{ receta.observaciones_tecnicas || 'Sin instrucciones adicionales' }}"
                     </p>
                   </div>
 
                   <!-- Reject details -->
-                  <div v-if="receta.estado === 'rechazada' && receta.motivo_rechazo" class="bg-red-lighten-5 border-red-lighten-3 border pa-3 rounded mt-3 text-red-darken-4 text-body-2">
+                  <div v-if="receta.estado === 'rechazada' && receta.motivo_rechazo" class="bg-red-lighten-5 border-red-lighten-3 border pa-3 rounded mt-3 text-red-darken-4 text-md">
                     <strong>Motivo de Rechazo:</strong> {{ receta.motivo_rechazo }}
                   </div>
                 </v-card-text>

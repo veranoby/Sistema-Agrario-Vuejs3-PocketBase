@@ -27,7 +27,7 @@
         >
           <template v-slot:item.hacienda_solicitante="{ item }">
             <div class="font-weight-bold">{{ item.expand?.hacienda?.name || 'Desconocida' }}</div>
-            <div class="text-caption text-grey-darken-1">{{ item.expand?.solicitante?.email || 'Desconocido' }}</div>
+            <div class="text-xs text-grey-darken-1">{{ item.expand?.solicitante?.email || 'Desconocido' }}</div>
           </template>
           <template v-slot:item.solicitud="{ item }">
             <div class="mb-1">
@@ -35,10 +35,10 @@
                 {{ item.tipo === 'plan_upgrade' ? 'Mejora Plan' : 'Módulo Extra' }}
               </v-chip>
             </div>
-            <div v-if="item.tipo === 'plan_upgrade'" class="text-caption">
+            <div v-if="item.tipo === 'plan_upgrade'" class="text-xs">
               <strong>Plan:</strong> {{ item.expand?.plan_solicitado?.nombre || '?' }}
             </div>
-            <div v-if="item.modulo_solicitado && item.modulo_solicitado !== '[]'" class="text-caption">
+            <div v-if="item.modulo_solicitado && item.modulo_solicitado !== '[]'" class="text-xs">
               <strong>Módulos:</strong> {{ parseModules(item.modulo_solicitado) }}
             </div>
           </template>
@@ -48,7 +48,7 @@
             </v-chip>
           </template>
           <template v-slot:item.monto_notas="{ item }">
-            <span class="text-caption text-grey-darken-2">{{ item.notas_admin || 'N/A' }}</span>
+            <span class="text-xs text-grey-darken-2">{{ item.notas_admin || 'N/A' }}</span>
           </template>
           <template v-slot:item.actions="{ item }">
             <div class="d-flex align-center justify-end">

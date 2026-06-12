@@ -194,7 +194,7 @@
                       <strong>IP:</strong> {{ item.ip || 'N/A' }}<br />
                       <strong>User Agent:</strong> {{ item.userAgent || 'N/A' }}<br />
                       <strong>Stack Trace:</strong>
-                      <pre class="text-body-2">{{ item.stack || 'N/A' }}</pre>
+                      <pre class="text-md">{{ item.stack || 'N/A' }}</pre>
                     </v-col>
                   </v-row>
                 </v-card>

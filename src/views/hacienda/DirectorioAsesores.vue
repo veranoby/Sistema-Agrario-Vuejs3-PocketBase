@@ -117,7 +117,7 @@
                   <h3 class="  font-weight-bold text-truncate mb-0 text-high-emphasis">
                     {{ asesor.name }} {{ asesor.lastname }}
                   </h3>
-                  <div class="text-caption text-medium-emphasis text-truncate">
+                  <div class="text-xs text-medium-emphasis text-truncate">
                     Reg: {{ asesor.parsedInfo?.numero_colegiatura || 'N/A' }}
                   </div>
                 </div>
@@ -128,7 +128,7 @@
             <v-card-text class="flex-grow-1 pt-4 pb-2">
               <!-- Especialidades -->
               <div class="mb-3">
-                <div class="text-caption font-weight-bold text-medium-emphasis mb-1">Especialidades:</div>
+                <div class="text-xs font-weight-bold text-medium-emphasis mb-1">Especialidades:</div>
                 <div class="d-flex flex-wrap gap-1">
                   <v-chip
                     v-for="(spec, idx) in limitItems(asesor.parsedInfo?.especialidades, 3)"
@@ -154,7 +154,7 @@
 
               <!-- Cobertura -->
               <div class="mb-3">
-                <div class="text-caption font-weight-bold text-medium-emphasis mb-1">Zonas Cobertura:</div>
+                <div class="text-xs font-weight-bold text-medium-emphasis mb-1">Zonas Cobertura:</div>
                 <div class="d-flex flex-wrap gap-1">
                   <v-chip
                     v-for="zone in limitItems(asesor.parsedInfo?.zonas_cobertura, 2)"
@@ -180,7 +180,7 @@
 
               <!-- Bio -->
               <div>
-                <p class="text-caption text-medium-emphasis font-italic" style="line-height: 1.3;">
+                <p class="text-xs text-medium-emphasis font-italic" style="line-height: 1.3;">
                   "{{ truncateText(asesor.parsedInfo?.bio_corta, 110) }}"
                 </p>
               </div>

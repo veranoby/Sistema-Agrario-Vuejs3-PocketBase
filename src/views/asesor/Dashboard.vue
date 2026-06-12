@@ -67,7 +67,7 @@
 
         <v-divider></v-divider>
         <v-card-actions class="px-6 py-4 bg-grey-lighten-5 d-flex justify-space-between align-center">
-          <span class="text-caption text-grey-darken-1">
+          <span class="text-xs text-grey-darken-1">
             Soporte Administrativo: +593 99 999 9999
           </span>
           <v-btn
@@ -100,7 +100,7 @@
         <div class="d-flex align-center justify-space-between w-100">
           <div>
             <div class="text-subtitle-1 font-weight-bold">Tienes {{ pendingVinculacionesCount }} solicitud(es) de vinculación pendiente(s)</div>
-            <div class="text-body-2">Haciendas están esperando que apruebes su conexión.</div>
+            <div class="text-md">Haciendas están esperando que apruebes su conexión.</div>
           </div>
           <v-btn color="orange-darken-3" variant="flat" to="/asesor/haciendas" size="small">Revisar</v-btn>
         </div>
@@ -200,7 +200,7 @@
                         <v-chip size="x-small" :color="pkg.estado === 'enviado' ? 'orange' : 'indigo'" class="text-white font-weight-bold mb-1">
                           {{ pkg.estado === 'enviado' ? 'Nuevo' : 'Revisado' }}
                         </v-chip>
-                        <span class="text-caption text-grey d-block">{{ formatDate(pkg.created) }}</span>
+                        <span class="text-xs text-grey d-block">{{ formatDate(pkg.created) }}</span>
                       </div>
                     </template>
                   </v-list-item>
@@ -241,7 +241,7 @@
                         <v-chip size="x-small" :color="getRecipeStatusColor(receta.estado)" class="text-white font-weight-bold mb-1">
                           {{ getRecipeStatusLabel(receta.estado) }}
                         </v-chip>
-                        <span class="text-caption text-grey d-block">{{ formatDate(receta.created) }}</span>
+                        <span class="text-xs text-grey d-block">{{ formatDate(receta.created) }}</span>
                       </div>
                     </template>
                   </v-list-item>

@@ -9,7 +9,7 @@
  */
 
 // Importación dinámica de xlsx para code-splitting
-import { format } from 'date-fns'
+import { format, isSameMonth } from 'date-fns'
 import { es } from 'date-fns/locale'
 
 export class ExcelExporter {
@@ -157,27 +157,62 @@ export class ExcelExporter {
   }
 
   /**
-   * Exporta bitácoras con resumen agrupado
+   * Exporta bitácoras con resumen agrupado y separadas por tipo de actividad
    */
   async exportBitacorasWithSummary(bitacoras, actividades, tipoActividades, options = {}) {
     try {
       const XLSX = await import('xlsx')
 
-      // Crear hoja principal de datos
-      const data = this.prepareData(bitacoras, actividades, tipoActividades, options.filtros || {})
-      const mainSheet = XLSX.utils.json_to_sheet(data)
-      this.adjustColumnWidths(mainSheet)
+      // Filtrar por mes si se proporciona la fecha en filtros
+      let bitacorasToExport = bitacoras;
+      let targetDate = new Date();
+      if (options.filtros?.fecha) {
+        targetDate = new Date(options.filtros.fecha);
+        bitacorasToExport = bitacoras.filter(b => {
+          if (!b.fecha_ejecucion) return false;
+          return isSameMonth(new Date(b.fecha_ejecucion), targetDate);
+        });
+      }
 
-      // Crear hoja de resumen
-      const summarySheet = this.createSummarySheet(bitacoras, actividades, XLSX)
+      this.workbook = XLSX.utils.book_new();
 
-      // Crear libro de trabajo
-      this.workbook = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(this.workbook, mainSheet, 'Bitácoras Detalle')
-      XLSX.utils.book_append_sheet(this.workbook, summarySheet, 'Resumen')
+      // Crear hoja de resumen primero
+      const summarySheet = this.createSummarySheet(bitacorasToExport, actividades, XLSX)
+      XLSX.utils.book_append_sheet(this.workbook, summarySheet, 'Resumen General')
+
+      // Agrupar por Tipo de Actividad
+      const byTipoActividad = {};
+      for (const bitacora of bitacorasToExport) {
+        const actividad = actividades.find(a => a.id === bitacora.actividad_realizada);
+        const tipoId = actividad?.tipo_actividades || 'unknown';
+        if (!byTipoActividad[tipoId]) byTipoActividad[tipoId] = [];
+        byTipoActividad[tipoId].push(bitacora);
+      }
+
+      // Crear una hoja por cada Tipo de Actividad
+      for (const [tipoId, bitacorasGroup] of Object.entries(byTipoActividad)) {
+        const tipo = tipoActividades.find(t => t.id === tipoId);
+        // Excel restringe nombres de hoja a 31 caracteres y sin caracteres especiales (?, *, [, ], /, \)
+        let sheetName = tipo?.nombre ? tipo.nombre.replace(/[?*[\]/\\]/g, '').substring(0, 31) : 'Otras Actividades';
+        
+        const data = this.prepareData(bitacorasGroup, actividades, tipoActividades, options.filtros || {})
+        const sheet = XLSX.utils.json_to_sheet(data)
+        this.adjustColumnWidths(sheet)
+        
+        XLSX.utils.book_append_sheet(this.workbook, sheet, sheetName)
+      }
 
       // Generar nombre de archivo
-      const fileName = `bitacoras_resumen_${format(new Date(), 'yyyy-MM-dd_HHmm', { locale: es })}.xlsx`
+      const monthName = format(targetDate, 'yyyy_MM', { locale: es });
+      let fileNameBase = `bitacoras_${monthName}`;
+      
+      if (options.filtros?.siembra) {
+        fileNameBase += `_siembra_${options.filtros.siembra}`;
+      } else if (options.filtros?.actividad) {
+        fileNameBase += `_actividad_${options.filtros.actividad}`;
+      }
+      
+      const fileName = `${fileNameBase}.xlsx`;
 
       // Exportar archivo
       XLSX.writeFile(this.workbook, fileName)

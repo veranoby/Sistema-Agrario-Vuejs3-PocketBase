@@ -5,7 +5,7 @@
         <v-icon size="28" class="ml-4 mr-3">mdi-playlist-check</v-icon>
         <div class="flex flex-col">
           <v-toolbar-title class="font-weight-bold text-h6 leading-none">Registrar Cumplimientos</v-toolbar-title>
-          <div class="text-caption opacity-80 leading-none mt-1">
+          <div class="text-xs opacity-80 leading-none mt-1">
             {{ programacion?.descripcion }} 
             <span v-if="siembraContext" class="ml-2 font-weight-bold">| {{ siembraContext }}</span>
           </div>
@@ -61,8 +61,8 @@
               v-for="fecha in pendingFechas"
               :key="fecha"
               variant="flat"
-              class="date-card transition-all bg-grey-lighten-4"
-              :class="{ 'date-card--selected bg-primary-5': selectedFechas.includes(fecha) }"
+              class="transition-all rounded-lg bg-grey-lighten-5 border border-dashed border-grey-lighten-2 hover:border-primary-10"
+              :class="{ 'bg-primary-5 elevation-1 border-solid border-primary-50': selectedFechas.includes(fecha) }"
               @click="toggleFechaSelection(fecha)"
             >
               <div class="pa-3 flex items-center">
@@ -72,7 +72,7 @@
                   density="compact"
                   class="mr-2"
                 />
-                <span class="text-smfont-weight-medium">{{ formatFecha(fecha) }}</span>
+                <span class="text-md" :class="selectedFechas.includes(fecha) ? 'text-primary font-weight-bold' : 'text-grey-darken-3'">{{ formatFecha(fecha) }}</span>
               </div>
             </v-card>
           </div>

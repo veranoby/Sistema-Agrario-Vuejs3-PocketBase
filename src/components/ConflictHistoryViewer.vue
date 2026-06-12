@@ -157,7 +157,7 @@
                       <v-list-item-subtitle>
                         <div>{{ formatTimestamp(item.timestamp) }}</div>
                         <div class="d-flex justify-space-between align-center mt-1">
-                          <span class="text-caption">Usuario: {{ item.userId }}</span>
+                          <span class="text-xs">Usuario: {{ item.userId }}</span>
                           <v-chip
                             :color="getStrategyColor(item.strategy)"
                             size="small"

@@ -21,7 +21,7 @@
                   Alimenta Nómina Express
                 </v-chip>
               </h3>
-              <p class="text-caption text-grey-darken-3 mt-1">
+              <p class="text-xs text-grey-darken-3 mt-1">
                 Registro de volumen cosechado por lote y operario en tiempo real. Soporta funcionamiento offline.
               </p>
             </div>
@@ -139,7 +139,7 @@
                 size="small"
                 @click="eliminarRegistro(item)"
               ></v-btn>
-              <span v-else class="text-caption text-grey-darken-1">-</span>
+              <span v-else class="text-xs text-grey-darken-1">-</span>
             </template>
           </v-data-table>
           
@@ -160,7 +160,7 @@
                       </v-avatar>
                     </template>
                     <v-list-item-title class="font-weight-bold text-md">{{ getOperarioNombre(item) }}</v-list-item-title>
-                    <v-list-item-subtitle class="text-caption text-grey-darken-1 d-flex flex-column">
+                    <v-list-item-subtitle class="text-xs text-grey-darken-1 d-flex flex-column">
                       <span>{{ formatFecha(item.fecha) }} &bull; {{ getSiembraNombre(item) }}</span>
                       <span class="d-flex align-center gap-1 mt-1">
                         <v-chip
@@ -184,7 +184,7 @@
                         <div class="font-weight-bold   text-primary-3">
                           {{ item.cantidad }} {{ item.tipo_unidad }}
                         </div>
-                        <div v-if="item.cantidad_merma" class="text-caption text-red-darken-3">
+                        <div v-if="item.cantidad_merma" class="text-xs text-red-darken-3">
                           -{{ item.cantidad_merma }} merma
                         </div>
                         <v-btn

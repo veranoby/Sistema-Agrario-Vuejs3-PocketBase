@@ -34,7 +34,7 @@
                 <v-form @submit.prevent="login" aria-label="Formulario de inicio de sesión">
                   <v-row justify="center">
                     <v-col cols="6">
-                      <label :for="usernameInputId" class="text-caption">{{ t('auth.login_by_user') }}</label>
+                      <label :for="usernameInputId" class="text-xs">{{ t('auth.login_by_user') }}</label>
                       <v-text-field
                         v-model="loginForm.username"
                         :id="usernameInputId"
@@ -50,7 +50,7 @@
                       ></v-text-field>
                     </v-col>
                     <v-col cols="6">
-                      <label :for="emailInputId" class="text-caption">{{ t('auth.login_by_email') }}</label>
+                      <label :for="emailInputId" class="text-xs">{{ t('auth.login_by_email') }}</label>
                       <v-text-field
                         v-model="loginForm.email"
                         :id="emailInputId"
@@ -94,7 +94,7 @@
                     </v-col>
                     <v-col class="pt-4">
                       <a
-                        class="text-caption text-decoration-none text-primary"
+                        class="text-xs text-decoration-none text-primary"
                         href="#"
                         rel="noopener noreferrer"
                         @click.prevent="openForgotPasswordDialog"
@@ -322,7 +322,7 @@
                         rounded
                         class="mt-2"
                       ></v-progress-linear>
-                      <p v-if="registerForm.password" class="text-caption mt-1" :class="`text-${strengthColor}`">
+                      <p v-if="registerForm.password" class="text-xs mt-1" :class="`text-${strengthColor}`">
                         {{ strengthLabel }}
                       </p>
                     </v-col>

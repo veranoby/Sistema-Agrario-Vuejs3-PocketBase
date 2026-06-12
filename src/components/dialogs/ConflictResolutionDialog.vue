@@ -44,7 +44,7 @@
                   <v-chip size="x-small" color="primary" variant="tonal" class="font-weight-bold">
                     {{ conflict.collection }}
                   </v-chip>
-                  <span class="text-caption text-grey">ID: {{ (conflict.id || conflict.tempId || '').slice(-8) }}</span>
+                  <span class="text-xs text-grey">ID: {{ (conflict.id || conflict.tempId || '').slice(-8) }}</span>
                 </div>
               </div>
             </div>
@@ -59,7 +59,7 @@
                   @click="!conflict.resolved && selectResolution(conflict, 'local')"
                 >
                   <div class="pa-3 border-b flex items-center justify-between" :class="conflict.resolution === 'local' ? 'bg-primary-4' : 'bg-grey-lighten-4'">
-                    <span class="text-caption font-weight-bold flex items-center">
+                    <span class="text-xs font-weight-bold flex items-center">
                       <v-icon start size="14" class="mr-1">mdi-cellphone</v-icon> Local
                     </span>
                     <v-icon v-if="conflict.resolution === 'local'" color="primary" size="16">mdi-check-circle</v-icon>
@@ -79,7 +79,7 @@
                   @click="!conflict.resolved && selectResolution(conflict, 'server')"
                 >
                   <div class="pa-3 border-b flex items-center justify-between" :class="conflict.resolution === 'server' ? 'bg-primary-4' : 'bg-grey-lighten-4'">
-                    <span class="text-caption font-weight-bold flex items-center">
+                    <span class="text-xs font-weight-bold flex items-center">
                       <v-icon start size="14" class="mr-1">mdi-cloud</v-icon> Servidor
                     </span>
                     <v-icon v-if="conflict.resolution === 'server'" color="primary" size="16">mdi-check-circle</v-icon>

@@ -242,7 +242,7 @@
                           rounded
                           class="mt-2"
                         />
-                        <span class="text-caption">{{ getPercentage(count).toFixed(1) }}%</span>
+                        <span class="text-xs">{{ getPercentage(count).toFixed(1) }}%</span>
                       </td>
                     </tr>
                   </tbody>
