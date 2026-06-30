@@ -2,31 +2,25 @@
 <template>
   <v-container fluid class="pa-2">
     <div class="d-flex flex-column gap-4 w-100">
-      <header class="w-100 bg-background shadow-sm p-0 mb-4">
-        <div class="profile-container mt-0 ml-0">
-          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div class="w-full sm:flex-grow">
-              <h3 class="profile-title text-sm sm:text-lg mb-2 sm:mb-0 text-uppercase">
-                <v-icon icon="mdi-file-percent" color="green-darken-3" class="mr-2"></v-icon> Nómina Agrícola Express
-                <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
-                  <v-avatar start> <v-img :src="avatarUrl" alt="Avatar del usuario"></v-img> </v-avatar>
-                  {{ t('roles.' + userRole) }}
-                </v-chip>
-                <v-chip variant="flat" size="small" color="green-lighten-3" class="mx-1" pill>
-                  <v-avatar start> <v-img :src="avatarHaciendaUrl" alt="Avatar de hacienda"></v-img> </v-avatar>
-                  {{ t('dashboard.hacienda') }}: {{ mi_hacienda?.name }}
-                </v-chip>
-              </h3>
-              <p class="text-xs text-grey-darken-3 mt-1">
-                Conciliación semanal de jornales, cosechas y destajos para el sábado de raya.
-              </p>
-            </div>
-          </div>
-          <div class="avatar-container">
-            <img :src="avatarHaciendaUrl" alt="Avatar de hacienda" class="avatar-image" />
-          </div>
-        </div>
-      </header>
+      <UniversalHeader 
+        title="Nómina Agrícola Express"
+        :bgImage="avatarHaciendaUrl"
+        icon="mdi-file-percent"
+      >
+        <template #chips>
+          <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
+            <v-avatar start> <v-img :src="avatarUrl" alt="Avatar del usuario"></v-img> </v-avatar>
+            {{ t('roles.' + userRole) }}
+          </v-chip>
+          <v-chip variant="flat" size="small" color="green-lighten-3" class="mx-1" pill>
+            <v-avatar start> <v-img :src="avatarHaciendaUrl" alt="Avatar de hacienda"></v-img> </v-avatar>
+            {{ t('dashboard.hacienda') }}: {{ mi_hacienda?.name }}
+          </v-chip>
+          <p class="text-xs text-grey-darken-3 mt-1 w-100">
+            Conciliación semanal de jornales, cosechas y destajos para el sábado de raya.
+          </p>
+        </template>
+      </UniversalHeader>
 
     <v-tabs v-model="tab" color="green-darken-3" class="mb-6 bg-white rounded-lg shadow-sm">
       <v-tab value="calculo">
@@ -746,6 +740,7 @@ import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/authStore'
 import { useDisplay } from 'vuetify'
+import UniversalHeader from '@/components/UniversalHeader.vue'
 
 // Stores
 const nominaStore = useNominaStore()

@@ -96,7 +96,8 @@
     </v-card-text>
     <v-divider v-if="entry.id"></v-divider>
     <v-card-actions v-if="entry.id">
-      <BitacoraSignature
+      <UniversalSignature
+        v-if="entry.signature"
         :bitacoraId="entry.id"
         :existingSignature="entry.signature"
         @signed="onSigned"
@@ -126,7 +127,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import { useBitacoraStore } from '@/stores/bitacoraStore'
 import { generateBpaReport } from '@/services/pdfGenerator'
-import BitacoraSignature from './BitacoraSignature.vue';
+import UniversalSignature from '@/components/common/UniversalSignature.vue';
 
 const authStore = useAuthStore()
 const haciendaStore = useHaciendaStore()

@@ -48,7 +48,6 @@
                     <div class="flex-grow-1">
                       <div class="font-weight-bold text-primary-4  ">{{ siembra.nombre }}</div>
                       <div class="d-flex gap-4 mt-1 text-xs text-grey-darken-1">
-                        <span><strong>Variedad:</strong> {{ siembra.variedad || 'N/A' }}</span>
                         <span><strong>Tipo:</strong> {{ siembra.tipo }}</span>
                         <span><strong>Inicio:</strong> {{ formatDate(siembra.fecha_inicio) }}</span>
                       </div>
@@ -62,9 +61,9 @@
 
           <template v-slot:item.2>
             <div class="py-4">
-              <h3 class="text-h6 font-weight-bold text-primary-3 mb-1">Paso 2: Selecciona Zonas y Bitácoras</h3>
+              <h3 class="text-h6 font-weight-bold text-primary-3 mb-1">Paso 2: Selecciona Zonas y Actividades</h3>
               <p class="text-smtext-grey-darken-1 mb-4">
-                Elige qué zonas geográficas y qué entradas de bitácora quieres incluir en este paquete.
+                Elige qué zonas geográficas y qué actividades quieres incluir en este paquete.
               </p>
 
               <!-- Loading Zonas/Bitacora -->
@@ -115,7 +114,7 @@
                 <v-col cols="12" md="6">
                   <v-card variant="outlined" class="rounded-lg h-100 border-grey-lighten-2">
                     <v-card-title class="bg-grey-lighten-4 py-2 px-4 d-flex align-center justify-space-between">
-                      <span class="  font-weight-bold text-grey-darken-3">Entradas de Bitácora</span>
+                      <span class="  font-weight-bold text-grey-darken-3">Actividades de la Siembra</span>
                       <v-checkbox-btn
                         v-model="allBitacorasSelected"
                         color="primary"
@@ -126,7 +125,7 @@
                     </v-card-title>
                     <v-card-text class="pa-3 overflow-y-auto" style="max-height: 250px;">
                       <div v-if="availableBitacoras.length === 0" class="text-center py-6 text-grey text-xs">
-                        No hay bitácoras vinculadas a esta siembra.
+                        No hay actividades vinculadas a esta siembra.
                       </div>
                       <v-checkbox
                         v-for="entry in availableBitacoras"
@@ -168,14 +167,19 @@
                 <v-card-text class="py-3 px-4">
                   <div class="font-weight-bold text-primary-4 mb-2">Resumen del Paquete</div>
                   <v-row class="text-smtext-grey-darken-3">
-                    <v-col cols="12" sm="4">
-                      <strong>Siembra:</strong> {{ getSiembraName(selectedSiembraId) }}
+                    <v-col cols="12" class="pb-0">
+                      <strong>Siembra:</strong> {{ getSiembraName(selectedSiembraId) }} (Tipo: {{ getSiembraTipo(selectedSiembraId) }})
                     </v-col>
-                    <v-col cols="12" sm="4">
-                      <strong>Zonas Compartidas:</strong> {{ selectedZonas.length }} seleccionadas
+                    <v-col cols="12" sm="6">
+                      <strong>Zonas Compartidas:</strong>
+                      <div class="text-xs mt-1" v-if="selectedZonas.length > 0">
+                        {{ getZonasNames(selectedZonas).join(', ') }}
+                      </div>
+                      <div class="text-xs mt-1 text-grey" v-else>Ninguna seleccionada</div>
                     </v-col>
-                    <v-col cols="12" sm="4">
-                      <strong>Bitácoras Compartidas:</strong> {{ selectedBitacoras.length }} seleccionadas
+                    <v-col cols="12" sm="6">
+                      <strong>Actividades Compartidas:</strong>
+                      <div class="text-xs mt-1">{{ selectedBitacoras.length }} seleccionadas</div>
                     </v-col>
                   </v-row>
                 </v-card-text>
@@ -193,6 +197,10 @@
                 color="primary"
                 required
               ></v-textarea>
+
+              <div class="mt-4">
+                <EvidenciasImageUpload v-model="fotos" :max-files="5" />
+              </div>
             </div>
           </template>
         </v-stepper>
@@ -247,8 +255,10 @@ import { useSiembrasStore } from '@/stores/siembrasStore'
 import { useZonasStore } from '@/stores/zonasStore'
 import { useBitacoraStore } from '@/stores/bitacoraStore'
 import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
+import { useAuthStore } from '@/stores/authStore'
 import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
+import EvidenciasImageUpload from '@/components/common/EvidenciasImageUpload.vue'
 
 const props = defineProps({
   modelValue: Boolean,
@@ -264,12 +274,13 @@ const bitacoraStore = useBitacoraStore()
 const uiFeedback = useUiFeedbackStore()
 
 const step = ref(1)
-const stepperItems = ['Siembra', 'Zonas & Bitácoras', 'Confirmar']
+const stepperItems = ['Siembra', 'Zonas & Actividades', 'Confirmar']
 
 const selectedSiembraId = ref(null)
 const selectedZonas = ref([])
 const selectedBitacoras = ref([])
 const notasHacienda = ref('')
+const fotos = ref([])
 
 const loadingSiembras = ref(false)
 const loadingDetails = ref(false)
@@ -324,6 +335,7 @@ watch(() => props.modelValue, async (isOpen) => {
     selectedZonas.value = []
     selectedBitacoras.value = []
     notasHacienda.value = ''
+    fotos.value = []
     availableZonas.value = []
     availableBitacoras.value = []
 
@@ -370,6 +382,18 @@ const getSiembraName = (id) => {
   return s ? s.nombre : 'Sowing'
 }
 
+const getSiembraTipo = (id) => {
+  const s = activeSiembras.value.find(x => x.id === id)
+  return s ? s.tipo : 'N/A'
+}
+
+const getZonasNames = (ids) => {
+  return ids.map(id => {
+    const zona = availableZonas.value.find(z => z.id === id)
+    return zona ? zona.nombre : ''
+  }).filter(Boolean)
+}
+
 const formatDate = (dateStr) => {
   if (!dateStr) return 'N/A'
   return new Date(dateStr).toLocaleDateString()
@@ -398,17 +422,26 @@ const enviarPaquete = async () => {
       throw new Error('No se encontró una vinculación activa con este asesor.')
     }
 
-    // Field names match paquetes_evaluacion PocketBase schema exactly
-    await pb.collection('paquetes_evaluacion').create({
-      vinculacion_id: finalVinculacionId,
-      hacienda_id: authStore.user.hacienda,
-      asesor_id: finalAsesorId,
-      siembra_id: selectedSiembraId.value,
-      zonas_ids: selectedZonas.value,
-      bitacora_ids: selectedBitacoras.value,
-      notas_hacienda: notasHacienda.value,
-      estado: 'enviado'
+    // Use FormData for file upload
+    const formData = new FormData()
+    formData.append('vinculacion_id', finalVinculacionId)
+    formData.append('hacienda_id', authStore.user.hacienda)
+    formData.append('asesor_id', finalAsesorId)
+    formData.append('siembra_id', selectedSiembraId.value)
+    
+    // Append arrays as JSON strings since PB handles arrays via multipart as strings if not files
+    selectedZonas.value.forEach(id => formData.append('zonas_ids', id))
+    selectedBitacoras.value.forEach(id => formData.append('bitacora_ids', id))
+    
+    formData.append('notas_hacienda', notasHacienda.value)
+    formData.append('estado', 'enviado')
+
+    // Append evidences
+    fotos.value.forEach(file => {
+      formData.append('evidencias', file)
     })
+
+    await pb.collection('paquetes_evaluacion').create(formData)
 
     uiFeedback.showSnackbar('Paquete de evaluación enviado con éxito', 'success')
     close()

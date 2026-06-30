@@ -1,92 +1,88 @@
 <template>
-  <header class="bg-background shadow-sm">
-    <div class="profile-container">
-      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div class="w-full sm:flex-grow">
-          <h3 class="profile-title">
-            <nav class="flex mb-3" aria-label="Breadcrumb">
-              <ol class="flex items-center space-x-2 bg-primary-4 py-2 px-4 rounded-r-full">
-                <li>
-                  <div class="flex items-center">
-                    <v-icon>mdi-gesture-tap-button</v-icon>
-                    <router-link
-                      to="/actividades"
-                      class="ml-3 text-sm font-extrabold hover:text-gray-700"
-                    >
-                      {{ t('activity_workspace.my_activities') }}
-                    </router-link>
-                  </div>
-                </li>
-                <li>
-                  <div class="flex items-center">
-                    <v-icon>mdi-chevron-right</v-icon>
-                    <span class="ml-1 text-sm font-extrabold" aria-current="page">
-                      {{ actividadInfo.nombre }}
-                    </span>
-                  </div>
-                </li>
-              </ol>
-            </nav>
+  <UniversalHeader 
+    :bgImage="actividadAvatarUrl"
+  >
+    <template #title>
+      <nav class="flex" aria-label="Breadcrumb">
+        <ol class="flex items-center space-x-2 bg-primary-4 py-2 px-4 rounded-r-full">
+          <li>
+            <div class="flex items-center">
+              <v-icon>mdi-gesture-tap-button</v-icon>
+              <router-link
+                to="/actividades"
+                class="ml-3 text-sm font-extrabold hover:text-gray-700"
+              >
+                {{ t('activity_workspace.my_activities') }}
+              </router-link>
+            </div>
+          </li>
+          <li>
+            <div class="flex items-center">
+              <v-icon>mdi-chevron-right</v-icon>
+              <span class="ml-1 text-sm font-extrabold" aria-current="page">
+                {{ actividadInfo.nombre }}
+              </span>
+            </div>
+          </li>
+        </ol>
+      </nav>
+    </template>
 
-            <v-chip variant="flat" size="small" color="green-lighten-3" class="mx-1" pill>
-              <v-avatar start>
-                <v-img :src="avatarHaciendaUrl" alt="Avatar"></v-img>
-              </v-avatar>
-              {{ t('activity_workspace.hacienda') }}: {{ mi_hacienda.name }}
-            </v-chip>
+    <template #chips>
+      <v-chip variant="flat" size="small" color="green-lighten-3" class="mx-1" pill>
+        <v-avatar start>
+          <v-img :src="avatarHaciendaUrl" alt="Avatar"></v-img>
+        </v-avatar>
+        {{ t('activity_workspace.hacienda') }}: {{ mi_hacienda.name }}
+      </v-chip>
 
-            <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
-              <v-avatar start>
-                <v-img :src="avatarUrl" alt="Avatar"></v-img>
-              </v-avatar>
-              {{ t('roles.' + userRole) }}
-            </v-chip>
+      <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
+        <v-avatar start>
+          <v-img :src="avatarUrl" alt="Avatar"></v-img>
+        </v-avatar>
+        {{ t('roles.' + userRole) }}
+      </v-chip>
 
+      <v-chip :color="getStatusColor(actividadInfo.activa)" size="small" variant="flat">
+        {{ getStatusMsg(actividadInfo.activa) }}
+      </v-chip>
 
-            <v-chip :color="getStatusColor(actividadInfo.activa)" size="small" variant="flat">
-              {{ getStatusMsg(actividadInfo.activa) }}
-            </v-chip>
+      <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
+        {{ t('activity_workspace.type') }}:
+        {{ actividadesStore.getActividadTipo(actividadInfo.tipo_actividades).toUpperCase() }}
+      </v-chip>
+    </template>
 
-            <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
-              {{ t('activity_workspace.type') }}:
-              {{ actividadesStore.getActividadTipo(actividadInfo.tipo_actividades).toUpperCase() }}
-            </v-chip>
-          </h3>
-        </div>
-
-        <div class="w-full sm:w-auto z-10 text-center">
-          <h4
-            :class="{
-              'text-red font-extrabold pt-0 pb-2 text-xs sm:text-sm': actividadInfo.bpa_estado < 40,
-              'text-orange font-extrabold pt-0 pb-2 text-xs sm:text-sm':
-                actividadInfo.bpa_estado >= 40 && actividadInfo.bpa_estado < 80,
-              'text-primary font-extrabold pt-0 pb-2 text-xs sm:text-sm':
-                actividadInfo.bpa_estado >= 80
-            }"
-          >
-            {{ t('activity_workspace.bpa_progress') }}:
-          </h4>
-          <v-progress-circular
-            :model-value="actividadInfo.bpa_estado"
-            :size="78"
-            :width="8"
-            :color="colorBpaEstado"
-          >
-            <template v-slot:default> {{ actividadInfo.bpa_estado }} % </template>
-          </v-progress-circular>
-        </div>
+    <template #actions>
+      <div class="w-full sm:w-auto z-10 text-center">
+        <h4
+          :class="{
+            'text-red font-extrabold pt-0 pb-2 text-xs sm:text-sm': actividadInfo.bpa_estado < 40,
+            'text-orange font-extrabold pt-0 pb-2 text-xs sm:text-sm':
+              actividadInfo.bpa_estado >= 40 && actividadInfo.bpa_estado < 80,
+            'text-primary font-extrabold pt-0 pb-2 text-xs sm:text-sm':
+              actividadInfo.bpa_estado >= 80
+          }"
+        >
+          {{ t('activity_workspace.bpa_progress') }}:
+        </h4>
+        <v-progress-circular
+          :model-value="actividadInfo.bpa_estado"
+          :size="78"
+          :width="8"
+          :color="colorBpaEstado"
+        >
+          <template v-slot:default> {{ actividadInfo.bpa_estado }} % </template>
+        </v-progress-circular>
       </div>
-
-      <div class="avatar-container">
-        <img :src="actividadAvatarUrl" alt="Avatar de Actividad" class="avatar-image" />
-      </div>
-    </div>
-  </header>
+    </template>
+  </UniversalHeader>
 </template>
 
 <script setup>
 import { useI18n } from 'vue-i18n'
 import { useActividadesStore } from '@/stores/actividadesStore'
+import UniversalHeader from '@/components/UniversalHeader.vue'
 
 const props = defineProps({
   actividadInfo: {
@@ -139,13 +135,4 @@ const getStatusMsg = (status) => {
 </script>
 
 <style scoped>
-.profile-container {
-  position: relative;
-  padding: 1rem;
-}
-
-.profile-title {
-  margin: 0;
-  padding-right: 100px;
-}
 </style>

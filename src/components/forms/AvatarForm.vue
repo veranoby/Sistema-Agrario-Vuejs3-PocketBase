@@ -134,7 +134,7 @@ const compressionStats = ref(null)
 const exifData = ref(null)
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
-const TARGET_SIZE_MB = 0.5 // 500KB - objetivo de compresión de salida
+const TARGET_SIZE_MB = 0.2 // 200KB - objetivo de compresión de salida
 
 const imageOptimizer = new ImageOptimizer({
   maxWidth: 1200,

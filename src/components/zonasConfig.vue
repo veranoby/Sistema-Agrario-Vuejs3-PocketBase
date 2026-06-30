@@ -1,57 +1,49 @@
 <template>
   <v-container fluid class="pa-2">
-    <div class="grid grid-cols-4 gap-2 p-0 m-2">
-      <header class="col-span-4 bg-background shadow-sm p-0">
-        <div class="profile-container mt-0 ml-0 px-2 py-2">
-          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <!-- Title and Chips Section -->
-            <div class="w-full sm:flex-grow">
-              <h3 class="profile-title text-sm sm:text-lg mb-2 sm:mb-0">
-                {{ t('zones.zones_and_logistics') }}
-                <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
-                  <v-avatar start>
-                    <v-img :src="avatarUrl" alt="Avatar"></v-img>
-                  </v-avatar>
-                  {{ userRole }}
-                </v-chip>
-                <v-chip variant="flat" size="small" color="green-lighten-3" class="mx-1" pill>
-                  <v-avatar start>
-                    <v-img :src="avatarHaciendaUrl" alt="Avatar"></v-img>
-                  </v-avatar>
-                  {{ mi_hacienda.name }}
-                </v-chip>
-              </h3>
-            </div>
+    <div class="w-100 p-0 m-2">
+      <UniversalHeader 
+        :title="t('zones.zones_and_logistics')"
+        :bgImage="avatarHaciendaUrl"
+      >
+        <template #chips>
+          <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
+            <v-avatar start>
+              <v-img :src="avatarUrl" alt="Avatar"></v-img>
+            </v-avatar>
+            {{ userRole }}
+          </v-chip>
+          <v-chip variant="flat" size="small" color="green-lighten-3" class="mx-1" pill>
+            <v-avatar start>
+              <v-img :src="avatarHaciendaUrl" alt="Avatar"></v-img>
+            </v-avatar>
+            {{ mi_hacienda.name }}
+          </v-chip>
+        </template>
 
-            <!-- EXTRAS Section -->
-            <div class="w-full sm:w-auto z-10 text-center">
-              <h4
-                :class="{
-                  'text-red font-extrabold pt-0 pb-2 text-xs sm:text-sm': promedioBpaEstado < 40,
-                  'text-orange font-extrabold pt-0 pb-2 text-xs sm:text-sm':
-                    promedioBpaEstado >= 40 && promedioBpaEstado < 80,
-                  'text-primary font-extrabold pt-0 pb-2 text-xs sm:text-sm': promedioBpaEstado >= 80
-                }"
-              >
-                {{ t('zones.bpa_progress') }}:
-                <span class="hidden sm:inline">{{ t('zones.zones_and_logistics_progress') }}</span>
-              </h4>
-              <v-progress-circular
-                :model-value="promedioBpaEstado"
-                :size="78"
-                :width="8"
-                :color="colorBpaEstado"
-              >
-                <template v-slot:default> {{ promedioBpaEstado }} % </template>
-              </v-progress-circular>
-            </div>
+        <template #actions>
+          <div class="text-center d-flex flex-column align-center">
+            <h4
+              :class="{
+                'text-red font-extrabold pt-0 pb-1 text-xs sm:text-sm': promedioBpaEstado < 40,
+                'text-orange font-extrabold pt-0 pb-1 text-xs sm:text-sm':
+                  promedioBpaEstado >= 40 && promedioBpaEstado < 80,
+                'text-primary font-extrabold pt-0 pb-1 text-xs sm:text-sm': promedioBpaEstado >= 80
+              }"
+            >
+              {{ t('zones.bpa_progress') }}:
+              <span class="hidden sm:inline">{{ t('zones.zones_and_logistics_progress') }}</span>
+            </h4>
+            <v-progress-circular
+              :model-value="promedioBpaEstado"
+              :size="50"
+              :width="6"
+              :color="colorBpaEstado"
+            >
+              <template v-slot:default> <span class="text-xs">{{ promedioBpaEstado }}%</span> </template>
+            </v-progress-circular>
           </div>
-
-          <div class="avatar-container">
-            <img :src="avatarHaciendaUrl" alt="Avatar de hacienda" class="avatar-image" />
-          </div>
-        </div>
-      </header>
+        </template>
+      </UniversalHeader>
     </div>
 
     <main class="flex-1 py-2">
@@ -300,6 +292,7 @@ import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import { useAvatarStore } from '@/stores/avatarStore'
 import ZonaForm from '@/components/forms/ZonaForm.vue'
 import AiAssistant from '@/components/AiAssistant.vue'
+import UniversalHeader from '@/components/UniversalHeader.vue'
 import { useDebouncedSearch } from '@/composables/useDebouncedSearch'
 
 const { t } = useI18n()

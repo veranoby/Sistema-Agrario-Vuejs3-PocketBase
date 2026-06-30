@@ -152,10 +152,19 @@ routerAdd("POST", "/api/ext/alerts/send", (e) => {
 
     let resendApiKey = "";
     try {
-      const configRecord = $app.dao().findFirstRecordByData("system_config", "key", "resend_api_key");
-      resendApiKey = configRecord.get("value");
-    } catch (err) {
-      // Record not found
+      const configRecord = $app.dao().findFirstRecordByFilter("system_config", "id != ''");
+      if (configRecord) {
+        resendApiKey = configRecord.get("resend_api_key");
+      }
+    } catch (err1) {
+      try {
+        const records = $app.dao().findRecordsByExpr("system_config", $dbx.exp("1=1"));
+        if (records && records.length > 0) {
+          resendApiKey = records[0].get("resend_api_key");
+        }
+      } catch (err2) {
+        console.error("Error leyendo resend_api_key de system_config:", err2.message);
+      }
     }
     if (!resendApiKey) {
       resendApiKey = $os.getenv("RESEND_API_KEY");

@@ -108,7 +108,8 @@
 
             <!-- SECCIÓN Firma Digital -->
             <div class="mt-6 border-t pt-4">
-              <BitacoraSignature
+              <UniversalSignature
+                v-if="requiresSignature"
                 :data-to-sign="computedDataToSign"
                 @signed="onSignatureCaptured"
                 :require-drawing="true"
@@ -199,7 +200,7 @@ import { useProgramacionesStore } from '@/stores/programaciones';
 import { useActividadesStore } from '@/stores/actividadesStore';
 import BatchGeneralDataForm from '@/components/forms/BatchGeneralDataForm.vue';
 import BpaChecklist from '@/components/bitacora/BpaChecklist.vue';
-import BitacoraSignature from '@/components/bitacora/BitacoraSignature.vue';
+import UniversalSignature from '@/components/common/UniversalSignature.vue';
 import { useUiFeedbackStore } from '@/stores/uiFeedbackStore';
 
 const props = defineProps({

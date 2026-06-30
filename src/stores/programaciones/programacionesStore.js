@@ -294,7 +294,8 @@ export const useProgramacionesStore = defineStore('programaciones', {
       try {
         proximaEjecucion = calculateInitialExecutionDate(
           nuevaProgramacion.frecuencia,
-          nuevaProgramacion.frecuencia_personalizada
+          nuevaProgramacion.frecuencia_personalizada,
+          nuevaProgramacion.exclusiones
         ).toISOString()
       } catch (error) {
         logger.error('[PROGRAMACIONES_STORE] Error calculando próxima ejecución:', error)

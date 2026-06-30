@@ -6,63 +6,57 @@
 
     <template v-else>
       <!-- Standard Profile-style Header -->
-      <div class="profile-container">
-        <div class="flex justify-between items-start w-full">
-          <div>
-            <h3 class="profile-title">
-              {{ t('hacienda_info.hacienda_profile') }}
-              <v-chip variant="flat" size="small" color="green-lighten-2" class="mx-1" pill>
-                <v-avatar start> <v-img :src="avatarHaciendaUrl" alt="Avatar"></v-img> </v-avatar>
-                {{ mi_hacienda.name }}
-              </v-chip>
-            </h3>
+      <UniversalHeader 
+        :title="t('hacienda_info.hacienda_profile')"
+        :bgImage="avatarHaciendaUrl"
+      >
+        <template #chips>
+          <v-chip variant="flat" size="small" color="green-lighten-2" class="mx-1" pill>
+            <v-avatar start> <v-img :src="avatarHaciendaUrl" alt="Avatar"></v-img> </v-avatar>
+            {{ mi_hacienda.name }}
+          </v-chip>
             
-            <div class="mt-2 text-xs">
-              <v-chip variant="flat" size="small" color="green-lighten-3" class="mx-1 mb-1 mt-1">
-                <v-icon size="small" class="mr-1">mdi-map-marker-radius</v-icon>
-                {{ mi_hacienda?.location || t('hacienda_info.not_available') }}
-              </v-chip>
-              <v-chip variant="flat" size="small" color="green-lighten-3" class="mx-1 mb-1 mt-1">
-                <v-icon size="small" class="mr-1">mdi-map-marker-multiple</v-icon>
-                {{ formatGPS(mi_hacienda?.gps) }}
-              </v-chip>
-              
-              <v-chip v-if="mi_hacienda?.contacto_email" variant="flat" size="small" color="green-lighten-3" class="mx-1 mb-1 mt-1">
-                <v-icon size="small" class="mr-1">mdi-email</v-icon>
-                {{ mi_hacienda.contacto_email }}
-              </v-chip>
-              <v-chip v-if="mi_hacienda?.contacto_telefono" variant="flat" size="small" color="green-lighten-3" class="mx-1 mb-1 mt-1">
-                <v-icon size="small" class="mr-1">mdi-phone</v-icon>
-                {{ mi_hacienda.contacto_telefono }}
-              </v-chip>
-            </div>
+          <div class="mt-2 text-xs w-100">
+            <v-chip variant="flat" size="small" color="green-lighten-3" class="mx-1 mb-1 mt-1">
+              <v-icon size="small" class="mr-1">mdi-map-marker-radius</v-icon>
+              {{ mi_hacienda?.location || t('hacienda_info.not_available') }}
+            </v-chip>
+            <v-chip variant="flat" size="small" color="green-lighten-3" class="mx-1 mb-1 mt-1">
+              <v-icon size="small" class="mr-1">mdi-map-marker-multiple</v-icon>
+              {{ formatGPS(mi_hacienda?.gps) }}
+            </v-chip>
+            
+            <v-chip v-if="mi_hacienda?.contacto_email" variant="flat" size="small" color="green-lighten-3" class="mx-1 mb-1 mt-1">
+              <v-icon size="small" class="mr-1">mdi-email</v-icon>
+              {{ mi_hacienda.contacto_email }}
+            </v-chip>
+            <v-chip v-if="mi_hacienda?.contacto_telefono" variant="flat" size="small" color="green-lighten-3" class="mx-1 mb-1 mt-1">
+              <v-icon size="small" class="mr-1">mdi-phone</v-icon>
+              {{ mi_hacienda.contacto_telefono }}
+            </v-chip>
+          </div>
 
-            <!-- Metrics row -->
-            <div class="mt-3 flex flex-wrap gap-1">
-              <v-tooltip v-for="(metrica, key) in mi_hacienda.metricas" :key="key" location="bottom">
-                <template v-slot:activator="{ props }">
-                  <v-chip
-                    v-bind="props"
-                    variant="flat"
-                    size="x-small"
-                    color="green-lighten-4"
-                    class="mx-1 mb-1"
-                    pill
-                  >
-                    <span class="font-weight-bold mr-1">{{ key.replace(/_/g, ' ').toUpperCase() }}:</span>
-                    {{ formatMetricValue(metrica.valor) }}
-                  </v-chip>
-                </template>
-                <span>{{ metrica.descripcion }}</span>
-              </v-tooltip>
-            </div>
+          <!-- Metrics row -->
+          <div class="mt-3 flex flex-wrap gap-1 w-100">
+            <v-tooltip v-for="(metrica, key) in mi_hacienda.metricas" :key="key" location="bottom">
+              <template v-slot:activator="{ props }">
+                <v-chip
+                  v-bind="props"
+                  variant="flat"
+                  size="x-small"
+                  color="green-lighten-4"
+                  class="mx-1 mb-1"
+                  pill
+                >
+                  <span class="font-weight-bold mr-1">{{ key.replace(/_/g, ' ').toUpperCase() }}:</span>
+                  {{ formatMetricValue(metrica.valor) }}
+                </v-chip>
+              </template>
+              <span>{{ metrica.descripcion }}</span>
+            </v-tooltip>
           </div>
-          
-          <div class="avatar-container">
-            <img :src="avatarHaciendaUrl" alt="Avatar de hacienda" class="avatar-image" />
-          </div>
-        </div>
-      </div>
+        </template>
+      </UniversalHeader>
 
       <!-- Action Bar -->
       <div class="mx-4 p-2 my-2 flex items-center justify-between">
@@ -155,6 +149,7 @@ import { storeToRefs } from 'pinia'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import HaciendaForm from '@/components/forms/HaciendaForm.vue'
 import AvatarForm from '@/components/forms/AvatarForm.vue'
+import UniversalHeader from '@/components/UniversalHeader.vue'
 
 const { t } = useI18n()
 const haciendaStore = useHaciendaStore()

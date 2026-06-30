@@ -88,7 +88,7 @@ export const emailService = {
     const alertType = metadata.emailType || metadata.reportType || 'recordatorio'
     const hacienda = metadata.haciendaName || metadata.hacienda || 'Sistema'
 
-    // Mapeo al formato que espera /api/alerts/send
+    // Mapeo al formato que espera /api/ext/alerts/send
     const alertTypeMap = {
       'verification': 'recordatorio',
       'password_reset': 'recordatorio',
@@ -108,7 +108,7 @@ export const emailService = {
     }
 
     const { pb } = await import('@/utils/pocketbase')
-    const response = await fetch('/api/alerts/send', {
+    const response = await fetch('/api/ext/alerts/send', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

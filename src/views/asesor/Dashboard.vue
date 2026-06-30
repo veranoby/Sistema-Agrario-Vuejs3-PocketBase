@@ -23,35 +23,16 @@
             Para activar tu perfil y aparecer en el directorio visible para todas las haciendas asociadas de ConAgri, realiza el depósito o transferencia bancaria mensual:
           </p>
 
-          <v-card variant="outlined" class="rounded-lg border-indigo pa-4 bg-indigo-lighten-5 mb-6 text-indigo-darken-4">
-            <v-row>
-              <v-col cols="12" sm="6" class="py-1">
-                <strong>Banco:</strong> Banco Pichincha
-              </v-col>
-              <v-col cols="12" sm="6" class="py-1">
-                <strong>Tipo de Cuenta:</strong> Ahorros
-              </v-col>
-              <v-col cols="12" sm="6" class="py-1">
-                <strong>Número de Cuenta:</strong> 2208574932
-              </v-col>
-              <v-col cols="12" sm="6" class="py-1">
-                <strong>Beneficiario:</strong> Soluciones Agrícolas ConAgri S.A.
-              </v-col>
-              <v-col cols="12" sm="6" class="py-1">
-                <strong>RUC:</strong> 1792837492001
-              </v-col>
-              <v-col cols="12" sm="6" class="py-1">
-                <strong>Monto Mensual:</strong> $5.00 USD
-              </v-col>
-            </v-row>
-          </v-card>
+          <div class="bg-white pa-4 rounded-lg mb-6 border border-dashed text-indigo-darken-4">
+            <div class="text-sm whitespace-pre-wrap" v-html="bankInstructions"></div>
+          </div>
 
           <div class="bg-grey-lighten-4 pa-4 rounded-lg border border-grey-lighten-3 mb-4">
             <span class="text-md font-weight-bold text-grey-darken-3 d-block mb-1">
               ¿Ya realizaste tu transferencia?
             </span>
-            <p class="text-smtext-grey-darken-2 mb-3">
-              Envía el comprobante digital de pago a <strong>pagos@conagri.com</strong> o súbelo directamente en tu perfil para agilizar el proceso. El equipo administrativo validará tu transacción y activará tu cuenta en un lapso menor a 2 horas.
+            <p class="text-sm text-grey-darken-2 mb-3">
+              Envía el comprobante digital de pago a <strong>contacto@conespacio.org</strong> o súbelo directamente en tu perfil para agilizar el proceso. El equipo administrativo validará tu transacción y activará tu cuenta en un lapso menor a 2 horas.
             </p>
             <v-btn
               color="indigo-darken-2"
@@ -68,14 +49,14 @@
         <v-divider></v-divider>
         <v-card-actions class="px-6 py-4 bg-grey-lighten-5 d-flex justify-space-between align-center">
           <span class="text-xs text-grey-darken-1">
-            Soporte Administrativo: +593 99 999 9999
+            Soporte Administrativo: +593 99 719 7151
           </span>
           <v-btn
             color="orange-darken-2"
             variant="flat"
             class="font-weight-bold text-white rounded-lg px-6"
             prepend-icon="mdi-whatsapp"
-            href="https://wa.me/593999999999"
+            href="https://wa.me/593997197151"
             target="_blank"
           >
             Reportar Pago Vía WhatsApp
@@ -107,34 +88,27 @@
       </v-alert>
 
       <!-- Header -->
-      <header class="w-100 bg-background shadow-sm p-0 mb-4">
-        <div class="profile-container mt-0 ml-0">
-          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div class="w-full sm:flex-grow">
-              <h3 class="profile-title text-sm sm:text-lg mb-2 sm:mb-0">
-                Dashboard de Asesoría
-                <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
-                  <v-avatar start>
-                    <v-img :src="avatarUrl" alt="Avatar"></v-img>
-                  </v-avatar>
-                  {{ userRole }}
-                </v-chip>
-                <v-chip color="indigo-darken-2" variant="flat" size="small" class="text-white mx-1" pill>
-                  <v-icon start icon="mdi-shield-check" class="mr-1"></v-icon>
-                  Profesional Certificado
-                </v-chip>
-              </h3>
-            </div>
-          </div>
-          <div class="avatar-container">
-            <img :src="avatarUrl" alt="Avatar" class="avatar-image" />
-          </div>
-        </div>
-      </header>
+      <UniversalHeader 
+        title="Dashboard de Asesoría"
+        :bgImage="avatarUrl"
+      >
+        <template #chips>
+          <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
+            <v-avatar start>
+              <v-img :src="avatarUrl" alt="Avatar"></v-img>
+            </v-avatar>
+            {{ userRole }}
+          </v-chip>
+          <v-chip color="indigo-darken-2" variant="flat" size="small" class="text-white mx-1" pill>
+            <v-icon start icon="mdi-shield-check" class="mr-1"></v-icon>
+            Profesional Certificado
+          </v-chip>
+        </template>
+      </UniversalHeader>
 
       <!-- Metricas -->
       <v-row class="mb-6 mt-0">
-        <v-col cols="12" sm="4">
+        <v-col cols="12" sm="6" md="3">
           <v-card class="elevation-3 hover-card rounded-lg bg-gradient-indigo text-white">
             <v-card-text class="d-flex align-center justify-space-between pa-6">
               <div>
@@ -145,7 +119,7 @@
             </v-card-text>
           </v-card>
         </v-col>
-        <v-col cols="12" sm="4">
+        <v-col cols="12" sm="6" md="3">
           <v-card class="elevation-3 hover-card rounded-lg bg-gradient-orange text-white">
             <v-card-text class="d-flex align-center justify-space-between pa-6">
               <div>
@@ -156,7 +130,7 @@
             </v-card-text>
           </v-card>
         </v-col>
-        <v-col cols="12" sm="4">
+        <v-col cols="12" sm="6" md="3">
           <v-card class="elevation-3 hover-card rounded-lg bg-gradient-blue text-white">
             <v-card-text class="d-flex align-center justify-space-between pa-6">
               <div>
@@ -164,6 +138,17 @@
                 <h3 class="text-h3 font-weight-black mt-2">{{ draftPrescriptionsCount }}</h3>
               </div>
               <v-icon icon="mdi-file-document-edit" size="56" class="opacity-80"></v-icon>
+            </v-card-text>
+          </v-card>
+        </v-col>
+        <v-col cols="12" sm="6" md="3">
+          <v-card class="elevation-3 hover-card rounded-lg bg-teal-darken-1 text-white">
+            <v-card-text class="d-flex align-center justify-space-between pa-6">
+              <div>
+                <span class="  opacity-90 font-weight-medium">Mensajes Sin Leer</span>
+                <h3 class="text-h3 font-weight-black mt-2">{{ unreadMessagesCount }}</h3>
+              </div>
+              <v-icon icon="mdi-email-alert" size="56" class="opacity-80"></v-icon>
             </v-card-text>
           </v-card>
         </v-col>
@@ -264,19 +249,25 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
+import { useSettingsStore } from '@/stores/settingsStore'
 import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
+import UniversalHeader from '@/components/UniversalHeader.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const settingsStore = useSettingsStore()
 
 const checkingSubscription = ref(true)
 const subscriptionActive = ref(false)
+
+const bankInstructions = computed(() => settingsStore.bankAccountInfo || 'No hay instrucciones bancarias configuradas.')
 
 const activeFarmsCount = ref(0)
 const pendingVinculacionesCount = ref(0)
 const pendingPackagesCount = ref(0)
 const draftPrescriptionsCount = ref(0)
+const unreadMessagesCount = ref(0)
 
 const recentPackages = ref([])
 const recentPrescriptions = ref([])
@@ -290,6 +281,7 @@ const avatarUrl = computed(() => {
 
 onMounted(async () => {
   try {
+    await settingsStore.fetchConfig()
     // 0. Check subscription status in subscriptions collection
     try {
       const asesorPlan = await pb.collection('modulos').getFirstListItem(`code="asesor_plan"`)
@@ -337,7 +329,7 @@ onMounted(async () => {
         if (v) {
           try {
             const h = await pb.collection('Haciendas').getOne(v.hacienda_id)
-            haciendaNombre = h.nombre
+            haciendaNombre = h.name || 'Hacienda'
             haciendaId = h.id
           } catch {}
         }
@@ -350,19 +342,29 @@ onMounted(async () => {
 
       // 3. Fetch recetas
       const recipes = await pb.collection('recetas').getFullList({
-        filter: `(${vincFilter})`,
+        filter: `asesor_id="${authStore.user.id}"`,
         sort: '-created'
       })
 
       draftPrescriptionsCount.value = recipes.filter(r => r.estado === 'borrador').length
 
       recentPrescriptions.value = recipes.slice(0, 5).map(r => {
-        const v = activeVinculaciones.find(x => x.id === r.vinculacion_id)
         return {
           ...r,
-          haciendaId: v ? v.hacienda_id : ''
+          haciendaId: r.hacienda_id || ''
         }
       })
+
+      // 4. Fetch unread messages
+      try {
+        const msgs = await pb.collection('comunicaciones_asesoria').getFullList({
+          filter: `leido=false && emisor_id!="${authStore.user.id}" && (${vincFilter})`
+        })
+        unreadMessagesCount.value = msgs.length
+      } catch (err) {
+        console.warn('Could not fetch unread messages count:', err)
+        unreadMessagesCount.value = 0
+      }
     }
   } catch (error) {
     handleError(error, 'Error al cargar las métricas de asesoría')

@@ -20,7 +20,14 @@
     "paquetes_evaluacion",
     "recetas",
     "vinculaciones_asesor",
-    "system_config"
+    "system_config",
+    "bodega_items",
+    "bodega_movimientos",
+    "comunicaciones_asesoria",
+    "nomina_asistencia",
+    "nomina_semanas",
+    "plantilla_nomina",
+    "tarjas"
   ],
   "custom_hooks": [
     {
@@ -33,9 +40,9 @@
       "security": "Proxy logic protects BYOK/Global keys. RequireAuth check."
     },
     {
-      "path": "/api/alerts/send",
+      "path": "/api/ext/alerts/send",
       "method": "POST",
-      "handler": "pb_hooks/main.js",
+      "handler": "pb_hooks/alerts_send.pb.js",
       "audit_status": "✅ 100%",
       "validation": "Validates type, recipients (non-empty array), hacienda fields.",
       "error_handling": "Returns 400 for invalid fields, 500 for Resend proxy failure.",
@@ -188,11 +195,18 @@
       "note": "Needs alertConfig field in Haciendas collection. Cron logic exists but alertConfig JSON field missing from PB schema."
     },
     {
-      "path": "MISSING: pb_hooks/asesores.pb.js",
+      "path": "pb_hooks/asesores.pb.js",
       "method": "HOOK",
-      "handler": "DOES NOT EXIST",
-      "audit_status": "❌ 0% NOT IMPLEMENTED",
-      "note": "Defined in asesor_tecnico_implementacion.md but file was never created. No automated state transition (fecha_envio, fecha_vista) is happening."
+      "handler": "JSVM Hooks",
+      "audit_status": "✅ 100% - Verificado",
+      "note": "Hooks para transiciones de estado en recetas y paquetes_evaluacion, notificaciones via email y control de duplicidad en vinculaciones."
+    },
+    {
+      "path": "pb_hooks/security_asesor.pb.js",
+      "method": "HOOK",
+      "handler": "JSVM Hooks",
+      "audit_status": "✅ 100% - Verificado",
+      "note": "Hook de seguridad (OnRecordViewRequest) para bloquear accesos no autorizados al dashboard de asesores si la suscripción no está activa."
     }
   ]
 }

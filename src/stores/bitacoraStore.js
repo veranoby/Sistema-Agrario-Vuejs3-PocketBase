@@ -49,7 +49,6 @@ function mapToBackend(entryData) {
   if (payload.user_responsable) { payload.user_created = payload.user_responsable; delete payload.user_responsable; }
   
   // Clean up fields not in DB to prevent errors
-  delete payload.fotos;
   delete payload.trabajadores_involucrados;
   
   return payload;
@@ -409,7 +408,25 @@ export const useBitacoraStore = defineStore('bitacora', {
       logger.debug('[BITACORA_STORE] Online mode: Creating entry directly on PocketBase.');
       this.isLoading = true;
       try {
-        const record = await pb.collection('bitacora').create(backendPayload, {
+        let submitPayload = backendPayload;
+        if (backendPayload.fotos && backendPayload.fotos.length > 0) {
+          submitPayload = new FormData();
+          Object.keys(backendPayload).forEach(key => {
+            if (key === 'fotos') {
+              backendPayload.fotos.forEach(file => submitPayload.append('fotos', file));
+            } else if (backendPayload[key] !== null && backendPayload[key] !== undefined) {
+              if (typeof backendPayload[key] === 'object' && !Array.isArray(backendPayload[key])) {
+                submitPayload.append(key, JSON.stringify(backendPayload[key]));
+              } else if (Array.isArray(backendPayload[key])) {
+                backendPayload[key].forEach(val => submitPayload.append(key, val));
+              } else {
+                submitPayload.append(key, backendPayload[key]);
+              }
+            }
+          });
+        }
+
+        const record = await pb.collection('bitacora').create(submitPayload, {
           expand: "actividades,actividades.tipo_actividades,siembras,zonas,programaciones,user_created"
         });
         

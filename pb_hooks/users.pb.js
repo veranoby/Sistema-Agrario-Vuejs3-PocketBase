@@ -14,7 +14,7 @@ onRecordCreateRequest((e) => {
         };
 
         $http.send({
-            url: "http://127.0.0.1:8090/api/alerts/send",
+            url: "http://127.0.0.1:8090/api/ext/alerts/send",
             method: "POST",
             body: JSON.stringify(payload),
             headers: { "Content-Type": "application/json" }

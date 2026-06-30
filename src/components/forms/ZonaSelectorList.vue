@@ -43,8 +43,9 @@
             v-for="zona in zonasToDisplay.asociadas"
             :key="zona.id"
             variant="flat"
-            class="transition-all rounded-lg bg-grey-lighten-4 border border-transparent"
-            :class="{ 'bg-green-lighten-4 shadow-md border-solid border-success': modelValue.includes(zona.id) }"
+            :color="modelValue.includes(zona.id) ? 'green-lighten-4' : 'grey-lighten-4'"
+            class="transition-all rounded-lg"
+            :class="modelValue.includes(zona.id) ? 'elevation-1 border-solid border-success border-opacity-100' : 'border border-transparent'"
             @click="toggleSelection(zona.id)"
           >
             <v-card-text class="pa-3 flex items-center">
@@ -79,8 +80,9 @@
             v-for="zona in zonasToDisplay.deSiembras"
             :key="zona.id"
             variant="flat"
-            class="transition-all rounded-lg bg-grey-lighten-4 border border-transparent"
-            :class="{ 'bg-blue-lighten-4 shadow-md border-solid border-info': modelValue.includes(zona.id) }"
+            :color="modelValue.includes(zona.id) ? 'blue-lighten-4' : 'grey-lighten-4'"
+            class="transition-all rounded-lg"
+            :class="modelValue.includes(zona.id) ? 'elevation-1 border-solid border-info border-opacity-100' : 'border border-transparent'"
             @click="toggleSelection(zona.id)"
           >
             <v-card-text class="p-3 flex items-center">
@@ -115,8 +117,9 @@
             v-for="zona in zonasToDisplay.independientes"
             :key="zona.id"
             variant="flat"
-            class="transition-all rounded-lg bg-grey-lighten-4 border border-transparent"
-            :class="{ 'bg-orange-lighten-4 shadow-md border-solid border-warning': modelValue.includes(zona.id) }"
+            :color="modelValue.includes(zona.id) ? 'orange-lighten-4' : 'grey-lighten-4'"
+            class="transition-all rounded-lg"
+            :class="modelValue.includes(zona.id) ? 'elevation-1 border-solid border-warning border-opacity-100' : 'border border-transparent'"
             @click="toggleSelection(zona.id)"
           >
             <v-card-text class="pa-3 flex items-center">

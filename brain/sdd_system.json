@@ -12,38 +12,43 @@
     "users", "Haciendas", "Siembras", "actividades", "tipo_actividades",
     "tipos_zonas", "zonas", "bitacora", "programaciones", "recordatorios",
     "finanzas", "modulos", "planes", "subscriptions", "solicitudes_suscripcion",
-    "paquetes_evaluacion", "recetas", "vinculaciones_asesor", "system_config"
+    "paquetes_evaluacion", "recetas", "vinculaciones_asesor", "system_config",
+    "bodega_items", "bodega_movimientos", "comunicaciones_asesoria",
+    "nomina_asistencia", "nomina_semanas", "plantilla_nomina", "tarjas"
   ],
   "collections_missing_from_schema": [
     {
       "collection": "alertConfig (field in Haciendas)",
       "type": "JSON field",
       "required_by": ["cron.alerts.pb.js", "NotificationSettings.vue", "emailAlertService.js"],
-      "action": "Owner must add JSON field 'alertConfig' to Haciendas collection"
+      "action": "Owner must add JSON field 'alertConfig' to Haciendas collection",
+      "status": "✅ Creado y verificado en PocketBase"
     },
     {
       "collection": "signature (field in bitacora)",
       "type": "JSON field",
       "required_by": ["bitacoraStore.js (crearBitacoraEntry)"],
-      "action": "Owner must add JSON field 'signature' to bitacora collection"
+      "action": "Owner must add JSON field 'signature' to bitacora collection",
+      "status": "✅ Creado y verificado en PocketBase"
     },
     {
       "collection": "bpa_respuestas (field in bitacora)",
       "type": "JSON field",
       "required_by": ["BitacoraEntryForm.vue"],
-      "action": "Owner must add JSON field 'bpa_respuestas' to bitacora collection"
+      "action": "Owner must add JSON field 'bpa_respuestas' to bitacora collection",
+      "status": "✅ Creado y verificado en PocketBase"
     }
   ],
   "data_flows": {
     "sync": "Action-based Queue (src/stores/sync/queueProcessor.js) -> IndexedDB -> PocketBase REST. Atomicity per-item.",
     "rbac": "Backend enforcement for SuperAdmin role on critical hooks (modules). Frontend route guards via authStore.",
     "gis": "Stores load GeoJSON -> GisMapComponent parses manually (imperative Leaflet) -> DrawnItems",
-    "signatures": "Bitacora data -> digitalSignature.js (WebCrypto RSASSA-PKCS1-v1_5) -> base64 stored in PocketBase 'signature' JSON field (FIELD MISSING FROM PB SCHEMA - needs creation)",
+    "signatures": "Bitacora data -> digitalSignature.js (WebCrypto RSASSA-PKCS1-v1_5) -> base64 stored in PocketBase 'signature' JSON field. Creado y verificado.",
     "ia_assistant": "Frontend UI -> Backend Proxy (/api/ai/chat) -> OpenRouter. Structured JSON response allows action execution (Human-in-the-loop).",
     "bitacora_individual": "UI (BitacoraEntryForm Modo A1/B) -> bitacoraStore.crearBitacoraEntry -> validacion handler -> GPS -> firma RSA -> pb.collection('bitacora').create",
     "bitacora_batch": "UI (BatchExecutionDialog Modo A2) -> programacionesStore.ejecutarProgramacionesBatch -> batchOperations.js -> crearBitacoraEntry x N fechas -> updateProgramacionAfterBatch",
-    "asesor_receta": "BROKEN - RecetaEditorDialog envia campos erroneos (nombre_receta, actividad_id, producto, instrucciones, frecuencia) que NO existen en schema real de recetas (que usa titulo, blanco_biologico, producto_recomendado, etc.)",
-    "paquete_evaluacion": "BROKEN - EnviarPaqueteWizard envia siembras_compartidas/zonas_compartidas/bitacoras_compartidas y estado='pendiente'. Schema real usa siembra_id(relation), zonas_ids(JSON), bitacora_ids(JSON) y estado no tiene valor 'pendiente'."
+    "asesor_receta": "✅ CORREGIDO - RecetaEditorDialog ahora envía campos alineados con el schema real de PocketBase (titulo, blanco_biologico, producto_recomendado, etc.)",
+    "paquete_evaluacion": "✅ CORREGIDO - EnviarPaqueteWizard envía vinculacion_id, hacienda_id, asesor_id, siembra_id, zonas_ids, bitacora_ids, notas_hacienda y estado='enviado' usando FormData."
   },
   "security_audit": {
     "authentication": "PocketBase JWT. Secure.",
@@ -53,13 +58,15 @@
         "id": "V1",
         "issue": "Plan bypass",
         "risk": "High",
-        "description": "HaciendaUserManagement.vue no conecta con useSubscriptionLimits.js. Botones de agregar usuarios no bloqueados reactivamente."
+        "description": "HaciendaUserManagement.vue no conecta con useSubscriptionLimits.js. Botones de agregar usuarios no bloqueados reactivamente.",
+        "status": "✅ Remediado y verificado en HaciendaUserManagement.vue"
       },
       {
         "id": "V2",
         "issue": "Asesor sin suscripción accede al dashboard",
         "risk": "Medium",
-        "description": "asesor/Dashboard.vue verifica subscripción en frontend via PB query. Sin hook de backend que fuerce validación server-side en cada request, un usuario manipulado puede saltarlo."
+        "description": "asesor/Dashboard.vue verifica subscripción en frontend via PB query. Sin hook de backend que fuerce validación server-side en cada request, un usuario manipulado puede saltarlo.",
+        "status": "✅ Remediado y verificado con pb_hooks/security_asesor.pb.js"
       }
     ],
     "remediations": [
@@ -84,18 +91,20 @@
     ]
   },
   "critical_flows_status": {
-    "bitacora_individual": "✅ Listo Producción. BitacoraEntryForm crea correctamente con firma RSA (si existe campo en PB).",
+    "bitacora_individual": "✅ Listo Producción. BitacoraEntryForm crea correctamente con firma RSA.",
     "bitacora_batch": "✅ Listo Producción. BatchExecutionDialog + batchOperations.js funcional y atómico.",
     "sincronizacion_offline": "✅ Listo Producción. Race conditions fixed, atomic persistence, isProcessing lock.",
     "asistente_ia": "✅ Listo Producción. Proxy seguro, action cards, human-in-the-loop.",
-    "asesor_crear_receta": "❌ BROKEN. Campos escritos en RecetaEditorDialog.vue no coinciden con schema real de colección recetas.",
-    "asesor_enviar_paquete": "❌ BROKEN. Campos de paquetes_evaluacion incorrectos en EnviarPaqueteWizard.vue.",
-    "asesor_aprobar_receta": "❌ BROKEN. Estado 'aprobada' no existe en schema. Programacion creada con campo 'actividad' en singular en lugar de array 'actividades'.",
-    "alertas_email_cron": "🟡 Parcial. Backend hook existe. Cron logic existe. Falta campo alertConfig en PB Haciendas.",
-    "cuotas_plan_ui": "🟡 Parcial. Composable implementado. Falta integración en UI de gestión de usuarios.",
-    "finanzas": "🟡 Parcial. CRUD. Sin SRI, sin enlace automático a bitácora.",
-    "bodega_kardex": "❌ No Implementado.",
-    "pdf_bpa_inmutable": "❌ No Implementado.",
-    "nomina_agricola": "❌ No Implementado."
+    "asesor_crear_receta": "✅ Listo Producción. Campos corregidos y alineados con recetas.",
+    "asesor_enviar_paquete": "✅ Listo Producción. Campos de paquetes_evaluacion corregidos y usando FormData.",
+    "asesor_aprobar_receta": "✅ Listo Producción. Estado 'ejecutada' alineado y actividades pasadas como array.",
+    "asesor_flujo_bidireccional": "✅ Listo Producción. Link receta<->paquete, notas_asesor (feedback), y chat con compresión de fotos.",
+    "alertas_email_cron": "✅ Listo Producción. Campo alertConfig creado y cron/NotificationSettings funcionales.",
+    "cuotas_plan_ui": "✅ Listo Producción. Bloqueo reactivo e indicador de cuota integrados en HaciendaUserManagement.",
+    "finanzas": "🟡 Parcial. CRUD. Enlace automático bitácora FIN-1 listo. Sin SRI.",
+    "bitacora_to_finanzas_auto": "✅ Listo Producción. postProcess en AplicacionHandler y FertilizacionHandler auto-registra en finanzas con monto calculado.",
+    "bodega_kardex": "✅ Listo Producción.",
+    "pdf_bpa_inmutable": "✅ Listo Producción.",
+    "nomina_agricola": "✅ Listo Producción."
   }
 }

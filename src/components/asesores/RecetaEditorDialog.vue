@@ -214,10 +214,12 @@ import { handleError } from '@/utils/errorHandler'
 
 const props = defineProps({
   modelValue: Boolean,
-  vinculacionId: String,
+  haciendaId: String,
+  asesorId: String,
   sharedSiembras: Array,
   actividades: Array,
-  recipeId: String
+  recipeId: String,
+  paqueteId: String
 })
 
 const emit = defineEmits(['update:modelValue', 'save'])
@@ -286,7 +288,8 @@ const close = () => {
 const getPayload = (estado) => {
   // All field names match recetas PocketBase collection schema exactly
   return {
-    vinculacion_id: props.vinculacionId,
+    hacienda_id: props.haciendaId,
+    asesor_id: props.asesorId,
     titulo: titulo.value,
     siembra_id: selectedSiembra.value,
     blanco_biologico: blancoBiologico.value,
@@ -298,6 +301,7 @@ const getPayload = (estado) => {
     rei_horas: reiHoras.value ? Number(reiHoras.value) : null,
     metodo_aplicacion: metodoAplicacion.value,
     observaciones_tecnicas: observacionesTecnicas.value,
+    paquete_id: props.paqueteId || null,
     estado
   }
 }

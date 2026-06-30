@@ -1,29 +1,27 @@
 <template>
   <v-container fluid class="metricas-dashboard pa-0 pb-8">
     <!-- Header Estilo Plataforma -->
-          <header role="banner" class="bg-background shadow-sm">
-        <div class="profile-container">
-          <h3 class="profile-title" id="dashboard-welcome-title">
-            HUB DE INTELIGENCIA Y METRICAS
-            <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
-              <v-avatar start> <v-img :src="avatarUrl" alt="Avatar del usuario"></v-img> </v-avatar>
-              {{ t('roles.' + userRole) }}
-            </v-chip>
+      <UniversalHeader 
+        title="HUB DE INTELIGENCIA Y METRICAS"
+        :bgImage="avatarHaciendaUrl"
+      >
+        <template #chips>
+          <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
+            <v-avatar start> <v-img :src="avatarUrl" alt="Avatar del usuario"></v-img> </v-avatar>
+            {{ t('roles.' + userRole) }}
+          </v-chip>
 
-            <v-chip variant="flat" size="small" color="green-lighten-3" class="mx-1" pill>
-              <v-avatar start> <v-img :src="avatarHaciendaUrl" alt="Avatar de hacienda"></v-img> </v-avatar>
-              {{ t('dashboard.hacienda') }}: {{ mi_hacienda.name }}
-            </v-chip>
-              <p class="text-xs text-grey-darken-3 mt-1">
+          <v-chip variant="flat" size="small" color="green-lighten-3" class="mx-1" pill>
+            <v-avatar start> <v-img :src="avatarHaciendaUrl" alt="Avatar de hacienda"></v-img> </v-avatar>
+            {{ t('dashboard.hacienda') }}: {{ mi_hacienda.name }}
+          </v-chip>
+          
+          <p class="text-xs text-grey-darken-3 mt-1 w-100">
             <v-icon size="14" class="mr-1">mdi-information</v-icon>
             Fuente: Bitácoras - gráficos se basan en métricas estándar (cantidad_cosechada, volumen_agua_utilizada, dosis_aplicada, etc).
           </p>
-          </h3>
-          <div class="avatar-container">
-            <img :src="avatarHaciendaUrl" alt="Avatar de hacienda" class="avatar-image" />
-          </div>
-        </div>
-      </header>
+        </template>
+      </UniversalHeader>
 
 
     <!-- Filters -->
@@ -271,6 +269,7 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/authStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import { storeToRefs } from 'pinia'
+import UniversalHeader from '@/components/UniversalHeader.vue'
 
 const { t } = useI18n()
 const authStore = useAuthStore()

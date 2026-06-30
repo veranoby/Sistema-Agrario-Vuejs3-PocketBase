@@ -2,38 +2,32 @@
   <v-container fluid class="px-6 py-6 fill-height align-start">
     <div class="w-100">
       <!-- Header -->
-      <v-row class="mb-4">
-        <v-col cols="12">
-          <div class="d-flex align-center justify-space-between flex-wrap gap-4">
-            <div>
-              <div class="d-flex align-center gap-2 mb-1">
-                <v-btn icon="mdi-arrow-left" variant="text" color="primary" @click="router.push('/asesor/haciendas')"></v-btn>
-                <h1 class="text-h4 font-weight-bold text-primary-3">
-                  Expediente de {{ hacienda?.nombre || 'Hacienda' }}
-                </h1>
-              </div>
-              <p class="  text-grey-darken-1 pl-12">
-                Revisa bitácoras de campo, zonas geográficas y formula recetas técnicas personalizadas.
-              </p>
-            </div>
-            
-            <div class="pl-12 pl-sm-0">
-              <v-btn
-                color="primary"
-                variant="flat"
-                class="font-weight-bold text-white rounded-lg px-4"
-                prepend-icon="mdi-file-document-edit"
-                @click="openNewRecipe"
-              >
-                Crear Receta
-              </v-btn>
-            </div>
-          </div>
-        </v-col>
-      </v-row>
+      <UniversalHeader
+        :title="`Expediente de ${hacienda?.nombre || 'Hacienda'}`"
+        subtitle="Revisa bitácoras de campo, zonas geográficas y formula recetas técnicas personalizadas."
+        :bgImage="hacienda?.avatar ? pb.files.getUrl(hacienda, hacienda.avatar, { thumb: '500x500' }) : ''"
+        showBack
+        @back="router.push('/asesor/haciendas')"
+      >
+        <template #actions>
+          <v-btn
+            color="primary"
+            variant="flat"
+            class="font-weight-bold text-white rounded-lg px-4"
+            prepend-icon="mdi-file-document-edit"
+            @click="openNewRecipe"
+          >
+            Crear Receta
+          </v-btn>
+        </template>
+      </UniversalHeader>
 
       <!-- Main Tabs -->
       <v-tabs v-model="tab" color="primary" align-tabs="start" class="border-b border-grey-lighten-2 mb-6">
+        <v-tab value="comunicaciones" class="font-weight-bold">
+          <v-icon start icon="mdi-forum"></v-icon>
+          Comunicaciones
+        </v-tab>
         <v-tab value="paquetes" class="font-weight-bold">
           <v-icon start icon="mdi-package-variant-closed"></v-icon>
           Paquetes de Evaluación
@@ -46,6 +40,13 @@
 
       <!-- Windows Content -->
       <v-window v-model="tab">
+        <!-- TAB 0: COMUNICACIONES -->
+        <v-window-item value="comunicaciones">
+          <v-card class="elevation-2 rounded-lg border border-grey-lighten-3 bg-white" style="height: 600px;">
+            <ComunicacionesThread v-if="vinculacion?.id" :vinculacionId="vinculacion?.id" :prefilledPaquete="prefilledPaquete" />
+          </v-card>
+        </v-window-item>
+
         <!-- TAB 1: PAQUETES DE EVALUACION -->
         <v-window-item value="paquetes">
           <v-row>
@@ -117,9 +118,14 @@
               <v-card class="elevation-2 rounded-lg border border-grey-lighten-3 h-100" v-if="selectedPackage">
                 <v-card-title class="bg-primary py-3 px-5 text-white font-weight-bold d-flex justify-space-between align-center">
                   <span>Detalle del Paquete de Evaluación</span>
-                  <v-chip size="small" color="white" class="text-primary font-weight-bold">
-                    {{ formatDate(selectedPackage.created) }}
-                  </v-chip>
+                  <div class="d-flex align-center gap-2">
+                    <v-btn size="small" color="white" variant="tonal" class="text-primary font-weight-bold" @click="responderPaquete">
+                      Responder
+                    </v-btn>
+                    <v-chip size="small" color="white" class="text-primary font-weight-bold">
+                      {{ formatDate(selectedPackage.created) }}
+                    </v-chip>
+                  </div>
                 </v-card-title>
                 
                 <v-card-text class="pa-5 overflow-y-auto" style="max-height: 550px;">
@@ -131,6 +137,66 @@
                     <p class="text-smbg-grey-lighten-4 pa-3 rounded text-grey-darken-3 whitespace-pre-line italic">
                       "{{ selectedPackage.notas_hacienda || 'Sin notas aclaratorias' }}"
                     </p>
+                  </div>
+
+                  <!-- Notas Asesor (Respuesta) -->
+                  <div class="mb-4">
+                    <span class="text-md font-weight-bold text-teal-darken-3 d-block mb-1">
+                      Tus Observaciones / Respuesta al Paquete:
+                    </span>
+                    <v-textarea
+                      v-model="notasAsesorEdit"
+                      variant="outlined"
+                      bg-color="teal-lighten-5"
+                      color="teal"
+                      rows="3"
+                      placeholder="Escribe tus observaciones formales sobre este paquete..."
+                      hide-details
+                      class="mb-2"
+                    ></v-textarea>
+                    <div class="d-flex justify-end">
+                      <v-btn
+                        size="small"
+                        color="teal"
+                        variant="flat"
+                        class="text-white font-weight-bold"
+                        prepend-icon="mdi-content-save-outline"
+                        :loading="savingNotas"
+                        @click="saveNotasAsesor"
+                      >
+                        Guardar Observación
+                      </v-btn>
+                    </div>
+                  </div>
+
+                  <!-- Evidencias Fotográficas -->
+                  <div class="mb-4" v-if="selectedPackage.evidencias && selectedPackage.evidencias.length > 0">
+                    <span class="text-md font-weight-bold text-primary-4 d-block mb-2">
+                      Evidencias Fotográficas ({{ selectedPackage.evidencias.length }}):
+                    </span>
+                    <v-row dense>
+                      <v-col
+                        v-for="(evidencia, index) in selectedPackage.evidencias"
+                        :key="index"
+                        cols="4"
+                        sm="3"
+                      >
+                        <v-card class="position-relative cursor-pointer" variant="outlined" @click="openImagePreview(pb.files.getUrl(selectedPackage, evidencia))">
+                          <v-img
+                            :src="pb.files.getUrl(selectedPackage, evidencia, { thumb: '300x300' })"
+                            height="100"
+                            cover
+                            class="bg-grey-lighten-2"
+                          >
+                            <template v-slot:placeholder>
+                              <div class="d-flex align-center justify-center fill-height">
+                                <v-progress-circular indeterminate color="grey-lighten-4"></v-progress-circular>
+                              </div>
+                            </template>
+                          </v-img>
+                        </v-card>
+                      </v-col>
+                    </v-row>
                   </div>
 
                   <v-divider class="my-4"></v-divider>
@@ -313,12 +379,25 @@
     <!-- Receta Editor Dialog -->
     <RecetaEditorDialog
       v-model="recipeDialogOpen"
-      :vinculacionId="vinculacion?.id"
+      :haciendaId="vinculacion?.hacienda_id"
+      :asesorId="vinculacion?.asesor_id"
       :sharedSiembras="sharedSiembras"
       :actividades="actividades"
       :recipeId="selectedRecipeId"
+      :paqueteId="selectedPackage?.id"
       @save="onRecipeSaved"
     />
+
+    <!-- Image Preview Dialog -->
+    <v-dialog v-model="imagePreviewDialog" max-width="800px">
+      <v-card class="bg-black">
+        <v-toolbar color="transparent" dark>
+          <v-spacer></v-spacer>
+          <v-btn icon="mdi-close" @click="imagePreviewDialog = false"></v-btn>
+        </v-toolbar>
+        <v-img :src="previewImageUrl" max-height="80vh" contain></v-img>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -329,7 +408,9 @@ import { pb } from '@/utils/pocketbase'
 import { useActividadesStore } from '@/stores/actividadesStore'
 import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import { handleError } from '@/utils/errorHandler'
+import UniversalHeader from '@/components/UniversalHeader.vue'
 import RecetaEditorDialog from '@/components/asesores/RecetaEditorDialog.vue'
+import ComunicacionesThread from '@/components/asesores/ComunicacionesThread.vue'
 import { useDisplay } from 'vuetify'
 
 const route = useRoute()
@@ -340,7 +421,7 @@ const { mobile } = useDisplay()
 
 const haciendaId = route.params.hacienda_id
 
-const tab = ref('paquetes')
+const tab = ref('comunicaciones')
 const loading = ref(false)
 
 const hacienda = ref(null)
@@ -356,6 +437,20 @@ const selectedPackage = ref(null)
 const packageSiembra = ref(null)
 const packageZonas = ref([])
 const packageBitacoras = ref([])
+const prefilledPaquete = ref(null)
+
+// Notas Asesor State
+const notasAsesorEdit = ref('')
+const savingNotas = ref(false)
+
+// Image Preview
+const imagePreviewDialog = ref(false)
+const previewImageUrl = ref('')
+
+const openImagePreview = (url) => {
+  previewImageUrl.value = url
+  imagePreviewDialog.value = true
+}
 
 // Recipe Editor Dialog
 const recipeDialogOpen = ref(false)
@@ -392,7 +487,7 @@ const loadPackagesAndRecipes = async () => {
       sort: '-created'
     }),
     pb.collection('recetas').getFullList({
-      filter: `vinculacion_id="${vinculacion.value.id}"`,
+      filter: `hacienda_id="${vinculacion.value.hacienda_id}" && asesor_id="${vinculacion.value.asesor_id}"`,
       sort: '-created'
     })
   ])
@@ -400,16 +495,19 @@ const loadPackagesAndRecipes = async () => {
   paquetes.value = pkgs
   recetas.value = recipes
 
-  // Extract siembras from packages using real schema field 'siembra_id'
-  const siembraIds = [...new Set(pkgs.map(p => p.siembra_id).filter(Boolean))]
-  sharedSiembras.value = await Promise.all(siembraIds.map(async (id) => {
-    try {
-      const s = await pb.collection('Siembras').getOne(id)
-      return { id: s.id, nombre: s.nombre }
-    } catch {
-      return { id, nombre: `Siembra #${id.substring(0, 4)}` }
-    }
-  }))
+  // Fetch all siembras of this hacienda to be available for new recipes
+  try {
+    const siembrasList = await pb.collection('Siembras').getFullList({
+      filter: `hacienda="${vinculacion.value.hacienda_id}"`
+    })
+    sharedSiembras.value = siembrasList.map(s => ({
+      id: s.id,
+      nombre: s.nombre
+    }))
+  } catch (err) {
+    console.warn('Could not fetch siembras for this hacienda:', err)
+    sharedSiembras.value = []
+  }
 }
 
 const selectPackage = async (pkg) => {
@@ -417,6 +515,7 @@ const selectPackage = async (pkg) => {
   packageSiembra.value = null
   packageZonas.value = []
   packageBitacoras.value = []
+  notasAsesorEdit.value = pkg.notas_asesor || ''
 
   // Auto-mark package as read if 'enviado' (real schema state)
   if (pkg.estado === 'enviado') {
@@ -516,6 +615,27 @@ const getRecipeStatusLabel = (state) => {
 const openNewRecipe = () => {
   selectedRecipeId.value = ''
   recipeDialogOpen.value = true
+}
+
+const responderPaquete = () => {
+  prefilledPaquete.value = selectedPackage.value
+  tab.value = 'comunicaciones'
+}
+
+const saveNotasAsesor = async () => {
+  if (!selectedPackage.value) return
+  savingNotas.value = true
+  try {
+    await pb.collection('paquetes_evaluacion').update(selectedPackage.value.id, {
+      notas_asesor: notasAsesorEdit.value
+    })
+    selectedPackage.value.notas_asesor = notasAsesorEdit.value
+    uiFeedback.showSnackbar('Observaciones guardadas con éxito', 'success')
+  } catch (error) {
+    handleError(error, 'Error al guardar observaciones del asesor')
+  } finally {
+    savingNotas.value = false
+  }
 }
 
 const editRecipe = (id) => {

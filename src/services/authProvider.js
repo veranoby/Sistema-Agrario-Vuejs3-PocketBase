@@ -25,8 +25,8 @@ export const authProvider = {
     return await pb.collection('users').authRefresh()
   },
 
-  async register(userData) {
-    return await pb.collection('users').create(userData)
+  async register(userData, headers = {}) {
+    return await pb.collection('users').create(userData, { headers })
   },
 
   async requestVerification(email) {

@@ -2,26 +2,19 @@
   <v-container fluid class="px-6 py-6 fill-height align-start">
     <div class="w-100">
       <!-- Header -->
-      <header class="w-100 bg-background shadow-sm p-0 mb-4">
-        <div class="profile-container mt-0 ml-0">
-          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div class="w-full sm:flex-grow">
-              <h3 class="profile-title text-sm sm:text-lg mb-2 sm:mb-0">
-                Mis Haciendas Vinculadas
-                <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
-                  <v-avatar start>
-                    <v-img :src="avatarUrl" alt="Avatar"></v-img>
-                  </v-avatar>
-                  {{ userRole }}
-                </v-chip>
-              </h3>
-            </div>
-          </div>
-          <div class="avatar-container">
-            <img :src="avatarUrl" alt="Avatar" class="avatar-image" />
-          </div>
-        </div>
-      </header>
+      <UniversalHeader 
+        title="Mis Haciendas Vinculadas"
+        :bgImage="avatarUrl"
+      >
+        <template #chips>
+          <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
+            <v-avatar start>
+              <v-img :src="avatarUrl" alt="Avatar"></v-img>
+            </v-avatar>
+            {{ userRole }}
+          </v-chip>
+        </template>
+      </UniversalHeader>
 
       
       <v-tabs v-model="activeTab" color="indigo" class="mb-6">
@@ -56,73 +49,94 @@
           sm="6"
           md="4"
         >
-          <v-card class="h-100 d-flex flex-column elevation-3 hover-card rounded-lg overflow-hidden border border-grey-lighten-3">
-            <!-- Header Card Gradient -->
-            <div class="bg-gradient-indigo py-4 px-5 text-white d-flex align-center justify-space-between position-relative">
-              <div>
-                <h3 class="text-h6 font-weight-bold text-truncate mb-0">
-                  {{ hacienda.nombre }}
-                </h3>
-                <span class="text-xs text-indigo-lighten-4 d-block">
-                  Ubicación: {{ hacienda.provincia || 'Ecuador' }}
-                </span>
+          <v-card class="h-100 d-flex flex-column border rounded-xl overflow-hidden bg-surface hover-card" elevation="2">
+            <!-- Header Card Gradient and Avatar -->
+            <div class="position-relative">
+              <div class="w-100" style="height: 70px; background: linear-gradient(135deg, rgba(63,81,181,0.8) 0%, rgba(26,35,126,0.8) 100%);">
+                <v-badge
+                  color="orange"
+                  :content="hacienda.pendingCount"
+                  :model-value="hacienda.pendingCount > 0"
+                  class="position-absolute top-0 right-0 ma-2"
+                >
+                  <v-icon v-if="hacienda.pendingCount > 0" icon="mdi-bell" color="white" size="20"></v-icon>
+                </v-badge>
               </div>
-              <v-badge
-                color="orange"
-                :content="hacienda.pendingCount"
-                :model-value="hacienda.pendingCount > 0"
-                overlap
-              >
-                <v-icon icon="mdi-bell-outline" size="28"></v-icon>
-              </v-badge>
+              <div class="px-5 position-relative d-flex align-end" style="margin-top: -35px; gap: 16px;">
+                <v-avatar size="70" class="border-md border-white bg-surface elevation-2">
+                  <v-img v-if="hacienda.avatar" :src="pb.files.getUrl(hacienda, hacienda.avatar, { thumb: '100x100' })" alt="Avatar">
+                    <template v-slot:placeholder>
+                      <div class="d-flex align-center justify-center bg-indigo-lighten-4 text-h5 font-weight-bold fill-height text-indigo-darken-4 w-100">
+                        {{ hacienda.nombre ? hacienda.nombre.charAt(0).toUpperCase() : 'H' }}
+                      </div>
+                    </template>
+                  </v-img>
+                  <div v-else class="d-flex align-center justify-center bg-indigo-lighten-4 text-h5 font-weight-bold fill-height text-indigo-darken-4 w-100">
+                    {{ hacienda.nombre ? hacienda.nombre.charAt(0).toUpperCase() : 'H' }}
+                  </div>
+                </v-avatar>
+                <div class="pb-1 overflow-hidden flex-grow-1">
+                  <h3 class="font-weight-bold text-truncate mb-0 text-high-emphasis text-h6">
+                    {{ hacienda.nombre }}
+                  </h3>
+                  <div class="text-xs text-medium-emphasis text-truncate d-flex align-center mt-1">
+                    <v-icon icon="mdi-map-marker" size="small" class="mr-1" color="indigo-lighten-1"></v-icon>
+                    {{ hacienda.provincia || 'Ecuador' }}
+                  </div>
+                </div>
+              </div>
             </div>
 
             <!-- Body Card -->
-            <v-card-text class="flex-grow-1 pt-4 pb-2">
-              <div class="d-flex align-center mb-3">
-                <v-icon icon="mdi-account" color="indigo" class="mr-2"></v-icon>
-                <div>
-                  <span class="text-xs text-grey d-block">Propietario / Administrador</span>
-                  <span class="text-smfont-weight-medium">{{ hacienda.ownerName || 'N/A' }}</span>
-                </div>
-              </div>
+            <v-card-text class="flex-grow-1 pt-5 pb-3">
+              <v-row dense class="mb-2">
+                <v-col cols="12">
+                  <div class="d-flex align-center text-body-2">
+                    <v-icon icon="mdi-account-tie" color="indigo-lighten-1" size="small" class="mr-2"></v-icon>
+                    <span class="text-medium-emphasis mr-1">Propietario:</span>
+                    <span class="font-weight-medium text-truncate">{{ hacienda.ownerName || 'N/A' }}</span>
+                  </div>
+                </v-col>
+                <v-col cols="12" v-if="hacienda.superficie">
+                  <div class="d-flex align-center text-body-2">
+                    <v-icon icon="mdi-texture-box" color="indigo-lighten-1" size="small" class="mr-2"></v-icon>
+                    <span class="font-weight-medium">{{ hacienda.superficie }} Hectáreas</span>
+                  </div>
+                </v-col>
+                <v-col cols="12" v-if="hacienda.siembras && hacienda.siembras.length > 0">
+                  <div class="d-flex flex-wrap mt-1" style="gap: 4px;">
+                    <v-chip 
+                      v-for="(siembra, idx) in hacienda.siembras" 
+                      :key="idx"
+                      size="x-small" 
+                      color="green-darken-1" 
+                      variant="flat"
+                      class="text-white font-weight-bold"
+                    >
+                      {{ siembra.nombre }} <span v-if="siembra.tipo" class="ml-1 font-weight-regular" style="opacity: 0.85">({{ siembra.tipo }})</span>
+                    </v-chip>
+                  </div>
+                </v-col>
+              </v-row>
 
-              <div class="d-flex align-center mb-3">
-                <v-icon icon="mdi-email" color="indigo" class="mr-2"></v-icon>
-                <div>
-                  <span class="text-xs text-grey d-block">Email de Contacto</span>
-                  <span class="text-md">{{ hacienda.ownerEmail || 'N/A' }}</span>
-                </div>
-              </div>
-
-              <div class="d-flex align-center mb-3" v-if="hacienda.superficie">
-                <v-icon icon="mdi-texture" color="indigo" class="mr-2"></v-icon>
-                <div>
-                  <span class="text-xs text-grey d-block">Superficie Total</span>
-                  <span class="text-md">{{ hacienda.superficie }} Hectáreas</span>
-                </div>
-              </div>
-
-              <div class="mt-4 pt-2 border-t border-grey-lighten-4 d-flex justify-space-between align-center">
-                <span class="text-xs font-weight-bold text-grey-darken-1">Paquetes Compartidos:</span>
-                <v-chip size="small" color="indigo-lighten-4" class="text-indigo-darken-4 font-weight-bold">
-                  {{ hacienda.totalPackages }} en total
-                </v-chip>
-              </div>
+              <v-chip size="small" color="indigo" variant="tonal" class="mt-2 font-weight-bold w-100 justify-center">
+                <v-icon start icon="mdi-package-variant-closed" size="small"></v-icon>
+                {{ hacienda.totalPackages }} Paquetes Compartidos
+              </v-chip>
             </v-card-text>
 
             <!-- Acciones Card -->
             <v-divider></v-divider>
-            <v-card-actions class="px-5 py-3 bg-grey-lighten-5">
+            <v-card-actions class="px-4 py-3 bg-grey-lighten-5">
               <v-btn
                 block
-                color="indigo"
+                color="indigo-darken-1"
                 variant="flat"
-                class="font-weight-bold text-white"
-                prepend-icon="mdi-eye"
+                class="font-weight-bold text-white rounded-lg"
+                prepend-icon="mdi-folder-open"
                 @click="goToHacienda(hacienda)"
               >
-                Revisar Expedientes
+                Abrir Expedientes
               </v-btn>
             </v-card-actions>
           </v-card>
@@ -174,6 +188,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
 import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
+import UniversalHeader from '@/components/UniversalHeader.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -215,15 +230,22 @@ const fetchHaciendas = async () => {
         ownerName: 'N/A',
         ownerEmail: 'N/A',
         pendingCount: 0,
-        totalPackages: 0
+        totalPackages: 0,
+        avatar: null,
+        collectionId: '',
+        collectionName: '',
+        siembras: []
       }
 
       try {
         // Fetch Hacienda record
         const h = await pb.collection('Haciendas').getOne(v.hacienda_id)
-        hDetails.nombre = h.nombre
-        hDetails.provincia = h.provincia
-        hDetails.superficie = h.superficie
+        hDetails.nombre = h.name || 'Hacienda Vinculada'
+        hDetails.provincia = h.location || 'Ecuador'
+        hDetails.superficie = h.area || 0
+        hDetails.avatar = h.avatar
+        hDetails.collectionId = h.collectionId
+        hDetails.collectionName = h.collectionName
 
         // Fetch Owner User details
         const u = await pb.collection('users').getFirstListItem(`hacienda="${v.hacienda_id}" && role="administrador"`)
@@ -231,6 +253,18 @@ const fetchHaciendas = async () => {
         hDetails.ownerEmail = u?.email
       } catch (err) {
         console.warn('Could not fetch all hacienda details:', err)
+      }
+
+      try {
+        const siembrasList = await pb.collection('Siembras').getFullList({
+          filter: `hacienda="${v.hacienda_id}"`
+        })
+        hDetails.siembras = siembrasList.map(s => ({
+          nombre: s.nombre,
+          tipo: s.tipo
+        }))
+      } catch (err) {
+        console.warn('Could not fetch siembras:', err)
       }
 
       try {
@@ -248,13 +282,18 @@ const fetchHaciendas = async () => {
     }))
 
     haciendasPendientes.value = await Promise.all(pendientes.map(async (v) => {
-      let pDetails = { vinculacionId: v.id, hacienda_id: v.hacienda_id, nombre: 'Hacienda', ownerName: 'N/A' }
+      let pDetails = { vinculacionId: v.id, hacienda_id: v.hacienda_id, nombre: 'Cargando...', ownerName: 'Cargando...' }
       try {
         const h = await pb.collection('Haciendas').getOne(v.hacienda_id)
-        pDetails.nombre = h.nombre
+        pDetails.nombre = h.name || 'Cargando...'
         const u = await pb.collection('users').getFirstListItem(`hacienda="${v.hacienda_id}" && role="administrador"`)
         pDetails.ownerName = `${u.name} ${u.lastname}`
-      } catch (e) {}
+      } catch (e) {
+        console.warn(`No se pudo cargar detalles de hacienda pendiente ${v.hacienda_id}:`, e.message)
+        pDetails.nombre = 'Hacienda no disponible / Eliminada'
+        pDetails.ownerName = 'Sin información'
+        pDetails.error = true
+      }
       return pDetails
     }))
 

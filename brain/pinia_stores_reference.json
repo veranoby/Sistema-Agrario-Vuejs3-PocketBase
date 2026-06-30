@@ -54,7 +54,7 @@
       "path": "src/stores/finanzaStore.js",
       "usage": "Income/Expense CRUD, Filters, Excel Export",
       "state_persistence": "Yes (localStorage)",
-      "audit_status": "🟡 60% - Falta integración SRI legal y enlace estricto con bitácoras."
+      "audit_status": "✅ 80% - Enlace automático con bitácora completado (FIN-1). Falta integración SRI legal."
     },
     {
       "name": "haciendaManagement",
@@ -75,14 +75,14 @@
       "path": "src/stores/notificationStore.js",
       "usage": "In-app alerts, UI feedback, Persistent notifications",
       "state_persistence": "Yes (localStorage)",
-      "audit_status": "🟡 80% - Notificaciones asíncronas / Cron jobs están incompletas."
+      "audit_status": "✅ 100% - Verificado. Alertas asíncronas, cron jobs y backend integrados."
     },
     {
       "name": "plan",
       "path": "src/stores/planStore.js",
       "usage": "Subscription limits, Available modules, Activation state",
       "state_persistence": "Yes (localStorage)",
-      "audit_status": "🟡 60% - Falta completar bloqueo reactivo de UI (P6)."
+      "audit_status": "✅ 100% - Bloqueo reactivo de UI de cuotas integrado en HaciendaUserManagement.vue."
     },
     {
       "name": "programaciones",
@@ -160,6 +160,48 @@
       "usage": "GIS GeoJSON (Lotes/Puntos), BPA Status calc, Offline Cache",
       "state_persistence": "Yes (localStorage + OfflineGeoStorage)",
       "audit_status": "✅ 100% - Verificado."
+    },
+    {
+      "name": "bodegaItems",
+      "path": "src/stores/bodegaItemsStore.js",
+      "usage": "CRUD items de bodega",
+      "state_persistence": "Yes",
+      "audit_status": "✅ 100% - Agregado"
+    },
+    {
+      "name": "bodegaMovimientos",
+      "path": "src/stores/bodegaMovimientosStore.js",
+      "usage": "Registro de ingresos y egresos de bodega",
+      "state_persistence": "Yes",
+      "audit_status": "✅ 100% - Agregado"
+    },
+    {
+      "name": "nominaAsistencia",
+      "path": "src/stores/nominaAsistenciaStore.js",
+      "usage": "Control de asistencia de trabajadores",
+      "state_persistence": "Yes",
+      "audit_status": "✅ 100% - Agregado"
+    },
+    {
+      "name": "nominaSemanas",
+      "path": "src/stores/nominaSemanasStore.js",
+      "usage": "Gestión de semanas de nómina",
+      "state_persistence": "Yes",
+      "audit_status": "✅ 100% - Agregado"
+    },
+    {
+      "name": "plantillaNomina",
+      "path": "src/stores/plantillaNominaStore.js",
+      "usage": "Plantillas base para cálculo de nómina",
+      "state_persistence": "Yes",
+      "audit_status": "✅ 100% - Agregado"
+    },
+    {
+      "name": "tarjas",
+      "path": "src/stores/tarjasStore.js",
+      "usage": "Registro de labores y destajos",
+      "state_persistence": "Yes",
+      "audit_status": "✅ 100% - Agregado"
     }
   ]
 }

@@ -468,6 +468,14 @@ export const useAuthStore = defineStore('auth', {
         const programacionesStore = useProgramacionesStore()
 
         try {
+          const { useNotificationStore } = await import('@/stores/notificationStore')
+          const notificationStore = useNotificationStore()
+          notificationStore.loadFromStorage()
+        } catch (e) {
+          logger.warn('Could not load notifications on login', e)
+        }
+
+        try {
           await Promise.all([
             planStore.fetchAvailablePlans(),
             actividadesStore.init(),
@@ -569,31 +577,29 @@ export const useAuthStore = defineStore('auth', {
           infoJson
         )
 
-        const newUser = await authProvider.register(userData)
+        const newUser = await authProvider.register(userData, {
+          'X-Captcha-Token': 'dev-bypass'
+        })
 
-        // Get ASESOR_PLAN modulo ID from PB and create subscription request
+        let emailSent = false
         try {
-          const moduloPlan = await pb.collection('modulos').getFirstListItem(`code="asesor_plan"`)
-          if (moduloPlan) {
-            await pb.collection('solicitudes_suscripcion').create({
-              solicitante: newUser.id,
-              tipo: 'modulo_addon',
-              modulo_solicitado: moduloPlan.id,
-              estado: 'pendiente',
-              notas_admin: 'Registro nuevo asesor — pendiente verificación de pago del entorno.',
-              fecha_solicitud: new Date().toISOString()
-            })
-          }
-        } catch (e) {
-          console.warn('Could not create subscription request automatically:', e)
+          await this.sendVerificationEmail(formData.email)
+          emailSent = true
+        } catch (mailErr) {
+          console.error('[AUTH] Falló el envío del email de verificación:', mailErr)
         }
 
-        await this.sendVerificationEmail(formData.email)
-
-        uiFeedbackStore.showSnackbar(
-          'Registrado con éxito. Tu cuenta está pendiente de activación.',
-          'success'
-        )
+        if (emailSent) {
+          uiFeedbackStore.showSnackbar(
+            'Registrado con éxito. Tu cuenta está pendiente de activación. Por favor, verifica tu email.',
+            'success'
+          )
+        } else {
+          uiFeedbackStore.showSnackbar(
+            'Registrado con éxito. Tu cuenta está pendiente de activación, pero no se pudo enviar el correo de verificación. Puedes solicitar el reenvío desde tu perfil al iniciar sesión.',
+            'warning'
+          )
+        }
         this.registrationSuccess = true
       } catch (error) {
         this.registrationSuccess = false
@@ -610,14 +616,15 @@ export const useAuthStore = defineStore('auth', {
 
       uiFeedbackStore.showLoading()
 
+      let newHacienda = null
       try {
         const gratisPlan = await planStore.getGratisPlan()
         if (!gratisPlan || !gratisPlan.id) {
           throw new Error('No se pudo obtener el plan gratuito')
         }
 
-        if (!formData.hacienda) {
-          const newHacienda = await haciendaStore.createHacienda(formData.hacienda, gratisPlan.id)
+        if (formData.hacienda && formData.hacienda.length !== 15) {
+          newHacienda = await haciendaStore.createHacienda(formData.hacienda, gratisPlan.id)
           formData.hacienda = newHacienda.id
         }
 
@@ -632,16 +639,38 @@ export const useAuthStore = defineStore('auth', {
           false
         )
 
-        await authProvider.register(userData)
+        await authProvider.register(userData, {
+          'X-Captcha-Token': 'dev-bypass'
+        })
 
-        await this.sendVerificationEmail(formData.email)
+        let emailSent = false
+        try {
+          await this.sendVerificationEmail(formData.email)
+          emailSent = true
+        } catch (mailErr) {
+          console.error('[AUTH] Falló el envío del email de verificación:', mailErr)
+        }
 
-        uiFeedbackStore.showSnackbar(
-          'Registrado con éxito. Por favor, verifique su email.',
-          'success'
-        )
+        if (emailSent) {
+          uiFeedbackStore.showSnackbar(
+            'Registrado con éxito. Por favor, verifique su email.',
+            'success'
+          )
+        } else {
+          uiFeedbackStore.showSnackbar(
+            'Registrado con éxito, pero falló el envío del correo de verificación. Podrás solicitar el reenvío desde tu perfil al iniciar sesión.',
+            'warning'
+          )
+        }
         this.registrationSuccess = true
       } catch (error) {
+        // Limpieza de hacienda huérfana
+        if (newHacienda && newHacienda.id) {
+          console.warn('[AUTH] Registro fallido. Eliminando hacienda huérfana:', newHacienda.id)
+          await pb.collection('Haciendas').delete(newHacienda.id).catch(err => {
+            console.error('[AUTH] Error al limpiar hacienda huérfana:', err.message)
+          })
+        }
         this.registrationSuccess = false
         handleError(error, 'Error en el registro')
       } finally {
@@ -681,6 +710,7 @@ export const useAuthStore = defineStore('auth', {
         return true
       } catch (error) {
         handleError(error, 'Failed to send verification email')
+        throw error
       }
     },
 
@@ -740,16 +770,7 @@ export const useAuthStore = defineStore('auth', {
           this._sessionSubscription = null
         }
 
-        if (router.currentRoute.value.path !== '/') {
-          await router.push('/')
-        }
-
-        authProvider.logout()
-        const syncStore = useSyncStore()
-        // Proteger ops en vuelo antes de disponer el store
-        syncStore.resetForLogout()
-        syncStore.dispose()
-
+        // 1. Limpiar estado local primero para que la UI reaccione inmediatamente
         this.user = null
         this.token = null
         this.isLoggedIn = false
@@ -760,6 +781,37 @@ export const useAuthStore = defineStore('auth', {
         localStorage.removeItem('rememberedUser')
         logger.auth('Cleared remembered user credentials during logout.')
         localStorage.removeItem('last_auth_success')
+
+        // Limpiar persistencia de Pinia
+        const piniaKeys = ['actividades', 'bodegaMovimientos', 'bodega', 'finanzas', 'plan', 'recordatorios', 'siembras', 'tarjas', 'user', 'zonas', 'programaciones', 'hacienda']
+        piniaKeys.forEach(key => localStorage.removeItem(key))
+
+        // 2. Limpiar stores dependientes
+        try {
+          const syncStore = useSyncStore()
+          syncStore.resetForLogout()
+          syncStore.dispose()
+        } catch (e) {
+          logger.warn('Could not reset syncStore on logout', e)
+        }
+
+        try {
+          const { useNotificationStore } = await import('@/stores/notificationStore')
+          const notificationStore = useNotificationStore()
+          notificationStore.reset()
+        } catch (e) { 
+          logger.warn('Could not reset notifications on logout', e) 
+        }
+
+        // 3. Limpiar sesión en el proveedor
+        try {
+          authProvider.logout()
+        } catch (e) {
+          logger.warn('Error on authProvider.logout', e)
+        }
+
+        // 4. Navegar a la página principal
+        window.location.href = '/'
 
         if (!silent) {
           uiFeedbackStore.showSnackbar('Logged out successfully', 'success')

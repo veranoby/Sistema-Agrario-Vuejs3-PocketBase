@@ -1,50 +1,46 @@
 <template>
   <v-container fluid class="pa-2">
     <div class="d-flex flex-column gap-4 w-100">
-      <header class="w-100 bg-background shadow-sm p-0 mb-4">
-        <div class="profile-container mt-0 ml-0">
-          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div class="w-full sm:flex-grow">
-              <h3 class="profile-title text-sm sm:text-lg mb-2 sm:mb-0 text-uppercase">
-                <v-icon icon="mdi-chart-bar" color="primary" class="mr-2"></v-icon> Dashboard Gerencial
-                <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
-                  <v-avatar start> <v-img :src="avatarUrl" alt="Avatar del usuario"></v-img> </v-avatar>
-                  {{ t('roles.' + userRole) }}
-                </v-chip>
-                <v-chip variant="flat" size="small" color="green-lighten-3" class="mx-1" pill>
-                  <v-avatar start> <v-img :src="avatarHaciendaUrl" alt="Avatar de hacienda"></v-img> </v-avatar>
-                  {{ t('dashboard.hacienda') }}: {{ mi_hacienda?.name }}
-                </v-chip>
-              </h3>
-            </div>
+      <UniversalHeader 
+        title="Dashboard Gerencial"
+        :bgImage="avatarHaciendaUrl"
+        icon="mdi-chart-bar"
+      >
+        <template #chips>
+          <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
+            <v-avatar start> <v-img :src="avatarUrl" alt="Avatar del usuario"></v-img> </v-avatar>
+            {{ t('roles.' + userRole) }}
+          </v-chip>
+          <v-chip variant="flat" size="small" color="green-lighten-3" class="mx-1" pill>
+            <v-avatar start> <v-img :src="avatarHaciendaUrl" alt="Avatar de hacienda"></v-img> </v-avatar>
+            {{ t('dashboard.hacienda') }}: {{ mi_hacienda?.name }}
+          </v-chip>
+        </template>
 
-            <div class="w-full sm:w-auto z-10 d-flex gap-2">
-              <v-btn
-                color="green-darken-3"
-                variant="flat"
-                prepend-icon="mdi-refresh"
-                class="font-weight-bold text-white elevation-2 rounded-lg"
-                :loading="loading"
-                @click="cargarDatos"
-              >
-                Actualizar
-              </v-btn>
-              <v-btn
-                color="green-darken-3"
-                variant="flat"
-                prepend-icon="mdi-file-excel"
-                class="font-weight-bold text-white rounded-lg elevation-2"
-                @click="exportarDatos"
-              >
-                Exportar
-              </v-btn>
-            </div>
+        <template #actions>
+          <div class="w-full sm:w-auto z-10 d-flex gap-2">
+            <v-btn
+              color="green-darken-3"
+              variant="flat"
+              prepend-icon="mdi-refresh"
+              class="font-weight-bold text-white elevation-2 rounded-lg"
+              :loading="loading"
+              @click="cargarDatos"
+            >
+              Actualizar
+            </v-btn>
+            <v-btn
+              color="green-darken-3"
+              variant="flat"
+              prepend-icon="mdi-file-excel"
+              class="font-weight-bold text-white rounded-lg elevation-2"
+              @click="exportarDatos"
+            >
+              Exportar
+            </v-btn>
           </div>
-          <div class="avatar-container">
-            <img :src="avatarHaciendaUrl" alt="Avatar de hacienda" class="avatar-image" />
-          </div>
-        </div>
-      </header>
+        </template>
+      </UniversalHeader>
 
       <!-- KPI Summary Cards Minimal -->
       <v-row class="mb-6">
@@ -235,6 +231,7 @@ import {
   Filler
 } from 'chart.js'
 import { Bar, Doughnut, Line } from 'vue-chartjs'
+import UniversalHeader from '@/components/UniversalHeader.vue'
 
 ChartJS.register(
   Title,

@@ -1,7 +1,6 @@
 <template>
   <v-container fluid class="flex flex-col min-h-screen pa-0" v-if="!isLoading">
     <!-- Header -->
-    <header class="bg-background shadow-sm">
       <SiembraHeader
         :siembraInfo="siembraInfo"
         :avatarUrl="avatarUrl"
@@ -10,7 +9,6 @@
         :userRole="userRole"
         :siembraAvatarUrl="siembraAvatarUrl"
       />
-    </header>
 
     <v-row no-gutters>
       <!-- Main Content -->

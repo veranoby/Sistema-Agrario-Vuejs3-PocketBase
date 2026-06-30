@@ -11,6 +11,7 @@ import {
   addYears
 } from 'date-fns'
 import { logger } from '@/utils/logger'
+import { aplicarExclusiones } from './dateCalculators'
 
 /**
  * Frequency types enumeration
@@ -61,28 +62,38 @@ export const DEFAULT_FREQUENCY_CONFIGS = {
  * @param {Date} baseDate - Starting date
  * @param {string} frequency - Frequency type from FREQUENCY_TYPES
  * @param {Object} customConfig - Custom frequency configuration for 'personalizada' type
+ * @param {Array<string>} exclusiones - Exclusions array
  * @returns {Date} Next execution date
  */
-export function calculateNextExecutionByFrequency(baseDate, frequency, customConfig = {}) {
+export function calculateNextExecutionByFrequency(baseDate, frequency, customConfig = {}, exclusiones = []) {
   try {
+    let nextDate
     switch (frequency) {
       case FREQUENCY_TYPES.DIARIA:
-        return addDays(baseDate, 1)
+        nextDate = addDays(baseDate, 1)
+        break
       case FREQUENCY_TYPES.SEMANAL:
-        return addWeeks(baseDate, 1)
+        nextDate = addWeeks(baseDate, 1)
+        break
       case FREQUENCY_TYPES.QUINCENAL:
-        return addDays(baseDate, 15)
+        nextDate = addDays(baseDate, 15)
+        break
       case FREQUENCY_TYPES.MENSUAL:
-        return addMonths(baseDate, 1)
+        nextDate = addMonths(baseDate, 1)
+        break
       case FREQUENCY_TYPES.PERSONALIZADA:
-        return calculateCustomFrequency(baseDate, customConfig)
+        nextDate = calculateCustomFrequency(baseDate, customConfig)
+        break
       case FREQUENCY_TYPES.FECHA_ESPECIFICA:
         // For fecha_especifica, return the configured date
-        return customConfig?.fecha ? new Date(customConfig.fecha) : baseDate
+        nextDate = customConfig?.fecha ? new Date(customConfig.fecha) : baseDate
+        break
       default:
         logger.warn(`[frequencyHandlers] Unknown frequency type: ${frequency}`)
-        return addDays(baseDate, 1)
+        nextDate = addDays(baseDate, 1)
+        break
     }
+    return aplicarExclusiones(nextDate, exclusiones)
   } catch (error) {
     logger.error('[frequencyHandlers] Error calculating next execution:', error)
     return addDays(baseDate, 1)
@@ -209,14 +220,15 @@ export function getFrequencyDisplayName(frequency, customConfig = {}) {
  * Calculates initial execution date when creating a programacion
  * @param {string} frequency - Frequency type
  * @param {Object} customConfig - Custom configuration
+ * @param {Array<string>} exclusiones - Exclusions array
  * @returns {Date} Initial execution date
  */
-export function calculateInitialExecutionDate(frequency, customConfig = {}) {
+export function calculateInitialExecutionDate(frequency, customConfig = {}, exclusiones = []) {
   const now = new Date()
 
   if (frequency === FREQUENCY_TYPES.FECHA_ESPECIFICA && customConfig.fecha) {
-    return new Date(customConfig.fecha)
+    return aplicarExclusiones(new Date(customConfig.fecha), exclusiones)
   }
 
-  return calculateNextExecutionByFrequency(now, frequency, customConfig)
+  return calculateNextExecutionByFrequency(now, frequency, customConfig, exclusiones)
 }

@@ -20,6 +20,7 @@ export class SchedulerOptimizer {
     this.pendingSync = false
     this.debounceTimer = null
     this.debounceDelay = 30 * 1000 // 30 segundos debounce
+    this.lastHaciendaId = null
   }
 
   /**
@@ -27,7 +28,15 @@ export class SchedulerOptimizer {
    * - Usa caché cuando es posible
    * - Solo hace request si hay cambios probables
    */
-  async checkPendingProgramacionesOptimized() {
+  async checkPendingProgramacionesOptimized(haciendaId) {
+    if (!haciendaId) return { cached: true, programaciones: [] }
+
+    // Invalidar caché si cambia de hacienda
+    if (this.lastHaciendaId !== haciendaId) {
+      this.clearCache()
+      this.lastHaciendaId = haciendaId
+    }
+
     // Si ya hay un sync en progreso, no hacer otro
     if (this.syncInProgress) {
       this.pendingSync = true
@@ -42,13 +51,13 @@ export class SchedulerOptimizer {
     }
 
     // Hacer fetch optimizado (solo IDs y fechas críticas)
-    return await this.fetchOptimizedPending()
+    return await this.fetchOptimizedPending(haciendaId)
   }
 
   /**
    * Fetch optimizado - solo campos necesarios
    */
-  async fetchOptimizedPending() {
+  async fetchOptimizedPending(haciendaId) {
     this.syncInProgress = true
 
     try {
@@ -56,7 +65,7 @@ export class SchedulerOptimizer {
 
       // Solo traer campos necesarios para determinar si está pendiente
       const programaciones = await pb.collection('programaciones').getFullList({
-        filter: `estado = "activo" && proxima_ejecucion <= "${now}"`,
+        filter: `hacienda = "${haciendaId}" && estado = "activo" && proxima_ejecucion <= "${now}"`,
         fields: 'id,proxima_ejecucion,ultima_ejecucion,frecuencia,frecuencia_personalizada,estado',
         skipTotal: true // No contar total, ahorra resources
       })
@@ -78,7 +87,7 @@ export class SchedulerOptimizer {
       // Si había un sync pendiente, ejecutarlo después
       if (this.pendingSync) {
         this.pendingSync = false
-        setTimeout(() => this.fetchOptimizedPending(), 1000)
+        setTimeout(() => this.fetchOptimizedPending(haciendaId), 1000)
       }
     }
   }
@@ -128,14 +137,14 @@ export class SchedulerOptimizer {
   /**
    * Debounce para evitar llamadas excesivas
    */
-  debounceCheck() {
+  debounceCheck(haciendaId) {
     return new Promise((resolve) => {
       if (this.debounceTimer) {
         clearTimeout(this.debounceTimer)
       }
 
       this.debounceTimer = setTimeout(async () => {
-        const result = await this.checkPendingProgramacionesOptimized()
+        const result = await this.checkPendingProgramacionesOptimized(haciendaId)
         resolve(result)
       }, this.debounceDelay)
     })

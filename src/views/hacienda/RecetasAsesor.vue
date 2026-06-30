@@ -1,39 +1,40 @@
 <template>
   <v-container fluid class="px-6 py-6 fill-height align-start">
     <div class="w-100">
-      <!-- Header -->
-      <v-row class="mb-4">
-        <v-col cols="12">
-          <div class="d-flex align-center justify-space-between flex-wrap gap-4">
-            <div>
-              <div class="d-flex align-center gap-2 mb-1">
-                <v-btn icon="mdi-arrow-left" variant="text" color="primary" @click="router.push('/hacienda/directorio-asesores')"></v-btn>
-                <h1 class="text-h4 font-weight-bold text-primary-3">
-                  Buzón del Asesor Técnico
-                </h1>
-              </div>
-              <p class="  text-grey-darken-1 pl-12" v-if="asesor">
-                Asesor: <strong>{{ asesor.name }} {{ asesor.lastname }}</strong> | Nro. Colegiatura: {{ asesor.parsedInfo?.numero_colegiatura || 'N/A' }}
-              </p>
-            </div>
-            
-            <div class="pl-12 pl-sm-0 hidden-sm-and-down" v-if="!mobile">
-              <v-btn
-                color="primary"
-                variant="flat"
-                class="font-weight-bold text-white rounded-lg px-4"
-                prepend-icon="mdi-package-variant"
-                @click="openShareWizard"
-              >
-                Enviar Nuevo Paquete
-              </v-btn>
-            </div>
-          </div>
-        </v-col>
-      </v-row>
+      <UniversalHeader 
+        title="Buzón del Asesor Técnico"
+        :bgImage="avatarHaciendaUrl"
+        icon="mdi-account-tie"
+        showBack
+        @back="router.push('/hacienda/directorio-asesores')"
+      >
+        <template #chips>
+          <v-chip variant="flat" size="small" color="teal-lighten-4" class="mx-1" pill v-if="asesor">
+            <v-avatar start>
+              <v-icon icon="mdi-account-tie" color="teal-darken-3"></v-icon>
+            </v-avatar>
+            Asesor: {{ asesor.name }} {{ asesor.lastname }}
+          </v-chip>
+          <v-btn
+            v-if="!mobile"
+            color="primary"
+            variant="flat"
+            size="small"
+            class="font-weight-bold text-white rounded-lg px-4 ml-2"
+            prepend-icon="mdi-package-variant"
+            @click="openShareWizard"
+          >
+            Enviar Nuevo Paquete
+          </v-btn>
+        </template>
+      </UniversalHeader>
 
       <!-- Tabs Navigation -->
       <v-tabs v-model="tab" color="primary" align-tabs="start" class="border-b border-grey-lighten-2 mb-6">
+        <v-tab value="comunicaciones" class="font-weight-bold">
+          <v-icon start icon="mdi-forum"></v-icon>
+          Hilo de Comunicación
+        </v-tab>
         <v-tab value="recetas" class="font-weight-bold">
           <v-icon start icon="mdi-file-document-edit"></v-icon>
           Recetas Recibidas
@@ -46,6 +47,13 @@
 
       <!-- Tab Items -->
       <v-window v-model="tab">
+        <!-- TAB 0: COMUNICACIONES -->
+        <v-window-item value="comunicaciones">
+          <v-card class="elevation-2 rounded-lg border border-grey-lighten-3 bg-white" style="height: 600px;">
+            <ComunicacionesThread v-if="vinculacion?.id" :vinculacionId="vinculacion?.id" />
+          </v-card>
+        </v-window-item>
+
         <!-- TAB 1: RECETAS -->
         <v-window-item value="recetas">
           <div v-if="loading" class="d-flex justify-center align-center py-12">
@@ -164,9 +172,15 @@
                     <span class="text-md font-weight-bold text-primary-3">
                       Paquete de Evaluación
                     </span>
-                    <v-chip size="small" :color="paquete.estado === 'enviado' ? 'orange' : 'teal'" variant="flat" class="text-white">
-                      {{ paquete.estado === 'enviado' ? 'Nuevo' : 'Revisado' }}
-                    </v-chip>
+                    <div class="d-flex gap-2">
+                      <v-chip size="small" :color="paquete.estado === 'enviado' ? 'orange' : 'teal'" variant="flat" class="text-white">
+                        {{ paquete.estado === 'enviado' ? 'Nuevo' : 'Revisado' }}
+                      </v-chip>
+                      <v-chip size="small" color="blue" variant="flat" class="text-white" v-if="hasRecetaFor(paquete.id)">
+                        <v-icon start icon="mdi-file-document-check" size="14"></v-icon>
+                        Receta Recibida
+                      </v-chip>
+                    </div>
                   </div>
 
                   <p class="text-xs text-grey mb-1">Enviado el: {{ formatDate(paquete.created) }}</p>
@@ -193,6 +207,47 @@
                     <p class="text-smitalic text-grey-darken-2">
                       "{{ paquete.notas_hacienda || 'Sin notas adicionales' }}"
                     </p>
+                  </div>
+
+                  <!-- Respuesta / Notas del Asesor -->
+                  <div class="mt-3" v-if="paquete.notas_asesor">
+                    <span class="text-xs font-weight-bold text-teal-darken-3 d-block mb-1">
+                      Respuesta del Asesor:
+                    </span>
+                    <v-card variant="flat" color="teal-lighten-5" class="pa-3 rounded">
+                      <!-- Render HTML content directly from editor -->
+                      <div class="text-smtext-grey-darken-3" v-html="paquete.notas_asesor"></div>
+                    </v-card>
+                  </div>
+
+                  <!-- Evidencias Fotográficas -->
+                  <div class="mt-4" v-if="paquete.evidencias && paquete.evidencias.length > 0">
+                    <span class="text-xs text-grey d-block mb-1">
+                      Evidencias Fotográficas ({{ paquete.evidencias.length }}):
+                    </span>
+                    <v-row dense>
+                      <v-col
+                        v-for="(evidencia, index) in paquete.evidencias"
+                        :key="index"
+                        cols="4"
+                        sm="3"
+                      >
+                        <v-card class="position-relative cursor-pointer" variant="outlined" @click="openImagePreview(pb.files.getUrl(paquete, evidencia))">
+                          <v-img
+                            :src="pb.files.getUrl(paquete, evidencia, { thumb: '300x300' })"
+                            height="80"
+                            cover
+                            class="bg-grey-lighten-2"
+                          >
+                            <template v-slot:placeholder>
+                              <div class="d-flex align-center justify-center fill-height">
+                                <v-progress-circular indeterminate color="grey-lighten-4" size="20"></v-progress-circular>
+                              </div>
+                            </template>
+                          </v-img>
+                        </v-card>
+                      </v-col>
+                    </v-row>
                   </div>
                 </v-card-text>
               </v-card>
@@ -298,6 +353,17 @@
       style="z-index: 100"
       @click="openShareWizard"
     ></v-btn>
+
+    <!-- Image Preview Dialog -->
+    <v-dialog v-model="imagePreviewDialog" max-width="800px">
+      <v-card class="bg-black">
+        <v-toolbar color="transparent" dark>
+          <v-spacer></v-spacer>
+          <v-btn icon="mdi-close" @click="imagePreviewDialog = false"></v-btn>
+        </v-toolbar>
+        <v-img :src="previewImageUrl" max-height="80vh" contain></v-img>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -311,7 +377,11 @@ import { useProgramacionesStore } from '@/stores/programaciones/programacionesSt
 import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import { handleError } from '@/utils/errorHandler'
 import EnviarPaqueteWizard from '@/components/forms/asesores/EnviarPaqueteWizard.vue'
+import ComunicacionesThread from '@/components/asesores/ComunicacionesThread.vue'
+import UniversalHeader from '@/components/UniversalHeader.vue'
 import { useDisplay } from 'vuetify'
+import { useHaciendaStore } from '@/stores/haciendaStore'
+import { storeToRefs } from 'pinia'
 
 const route = useRoute()
 const router = useRouter()
@@ -319,11 +389,13 @@ const siembrasStore = useSiembrasStore()
 const actividadesStore = useActividadesStore()
 const programacionesStore = useProgramacionesStore()
 const uiFeedback = useUiFeedbackStore()
+const haciendaStore = useHaciendaStore()
 const { mobile } = useDisplay()
+const { avatarHaciendaUrl } = storeToRefs(haciendaStore)
 
 const advisorUserId = route.params.asesor_user_id
 
-const tab = ref('recetas')
+const tab = ref('comunicaciones')
 const loading = ref(false)
 
 const asesor = ref(null)
@@ -353,6 +425,15 @@ const frecuenciaOptions = [
   { title: 'Mensual', value: 'mensual' }
 ]
 
+// Image Preview
+const imagePreviewDialog = ref(false)
+const previewImageUrl = ref('')
+
+const openImagePreview = (url) => {
+  previewImageUrl.value = url
+  imagePreviewDialog.value = true
+}
+
 onMounted(async () => {
   loading.value = true
   try {
@@ -376,7 +457,7 @@ onMounted(async () => {
     await Promise.all([
       siembrasStore.cargarSiembras(),
       actividadesStore.cargarActividades(),
-      loadRecetasAndPaquetes(vinc.id)
+      loadRecetasAndPaquetes(vinc)
     ])
   } catch (error) {
     handleError(error, 'Error al inicializar la bandeja del asesor')
@@ -385,14 +466,14 @@ onMounted(async () => {
   }
 })
 
-const loadRecetasAndPaquetes = async (vincId) => {
+const loadRecetasAndPaquetes = async (vinc) => {
   const [recipes, packages] = await Promise.all([
     pb.collection('recetas').getFullList({
-      filter: `vinculacion_id="${vincId}"`,
+      filter: `hacienda_id="${vinc.hacienda_id}" && asesor_id="${vinc.asesor_id}"`,
       sort: '-created'
     }),
     pb.collection('paquetes_evaluacion').getFullList({
-      filter: `vinculacion_id="${vincId}"`,
+      filter: `vinculacion_id="${vinc.id}"`,
       sort: '-created'
     })
   ])
@@ -416,6 +497,10 @@ const loadRecetasAndPaquetes = async (vincId) => {
 const formatDate = (dateStr) => {
   if (!dateStr) return 'N/A'
   return new Date(dateStr).toLocaleDateString()
+}
+
+const hasRecetaFor = (paqueteId) => {
+  return recetas.value.some(r => r.paquete_id === paqueteId)
 }
 
 const getSiembraName = (id) => {

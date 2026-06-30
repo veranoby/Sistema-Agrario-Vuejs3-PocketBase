@@ -11,7 +11,8 @@ import {
   calcularSiguienteFecha,
   calcularEjecucionesPendientes,
   normalizeDate,
-  formatToDisplayDate
+  formatToDisplayDate,
+  aplicarExclusiones
 } from './utils/dateCalculators'
 import {
   FREQUENCY_TYPES,
@@ -40,7 +41,8 @@ export function getFechasPendientes(programacion, isFechaProcessedInBitacora, si
     // Handle fecha_especifica (one-time execution)
     if (programacion.frecuencia === FREQUENCY_TYPES.FECHA_ESPECIFICA) {
       if (programacion.frecuencia_personalizada?.fecha) {
-        const fechaEspecifica = new Date(programacion.frecuencia_personalizada.fecha)
+        let fechaEspecifica = new Date(programacion.frecuencia_personalizada.fecha)
+        fechaEspecifica = aplicarExclusiones(fechaEspecifica, programacion.exclusiones)
         fechaEspecifica.setHours(0, 0, 0, 0)
 
         // Only include if it's in the past or today
@@ -176,7 +178,8 @@ export function generateFutureExecutionDates(programacion, count = 5) {
       const nextDate = calculateNextExecutionByFrequency(
         currentDate,
         programacion.frecuencia,
-        programacion.frecuencia_personalizada
+        programacion.frecuencia_personalizada,
+        programacion.exclusiones
       )
       dates.push(formatToDisplayDate(nextDate))
       currentDate = nextDate

@@ -238,23 +238,6 @@
       </v-card>
     </v-dialog>
 
-    <!-- Dialog: Confirmar Eliminación -->
-    <v-dialog v-model="deleteDialog" max-width="400">
-      <v-card>
-        <v-card-title class="text-h6">Confirmar Eliminación</v-card-title>
-        <v-card-text>
-          ¿Está seguro de eliminar al usuario <strong>{{ selectedUser?.email }}</strong>?
-          <v-alert type="warning" class="mt-2" density="compact">
-            Esta acción eliminará también la hacienda vinculada, así como a los usuarios operadores y auditores, y las recetas entregadas a la hacienda. No se eliminarán los asesores.
-          </v-alert>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn color="grey" @click="deleteDialog = false">CANCELAR</v-btn>
-          <v-btn color="error" @click="deleteUser">Eliminar</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
 
   </v-container>
 </template>
@@ -288,7 +271,6 @@ const filterStatus = ref(null)
 const filterHacienda = ref(null)
 const userDialog = ref(false)
 const viewDialog = ref(false)
-const deleteDialog = ref(false)
 const editingUser = ref(null)
 const selectedUser = ref(null)
 const selectedUsers = ref([])
@@ -435,9 +417,27 @@ function viewUser(user) {
 }
 
 // Confirmar eliminación
-function confirmDelete(user) {
-  selectedUser.value = user
-  deleteDialog.value = true
+async function confirmDelete(user) {
+  const confirmed = await uiFeedbackStore.showConfirm(
+    'Confirmar Eliminación',
+    `¿Está seguro de eliminar al usuario **${user.email}**?\n\nEsta acción eliminará también la hacienda vinculada, así como a los usuarios operadores y auditores, y las recetas entregadas a la hacienda. No se eliminarán los asesores.`,
+    'error',
+    'mdi-delete'
+  )
+
+  if (confirmed) {
+    loading.value = true
+    try {
+      await userStore.deleteUser(user.id, { soft: true })
+      emit(EVENTS.USUARIO_REMOVED, { userId: user.id, soft: true })
+      showSnackbar('Usuario eliminado correctamente', 'success')
+      await fetchUsers()
+    } catch (error) {
+      handleError(error, 'Error al eliminar usuario')
+    } finally {
+      loading.value = false
+    }
+  }
 }
 
 // GUARDAR usuario (recibe datos de UserForm)
@@ -472,22 +472,7 @@ async function saveUser(userFormData) {
   }
 }
 
-// Eliminar usuario
-async function deleteUser() {
-  loading.value = true
-  try {
-    await userStore.deleteUser(selectedUser.value.id, { soft: true })
-    emit(EVENTS.USUARIO_REMOVED, { userId: selectedUser.value.id, soft: true })
-    showSnackbar('Usuario eliminado correctamente', 'success')
-    deleteDialog.value = false
-    selectedUser.value = null
-    await fetchUsers()
-  } catch (error) {
-    handleError(error, 'Error al eliminar usuario')
-  } finally {
-    loading.value = false
-  }
-}
+
 
 // Desconectar usuario
 async function disconnectUser(user) {

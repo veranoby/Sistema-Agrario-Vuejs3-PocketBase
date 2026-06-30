@@ -105,7 +105,7 @@
                       >
                     </v-col>
                   </v-row>
-                  <v-btn type="submit" @click="login" color="primary" block aria-label="Iniciar sesión">{{ t('auth.login') }}</v-btn>
+                  <v-btn type="submit" color="primary" block :loading="uiFeedbackStore.globalLoading" aria-label="Iniciar sesión">{{ t('auth.login') }}</v-btn>
                 </v-form>
               </v-col>
             </v-row>
@@ -343,9 +343,7 @@
                         @click:append-inner="visible = !visible"
                       ></v-text-field>
                     </v-col>
-                    <v-btn type="submit" @click="register" color="blue" block :disabled="!formValid">{{
-                      t('auth.register_now')
-                    }}</v-btn>
+                    <v-btn type="submit" color="blue" block :disabled="!formValid" :loading="uiFeedbackStore.globalLoading">{{ t('auth.register_now') }}</v-btn>
                   </v-row>
                   <v-row justify="center" no-gutters v-else>
                     <v-col cols="12"

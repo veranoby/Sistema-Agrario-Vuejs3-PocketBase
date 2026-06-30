@@ -155,18 +155,20 @@ h6 {
     padding: 12px;
     margin: 10px 0px;
     align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
   }
 
   .avatar-container {
     width: 100%;
-    opacity: 0.15;
+    opacity: 0.25;
     z-index: 1;
     pointer-events: none;
   }
 
   .avatar-image {
-    mask-image: linear-gradient(to right, transparent, black 100%);
-    -webkit-mask-image: linear-gradient(to right, transparent, black 100%);
+    mask-image: linear-gradient(to right, transparent 20%, black 100%);
+    -webkit-mask-image: linear-gradient(to right, transparent 20%, black 100%);
   }
 
   .profile-container>div:not(.avatar-container) {

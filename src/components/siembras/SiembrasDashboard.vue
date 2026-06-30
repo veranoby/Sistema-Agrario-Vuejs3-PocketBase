@@ -1,68 +1,64 @@
 <template>
   <v-container fluid class="pa-2 siembras-dashboard">
     <div class="grid gap-2 p-0 m-2">
-      <header class="col-span-4 bg-background shadow-sm p-0">
-        <div class="profile-container mt-0 ml-0">
-          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div class="w-full sm:flex-grow">
-              <h3 class="profile-title text-sm sm:text-lg mb-2 sm:mb-0">
-                Dashboard de Siembras
-                <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
-                  <v-avatar start>
-                    <v-img :src="avatarUrl" alt="Avatar"></v-img>
-                  </v-avatar>
-                  {{ userRole }}
-                </v-chip>
-                <v-chip variant="flat" size="small" color="green-lighten-3" class="mx-1" pill>
-                  <v-avatar start>
-                    <v-img :src="avatarHaciendaUrl" alt="Avatar"></v-img>
-                  </v-avatar>
-                  {{ mi_hacienda?.name }}
-                </v-chip>
+      <UniversalHeader 
+        title="Dashboard de Siembras"
+        :bgImage="avatarHaciendaUrl"
+      >
+        <template #chips>
+          <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
+            <v-avatar start>
+              <v-img :src="avatarUrl" alt="Avatar"></v-img>
+            </v-avatar>
+            {{ userRole }}
+          </v-chip>
+          <v-chip variant="flat" size="small" color="green-lighten-3" class="mx-1" pill>
+            <v-avatar start>
+              <v-img :src="avatarHaciendaUrl" alt="Avatar"></v-img>
+            </v-avatar>
+            {{ mi_hacienda?.name }}
+          </v-chip>
 
-                <!-- Estadísticas como v-chips -->
-                <v-chip variant="flat" size="small" color="primary" class="mx-1" pill>
-                  <v-icon start size="small">mdi-sprout</v-icon>
-                  Activas: {{ metrics.activeSiembras }}
-                </v-chip>
-                <v-chip variant="flat" size="small" color="blue" class="mx-1" pill>
-                  <v-icon start size="small">mdi-ruler</v-icon>
-                  Área: {{ formatArea(metrics.totalArea) }}
-                </v-chip>
-                <v-chip variant="flat" size="small" color="orange" class="mx-1" pill>
-                  <v-icon start size="small">mdi-calendar-clock</v-icon>
-                  Cosechas: {{ metrics.upcomingHarvests }}
-                </v-chip>
-                <v-chip
-                  v-if="metrics.alerts > 0"
-                  variant="flat"
-                  size="small"
-                  color="error"
-                  class="mx-1"
-                  pill
-                >
-                  <v-icon start size="small">mdi-alert-circle</v-icon>
-                  Alertas: {{ metrics.alerts }}
-                </v-chip>
-              </h3>
-            </div>
-            <div class="w-full sm:w-auto z-10 hidden-sm-and-down" v-if="canCreate && !mobile">
-              <v-btn
-                prepend-icon="mdi-plus-circle"
-                color="primary"
-                variant="flat"
-                class="font-weight-bold text-white elevation-2 rounded-lg"
-                @click="abrirDialogCreacion"
-              >
-                {{ $t('sowings.new_sowing') }}
-              </v-btn>
-            </div>
+          <!-- Estadísticas como v-chips -->
+          <v-chip variant="flat" size="small" color="primary" class="mx-1" pill>
+            <v-icon start size="small">mdi-sprout</v-icon>
+            Activas: {{ metrics.activeSiembras }}
+          </v-chip>
+          <v-chip variant="flat" size="small" color="blue" class="mx-1" pill>
+            <v-icon start size="small">mdi-ruler</v-icon>
+            Área: {{ formatArea(metrics.totalArea) }}
+          </v-chip>
+          <v-chip variant="flat" size="small" color="orange" class="mx-1" pill>
+            <v-icon start size="small">mdi-calendar-clock</v-icon>
+            Cosechas: {{ metrics.upcomingHarvests }}
+          </v-chip>
+          <v-chip
+            v-if="metrics.alerts > 0"
+            variant="flat"
+            size="small"
+            color="error"
+            class="mx-1"
+            pill
+          >
+            <v-icon start size="small">mdi-alert-circle</v-icon>
+            Alertas: {{ metrics.alerts }}
+          </v-chip>
+        </template>
+
+        <template #actions>
+          <div class="w-full sm:w-auto z-10 hidden-sm-and-down" v-if="canCreate && !mobile">
+            <v-btn
+              prepend-icon="mdi-plus-circle"
+              color="primary"
+              variant="flat"
+              class="font-weight-bold text-white elevation-2 rounded-lg"
+              @click="abrirDialogCreacion"
+            >
+              {{ $t('sowings.new_sowing') }}
+            </v-btn>
           </div>
-          <div class="avatar-container">
-            <img :src="avatarHaciendaUrl" alt="Avatar de hacienda" class="avatar-image" />
-          </div>
-        </div>
-      </header>
+        </template>
+      </UniversalHeader>
     </div>
 
     <main class="flex-1 py-2">
@@ -296,6 +292,7 @@ import { useAvatarStore } from '@/stores/avatarStore'
 import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import { logger } from '@/utils/logger'
 import { useDisplay } from 'vuetify'
+import UniversalHeader from '@/components/UniversalHeader.vue'
 
 const router = useRouter()
 const siembrasStore = useSiembrasStore()

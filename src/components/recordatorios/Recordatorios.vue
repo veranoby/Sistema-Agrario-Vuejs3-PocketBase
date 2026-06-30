@@ -8,42 +8,39 @@
       @submit="handleFormSubmit"
     />
     <div class="grid gap-2 p-0 m-2">
-      <header class="col-span-4 bg-background shadow-sm p-0">
-        <div class="profile-container mt-0 ml-0">
-          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div class="w-full sm:flex-grow">
-              <h3 class="profile-title text-sm sm:text-lg mb-2 sm:mb-0">
-                {{ t('reminders.reminder_management') }}
-                <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
-                  <v-avatar start>
-                    <v-img :src="avatarUrl" alt="Avatar"></v-img>
-                  </v-avatar>
-                  {{ userRole }}
-                </v-chip>
-                <v-chip variant="flat" size="small" color="green-lighten-3" class="mx-1" pill>
-                  <v-avatar start>
-                    <v-img :src="avatarHaciendaUrl" alt="Avatar"></v-img>
-                  </v-avatar>
-                  {{ mi_hacienda.name }}
-                </v-chip>
-              </h3>
-            </div>
-            <div class="w-full sm:w-auto z-10" v-if="canCreate">
-              <v-btn
-                prepend-icon="mdi-plus-circle"
-                color="primary"
-                variant="flat"
-                class="font-weight-bold text-white elevation-2 rounded-lg"                @click="recordatoriosStore.abrirNuevoRecordatorio"
-              >
-                {{ t('reminders.new_reminder') }}
-              </v-btn>
-            </div>
+      <UniversalHeader 
+        :title="t('reminders.reminder_management')"
+        :bgImage="avatarHaciendaUrl"
+      >
+        <template #chips>
+          <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
+            <v-avatar start>
+              <v-img :src="avatarUrl" alt="Avatar"></v-img>
+            </v-avatar>
+            {{ userRole }}
+          </v-chip>
+          <v-chip variant="flat" size="small" color="green-lighten-3" class="mx-1" pill>
+            <v-avatar start>
+              <v-img :src="avatarHaciendaUrl" alt="Avatar"></v-img>
+            </v-avatar>
+            {{ mi_hacienda.name }}
+          </v-chip>
+        </template>
+
+        <template #actions>
+          <div class="w-full sm:w-auto z-10" v-if="canCreate">
+            <v-btn
+              prepend-icon="mdi-plus-circle"
+              color="primary"
+              variant="flat"
+              class="font-weight-bold text-white elevation-2 rounded-lg"
+              @click="recordatoriosStore.abrirNuevoRecordatorio"
+            >
+              {{ t('reminders.new_reminder') }}
+            </v-btn>
           </div>
-          <div class="avatar-container">
-            <img :src="avatarHaciendaUrl" alt="Avatar de hacienda" class="avatar-image" />
-          </div>
-        </div>
-      </header>
+        </template>
+      </UniversalHeader>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
@@ -89,6 +86,7 @@ import { handleError } from '@/utils/errorHandler'
 import StatusPanel from './RecordatoriosStatusPanel.vue'
 import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import RecordatorioForm from '@/components/forms/RecordatorioForm.vue'
+import UniversalHeader from '@/components/UniversalHeader.vue'
 
 const { t } = useI18n()
 const authStore = useAuthStore()

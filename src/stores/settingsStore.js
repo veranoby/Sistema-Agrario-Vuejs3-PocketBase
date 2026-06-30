@@ -2,6 +2,8 @@ import { defineStore } from 'pinia'
 import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
 
+let fetchPromise = null
+
 export const useSettingsStore = defineStore('settings', {
   state: () => ({
     system_config: null,
@@ -21,38 +23,52 @@ export const useSettingsStore = defineStore('settings', {
 
   actions: {
     async fetchConfig() {
-      this.loading = true
-      try {
-        // Obtenemos el singleton de system_config
-        const records = await pb.collection('system_config').getFullList()
-        if (records.length > 0) {
-          this.system_config = records[0]
-        } else {
-          try {
-            const defaultRecord = await pb.collection('system_config').create({
-              bank_account_info: 'Banco Pichincha, Cuenta de Ahorros #2208574932',
-              global_openrouter_key: '',
-              resend_api_key: '',
-              ai_rate_limit: 5,
-              ai_rate_window: 3600000,
-              maintenance_mode: false,
-              allow_registration: true
-            })
-            this.system_config = defaultRecord
-          } catch (createErr) {
-            // Silenciado: Es normal que falle si el usuario no es superadmin
+      if (fetchPromise) return fetchPromise
+      
+      fetchPromise = (async () => {
+        this.loading = true
+        try {
+          // Obtenemos el singleton de system_config
+          const records = await pb.collection('system_config').getFullList()
+          if (records.length > 0) {
+            this.system_config = records[0]
+          } else {
+            try {
+              const defaultRecord = await pb.collection('system_config').create({
+                bank_account_info: '**Banco:** Banco de Guayaquil\\n**Tipo:** Cuenta Corriente\\n**Cuenta:** 1529650\\n**Beneficiario:** MARIO MONTALVAN BACA\\n**Cédula:** 0914800206\\n**Email:** contacto@conespacio.org\\n**Celular/WhatsApp:** 0997197151',
+                global_openrouter_key: '',
+                resend_api_key: '',
+                ai_rate_limit: 5,
+                ai_rate_window: 3600000,
+                maintenance_mode: false,
+                allow_registration: true
+              })
+              this.system_config = defaultRecord
+            } catch (createErr) {
+              // Silenciado: Es normal que falle si el usuario no es superadmin
+            }
           }
+        } catch (error) {
+          handleError(error, 'Error al obtener system_config')
+        } finally {
+          this.loading = false
         }
-      } catch (error) {
-        handleError(error, 'Error al obtener system_config')
+      })();
+
+      try {
+        await fetchPromise
       } finally {
-        this.loading = false
+        fetchPromise = null
       }
     },
 
     async updateConfig(newConfig) {
       this.loading = true
       try {
+        if (!this.system_config?.id) {
+          await this.fetchConfig()
+        }
+
         if (this.system_config?.id) {
           const record = await pb.collection('system_config').update(this.system_config.id, newConfig)
           this.system_config = record

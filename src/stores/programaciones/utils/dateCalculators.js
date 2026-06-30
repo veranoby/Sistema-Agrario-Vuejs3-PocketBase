@@ -17,6 +17,29 @@ import {
 import { logger } from '@/utils/logger'
 
 /**
+ * Aplica exclusiones (ej. fines de semana) a una fecha dada
+ * @param {Date} fecha - Fecha a validar
+ * @param {Array<string>} exclusiones - Arreglo de exclusiones
+ * @returns {Date} Fecha ajustada
+ */
+export function aplicarExclusiones(fecha, exclusiones) {
+  if (!exclusiones || !Array.isArray(exclusiones)) return fecha
+  
+  let currentFecha = new Date(fecha)
+  
+  if (exclusiones.includes('fines_de_semana')) {
+    let day = currentFecha.getDay()
+    // 0 is Sunday, 6 is Saturday
+    while (day === 0 || day === 6) {
+      currentFecha = addDays(currentFecha, 1)
+      day = currentFecha.getDay()
+    }
+  }
+  
+  return currentFecha
+}
+
+/**
  * Calculates the next execution date based on programacion frequency
  * @param {Object} programacion - Programacion object
  * @returns {Date} Next execution date
@@ -32,20 +55,28 @@ export function calcularProximaEjecucion(programacion) {
     const baseDate = new Date(programacion.ultima_ejecucion)
     const config = programacion.frecuencia_personalizada || {}
 
+    let nextDate
     switch (programacion.frecuencia) {
       case 'diaria':
-        return addDays(baseDate, 1)
+        nextDate = addDays(baseDate, 1)
+        break
       case 'semanal':
-        return addWeeks(baseDate, 1)
+        nextDate = addWeeks(baseDate, 1)
+        break
       case 'quincenal':
-        return addDays(baseDate, 15)
+        nextDate = addDays(baseDate, 15)
+        break
       case 'mensual':
-        return addMonths(baseDate, 1)
+        nextDate = addMonths(baseDate, 1)
+        break
       case 'personalizada':
-        return calcularFrecuenciaPersonalizada(baseDate, config)
+        nextDate = calcularFrecuenciaPersonalizada(baseDate, config)
+        break
       default:
-        return addDays(baseDate, 1)
+        nextDate = addDays(baseDate, 1)
+        break
     }
+    return aplicarExclusiones(nextDate, programacion.exclusiones)
   } catch (error) {
     logger.error('[dateCalculators] Error calculating proxima ejecucion:', error)
     return new Date()
@@ -84,15 +115,20 @@ export function calcularSiguienteFecha(baseDate, programacion) {
   try {
     const config = programacion.frecuencia_personalizada || {}
 
+    let nextDate
     switch (programacion.frecuencia) {
       case 'diaria':
-        return addDays(baseDate, 1)
+        nextDate = addDays(baseDate, 1)
+        break
       case 'semanal':
-        return addWeeks(baseDate, 1)
+        nextDate = addWeeks(baseDate, 1)
+        break
       case 'quincenal':
-        return addDays(baseDate, 15)
+        nextDate = addDays(baseDate, 15)
+        break
       case 'mensual':
-        return addMonths(baseDate, 1)
+        nextDate = addMonths(baseDate, 1)
+        break
       case 'personalizada':
         const addFunctions = {
           dias: addDays,
@@ -100,10 +136,13 @@ export function calcularSiguienteFecha(baseDate, programacion) {
           meses: addMonths,
           años: addYears
         }
-        return addFunctions[config.tipo]?.(baseDate, config.cantidad) || addDays(baseDate, 1)
+        nextDate = addFunctions[config.tipo]?.(baseDate, config.cantidad) || addDays(baseDate, 1)
+        break
       default:
-        return addDays(baseDate, 1)
+        nextDate = addDays(baseDate, 1)
+        break
     }
+    return aplicarExclusiones(nextDate, programacion.exclusiones)
   } catch (error) {
     logger.error('[dateCalculators] Error calculating siguiente fecha:', error)
     return addDays(baseDate, 1)

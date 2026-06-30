@@ -183,6 +183,50 @@ class AplicacionHandler extends BaseBitacoraHandler {
     if (metricas.producto && metricas.producto.toLowerCase().match(/sistémico|larga duración/)) {
       logger.info(`[AplicacionHandler] Producto con reingreso detectado: ${metricas.producto}`)
     }
+
+    try {
+      let monto = Number(metricas.costo_total_aplicacion) || 0;
+
+      if (monto <= 0) {
+        const { useHaciendaStore } = await import('@/stores/haciendaStore');
+        const haciendaStore = useHaciendaStore();
+        if (haciendaStore.isModuleActive('kardex_bodega')) {
+          const { useBodegaStore } = await import('@/stores/bodegaStore');
+          const bodegaStore = useBodegaStore();
+          const item = bodegaStore.items.find(i =>
+            i.nombre?.toLowerCase() === (metricas.producto_aplicado || metricas.producto)?.toLowerCase()
+          );
+          if (item) {
+            const precio = item.costo_promedio_ponderado || item.costo_adquisicion || 0;
+            const cantidad = Number(metricas.dosis) || 0;
+            monto = precio * cantidad;
+          }
+        }
+      }
+
+      if (monto > 0) {
+        const { useFinanzaStore } = await import('@/stores/finanzaStore');
+        const { useAuthStore } = await import('@/stores/authStore');
+        const finanzaStore = useFinanzaStore();
+        const authStore = useAuthStore();
+        
+        await finanzaStore.crearRegistro({
+          fecha: entrada.fecha || entrada.fecha_ejecucion || new Date().toISOString(),
+          detalle: `Aplicación: ${metricas.producto_aplicado || metricas.producto || 'Insumo'}`,
+          razon_social: '',
+          factura: `BIT-${entrada.id}`,
+          costo: 'MATERIALES',
+          comentarios: `Área: ${metricas.area_aplicada || '?'} ha`,
+          monto,
+          pagado_por: authStore.user?.id
+        });
+      } else {
+        logger.info('[AplicacionHandler] Sin costo calculable, omitiendo entrada en Finanzas.');
+      }
+    } catch (error) {
+      logger.warn('[AplicacionHandler] Error al auto-registrar en finanzas:', error);
+    }
+
     return entrada
   }
 
@@ -306,6 +350,54 @@ class FertilizacionHandler extends BaseBitacoraHandler {
 
   transform(metricas, formatoReporte = null) {
     return transformMetricasByTipo(metricas, 'fertilizacion', formatoReporte)
+  }
+
+  async postProcess(entrada, context = {}) {
+    const metricas = entrada.metricas || {};
+    try {
+      let monto = Number(metricas.costo_total_aplicacion) || 0;
+
+      if (monto <= 0) {
+        const { useHaciendaStore } = await import('@/stores/haciendaStore');
+        const haciendaStore = useHaciendaStore();
+        if (haciendaStore.isModuleActive('kardex_bodega')) {
+          const { useBodegaStore } = await import('@/stores/bodegaStore');
+          const bodegaStore = useBodegaStore();
+          const item = bodegaStore.items.find(i =>
+            i.nombre?.toLowerCase() === (metricas.producto_aplicado || metricas.producto)?.toLowerCase()
+          );
+          if (item) {
+            const precio = item.costo_promedio_ponderado || item.costo_adquisicion || 0;
+            const cantidad = Number(metricas.dosis) || 0;
+            monto = precio * cantidad;
+          }
+        }
+      }
+
+      if (monto > 0) {
+        const { useFinanzaStore } = await import('@/stores/finanzaStore');
+        const { useAuthStore } = await import('@/stores/authStore');
+        const finanzaStore = useFinanzaStore();
+        const authStore = useAuthStore();
+        
+        await finanzaStore.crearRegistro({
+          fecha: entrada.fecha || entrada.fecha_ejecucion || new Date().toISOString(),
+          detalle: `Fertilización: ${metricas.producto_aplicado || metricas.producto || 'Insumo'}`,
+          razon_social: '',
+          factura: `BIT-${entrada.id}`,
+          costo: 'MATERIALES',
+          comentarios: `Área: ${metricas.area_aplicada || '?'} ha`,
+          monto,
+          pagado_por: authStore.user?.id
+        });
+      } else {
+        logger.info('[FertilizacionHandler] Sin costo calculable, omitiendo entrada en Finanzas.');
+      }
+    } catch (error) {
+      logger.warn('[FertilizacionHandler] Error al auto-registrar en finanzas:', error);
+    }
+
+    return entrada;
   }
 
   async prepareFormData(programacion, actividad) {

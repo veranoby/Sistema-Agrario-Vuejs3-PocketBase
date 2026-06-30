@@ -1,70 +1,66 @@
 <template>
-  <div class="profile-container">
-    <div class="flex justify-between items-start">
-      <div>
-        <h3 class="profile-title">
-          {{ t('profile.social_profile') }}
-          <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
-            <v-avatar start> <v-img :src="avatarUrl" alt="Avatar"></v-img> </v-avatar>
-            {{ userRole }}
-          </v-chip>
-        </h3>
-        <div class="mt-0 text-xs">
-          <v-chip variant="flat" size="small" color="teal-lighten-3" class="mx-1 mb-2 mt-2">
-            <v-icon size="x-large" class="mr-2">mdi-account-circle</v-icon>
-            {{ user?.username }}
-          </v-chip>
-          <v-chip variant="flat" size="small" color="teal-lighten-3" class="mx-1 mb-2 mt-2">
-            {{ user?.name }} {{ user?.lastname }}
-          </v-chip>
+  <UniversalHeader 
+    :title="t('profile.social_profile')"
+    :bgImage="avatarUrl"
+    icon="mdi-account"
+  >
+    <template #chips>
+      <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
+        <v-avatar start> <v-img :src="avatarUrl" alt="Avatar"></v-img> </v-avatar>
+        {{ userRole }}
+      </v-chip>
+      <div class="mt-0 text-xs w-100 flex-wrap d-flex">
+        <v-chip variant="flat" size="small" color="teal-lighten-3" class="mx-1 mb-2 mt-2">
+          <v-icon size="x-large" class="mr-2">mdi-account-circle</v-icon>
+          {{ user?.username }}
+        </v-chip>
+        <v-chip variant="flat" size="small" color="teal-lighten-3" class="mx-1 mb-2 mt-2">
+          {{ user?.name }} {{ user?.lastname }}
+        </v-chip>
 
-          <v-chip variant="flat" size="small" color="teal-lighten-3" class="mx-1 mb-2 mt-2">
-            <v-icon class="mr-1">mdi-email</v-icon>
-            {{ user?.email }}
-            <v-icon
-              v-if="user?.verified"
-              class="ml-1"
-              color="primary"
-              size="small"
-              :title="t('profile.email_verified')"
-            >mdi-check-circle</v-icon>
-            <v-icon
-              v-else
-              class="ml-1"
-              color="warning"
-              size="small"
-              :title="t('profile.email_not_verified')"
-            >mdi-alert-circle</v-icon>
-          </v-chip>
-        </div>
-
-        <!-- Email Verification Status -->
-        <div v-if="!user?.verified" class="mt-2">
-          <v-alert
-            type="warning"
-            variant="tonal"
-            density="compact"
-            class="mb-2"
-            :text="t('profile.verification_required_message')"
-          ></v-alert>
-          <v-btn
-            size="small"
-            color="primary"
-            variant="outlined"
-            :loading="resendingEmail"
-            @click="resendVerificationEmail"
+        <v-chip variant="flat" size="small" color="teal-lighten-3" class="mx-1 mb-2 mt-2">
+          <v-icon class="mr-1">mdi-email</v-icon>
+          {{ user?.email }}
+          <v-icon
+            v-if="user?.verified"
             class="ml-1"
-          >
-            <v-icon start>mdi-email-sync</v-icon>
-            {{ t('profile.resend_verification') }}
-          </v-btn>
-        </div>
+            color="primary"
+            size="small"
+            :title="t('profile.email_verified')"
+          >mdi-check-circle</v-icon>
+          <v-icon
+            v-else
+            class="ml-1"
+            color="warning"
+            size="small"
+            :title="t('profile.email_not_verified')"
+          >mdi-alert-circle</v-icon>
+        </v-chip>
       </div>
-      <div class="avatar-container">
-        <img :src="avatarUrl" alt="Avatar de usuario" class="avatar-image" />
+
+      <!-- Email Verification Status -->
+      <div v-if="!user?.verified" class="mt-2 w-100">
+        <v-alert
+          type="warning"
+          variant="tonal"
+          density="compact"
+          class="mb-2"
+          :text="t('profile.verification_required_message')"
+        ></v-alert>
+        <v-btn
+          size="small"
+          color="primary"
+          variant="outlined"
+          :loading="resendingEmail"
+          @click="resendVerificationEmail"
+          class="ml-1"
+        >
+          <v-icon start>mdi-email-sync</v-icon>
+          {{ t('profile.resend_verification') }}
+        </v-btn>
       </div>
-    </div>
-  </div>
+    </template>
+  </UniversalHeader>
 
   <div class="mx-4 p-2 my-2 flex items-center justify-between">
     <div class="flex items-center">
@@ -221,6 +217,7 @@ import { storeToRefs } from 'pinia'
 import { useAuthStore } from '@/stores/authStore'
 import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import AvatarForm from '@/components/forms/AvatarForm.vue'
+import UniversalHeader from '@/components/UniversalHeader.vue'
 
 const authStore = useAuthStore()
 const uiFeedbackStore = useUiFeedbackStore()

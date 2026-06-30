@@ -11,6 +11,7 @@
 import { defineStore } from 'pinia'
 import { handleError } from '@/utils/errorHandler'
 import { emailAlertService } from '@/services/emailAlertService'
+import { pb } from '@/utils/pocketbase'
 
 export const useNotificationStore = defineStore('notifications', {
   state: () => ({
@@ -234,11 +235,19 @@ export const useNotificationStore = defineStore('notifications', {
     },
 
     /**
+     * Obtiene la clave de localStorage específica del usuario
+     */
+    getStorageKey() {
+      const userId = pb.authStore.model?.id || 'guest'
+      return `notifications_${userId}`
+    },
+
+    /**
      * Guarda notificaciones en localStorage
      */
     saveToStorage() {
       try {
-        localStorage.setItem('notifications', JSON.stringify(this.notifications))
+        localStorage.setItem(this.getStorageKey(), JSON.stringify(this.notifications))
       } catch (error) {
         handleError(error, 'Error guardando notificaciones')
       }
@@ -249,10 +258,12 @@ export const useNotificationStore = defineStore('notifications', {
      */
     loadFromStorage() {
       try {
-        const saved = localStorage.getItem('notifications')
+        const saved = localStorage.getItem(this.getStorageKey())
         if (saved) {
           this.notifications = JSON.parse(saved)
-          console.log(`[NotificationStore] ${this.notifications.length} notificaciones cargadas`)
+          console.log(`[NotificationStore] ${this.notifications.length} notificaciones cargadas para ${this.getStorageKey()}`)
+        } else {
+          this.notifications = []
         }
       } catch (error) {
         handleError(error, 'Error cargando notificaciones')

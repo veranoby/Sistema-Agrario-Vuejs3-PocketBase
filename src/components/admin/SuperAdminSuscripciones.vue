@@ -26,8 +26,13 @@
           class="elevation-1"
         >
           <template v-slot:item.hacienda_solicitante="{ item }">
-            <div class="font-weight-bold">{{ item.expand?.hacienda?.name || 'Desconocida' }}</div>
-            <div class="text-xs text-grey-darken-1">{{ item.expand?.solicitante?.email || 'Desconocido' }}</div>
+            <div class="font-weight-bold">
+              {{ item.expand?.hacienda?.name || 'Asesor / Independiente' }}
+            </div>
+            <div class="text-xs text-grey-darken-1">
+              {{ item.expand?.solicitante?.name || '' }} {{ item.expand?.solicitante?.lastname || '' }}
+              ({{ item.expand?.solicitante?.email || 'Desconocido' }})
+            </div>
           </template>
           <template v-slot:item.solicitud="{ item }">
             <div class="mb-1">
@@ -47,8 +52,13 @@
               {{ item.estado.toUpperCase() }}
             </v-chip>
           </template>
-          <template v-slot:item.monto_notas="{ item }">
-            <span class="text-xs text-grey-darken-2">{{ item.notas_admin || 'N/A' }}</span>
+          <template v-slot:item.monto="{ item }">
+            <div class="font-weight-bold text-success">
+              ${{ extractAmount(item).toFixed(2) }}
+            </div>
+          </template>
+          <template v-slot:item.notas="{ item }">
+            <span class="text-xs text-grey-darken-2">{{ item.notas_admin || 'Sin notas' }}</span>
           </template>
           <template v-slot:item.actions="{ item }">
             <div class="d-flex align-center justify-end">
@@ -168,10 +178,35 @@ const nextMonth = () => {
   fetchData()
 }
 
-const extractAmount = (notas) => {
-  if (!notas) return 0
+const extractAmount = (item) => {
+  if (!item) return 0
+  const notas = item.notas_admin || ''
   const match = notas.match(/Monto Total:\s*(\d+(\.\d+)?)/i)
-  return match ? parseFloat(match[1]) : 0
+  if (match) return parseFloat(match[1])
+  
+  // Si no está en notas (ej. Asesores antiguos o nuevos), calculamos desde la data
+  let total = 0
+  if (item.tipo === 'plan_upgrade' && item.expand?.plan_solicitado) {
+    total += parseFloat(item.expand.plan_solicitado.precio || 0)
+  }
+  
+  if (item.modulo_solicitado && item.modulo_solicitado !== '[]') {
+    let ids = []
+    try {
+      ids = item.modulo_solicitado.startsWith('[') ? JSON.parse(item.modulo_solicitado) : [item.modulo_solicitado]
+    } catch(e) {
+      ids = [item.modulo_solicitado]
+    }
+    
+    const isYearly = notas.toLowerCase().includes('anual')
+    ids.forEach(id => {
+      const mod = modulesMap.value[id]
+      if (mod) {
+        total += parseFloat(isYearly ? (mod.price_yearly || 0) : (mod.price_monthly || 0))
+      }
+    })
+  }
+  return total
 }
 
 const showSnackbar = (msg, color = 'success') => {
@@ -192,7 +227,7 @@ const exportToExcel = () => {
     const solicitante = item.expand?.solicitante?.email || 'N/A'
     const tipo = item.tipo === 'plan_upgrade' ? 'Mejora Plan' : 'Módulo Extra'
     const estado = item.estado.toUpperCase()
-    const monto = extractAmount(item.notas_admin)
+    const monto = extractAmount(item)
     csv += `"${item.created}","${hacienda}","${solicitante}","${tipo}","${estado}","${monto}"\n`
   })
 
@@ -226,7 +261,8 @@ const headers = [
   { title: 'Hacienda / Solicitante', key: 'hacienda_solicitante' },
   { title: 'Solicitud', key: 'solicitud' },
   { title: 'Estado', key: 'estado' },
-  { title: 'Monto / Notas', key: 'monto_notas' },
+  { title: 'Monto', key: 'monto' },
+  { title: 'Notas', key: 'notas' },
   { title: 'Acciones', key: 'actions', align: 'end' }
 ]
 
@@ -239,28 +275,17 @@ const fetchData = async () => {
   try {
     const modulosRes = await pb.collection('modulos').getList(1, 200)
     const map = {}
-    modulosRes.items.forEach(m => { map[m.id] = m.name })
+    modulosRes.items.forEach(m => { map[m.id] = m })
     modulesMap.value = map
 
     const res = await pb.collection('solicitudes_suscripcion').getList(1, 500, {
-      sort: '-fecha_solicitud'
+      sort: '-fecha_solicitud',
+      expand: 'hacienda,solicitante,plan_solicitado'
     })
-
-    const [haciendasRes, planesRes] = await Promise.all([
-      pb.collection('Haciendas').getList(1, 500).catch(() => ({ items: [] })),
-      pb.collection('planes').getList(1, 200).catch(() => ({ items: [] }))
-    ])
-    const haciendasMap = {}
-    haciendasRes.items.forEach(h => { haciendasMap[h.id] = h })
-    const planesMap = {}
-    planesRes.items.forEach(p => { planesMap[p.id] = p })
 
     todasTransacciones.value = res.items.map(item => ({
       ...item,
-      expand: {
-        hacienda: haciendasMap[item.hacienda] || null,
-        plan_solicitado: planesMap[item.plan_solicitado] || null
-      }
+      expand: item.expand || {}
     }))
   } catch (error) {
     console.error("Error fetching", error)
@@ -299,7 +324,7 @@ const totalMensual = computed(() => {
     const isCurrentMonth = itemDate.getFullYear() === y && itemDate.getMonth() === m
     
     if (isCurrentMonth && item.estado === 'aprobada') {
-      tempMensual += extractAmount(item.notas_admin)
+      tempMensual += extractAmount(item)
     }
   })
   
@@ -316,7 +341,7 @@ const parseModulesArray = (jsonString) => {
     } else {
       ids = [jsonString]
     }
-    return ids.map(id => modulesMap.value[id] || id)
+    return ids.map(id => modulesMap.value[id]?.name || id)
   } catch (e) {
     return [jsonString]
   }

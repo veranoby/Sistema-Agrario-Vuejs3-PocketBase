@@ -1,43 +1,39 @@
 <template>
   <v-container fluid class="pa-2">
     <div class="grid gap-2 p-0 m-2">
-      <header class="col-span-4 bg-background shadow-sm p-0">
-        <div class="profile-container mt-0 ml-0">
-          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div class="w-full sm:flex-grow">
-              <h3 class="profile-title text-sm sm:text-lg mb-2 sm:mb-0">
-                {{ t('activities.activity_management') }}
-                <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
-                  <v-avatar start>
-                    <v-img :src="avatarUrl" alt="Avatar"></v-img>
-                  </v-avatar>
-                  {{ userRole }}
-                </v-chip>
-                <v-chip variant="flat" size="small" color="green-lighten-3" class="mx-1" pill>
-                  <v-avatar start>
-                    <v-img :src="avatarHaciendaUrl" alt="Avatar"></v-img>
-                  </v-avatar>
-                  {{ mi_hacienda.name }}
-                </v-chip>
-              </h3>
-            </div>
-            <div class="w-full sm:w-auto z-10 hidden-sm-and-down" v-if="siembrasStore.siembras.length > 0 && canCreate && !mobile">
-              <v-btn
-                prepend-icon="mdi-plus-circle"
-                color="primary"
-                variant="flat"
-                class="font-weight-bold text-white elevation-2 rounded-lg"
-                @click="NuevaActividad"
-              >
-                {{ t('activities.new_activity') }}
-              </v-btn>
-            </div>
+      <UniversalHeader 
+        :title="t('activities.activity_management')"
+        :bgImage="avatarHaciendaUrl"
+      >
+        <template #chips>
+          <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
+            <v-avatar start>
+              <v-img :src="avatarUrl" alt="Avatar"></v-img>
+            </v-avatar>
+            {{ userRole }}
+          </v-chip>
+          <v-chip variant="flat" size="small" color="green-lighten-3" class="mx-1" pill>
+            <v-avatar start>
+              <v-img :src="avatarHaciendaUrl" alt="Avatar"></v-img>
+            </v-avatar>
+            {{ mi_hacienda.name }}
+          </v-chip>
+        </template>
+
+        <template #actions>
+          <div class="w-full sm:w-auto z-10 hidden-sm-and-down" v-if="siembrasStore.siembras.length > 0 && canCreate && !mobile">
+            <v-btn
+              prepend-icon="mdi-plus-circle"
+              color="primary"
+              variant="flat"
+              class="font-weight-bold text-white elevation-2 rounded-lg"
+              @click="NuevaActividad"
+            >
+              {{ t('activities.new_activity') }}
+            </v-btn>
           </div>
-          <div class="avatar-container">
-            <img :src="avatarHaciendaUrl" alt="Avatar de hacienda" class="avatar-image" />
-          </div>
-        </div>
-      </header>
+        </template>
+      </UniversalHeader>
     </div>
 
     <main class="flex-1 py-2">
@@ -191,6 +187,7 @@ import { useZonasStore } from '@/stores/zonasStore'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import ActividadForm from '../forms/ActividadForm.vue'
+import UniversalHeader from '@/components/UniversalHeader.vue'
 import { useDisplay } from 'vuetify'
 
 const { t } = useI18n()

@@ -1,71 +1,70 @@
 <template>
-  <header class="bg-background shadow-sm">
-    <div class="profile-container">
-      <h3 class="profile-title">
-        <nav class="flex mb-3" aria-label="Breadcrumb">
-          <ol class="flex items-center space-x-2 bg-primary-4 py-2 px-4 rounded-r-full">
-            <li>
-              <div class="flex items-center">
-                <v-icon>mdi-sprout</v-icon>
-                <router-link
-                  to="/siembras"
-                  class="ml-3 text-sm font-extrabold hover:text-gray-700"
-                >
-                  {{ t('sowing_workspace.my_sowings') }}
-                </router-link>
-              </div>
-            </li>
-            <li>
-              <div class="flex items-center">
-                <v-icon>mdi-chevron-right</v-icon>
-                <span class="ml-1 text-sm font-extrabold" aria-current="page">
-                  {{ siembraInfo?.nombre || t('sowing_workspace.loading') }}
-                </span>
-              </div>
-            </li>
-            <li>
-              <div class="flex items-center">
-                <span class="ml-1 text-sm font-bold text-gray-700" aria-current="page">
-                  {{ siembraInfo?.tipo || '' }}
-                </span>
-              </div>
-            </li>
-          </ol>
-        </nav>
+  <UniversalHeader 
+    :bgImage="siembraAvatarUrl"
+  >
+    <template #title>
+      <nav class="flex" aria-label="Breadcrumb">
+        <ol class="flex items-center space-x-2 bg-primary-4 py-2 px-4 rounded-r-full">
+          <li>
+            <div class="flex items-center">
+              <v-icon>mdi-sprout</v-icon>
+              <router-link
+                to="/siembras"
+                class="ml-3 text-sm font-extrabold hover:text-gray-700"
+              >
+                {{ t('sowing_workspace.my_sowings') }}
+              </router-link>
+            </div>
+          </li>
+          <li>
+            <div class="flex items-center">
+              <v-icon>mdi-chevron-right</v-icon>
+              <span class="ml-1 text-sm font-extrabold" aria-current="page">
+                {{ siembraInfo?.nombre || t('sowing_workspace.loading') }}
+              </span>
+            </div>
+          </li>
+          <li>
+            <div class="flex items-center">
+              <span class="ml-1 text-sm font-bold text-gray-700" aria-current="page">
+                {{ siembraInfo?.tipo || '' }}
+              </span>
+            </div>
+          </li>
+        </ol>
+      </nav>
+    </template>
 
-        <v-chip variant="flat" size="small" color="green-lighten-3" class="mx-1" pill>
-          <v-avatar start>
-            <v-img :src="avatarHaciendaUrl" alt="Avatar"></v-img>
-          </v-avatar>
-          {{ t('sowing_workspace.hacienda') }}: {{ mi_hacienda?.name || '' }}
-        </v-chip>
+    <template #chips>
+      <v-chip variant="flat" size="small" color="green-lighten-3" class="mx-1" pill>
+        <v-avatar start>
+          <v-img :src="avatarHaciendaUrl" alt="Avatar"></v-img>
+        </v-avatar>
+        {{ t('sowing_workspace.hacienda') }}: {{ mi_hacienda?.name || '' }}
+      </v-chip>
 
-        <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
-          <v-avatar start>
-            <v-img :src="avatarUrl" alt="Avatar"></v-img>
-          </v-avatar>
-          {{ t('roles.' + userRole) }}
-        </v-chip>
+      <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
+        <v-avatar start>
+          <v-img :src="avatarUrl" alt="Avatar"></v-img>
+        </v-avatar>
+        {{ t('roles.' + userRole) }}
+      </v-chip>
 
+      <v-chip :color="getStatusColor(siembraInfo?.estado)" size="small" variant="flat">
+        {{ siembraInfo?.estado || '' }}
+      </v-chip>
 
-        <v-chip :color="getStatusColor(siembraInfo?.estado)" size="small" variant="flat">
-          {{ siembraInfo?.estado || '' }}
-        </v-chip>
-
-        <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
-          {{ t('sowing_workspace.start') }}: {{ formatDate(siembraInfo?.fecha_inicio) }}
-        </v-chip>
-      </h3>
-      <div class="avatar-container">
-        <img :src="siembraAvatarUrl" alt="Avatar de Siembra" class="avatar-image" />
-      </div>
-    </div>
-  </header>
+      <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
+        {{ t('sowing_workspace.start') }}: {{ formatDate(siembraInfo?.fecha_inicio) }}
+      </v-chip>
+    </template>
+  </UniversalHeader>
 </template>
 
 <script setup>
 import { useI18n } from 'vue-i18n'
 import { formatDate } from '@/utils/formatters'
+import UniversalHeader from '@/components/UniversalHeader.vue'
 
 const props = defineProps({
   siembraInfo: { type: Object, default: () => ({}) },
@@ -90,13 +89,4 @@ const getStatusColor = (status) => {
 </script>
 
 <style scoped>
-.profile-container {
-  position: relative;
-  padding: 1rem;
-}
-
-.profile-title {
-  margin: 0;
-  padding-right: 100px;
-}
 </style>

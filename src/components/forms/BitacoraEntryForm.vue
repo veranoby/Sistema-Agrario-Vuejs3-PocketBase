@@ -225,32 +225,7 @@
                 <h4 class="font-weight-bold text-blue-darken-3">Fotografía / Evidencia</h4>
               </div>
               <div class="ml-8">
-                <v-file-input
-                  v-model="formData.fotos"
-                  accept="image/*"
-                  label="Tomar o adjuntar foto"
-                  prepend-icon=""
-                  prepend-inner-icon="mdi-camera-plus"
-                  variant="outlined"
-                  density="compact"
-                  multiple
-                  chips
-                  color="blue"
-                  class="rounded-lg mb-2"
-                  @change="handleFotosUpload"
-                >
-                  <template v-slot:selection="{ fileNames }">
-                    <template v-for="fileName in fileNames" :key="fileName">
-                      <v-chip size="small" color="blue" class="mr-2">
-                        {{ fileName }}
-                      </v-chip>
-                    </template>
-                  </template>
-                </v-file-input>
-                <div v-if="isCompressing" class="d-flex align-center mt-2">
-                  <v-progress-circular indeterminate size="20" color="blue" class="mr-2"></v-progress-circular>
-                  <span class="text-xs text-blue-darken-2">Comprimiendo imágenes para envío rápido...</span>
-                </div>
+                <EvidenciasImageUpload v-model="formData.fotos" :max-files="5" />
               </div>
             </div>
 
@@ -265,7 +240,8 @@
               >
                 El módulo PDF BPA requiere firma del operador. Por favor firme antes de guardar para generar el certificado.
               </v-alert>
-              <BitacoraSignature
+              <UniversalSignature
+                :bitacoraId="formData.id || ''"
                 :existing-signature="formData.signature"
                 :data-to-sign="computedDataToSign"
                 @signed="onSignatureCaptured"
@@ -306,7 +282,8 @@
 
 <script setup>
 import { ref, reactive, onMounted, watch, computed } from 'vue';
-import imageCompression from 'browser-image-compression';
+import { useRoute } from 'vue-router';
+import EvidenciasImageUpload from '@/components/common/EvidenciasImageUpload.vue';
 import { useActividadesStore } from '@/stores/actividadesStore';
 import { useSiembrasStore } from '@/stores/siembrasStore';
 import { useBitacoraStore } from '@/stores/bitacoraStore';
@@ -322,7 +299,7 @@ import SiembraSelectorList from './SiembraSelectorList.vue';
 import ZonaSelectorList from './ZonaSelectorList.vue';
 import BatchGeneralDataForm from './BatchGeneralDataForm.vue';
 import BpaChecklist from '../bitacora/BpaChecklist.vue';
-import BitacoraSignature from '../bitacora/BitacoraSignature.vue';
+import UniversalSignature from '@/components/common/UniversalSignature.vue';
 
 const props = defineProps({
   entryToEdit: {
@@ -382,41 +359,6 @@ const defaultFormData = () => ({
 });
 
 const formData = reactive(defaultFormData());
-const isCompressing = ref(false);
-
-const handleFotosUpload = async (event) => {
-  const files = event.target?.files || formData.fotos;
-  if (!files || files.length === 0) return;
-  
-  isCompressing.value = true;
-  const compressedFiles = [];
-  
-  const options = {
-    maxSizeMB: 0.5,
-    maxWidthOrHeight: 1280,
-    useWebWorker: true,
-    fileType: 'image/jpeg',
-  };
-
-  try {
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      if (file.type.startsWith('image/')) {
-        const compressedFile = await imageCompression(file, options);
-        compressedFiles.push(new File([compressedFile], file.name, { type: 'image/jpeg' }));
-      } else {
-        compressedFiles.push(file);
-      }
-    }
-    formData.fotos = compressedFiles;
-  } catch (error) {
-    console.error('Error comprimiendo imágenes:', error);
-    uiFeedbackStore.showSnackbar('Hubo un error al comprimir algunas imágenes.', 'error');
-  } finally {
-    isCompressing.value = false;
-  }
-};
-
 const rules = {
   required: value => (Array.isArray(value) ? value.length > 0 : !!value) || 'Este campo es requerido.',
 };

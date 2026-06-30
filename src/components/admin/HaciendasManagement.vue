@@ -432,23 +432,6 @@
       </v-card>
     </v-dialog>
 
-    <!-- Dialog: Confirmar Eliminación -->
-    <v-dialog v-model="deleteDialog" max-width="450">
-      <v-card>
-        <v-card-title class="text-h6 bg-error text-white">Confirmar Eliminación</v-card-title>
-        <v-card-text class="pt-4">
-          ¿Está seguro de eliminar la hacienda <strong>{{ selectedHacienda?.name || selectedHacienda?.nombre }}</strong>?
-          <v-alert type="warning" class="mt-4" density="compact" variant="tonal">
-            Esta acción eliminará al usuario admin de la hacienda, así como a los operadores, auditores y todos los datos asociados (siembras, recetas, actividades, etc.)
-          </v-alert>
-        </v-card-text>
-        <v-card-actions class="pb-4 pr-4">
-          <v-spacer />
-          <v-btn color="grey" variant="elevated" @click="deleteDialog = false">CANCELAR</v-btn>
-          <v-btn color="error" variant="elevated" @click="deleteHacienda">ELIMINAR</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
 
     <!-- Dialog: Detalles de Item Operacional -->
     <v-dialog v-model="detailItemDialog" max-width="600">
@@ -554,7 +537,6 @@ const searchQuery = ref('')
 const filterStatus = ref(null)
 const haciendaDialog = ref(false)
 const viewDialog = ref(false)
-const deleteDialog = ref(false)
 const editingHacienda = ref(null)
 const selectedHacienda = ref(null)
 const formValid = ref(false)
@@ -756,9 +738,26 @@ async function deleteItem(collection, id) {
 }
 
 // Confirmar eliminación
-function confirmDelete(hacienda) {
-  selectedHacienda.value = hacienda
-  deleteDialog.value = true
+async function confirmDelete(hacienda) {
+  const confirmed = await uiFeedbackStore.showConfirm(
+    'Confirmar Eliminación',
+    `¿Está seguro de eliminar la hacienda **${hacienda.name || hacienda.nombre}**?\n\nEsta acción eliminará al usuario admin de la hacienda, así como a los operadores, auditores y todos los datos asociados (siembras, recetas, actividades, etc.)`,
+    'error',
+    'mdi-delete'
+  )
+
+  if (confirmed) {
+    loading.value = true
+    try {
+      await haciendaManagementStore.deleteHacienda(hacienda.id)
+      showSnackbar('Hacienda eliminada correctamente', 'success')
+      await fetchHaciendas()
+    } catch (error) {
+      handleError(error, 'Error al eliminar hacienda')
+    } finally {
+      loading.value = false
+    }
+  }
 }
 
 // GUARDAR hacienda
@@ -822,21 +821,6 @@ async function deleteAvatar() {
   }
 }
 
-// Eliminar hacienda
-async function deleteHacienda() {
-  loading.value = true
-  try {
-    await haciendaManagementStore.deleteHacienda(selectedHacienda.value.id)
-    showSnackbar('Hacienda eliminada correctamente', 'success')
-    deleteDialog.value = false
-    selectedHacienda.value = null
-    await fetchHaciendas()
-  } catch (error) {
-    handleError(error, 'Error al eliminar hacienda')
-  } finally {
-    loading.value = false
-  }
-}
 
 // Cerrar dialog
 function closeDialog() {

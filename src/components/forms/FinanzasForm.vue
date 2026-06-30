@@ -165,7 +165,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useFinanzaStore } from '@/stores/finanzaStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
-import { format, parseISO, getYear, getMonth, getDate, setYear, setMonth, setDate } from 'date-fns'
+import { format, parseISO, getYear, getMonth, getDate } from 'date-fns'
 
 const finanzaStore = useFinanzaStore()
 const authStore = useAuthStore()
@@ -249,10 +249,16 @@ const usuariosHacienda = computed(() => {
     const haciendaUsers = haciendaStore.haciendaUsers
     console.log('Usuarios de la hacienda cargados en FinanzasForm:', haciendaUsers)
 
-    return haciendaUsers.map((user) => ({
-      title: `${user.name} ${user.lastname}` || user.username || 'Usuario ' + user.id,
-      value: user.id
-    }))
+    const allowedRoles = ['administrador', 'operador', 'auditor']
+    const filteredUsers = haciendaUsers.filter(user => allowedRoles.includes(user.role))
+
+    return filteredUsers.map((user) => {
+      const fullName = `${user.name || ''} ${user.lastname || ''}`.trim()
+      return {
+        title: fullName ? fullName : (user.username || `Usuario ${user.id}`),
+        value: user.id
+      }
+    })
   } catch (error) {
     console.error('Error cargando usuarios de hacienda:', error)
     return []

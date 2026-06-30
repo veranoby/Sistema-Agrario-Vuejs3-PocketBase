@@ -2,21 +2,17 @@
   <v-container fluid class="px-6 py-6 fill-height align-start">
     <div class="w-100">
       <!-- Header Estandarizado -->
-      <div class="profile-container mt-0 ml-0 mb-4">
-        <div>
-          <h3 class="profile-title text-h6 sm:text-md font-weight-bold mb-1" style="color: var(--color_titulo)">
-            <v-icon icon="mdi-account-circle" color="primary" size="32" class="mr-2"></v-icon>
-            Mi Perfil Profesional
-          </h3>
-          <p class="text-md sm:  text-grey-darken-1" style="margin-top: 8px;">
+      <UniversalHeader 
+        title="Mi Perfil Profesional"
+        :bgImage="authStore.user?.avatar ? avatarUrl : '@/assets/placeholder-user.png'"
+        icon="mdi-account-circle"
+      >
+        <template #chips>
+          <p class="text-md sm:  text-grey-darken-1 w-100 mt-2">
             Administra tus especialidades, provincias de cobertura y biografía corta para darte a conocer en el directorio de haciendas.
           </p>
-        </div>
-        <div class="avatar-container">
-          <img v-if="authStore.user?.avatar" :src="avatarUrl" alt="Perfil Asesor" class="avatar-image" />
-          <img v-else src="@/assets/placeholder-user.png" alt="Perfil Asesor" class="avatar-image" />
-        </div>
-      </div>
+        </template>
+      </UniversalHeader>
 
       <v-row>
         <!-- Form Column -->
@@ -396,28 +392,9 @@
             Para desbloquear tu portafolio y aparecer en el directorio de búsqueda, realiza el pago mensual de $5 USD y sube el comprobante.
           </p>
           
-          <v-card variant="outlined" class="rounded-lg border-indigo pa-4 bg-indigo-lighten-5 mb-6 text-indigo-darken-4">
-            <v-row dense>
-              <v-col cols="12" sm="6" class="py-1">
-                <strong>Banco:</strong> Banco Pichincha
-              </v-col>
-              <v-col cols="12" sm="6" class="py-1">
-                <strong>Tipo de Cuenta:</strong> Ahorros
-              </v-col>
-              <v-col cols="12" sm="6" class="py-1">
-                <strong>Número de Cuenta:</strong> 2208574932
-              </v-col>
-              <v-col cols="12" sm="6" class="py-1">
-                <strong>Razón Social:</strong> Soluciones Agrícolas ConAgri S.A.
-              </v-col>
-              <v-col cols="12" sm="6" class="py-1">
-                <strong>RUC:</strong> 1792837492001
-              </v-col>
-              <v-col cols="12" sm="6" class="py-1">
-                <strong>Monto a Transferir:</strong> $5.00 USD
-              </v-col>
-            </v-row>
-          </v-card>
+          <div class="bg-indigo-lighten-5 pa-4 rounded-lg mb-6 border border-dashed border-indigo text-indigo-darken-4">
+            <div class="text-sm whitespace-pre-wrap" v-html="bankInstructions"></div>
+          </div>
           
           <v-file-input
             v-model="comprobanteFile"
@@ -456,7 +433,7 @@
             class="elevation-0"
           >
             <template v-slot:item.fecha_solicitud="{ item }">
-              {{ new Date(item.created).toLocaleDateString('es-EC', {day:'2-digit', month:'2-digit', year:'numeric'}) }}
+              {{ new Date(item.fecha_solicitud || item.created).toLocaleDateString('es-EC', {day:'2-digit', month:'2-digit', year:'numeric'}) }}
             </template>
             <template v-slot:item.estado="{ item }">
               <v-chip size="small" :color="item.estado === 'aprobada' ? 'success' : item.estado === 'rechazada' ? 'error' : 'warning'">
@@ -480,14 +457,19 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
+import { useSettingsStore } from '@/stores/settingsStore'
 import { pb } from '@/utils/pocketbase'
 import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import { useAvatarStore } from '@/stores/avatarStore'
 import { handleError } from '@/utils/errorHandler'
+import UniversalHeader from '@/components/UniversalHeader.vue'
 
 const authStore = useAuthStore()
+const settingsStore = useSettingsStore()
 const uiFeedback = useUiFeedbackStore()
 const avatarStore = useAvatarStore()
+
+const bankInstructions = computed(() => settingsStore.bankAccountInfo || 'No hay instrucciones bancarias configuradas.')
 
 const formValid = ref(false)
 const loading = ref(false)
@@ -557,6 +539,8 @@ const onAvatarChange = async (e) => {
 }
 
 onMounted(async () => {
+  await settingsStore.fetchConfig()
+  
   name.value = authStore.user?.name || ''
   lastname.value = authStore.user?.lastname || ''
   email.value = authStore.user?.email || ''

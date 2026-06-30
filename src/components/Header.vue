@@ -86,7 +86,7 @@
           <v-icon>{{ currentTheme === 'dark' ? 'mdi-weather-night' : 'mdi-weather-sunny' }}</v-icon>
         </v-btn>
 
-        <NotificationBell color="white" />
+        <NotificationBell v-if="isLoggedIn" color="white" />
 
         <v-chip
           v-if="pendingOperations > 0"

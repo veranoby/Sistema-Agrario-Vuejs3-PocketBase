@@ -2,14 +2,14 @@
   "system_name": "ConAgri / Gestión Agri",
   "version": "1.1.0",
   "audit_type": "Deep Code Verification (Owl Protocol)",
-  "last_audit": "2026-05-20",
+  "last_audit": "2026-06-30",
   "modules": {
     "core_operativo": {
       "status": "✅",
       "progress": 95,
       "audit_status": "VERIFIED CODE. Bitacora CRUD + offline sync funcional. BitacoraEntryForm (Modo A1/A2/B) operativo. Firma digital RSA via WebCrypto implementada y persistida en IndexedDB.",
       "blockers": [],
-      "notes": "Campo 'signature' en colección bitacora requiere confirmación de schema PB (no encontrado en pocketbase_schemas.json). 'bpa_respuestas' también ausente del schema real."
+      "notes": "Campos 'signature', 'bpa_respuestas' y 'fotos' creados y verificados en el schema real de PocketBase."
     },
     "programaciones_recurrentes": {
       "status": "✅",
@@ -30,89 +30,34 @@
       "blockers": []
     },
     "asesor_tecnico": {
-      "status": "🟡",
-      "progress": 60,
-      "audit_status": "VERIFIED CODE. UI implementada: DirectorioAsesores, RecetasAsesor, HaciendaDetail, Dashboard asesor, EnviarPaqueteWizard, RecetaEditorDialog. Colecciones DB creadas en PB. BLOQUEANTES CRITICOS ENCONTRADOS (ver blockers).",
-      "blockers": [
-        {
-          "id": "ASESOR-1",
-          "severity": "CRITICA",
-          "description": "MISMATCH DE CAMPOS RECETAS - Frontend envía campos con nombres incorrectos. RecetaEditorDialog.vue escribe 'nombre_receta', 'actividad_id', 'producto', 'dosis', 'instrucciones', 'frecuencia'. Schema real usa: 'titulo', NO tiene 'actividad_id'/'nombre_receta'/'producto'/'instrucciones'/'frecuencia'. La colección 'recetas' tiene: titulo, blanco_biologico, producto_recomendado, ingrediente_activo, dosis(number), unidad_dosis, phi_dias, rei_horas, metodo_aplicacion, observaciones_tecnicas. Todos los creates/reads fallarán silenciosamente o en error."
-        },
-        {
-          "id": "ASESOR-2",
-          "severity": "CRITICA",
-          "description": "MISMATCH DE CAMPOS PAQUETES - EnviarPaqueteWizard.vue crea con 'siembras_compartidas', 'zonas_compartidas', 'bitacoras_compartidas'. Schema real usa 'siembra_id'(relation), 'zonas_ids'(JSON), 'bitacora_ids'(JSON). Ademàs 'estado' en PB no tiene valor 'pendiente', tiene 'enviado'. El create fallará en PB."
-        },
-        {
-          "id": "ASESOR-3",
-          "severity": "ALTA",
-          "description": "HOOK asesores.pb.js NO EXISTE. El archivo pb_hooks/asesores.pb.js planificado en la documentación nunca fue creado. Sin este hook: (1) fecha_envio y fecha_vista no se autocompletan, (2) la hacienda no recibe notificación al recibir una receta, (3) el asesor no recibe notificación cuando la hacienda ve la receta."
-        },
-        {
-          "id": "ASESOR-4",
-          "severity": "ALTA",
-          "description": "FLUJO APROBACION RECETA INCORRECTO. Al aprobar, RecetasAsesor.vue llama programacionesStore.crearProgramacion con campo 'actividad' (nombre incorrecto, debe ser 'actividades' como array). Además usa 'estado: aprobada' pero schema solo admite 'ejecutada'. La receta se crea pero el estado de la programación queda desalineado."
-        },
-        {
-          "id": "ASESOR-5",
-          "severity": "ALTA",
-          "description": "FILTRO PAQUETES SIN CAMPO vinculacion_id. La colección paquetes_evaluacion tiene campo 'vinculacion_id', pero el schema también tiene 'asesor_id', 'hacienda_id' y 'siembra_id'. HaciendaDetail filtra por vinculacion_id OK. Pero EnviarPaqueteWizard llama con hacienda indirecta. Falta validar que el vinculacion_id corresponde a la hacienda del user autenticado antes del create."
-        }
-      ]
+      "status": "✅",
+      "progress": 100,
+      "audit_status": "VERIFIED CODE. UI implementada: DirectorioAsesores, RecetasAsesor, HaciendaDetail, Dashboard asesor, EnviarPaqueteWizard, RecetaEditorDialog. Colecciones DB creadas en PB. Mismatches corregidos. Flujo bidireccional paquete<->receta implementado (notas_asesor y paquete_id). Chat enriquecido con carga de fotos (<200kb cliente). Hook backend de seguridad de suscripción implementado (V2 remediado).",
+      "blockers": []
     },
     "alertas_notificaciones": {
-      "status": "🟡",
-      "progress": 65,
-      "audit_status": "VERIFIED CODE. Backend hook /api/alerts/send implementado y funcional en main.js. cron.alerts.pb.js existe pero depende de campo alertConfig ausente del schema de Haciendas. NotificationSettings.vue existe pero accede a campo alertConfig que no está en PocketBase schemas.",
-      "blockers": [
-        {
-          "id": "NOTIF-1",
-          "severity": "ALTA",
-          "description": "Campo 'alertConfig' (JSON) no existe en colección Haciendas según pocketbase_schemas.json. El cron y NotificationSettings.vue fallan silenciosamente al leer/escribir preferencias."
-        }
-      ]
+      "status": "✅",
+      "progress": 100,
+      "audit_status": "VERIFIED CODE. Backend hook /api/alerts/send y cron.alerts.pb.js implementados y funcionales. Campo alertConfig (JSON) creado en colección Haciendas en PocketBase.",
+      "blockers": []
     },
     "finanzas_pro": {
-      "status": "🟡",
-      "progress": 60,
-      "audit_status": "VERIFIED CODE. CRUD finanzas funcional. Falta integración SRI, exportación legal, y enlace automático con costos de bitácora.",
-      "blockers": [
-        {
-          "id": "FIN-1",
-          "severity": "MEDIA",
-          "description": "No hay enlace automático entre aplicación de insumos registrada en bitácora y el módulo de finanzas. El operario debe duplicar entrada."
-        }
-      ]
+      "status": "✅",
+      "progress": 75,
+      "audit_status": "VERIFIED CODE. CRUD finanzas funcional. Enlace automático con bitácora completado (FIN-1). Falta integración SRI y exportación legal.",
+      "blockers": []
     },
     "auditoria_bpa": {
-      "status": "🟡",
-      "progress": 85,
-      "audit_status": "VERIFIED CODE. Firma RSA via digitalSignature.js funcional y probada. BpaChecklist.vue existe. Modos A/B operando. PENDIENTE: campos 'signature' y 'bpa_respuestas' en colección bitacora no encontrados en pocketbase_schemas.json.",
-      "blockers": [
-        {
-          "id": "BPA-1",
-          "severity": "ALTA",
-          "description": "Campo 'signature' (JSON) no encontrado en colección bitacora en pocketbase_schemas.json. bitacoraStore escribe fullEntryData.signature pero si el campo no existe en PB, se descarta silenciosamente."
-        },
-        {
-          "id": "BPA-2",
-          "severity": "MEDIA",
-          "description": "Campo 'bpa_respuestas' (JSON) no encontrado en colección bitacora en pocketbase_schemas.json. Mismo problema que BPA-1."
-        }
-      ]
+      "status": "✅",
+      "progress": 100,
+      "audit_status": "VERIFIED CODE. Firma RSA via digitalSignature.js funcional. BpaChecklist.vue y UniversalSignature.vue operando. Campos 'signature' y 'bpa_respuestas' creados y verificados en la colección bitacora.",
+      "blockers": []
     },
     "cuotas_plan_ui": {
-      "status": "🟡",
-      "progress": 50,
-      "audit_status": "VERIFIED CODE. useSubscriptionLimits.js implementado correctamente. Accede a subscriptions.user_limit y planes.auditores/operadores. Falta conectar con HaciendaUserManagement.vue para mostrar indicadores y bloqueo reactivo.",
-      "blockers": [
-        {
-          "id": "CUOTA-1",
-          "severity": "ALTA",
-          "description": "El composable useSubscriptionLimits.js está implementado pero no está integrado en HaciendaUserManagement.vue. Los botones de agregar usuarios no están bloqueados reactivamente al llegar al límite del plan."
-        }
-      ]
+      "status": "✅",
+      "progress": 100,
+      "audit_status": "VERIFIED CODE. useSubscriptionLimits.js implementado correctamente y conectado reactivamente con HaciendaUserManagement.vue para bloquear e indicar límites.",
+      "blockers": []
     },
     "bodega_kardex": {
       "status": "✅",
@@ -145,54 +90,5 @@
       "blockers": []
     }
   },
-  "production_blockers_summary": [
-    {
-      "id": "ASESOR-1",
-      "severity": "CRITICA",
-      "module": "asesor_tecnico",
-      "short": "Campos recetas incorrectos en frontend vs schema PB"
-    },
-    {
-      "id": "ASESOR-2",
-      "severity": "CRITICA",
-      "module": "asesor_tecnico",
-      "short": "Campos paquetes_evaluacion incorrectos en frontend vs schema PB"
-    },
-    {
-      "id": "ASESOR-3",
-      "severity": "ALTA",
-      "module": "asesor_tecnico",
-      "short": "pb_hooks/asesores.pb.js no existe"
-    },
-    {
-      "id": "ASESOR-4",
-      "severity": "ALTA",
-      "module": "asesor_tecnico",
-      "short": "Flujo de aprobación receta usa estado y campos incorrectos"
-    },
-    {
-      "id": "NOTIF-1",
-      "severity": "ALTA",
-      "module": "alertas",
-      "short": "Campo alertConfig ausente en schema PB Haciendas"
-    },
-    {
-      "id": "BPA-1",
-      "severity": "ALTA",
-      "module": "auditoria_bpa",
-      "short": "Campo signature ausente en schema PB bitacora"
-    },
-    {
-      "id": "BPA-2",
-      "severity": "MEDIA",
-      "module": "auditoria_bpa",
-      "short": "Campo bpa_respuestas ausente en schema PB bitacora"
-    },
-    {
-      "id": "CUOTA-1",
-      "severity": "ALTA",
-      "module": "cuotas_plan",
-      "short": "Bloqueo reactivo de UI por cuota no integrado en HaciendaUserManagement"
-    }
-  ]
+  "production_blockers_summary": []
 }

@@ -1,45 +1,39 @@
 <template>
   <v-container fluid class="pa-2">
     <div class="grid gap-2 p-0 m-2">
-      <header class="col-span-4 bg-background shadow-sm p-0">
-        <div class="profile-container mt-0 ml-0">
-          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div class="w-full sm:flex-grow">
-              <h3 class="profile-title text-sm sm:text-lg mb-2 sm:mb-0">
-                {{ t('finance.financial_management') }}
-                <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
-                  <v-avatar start>
-                    <v-img :src="avatarUrl" alt="Avatar"></v-img>
-                  </v-avatar>
-                  {{ userRole }}
-                </v-chip>
-                <v-chip variant="flat" size="small" color="green-lighten-3" class="mx-1" pill>
-                  <v-avatar start>
-                    <v-img :src="avatarHaciendaUrl" alt="Avatar"></v-img>
-                  </v-avatar>
-                  {{ mi_hacienda.name }}
-                </v-chip>
-              </h3>
-            </div>
+      <UniversalHeader 
+        :title="t('finance.financial_management')"
+        :bgImage="avatarHaciendaUrl"
+      >
+        <template #chips>
+          <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
+            <v-avatar start>
+              <v-img :src="avatarUrl" alt="Avatar"></v-img>
+            </v-avatar>
+            {{ userRole }}
+          </v-chip>
+          <v-chip variant="flat" size="small" color="green-lighten-3" class="mx-1" pill>
+            <v-avatar start>
+              <v-img :src="avatarHaciendaUrl" alt="Avatar"></v-img>
+            </v-avatar>
+            {{ mi_hacienda.name }}
+          </v-chip>
+        </template>
 
-            <div class="w-full sm:w-auto z-10 hidden-sm-and-down" v-if="!mobile">
-              <v-btn
-                prepend-icon="mdi-plus-circle"
-                color="primary"
-                variant="flat"
-                class="font-weight-bold text-white elevation-2 rounded-lg"
-                @click="openNuevoItem"
-              >
-                {{ t('finance.new_record') }}
-              </v-btn>
-            </div>
+        <template #actions>
+          <div class="w-full sm:w-auto z-10 hidden-sm-and-down" v-if="!mobile">
+            <v-btn
+              prepend-icon="mdi-plus-circle"
+              color="primary"
+              variant="flat"
+              class="font-weight-bold text-white elevation-2 rounded-lg"
+              @click="openNuevoItem"
+            >
+              {{ t('finance.new_record') }}
+            </v-btn>
           </div>
-
-          <div class="avatar-container">
-            <img :src="avatarHaciendaUrl" alt="Avatar de hacienda" class="avatar-image" />
-          </div>
-        </div>
-      </header>
+        </template>
+      </UniversalHeader>
     </div>
 
     <main class="flex-1 py-2">
@@ -335,24 +329,24 @@
             item-value="id"
             class="elevation-0"
           >
-            <template v-slot:item.fecha="{ item }">
+            <template v-slot:[`item.fecha`]="{ item }">
               {{ formatDate(item.fecha) }}
             </template>
-            <template v-slot:item.monto="{ item }">
+            <template v-slot:[`item.monto`]="{ item }">
               {{ formatCurrency(item.monto) }}
             </template>
-            <template v-slot:item.costo="{ item }">
+            <template v-slot:[`item.costo`]="{ item }">
               <v-chip size="small" :color="getCategoryColor(item.costo)" label>
                 {{ item.costo }}
               </v-chip>
             </template>
-            <template v-slot:item.registro_por="{ item }">
+            <template v-slot:[`item.registro_por`]="{ item }">
               {{ getUsuarioNombre(item.registro_por) }}
             </template>
-            <template v-slot:item.pagado_por="{ item }">
+            <template v-slot:[`item.pagado_por`]="{ item }">
               {{ getUsuarioNombre(item.pagado_por) }}
             </template>
-            <template v-slot:item.actions="{ item }">
+            <template v-slot:[`item.actions`]="{ item }">
               <div class="d-flex gap-2">
                 <v-tooltip
                   :text="
@@ -453,28 +447,74 @@
               </div>
             </template>
             <template v-for="item in filteredRegistros" :key="item.id">
-              <v-card class="mb-2 rounded-lg elevation-1" @click="openEditarItem(item)">
-                <v-list-item>
-                  <template v-slot:prepend>
-                    <v-avatar :color="item.monto < 0 ? 'red-lighten-4' : 'green-lighten-4'" size="40">
-                      <v-icon :color="item.monto < 0 ? 'red' : 'green'">
-                        {{ item.monto < 0 ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-                      </v-icon>
-                    </v-avatar>
-                  </template>
-                  <v-list-item-title class="font-weight-bold text-md">{{ item.razon_social || item.categoria }}</v-list-item-title>
-                  <v-list-item-subtitle class="text-xs text-grey-darken-1 d-flex flex-column">
-                    <span>{{ formatDate(item.fecha) }} &bull; {{ item.costo }}</span>
-                    <span class="text-truncate">{{ item.detalle }}</span>
+              <v-card class="mb-2 rounded-lg elevation-1" @click="toggleExpand(item.id)">
+                <v-list-item class="px-3 py-2">
+                  <v-list-item-title class="font-weight-bold text-md text-wrap mb-1">
+                    {{ item.detalle }}
+                  </v-list-item-title>
+                  
+                  <v-list-item-subtitle class="d-flex flex-column gap-1">
+                    <div class="d-flex align-center gap-2">
+                      <v-chip size="x-small" label color="grey-lighten-3" class="text-grey-darken-3">{{ formatDate(item.fecha) }}</v-chip>
+                      <v-chip size="x-small" :color="getCategoryColor(item.costo)" label>{{ item.costo }}</v-chip>
+                    </div>
+                    <div class="text-xs text-grey-darken-1 mt-1" v-if="item.razon_social">
+                      {{ item.razon_social }}
+                    </div>
                   </v-list-item-subtitle>
+                  
                   <template v-slot:append>
-                    <div class="text-right">
-                      <div class="font-weight-bold  " :class="item.monto < 0 ? 'text-red' : 'text-primary'">
+                    <div class="text-right d-flex flex-column align-end justify-center">
+                      <div class="font-weight-bold" :class="item.monto < 0 ? 'text-red' : 'text-primary'">
                         {{ formatCurrency(item.monto) }}
                       </div>
+                      <v-icon size="small" color="grey" class="mt-1">
+                        {{ expandedItemId === item.id ? 'mdi-chevron-up' : 'mdi-chevron-down' }}
+                      </v-icon>
                     </div>
                   </template>
                 </v-list-item>
+
+                <v-expand-transition>
+                  <div v-if="expandedItemId === item.id" class="px-3 pb-3 pt-1 border-t">
+                    <div class="text-xs mb-2 text-grey-darken-2" v-if="item.comentarios">
+                      <strong>{{ t('finance.comments') || 'Comentarios' }}:</strong> {{ item.comentarios }}
+                    </div>
+                    <div class="text-xs mb-3 text-grey-darken-2" v-if="item.factura">
+                      <strong>{{ t('finance.invoice_no') || 'Factura' }}:</strong> {{ item.factura }}
+                    </div>
+                    <div class="text-xs mb-3 text-grey-darken-2" v-if="item.registro_por || item.pagado_por">
+                      <div v-if="item.pagado_por"><strong>{{ t('finance.paid_by') || 'Pagado por' }}:</strong> {{ getUsuarioNombre(item.pagado_por) }}</div>
+                      <div v-if="item.registro_por"><strong>{{ t('finance.registered_by') || 'Registrado por' }}:</strong> {{ getUsuarioNombre(item.registro_por) }}</div>
+                    </div>
+                    
+                    <div class="d-flex justify-end gap-2 mt-2">
+                      <v-btn
+                        size="small"
+                        variant="tonal"
+                        color="primary"
+                        icon="mdi-pencil"
+                        :disabled="item.registro_por !== authStore.user.id && userRole !== 'administrador'"
+                        @click.stop="item.registro_por === authStore.user.id || userRole === 'administrador' ? openEditarItem(item) : showEditError()"
+                      ></v-btn>
+                      <v-btn
+                        size="small"
+                        variant="tonal"
+                        color="info"
+                        icon="mdi-content-copy"
+                        @click.stop="duplicarItem(item)"
+                      ></v-btn>
+                      <v-btn
+                        size="small"
+                        variant="tonal"
+                        color="error"
+                        icon="mdi-delete"
+                        :disabled="item.registro_por !== authStore.user.id && userRole !== 'administrador'"
+                        @click.stop="item.registro_por === authStore.user.id || userRole === 'administrador' ? confirmDelete(item) : showDeleteError()"
+                      ></v-btn>
+                    </div>
+                  </div>
+                </v-expand-transition>
               </v-card>
             </template>
           </v-list>
@@ -528,6 +568,7 @@ import { storeToRefs } from 'pinia'
 import { format, parseISO, getMonth, getYear, setMonth, setYear } from 'date-fns'
 import FinanzasForm from '@/components/forms/FinanzasForm.vue'
 import FinanzasImportExcel from '@/components/forms/FinanzasImportExcel.vue'
+import UniversalHeader from '@/components/UniversalHeader.vue'
 import { useDisplay } from 'vuetify'
 
 const { t } = useI18n()
@@ -544,7 +585,11 @@ const showForm = ref(false)
 const itemEditando = ref(null)
 const confirmDeleteDialog = ref(false)
 const itemToDelete = ref(null)
-const itemsPerPage = ref(50)
+const expandedItemId = ref(null)
+
+function toggleExpand(id) {
+  expandedItemId.value = expandedItemId.value === id ? null : id
+}
 
 const selectedMonth = ref(getMonth(finanzaStore.currentMonth))
 const selectedYear = ref(getYear(finanzaStore.currentMonth))

@@ -229,7 +229,7 @@ const usageDisplay = ref('...')
 // Computed
 const hasBYOK        = computed(() => !!haciendaStore.mi_hacienda?.ai_config?.auth_token)
 const isModuleActive = computed(() => {
-  return haciendaStore.isModuleActive('ai_assistant_premium');
+  return hasBYOK.value || haciendaStore.isModuleActive('ai_assistant_premium');
 })
 
 const keyInfo = computed(() => hasBYOK.value

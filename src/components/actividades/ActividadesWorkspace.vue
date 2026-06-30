@@ -1,8 +1,7 @@
 <template>
   <v-container fluid class="flex flex-col min-h-screen pa-0" v-if="!isLoading">
     <!-- Header -->
-    <div class="grid grid-cols-4 gap-2 p-0 m-2">
-      <header role="banner" class="col-span-4 bg-background shadow-sm p-0">
+    <div class="w-100 p-0 m-2">
         <ActividadesHeader
           :actividadInfo="actividadInfo"
           :avatarUrl="avatarUrl"
@@ -12,18 +11,17 @@
           :actividadAvatarUrl="actividadAvatarUrl"
           :colorBpaEstado="colorBpaEstado"
         />
-      </header>
     </div>
 
     <main role="main" aria-labelledby="actividad-title">
-      <v-row no-gutters>
-        <v-col cols="9" class="pa-4 pt-2">
-          <v-row no-gutters>
-            <v-col cols="6" class="pr-2">
+      <v-row no-gutters class="flex-column flex-md-row">
+        <v-col cols="12" md="9" class="pa-4 pt-2">
+          <v-row no-gutters class="flex-column flex-md-row">
+            <v-col cols="12" md="6" class="pr-md-2 mb-4 mb-md-0">
               <ActividadesInfo :actividadInfo="actividadInfo" @open-edit-dialog="openEditDialog" />
             </v-col>
 
-            <v-col cols="6" class="pl-2">
+            <v-col cols="12" md="6" class="pl-md-2">
               <ActividadesSiembrasZonas
                 :actividadInfo="actividadInfo"
                 @open-add-siembras-zonas="openAddSiembrasZonas"
@@ -48,7 +46,7 @@
           </v-row>
         </v-col>
 
-        <v-col cols="3" class="p-0 pr-4">
+        <v-col cols="12" md="3" class="px-4 px-md-0 pr-md-4 pb-4">
           <ActividadesRecordatorios
             :actividadId="actividadId"
             :dialogVisible="recordatoriosStore.dialog"

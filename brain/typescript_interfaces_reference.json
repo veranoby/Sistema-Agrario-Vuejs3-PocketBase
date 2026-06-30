@@ -101,13 +101,17 @@
     },
     "Finanza": {
       "id": "string",
-      "hacienda": "id (relation)",
-      "tipo": "enum (ingreso, egreso)",
-      "monto": "number",
+      "Haciendas": "id (relation)",
       "fecha": "ISOString",
-      "categoria": "string",
-      "comprobante_sri": "string (nullable)",
-      "bitacora_relacionada": "id (relation, nullable)"
+      "detalle": "string",
+      "razon_social": "string (nullable)",
+      "factura": "string (nullable)",
+      "costo": "enum (SERVICIOS LEGALES, INVERSION, SUNDRY, ALIMENTACION, EQUIPOS, HONORARIOS, MOVILIZACION, MATERIALES)",
+      "comentarios": "string (nullable)",
+      "monto": "number",
+      "registro_por": "id (relation)",
+      "pagado_por": "id (relation)",
+      "version": "number"
     },
     "Notificacion_Regla": {
       "id": "string",
@@ -126,7 +130,10 @@
       "zonas_ids": "json (array of strings)",
       "bitacora_ids": "json (array of strings)",
       "notas_hacienda": "string",
-      "estado": "enum (enviado, visto, cerrado)"
+      "estado": "enum (enviado, visto, cerrado)",
+      "fecha_visto": "ISOString (nullable)",
+      "evidencias": "array<string> (filenames)",
+      "notas_asesor": "string (html)"
     },
     "Receta": {
       "id": "string",
@@ -146,7 +153,70 @@
       "metodo_aplicacion": "string",
       "observaciones_tecnicas": "string",
       "estado": "enum (borrador, enviada, vista, ejecutada, rechazada)",
+      "fecha_envio": "ISOString (nullable)",
+      "fecha_vista": "ISOString (nullable)",
+      "motivo_rechazo": "string (nullable)",
       "programacion_id": "json (activity configuration details)"
+    },
+    "ComunicacionAsesoria": {
+      "id": "string",
+      "vinculacion_id": "id (relation)",
+      "paquete_id": "id (relation, nullable)",
+      "emisor_id": "id (relation)",
+      "mensaje": "string (html)",
+      "leido": "boolean",
+      "fotos": "array<string> (filenames)"
+    },
+    "BodegaItem": {
+      "id": "string",
+      "hacienda_id": "id (relation)",
+      "nombre": "string",
+      "tipo": "string",
+      "cantidad": "number",
+      "unidad": "string",
+      "costo_unitario": "number"
+    },
+    "BodegaMovimiento": {
+      "id": "string",
+      "hacienda_id": "id (relation)",
+      "item_id": "id (relation)",
+      "tipo_movimiento": "enum (ingreso, egreso)",
+      "cantidad": "number",
+      "fecha": "ISOString",
+      "referencia": "string"
+    },
+    "NominaAsistencia": {
+      "id": "string",
+      "hacienda_id": "id (relation)",
+      "trabajador_id": "id (relation)",
+      "fecha": "ISOString",
+      "estado": "enum (presente, ausente, permiso, enfermedad)",
+      "horas_trabajadas": "number"
+    },
+    "NominaSemana": {
+      "id": "string",
+      "hacienda_id": "id (relation)",
+      "numero_semana": "number",
+      "anio": "number",
+      "fecha_inicio": "ISOString",
+      "fecha_fin": "ISOString",
+      "estado": "enum (abierta, cerrada)"
+    },
+    "PlantillaNomina": {
+      "id": "string",
+      "hacienda_id": "id (relation)",
+      "nombre": "string",
+      "salario_base": "number",
+      "cargos_fijos": "json"
+    },
+    "Tarja": {
+      "id": "string",
+      "hacienda_id": "id (relation)",
+      "trabajador_id": "id (relation)",
+      "actividad_id": "id (relation)",
+      "fecha": "ISOString",
+      "cantidad": "number",
+      "tarifa": "number"
     }
   }
 }

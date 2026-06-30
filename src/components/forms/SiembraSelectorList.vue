@@ -36,8 +36,9 @@
         v-for="siembra in siembrasToDisplay"
         :key="siembra.id"
         variant="flat"
-        class="transition-all rounded-lg bg-grey-lighten-4 border border-transparent"
-        :class="{ 'elevation-1 bg-green-lighten-4 border-success': modelValue.includes(siembra.id) }"
+        :color="modelValue.includes(siembra.id) ? 'green-lighten-4' : 'grey-lighten-4'"
+        class="transition-all rounded-lg"
+        :class="modelValue.includes(siembra.id) ? 'elevation-1 border-solid border-success border-opacity-100' : 'border border-transparent'"
         @click="toggleSelection(siembra.id)"
       >
         <v-card-text class="pa-3 flex items-center">

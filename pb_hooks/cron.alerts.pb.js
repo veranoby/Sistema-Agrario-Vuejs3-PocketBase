@@ -4,25 +4,13 @@
  * Cron Job para envío de Resumen Gerencial Semanal y Alertas de Emergencia
  */
 
-// Resumen Semanal: Todos los lunes a las 08:00
-cronAdd("weeklyDigest", "0 8 * * 1", () => {
-    console.log("[CRON] Iniciando envío de Resumen Gerencial Semanal...");
-    processAlerts("weekly_digest");
-});
-
-// Emergencias: Todos los días a las 07:00
-cronAdd("emergencyAlerts", "0 7 * * *", () => {
-    console.log("[CRON] Iniciando verificación de Alertas de Emergencia...");
-    processAlerts("emergency");
-});
-
 /**
  * Procesa y envía las alertas según el tipo
  * @param {"weekly_digest" | "emergency"} processType 
  */
 function processAlerts(processType) {
     try {
-        const haciendas = $app.dao().findRecordsByFilter("Haciendas", "status = 'active'");
+        const haciendas = $app.findRecordsByFilter("Haciendas", "status = 'active'");
         
         for (const hacienda of haciendas) {
             const config = hacienda.get("alertConfig") || {};
@@ -67,7 +55,7 @@ function compileAlertData(hacienda, type) {
         const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
         // 1. Retroactiva: Bitácoras completadas la semana pasada
-        const pastLogs = $app.dao().findRecordsByFilter(
+        const pastLogs = $app.findRecordsByFilter(
             "bitacora", 
             `hacienda = "${hacienda.id}" && created >= "${lastWeek.toISOString()}" && estado = "completada"`,
             "-created", 10
@@ -78,7 +66,7 @@ function compileAlertData(hacienda, type) {
                 const actId = log.get("actividades");
                 const actIdStr = Array.isArray(actId) ? actId[0] : (actId || log.getString("actividades"));
                 if (actIdStr) {
-                    const actRecord = $app.dao().findRecordById("actividades", actIdStr);
+                    const actRecord = $app.findRecordById("actividades", actIdStr);
                     nombreActividad = actRecord.getString("nombre") || 'Actividad';
                 }
             } catch (e) {
@@ -89,7 +77,7 @@ function compileAlertData(hacienda, type) {
             try {
                 const userId = log.getString("user_created");
                 if (userId) {
-                    const userRecord = $app.dao().findRecordById("users", userId);
+                    const userRecord = $app.findRecordById("users", userId);
                     const name = userRecord.getString("name") || '';
                     const lastname = userRecord.getString("lastname") || '';
                     if (name || lastname) {
@@ -110,7 +98,7 @@ function compileAlertData(hacienda, type) {
         });
 
         // 2. Proactiva: Programaciones vencidas o por vencer
-        const upcoming = $app.dao().findRecordsByFilter(
+        const upcoming = $app.findRecordsByFilter(
             "programaciones",
             `hacienda = "${hacienda.id}" && estado = "activo" && proxima_ejecucion <= "${nextWeek.toISOString()}"`,
             "proxima_ejecucion", 10
@@ -122,7 +110,7 @@ function compileAlertData(hacienda, type) {
                     const actId = p.get("actividades");
                     const actIdStr = Array.isArray(actId) ? actId[0] : (actId || p.getString("actividades"));
                     if (actIdStr) {
-                        const actRecord = $app.dao().findRecordById("actividades", actIdStr);
+                        const actRecord = $app.findRecordById("actividades", actIdStr);
                         descripcion = actRecord.getString("nombre") || 'Actividad Programada';
                     }
                 } catch (e) {
@@ -152,7 +140,7 @@ function compileAlertData(hacienda, type) {
         }
 
         // 2. BPA Crítico (Zonas con score < 50)
-        const criticalZonas = $app.dao().findRecordsByFilter(
+        const criticalZonas = $app.findRecordsByFilter(
             "zonas",
             `hacienda = "${hacienda.id}" && bpa_estado < 50`,
             "bpa_estado"
@@ -171,8 +159,14 @@ function compileAlertData(hacienda, type) {
  * Invoca el envío de email llamando internamente a la lógica de Resend
  */
 function sendEmailViaHook(type, recipients, haciendaName, data) {
-    const settings = $app.settings();
-    const systemToken = settings.get("SYSTEM_TOKEN") || "sistema-agri-internal-token";
+    let systemToken = "sistema-agri-internal-token";
+    try {
+        const settings = $app.settings();
+        // Fallback robusto en v0.23+ 
+        systemToken = settings?.meta?.systemToken || $os.getenv("SYSTEM_TOKEN") || systemToken;
+    } catch(e) {
+        systemToken = $os.getenv("SYSTEM_TOKEN") || systemToken;
+    }
 
     // Optamos por llamar al endpoint interno para centralizar logs y templates
     try {
@@ -194,3 +188,20 @@ function sendEmailViaHook(type, recipients, haciendaName, data) {
         console.error("[CRON_SEND_ERROR]", e.message);
     }
 }
+
+// ==========================================
+// REGISTRO DE TAREAS CRON
+// Se coloca al final para evitar problemas de hoisting en Goja/JSVM
+// ==========================================
+
+// Resumen Semanal: Todos los lunes a las 08:00
+cronAdd("weeklyDigest", "0 8 * * 1", () => {
+    console.log("[CRON] Iniciando envío de Resumen Gerencial Semanal...");
+    processAlerts("weekly_digest");
+});
+
+// Emergencias: Todos los días a las 07:00
+cronAdd("emergencyAlerts", "0 7 * * *", () => {
+    console.log("[CRON] Iniciando verificación de Alertas de Emergencia...");
+    processAlerts("emergency");
+});

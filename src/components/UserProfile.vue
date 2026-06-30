@@ -1,13 +1,13 @@
 <template>
   <div class="flex flex-col min-h-screen">
-    <main class="">
-      <div class="grid grid-cols-4 gap-2">
-        <div class="col-span-3">
+    <main class="p-2 md:p-4">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="md:col-span-3 space-y-4">
           <ProfileInfo />
           <PasswordChange />
           <HaciendaInfo v-if="isHaciendaAdmin" />
         </div>
-        <div class="" v-if="isHaciendaAdmin">
+        <div class="space-y-4" v-if="isHaciendaAdmin">
           <PlanManagement />
           <NotificationSettings />
           <HaciendaUserManagement />

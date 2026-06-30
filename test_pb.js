@@ -1,18 +1,31 @@
-import PocketBase from 'pocketbase';
+const pb = require('./node_modules/pocketbase');
+const client = new pb('https://conagri.conespacio.org');
 
-const pb = new PocketBase('http://127.0.0.1:8090'); // Assuming local instance
 async function test() {
   try {
-    // Authenticate as superadmin or normal admin
-    await pb.admins.authWithPassword('admin@example.com', 'admin1234');
-    
-    // Get schema for bitacora
-    const collection = await pb.collections.getOne('bitacora');
-    console.log("SCHEMA FIELDS:");
-    collection.schema.forEach(f => console.log(f.name, f.type));
-    
+    const list = await client.collection('recetas').getList(1, 1);
+    if(list.items.length > 0) {
+      console.log("Recetas keys:", Object.keys(list.items[0]));
+    } else {
+      console.log("No recetas found, checking error when querying by vinculacion_id");
+      await client.collection('recetas').getList(1, 1, { filter: 'vinculacion_id="123"' });
+    }
   } catch(e) {
-    console.error(e.message);
+    console.error("Error with vinculacion_id:", e.message);
+    try {
+      console.log("Testing with vinculacion:");
+      await client.collection('recetas').getList(1, 1, { filter: 'vinculacion="123"' });
+      console.log("Success with vinculacion!");
+    } catch(e2) {
+      console.error("Error with vinculacion:", e2.message);
+      try {
+        console.log("Testing with asesor_id:");
+        await client.collection('recetas').getList(1, 1, { filter: 'asesor_id="123"' });
+        console.log("Success with asesor_id!");
+      } catch(e3) {
+        console.error("Error with asesor_id:", e3.message);
+      }
+    }
   }
 }
 test();

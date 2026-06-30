@@ -73,7 +73,7 @@ export function useValidation() {
           .map(f => `${f.field} = "${f.value.replace(/"/g, '\\"')}"`)
           .join(' || ')
 
-        const result = await pb.collection(collection).getList(1, 1, { filter: filters })
+        const result = await pb.collection(collection).getList(1, collectionFields.length, { filter: filters })
 
         // Procesar resultados y guardar en caché
         for (const field of collectionFields) {

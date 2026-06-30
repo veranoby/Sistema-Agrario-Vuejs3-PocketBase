@@ -7,45 +7,38 @@
 
     </div>
     <template v-else>
-      <header role="banner" class="bg-background shadow-sm">
-        <div class="profile-container">
-          <h3 class="profile-title" id="dashboard-welcome-title">
-            {{ t('dashboard.welcome_back', { fullName: fullName }) }}
-            <v-chip variant="flat" size="small" color="grey-lighten-2" class="mx-1" pill>
-              <v-avatar start> <v-img :src="avatarUrl" alt="Avatar del usuario"></v-img> </v-avatar>
-              {{ t('roles.' + userRole) }}
-            </v-chip>
+      <UniversalHeader 
+        :title="t('dashboard.welcome_back', { fullName: fullName })"
+        :bgImage="avatarHaciendaUrl"
+      >
+        <template #chips>
+          <v-chip variant="flat" size="small" color="grey-lighten-2" pill>
+            <v-avatar start> <v-img :src="avatarUrl" alt="Avatar del usuario"></v-img> </v-avatar>
+            {{ t('roles.' + userRole) }}
+          </v-chip>
 
-            <v-chip variant="flat" size="small" color="green-lighten-3" class="mx-1" pill>
-              <v-avatar start> <v-img :src="avatarHaciendaUrl" alt="Avatar de hacienda"></v-img> </v-avatar>
-              {{ t('dashboard.hacienda') }}: {{ mi_hacienda.name }}
-            </v-chip>
-            <v-menu>
-              <template v-slot:activator="{ props }">
-                <v-btn v-bind="props" prepend-icon="mdi-export" color="primary" variant="flat"
-                  class="font-weight-bold text-white elevation-2 rounded-lg">
-                  {{ t('dashboard.export') }}
-                </v-btn>
+          <v-chip variant="flat" size="small" color="green-lighten-3" pill>
+            <v-avatar start> <v-img :src="avatarHaciendaUrl" alt="Avatar de hacienda"></v-img> </v-avatar>
+            {{ t('dashboard.hacienda') }}: {{ mi_hacienda.name }}
+          </v-chip>
+        </template>
 
-              </template>
-              <v-list>
-                <v-list-item @click="exportReport('json')">
-                  <v-list-item-title>JSON</v-list-item-title>
-                </v-list-item>
-                <v-list-item @click="exportReport('csv')">
-                  <v-list-item-title>CSV</v-list-item-title>
-                </v-list-item>
-                <v-list-item @click="exportReport('md')">
-                  <v-list-item-title>Markdown (MD)</v-list-item-title>
-                </v-list-item>
-              </v-list>
-            </v-menu>
-          </h3>
-          <div class="avatar-container">
-            <img :src="avatarHaciendaUrl" alt="Avatar de hacienda" class="avatar-image" />
-          </div>
-        </div>
-      </header>
+        <template #actions>
+          <v-menu>
+            <template v-slot:activator="{ props }">
+              <v-btn v-bind="props" prepend-icon="mdi-export" color="primary" variant="flat"
+                class="font-weight-bold text-white elevation-2 rounded-lg">
+                {{ t('dashboard.export') }}
+              </v-btn>
+            </template>
+            <v-list>
+              <v-list-item @click="exportReport('json')"><v-list-item-title>JSON</v-list-item-title></v-list-item>
+              <v-list-item @click="exportReport('csv')"><v-list-item-title>CSV</v-list-item-title></v-list-item>
+              <v-list-item @click="exportReport('md')"><v-list-item-title>Markdown (MD)</v-list-item-title></v-list-item>
+            </v-list>
+          </v-menu>
+        </template>
+      </UniversalHeader>
 
       <main role="main" aria-labelledby="dashboard-welcome-title" class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-8 p-6">
         <div class="bg-card text-card-foreground">
@@ -236,6 +229,7 @@ import StatusPanel from '@/components/recordatorios/RecordatoriosStatusPanel.vue
 import RecordatorioForm from '@/components/forms/RecordatorioForm.vue'
 import GisMapComponent from '@/components/GisMapComponent.vue'
 import ProgramacionPanel from '@/components/programaciones/ProgramacionPanel.vue'
+import UniversalHeader from '@/components/UniversalHeader.vue'
 
 
 const { t } = useI18n()
