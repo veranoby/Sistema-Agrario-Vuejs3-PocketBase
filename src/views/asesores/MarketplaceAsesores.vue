@@ -208,18 +208,22 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import UniversalHeader from '@/components/UniversalHeader.vue'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
+import { useAsesoresStore } from '@/stores/asesoresStore'
+import { pb } from '@/utils/pocketbase'
 
 const haciendaStore = useHaciendaStore()
 const uiFeedbackStore = useUiFeedbackStore()
+const asesoresStore = useAsesoresStore()
 
 const showSolicitudModal = ref(false)
 const asesorSeleccionado = ref(null)
 const enviandoSolicitud = ref(false)
 const solicitudValid = ref(false)
+const cargandoAsesores = ref(false)
 
 const formSolicitud = ref({
   servicio: null,
@@ -234,7 +238,7 @@ const haciendasUsuario = computed(() => {
   return [{ id: 'hacienda_demo', nombre: 'Hacienda Principal' }]
 })
 
-const asesores = ref([
+const asesoresDemo = [
   {
     id: 'asesor_1',
     nombre: 'Ing. Agr. Carlos Mendoza Velásquez',
@@ -267,7 +271,44 @@ const asesores = ref([
       'Análisis Microbiológico de Agua de Riego'
     ]
   }
-])
+]
+
+onMounted(async () => {
+  cargandoAsesores.value = true
+  try {
+    await asesoresStore.fetchAsesores()
+  } catch (error) {
+    console.warn('[MarketplaceAsesores] Error al consultar PocketBase:', error)
+  } finally {
+    cargandoAsesores.value = false
+  }
+})
+
+const asesores = computed(() => {
+  const realList = asesoresStore.asesores || []
+  if (realList.length > 0) {
+    return realList.map(user => {
+      const info = user.parsedInfo || {}
+      return {
+        id: user.id,
+        nombre: `${user.name || ''} ${user.lastname || ''}`.trim() || 'Ingeniero Agrónomo',
+        titulo: info.bio_corta || 'Asesor Agrónomo Acreditado',
+        registroAgrocalidad: info.numero_colegiatura || 'AGRO-EC-OFICIAL',
+        calificacion: '5.0',
+        resenasCount: 12,
+        avatar: user.avatar ? pb.getFileUrl(user, user.avatar) : 'https://cdn.vuetifyjs.com/images/john.jpg',
+        especialidades: info.especialidades?.length ? info.especialidades : ['BPA', 'Nutrición', 'Sanidad'],
+        cobertura: info.zonas_cobertura?.length ? info.zonas_cobertura : ['Ecuador'],
+        servicios: info.servicios?.length ? info.servicios : [
+          'Auditoría y Certificación BPA Agrocalidad',
+          'Plan de Nutrición y Balance de Suelo',
+          'Firma Digital de Cuadernos de Campo'
+        ]
+      }
+    })
+  }
+  return asesoresDemo
+})
 
 function abrirSolicitudModal(asesor) {
   asesorSeleccionado.value = asesor

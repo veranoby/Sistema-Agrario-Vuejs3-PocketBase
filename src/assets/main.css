@@ -14,13 +14,22 @@
     Arial, sans-serif;
 }
 
-/* Asegúrate de que la fuente se aplique globalmente */
+/* Asegúrate de que la fuente se aplique globalmente en Vuetify */
 :root {
   --v-font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
-
-/* Typography is handled globally in main.js via Vuetify defaults */
+/* Forzar la fuente oficial en todas las clases tipográficas de Vuetify */
+.v-application,
+[class*="text-h"],
+[class*="text-subtitle"],
+[class*="text-body"],
+.text-h1, .text-h2, .text-h3, .text-h4, .text-h5, .text-h6,
+.text-subtitle-1, .text-subtitle-2,
+.text-body-1, .text-body-2,
+.text-caption, .text-button, .text-overline {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
 
 
 .ql-editor {
