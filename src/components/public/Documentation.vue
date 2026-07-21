@@ -61,6 +61,13 @@
                     <span class="text-xs text-muted-foreground dark:text-gray-300">Ingreso rápido de labores</span>
                   </div>
                 </router-link>
+                <router-link to="/manuales/asesores_bpa" target="_blank" class="flex items-center p-4 border border-green-100 dark:border-[#333] bg-white dark:bg-[#1e1e1e] rounded-lg shadow-sm hover:-translate-y-1 hover:shadow-md transition-all text-decoration-none">
+                  <v-icon color="primary" class="mr-3" size="32">mdi-account-tie</v-icon>
+                  <div>
+                    <h4 class="font-bold text-primary text-sm">Asesores BPA</h4>
+                    <span class="text-xs text-muted-foreground dark:text-gray-300">Marketplace, chat y recetas</span>
+                  </div>
+                </router-link>
               </div>
             </section>
 

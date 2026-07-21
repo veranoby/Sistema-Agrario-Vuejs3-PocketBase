@@ -27,6 +27,10 @@
           <v-icon start icon="mdi-account-star"></v-icon>
           Mis Asesores
         </v-tab>
+        <v-tab value="marketplace" class="font-weight-bold">
+          <v-icon start icon="mdi-store"></v-icon>
+          Marketplace & Descubrimiento
+        </v-tab>
         <v-tab value="directorio" class="font-weight-bold">
           <v-icon start icon="mdi-magnify"></v-icon>
           Explorar Directorio
@@ -39,7 +43,16 @@
           <div v-if="asesoresVinculados.length === 0" class="text-center py-12">
             <v-icon icon="mdi-account-group-outline" size="80" color="grey-lighten-1" class="mb-4"></v-icon>
             <h3 class="text-md text-grey-darken-2 font-weight-bold">Aún no tienes asesores vinculados</h3>
-            <p class="text-grey-darken-1 mt-1">Busca y solicita vinculación a expertos en la pestaña Explorar Directorio.</p>
+            <p class="text-grey-darken-1 mt-1">Busca y solicita vinculación a agrónomos acreditados en nuestro Marketplace.</p>
+            <v-btn
+              color="teal-darken-3"
+              variant="flat"
+              class="mt-3 font-weight-bold text-white rounded-lg"
+              prepend-icon="mdi-store"
+              @click="tab = 'marketplace'"
+            >
+              Explorar Marketplace de Asesores BPA
+            </v-btn>
           </div>
           <v-row v-else>
             <v-col v-for="asesor in asesoresVinculados" :key="asesor.id" cols="12" sm="6" md="4" lg="3">
@@ -106,6 +119,11 @@
               </v-card>
             </v-col>
           </v-row>
+        </v-window-item>
+
+        <!-- PESTAÑA: MARKETPLACE -->
+        <v-window-item value="marketplace">
+          <MarketplaceAsesores />
         </v-window-item>
 
         <!-- PESTAÑA: DIRECTORIO -->
@@ -351,6 +369,7 @@ import { useAvatarStore } from '@/stores/avatarStore'
 import { pb } from '@/utils/pocketbase'
 import { debounce } from '@/utils/debounce'
 import EnviarPaqueteWizard from '@/components/forms/asesores/EnviarPaqueteWizard.vue'
+import MarketplaceAsesores from '@/views/asesores/MarketplaceAsesores.vue'
 import UniversalHeader from '@/components/UniversalHeader.vue'
 
 const router = useRouter()
