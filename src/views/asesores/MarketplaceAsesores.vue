@@ -55,8 +55,19 @@
             class="rounded-xl border pa-4 h-100 d-flex flex-column transition-all hover-elevation"
           >
             <div class="d-flex align-start gap-4">
-              <v-avatar size="72" class="elevation-2 border-2 border-white">
-                <v-img :src="asesor.avatar" :alt="asesor.nombre"></v-img>
+              <v-avatar size="72" class="elevation-2 border-2 border-white bg-teal-lighten-5">
+                <v-img :src="getAvatarUrl(asesor)" :alt="asesor.nombre">
+                  <template v-slot:placeholder>
+                    <div class="d-flex align-center justify-center fill-height bg-teal-lighten-4 text-subtitle-1 font-weight-bold text-teal-darken-4">
+                      {{ getInitials(asesor.nombre) }}
+                    </div>
+                  </template>
+                  <template v-slot:error>
+                    <div class="d-flex align-center justify-center fill-height bg-teal-lighten-4 text-subtitle-1 font-weight-bold text-teal-darken-4">
+                      {{ getInitials(asesor.nombre) }}
+                    </div>
+                  </template>
+                </v-img>
               </v-avatar>
               
               <div class="flex-grow-1">
@@ -214,6 +225,7 @@ import { useHaciendaStore } from '@/stores/haciendaStore'
 import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import { useAsesoresStore } from '@/stores/asesoresStore'
 import { pb } from '@/utils/pocketbase'
+import placeholderUser from '@/assets/placeholder-user.png'
 
 const haciendaStore = useHaciendaStore()
 const uiFeedbackStore = useUiFeedbackStore()
@@ -246,7 +258,7 @@ const asesoresDemo = [
     registroAgrocalidad: 'AGRO-EC-84920',
     calificacion: '4.9',
     resenasCount: 28,
-    avatar: 'https://cdn.vuetifyjs.com/images/john.jpg',
+    avatar: null,
     especialidades: ['Banano', 'Cacao', 'Plátano', 'Palma'],
     cobertura: ['El Oro', 'Guayas', 'Los Ríos'],
     servicios: [
@@ -262,7 +274,7 @@ const asesoresDemo = [
     registroAgrocalidad: 'AGRO-EC-61049',
     calificacion: '4.9',
     resenasCount: 34,
-    avatar: 'https://cdn.vuetifyjs.com/images/lists/2.jpg',
+    avatar: null,
     especialidades: ['Flores', 'Hortalizas', 'Maíz', 'Papa'],
     cobertura: ['Pichincha', 'Cotopaxi', 'Tungurahua'],
     servicios: [
@@ -284,6 +296,26 @@ onMounted(async () => {
   }
 })
 
+function getAvatarUrl(asesor) {
+  if (asesor.rawUser && asesor.rawUser.avatar) {
+    return pb.getFileUrl(asesor.rawUser, asesor.rawUser.avatar)
+  }
+  if (asesor.avatar && typeof asesor.avatar === 'string' && asesor.avatar.startsWith('http')) {
+    return asesor.avatar
+  }
+  return placeholderUser
+}
+
+function getInitials(nombre) {
+  if (!nombre) return 'AG'
+  const clean = nombre.replace(/^Ing\.\s*Agr\.\s*/i, '').trim()
+  const parts = clean.split(' ')
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[1][0]).toUpperCase()
+  }
+  return parts[0] ? parts[0].substring(0, 2).toUpperCase() : 'AG'
+}
+
 const asesores = computed(() => {
   const realList = asesoresStore.asesores || []
   if (realList.length > 0) {
@@ -291,12 +323,13 @@ const asesores = computed(() => {
       const info = user.parsedInfo || {}
       return {
         id: user.id,
+        rawUser: user,
         nombre: `${user.name || ''} ${user.lastname || ''}`.trim() || 'Ingeniero Agrónomo',
         titulo: info.bio_corta || 'Asesor Agrónomo Acreditado',
         registroAgrocalidad: info.numero_colegiatura || 'AGRO-EC-OFICIAL',
         calificacion: '5.0',
         resenasCount: 12,
-        avatar: user.avatar ? pb.getFileUrl(user, user.avatar) : 'https://cdn.vuetifyjs.com/images/john.jpg',
+        avatar: user.avatar ? pb.getFileUrl(user, user.avatar) : null,
         especialidades: info.especialidades?.length ? info.especialidades : ['BPA', 'Nutrición', 'Sanidad'],
         cobertura: info.zonas_cobertura?.length ? info.zonas_cobertura : ['Ecuador'],
         servicios: info.servicios?.length ? info.servicios : [
