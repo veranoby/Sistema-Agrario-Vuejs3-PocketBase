@@ -19,12 +19,12 @@
           class="px-1 sm:px-2"
           style="min-width: 0;"
         >
-          <v-icon :class="{'mr-0': true, 'sm:mr-2': true}" icon="mdi-book"></v-icon>
+          <v-icon :class="{'mr-0': true, 'sm:mr-2': true}" icon="mdi-book" size="22"></v-icon>
           <span class="hidden sm:inline">{{ $t('header.documentation') }}</span>
         </v-btn>
         
         <v-btn text size="small" @click="scrollToContact" class="px-1 sm:px-2" style="min-width: 0;">
-          <v-icon :class="{'mr-0': true, 'sm:mr-2': true}" icon="mdi-email"></v-icon>
+          <v-icon :class="{'mr-0': true, 'sm:mr-2': true}" icon="mdi-email" size="22"></v-icon>
           <span class="hidden sm:inline">{{ $t('header.contact_us') }}</span>
         </v-btn>
 
@@ -48,13 +48,13 @@
           size="small"
           style="min-width: 0;"
         >
-          <v-icon>mdi-login</v-icon>
+          <v-icon size="22">mdi-login</v-icon>
         </v-btn>
 
         <v-menu offset-y>
           <template v-slot:activator="{ props }">
             <v-btn text v-bind="props" class="px-1 sm:px-2" size="small" style="min-width: 0;">
-              <v-icon icon="mdi-web" :class="{'mr-0': true, 'sm:mr-1': true}"></v-icon>
+              <v-icon icon="mdi-web" size="22" :class="{'mr-0': true, 'sm:mr-1': true}"></v-icon>
               <span class="text-uppercase hidden-xs">{{ currentLocale }}</span>
               <v-icon icon="mdi-chevron-down" size="x-small" class="hidden-xs"></v-icon>
             </v-btn>
@@ -81,9 +81,9 @@
           size="small"
           @click="toggleTheme"
           :color="currentTheme === 'dark' ? 'yellow' : 'grey'"
-          style="width: 32px; height: 32px;"
+          style="width: 36px; height: 36px;"
         >
-          <v-icon>{{ currentTheme === 'dark' ? 'mdi-weather-night' : 'mdi-weather-sunny' }}</v-icon>
+          <v-icon size="22">{{ currentTheme === 'dark' ? 'mdi-weather-night' : 'mdi-weather-sunny' }}</v-icon>
         </v-btn>
 
         <NotificationBell v-if="isLoggedIn" color="white" />

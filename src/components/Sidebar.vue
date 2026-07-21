@@ -18,9 +18,9 @@
           :class="{ 'active-link': isActive(link.to), 'vivid-hover': true }"
         >
           <template v-slot:prepend>
-            <v-icon :icon="link.icon" size="small"></v-icon>
+            <v-icon :icon="link.icon" size="22" class="mr-2"></v-icon>
           </template>
-          <v-list-item-title class="text-xs">{{ link.label }}</v-list-item-title>
+          <v-list-item-title class="text-caption font-weight-medium">{{ link.label }}</v-list-item-title>
         </v-list-item>
       </template>
     </v-list>
@@ -29,7 +29,6 @@
     </v-alert>
 
     <v-spacer></v-spacer>
-    <!-- Asegúrate de que este esté aquí para empujar el contenido hacia abajo -->
 
     <v-divider></v-divider>
 
@@ -42,18 +41,18 @@
           :class="{ 'active-link': isActive('/profile'), 'vivid-hover': true }"
         >
           <template v-slot:prepend>
-            <v-icon icon="mdi-account-circle"></v-icon>
+            <v-icon icon="mdi-account-circle" size="22" class="mr-2"></v-icon>
           </template>
 
-          <v-list-item-title class="text-xs"> {{ $t('sidebar.profile_hacienda') }} </v-list-item-title>
+          <v-list-item-title class="text-caption font-weight-medium"> {{ $t('sidebar.profile_hacienda') }} </v-list-item-title>
         </v-list-item>
 
         <v-list-item v-if="isLoggedIn" @click="handleLogout" link class="vivid-hover">
           <template v-slot:prepend>
-            <v-icon icon="mdi-logout"></v-icon>
+            <v-icon icon="mdi-logout" size="22" class="mr-2"></v-icon>
           </template>
 
-          <v-list-item-title class="text-xs"> {{ $t('sidebar.logout') }} </v-list-item-title>
+          <v-list-item-title class="text-caption font-weight-medium"> {{ $t('sidebar.logout') }} </v-list-item-title>
         </v-list-item>
       </v-list>
     </div>

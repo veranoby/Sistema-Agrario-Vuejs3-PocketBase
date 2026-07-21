@@ -84,17 +84,17 @@
                     </v-col>
                   </v-row>
 
-                  <div class="d-flex align-center justify-space-between mt-1 mb-6">
+                  <div class="d-flex align-center justify-space-between mt-1 mb-6 flex-nowrap gap-2">
                     <v-checkbox
                       v-model="loginForm.rememberMe"
                       :label="t('auth.remember_me')"
                       color="primary"
                       density="compact"
                       hide-details
-                      class="text-body-2"
+                      class="text-caption text-no-wrap flex-shrink-0"
                     ></v-checkbox>
                     <a
-                      class="text-caption font-weight-bold text-primary text-decoration-none cursor-pointer"
+                      class="text-caption font-weight-bold text-primary text-decoration-none cursor-pointer text-no-wrap ml-2"
                       @click.prevent="openForgotPasswordDialog"
                       tabindex="0"
                     >
@@ -455,7 +455,6 @@ import { useValidation } from '@/composables/useValidation'
 
 import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import loginLogo from '@/assets/login-logo.png'
-import registerLogo from '@/assets/register-logo.png'
 import { useVuelidate } from '@vuelidate/core'
 import { required, minLength, sameAs, helpers } from '@vuelidate/validators'
 import { useSyncStore } from '@/stores/sync'
@@ -474,7 +473,7 @@ const props = defineProps({
 const emit = defineEmits(['update:isOpen', 'loginSuccess', 'HandleDrawer'])
 const { t } = useI18n()
 const authStore = useAuthStore()
-const { checkFieldsTaken, loading: validationLoading } = useValidation()
+const { checkFieldsTaken } = useValidation()
 const uiFeedbackStore = useUiFeedbackStore()
 const tab = ref(props.initialTab)
 const visible = ref(false)
@@ -566,7 +565,7 @@ const rules = computed(() => ({
     required: helpers.withMessage(t('auth.required_field', { field: t('auth.username') }), required),
     noSpecialChars: helpers.withMessage(
       t('auth.no_special_chars'),
-      (value) => !/["'`!@#$%^&*()+=<>?\/\\{}[\]|~:;]/.test(value)
+      (value) => !/["'`!@#$%^&*()+=<>?/\\{}[\]|~:;]/.test(value)
     )
   },
   email: {
@@ -579,14 +578,14 @@ const rules = computed(() => ({
     required: helpers.withMessage(t('auth.required_field', { field: t('auth.firstname') }), required),
     noSpecialChars: helpers.withMessage(
       t('auth.no_special_chars'),
-      (value) => !/["'`!@#$%^&*()+=<>?\/\\{}[\]|~:;]/.test(value)
+      (value) => !/["'`!@#$%^&*()+=<>?/\\{}[\]|~:;]/.test(value)
     )
   },
   lastname: {
     required: helpers.withMessage(t('auth.required_field', { field: t('auth.lastname') }), required),
     noSpecialChars: helpers.withMessage(
       t('auth.no_special_chars'),
-      (value) => !/["'`!@#$%^&*()+=<>?\/\\{}[\]|~:;]/.test(value)
+      (value) => !/["'`!@#$%^&*()+=<>?/\\{}[\]|~:;]/.test(value)
     )
   },
   password: { required, minLength: minLength(8) },
@@ -598,7 +597,7 @@ const rules = computed(() => ({
     required: helpers.withMessage(t('auth.required_field', { field: t('auth.hacienda') }), (val) => accountType.value === 'asesor' || !!val),
     noSpecialChars: helpers.withMessage(
       t('auth.no_special_chars'),
-      (value) => accountType.value === 'asesor' || !/["'`!@#$%^&*()+=<>?\/\\{}[\]|~:;]/.test(value)
+      (value) => accountType.value === 'asesor' || !/["'`!@#$%^&*()+=<>?/\\{}[\]|~:;]/.test(value)
     )
   },
   numero_colegiatura: {
@@ -632,25 +631,6 @@ const strengthColor = computed(() =>
 const strengthLabel = computed(() =>
   getPasswordStrengthLabel(passwordStrength.value, t)
 )
-
-const checkFields = async () => {
-  try {
-    const validationResults = await checkFieldsTaken([
-      { collection: 'users', field: 'username', value: registerForm.value.username.toUpperCase() },
-      { collection: 'users', field: 'email', value: registerForm.value.email },
-      { collection: 'Haciendas', field: 'name', value: registerForm.value.hacienda.toUpperCase() }
-    ])
-
-    usernameAvailable.value = validationResults.username
-    emailAvailable.value = validationResults.email
-    haciendaAvailable.value = validationResults.name
-
-    return validationResults.username && validationResults.email && validationResults.name
-  } catch (error) {
-    console.error('Error checking fields:', error)
-    return false
-  }
-}
 
 // Funciones debounced para validación en tiempo real
 const checkUsernameAvailability = debounce(async (username) => {
@@ -859,10 +839,6 @@ const login = async () => {
 const closeDialog = () => {
   dialogModel.value = false
   emit('update:isOpen', false)
-}
-
-const validateEmail = () => {
-  v$.value.email.$touch()
 }
 
 const handleNameInput = (field) => {
