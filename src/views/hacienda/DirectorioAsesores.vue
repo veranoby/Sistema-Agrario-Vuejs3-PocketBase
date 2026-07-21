@@ -217,7 +217,7 @@
                 <div class="text-xs font-weight-bold text-medium-emphasis mb-1">Especialidades:</div>
                 <div class="d-flex flex-wrap gap-1">
                   <v-chip
-                    v-for="(spec, idx) in limitItems(asesor.parsedInfo?.especialidades, 3)"
+                    v-for="spec in limitItems(asesor.parsedInfo?.especialidades, 3)"
                     :key="spec"
                     size="x-small"
                     color="teal"
@@ -348,6 +348,7 @@ import { useAsesoresStore } from '@/stores/asesoresStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import { useAvatarStore } from '@/stores/avatarStore'
+import { pb } from '@/utils/pocketbase'
 import { debounce } from '@/utils/debounce'
 import EnviarPaqueteWizard from '@/components/forms/asesores/EnviarPaqueteWizard.vue'
 import UniversalHeader from '@/components/UniversalHeader.vue'

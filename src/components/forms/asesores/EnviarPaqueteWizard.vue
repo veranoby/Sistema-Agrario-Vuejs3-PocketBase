@@ -16,7 +16,7 @@
       <!-- Content -->
       <v-card-text class="pa-6">
         <v-stepper v-model="step" :items="stepperItems" hide-actions>
-          <template v-slot:item.1>
+          <template v-slot:[`item.1`]>
             <div class="py-4">
               <h3 class="text-h6 font-weight-bold text-primary-3 mb-2">Paso 1: Selecciona la Siembra</h3>
               <p class="text-smtext-grey-darken-1 mb-4">
@@ -59,7 +59,7 @@
             </div>
           </template>
 
-          <template v-slot:item.2>
+          <template v-slot:[`item.2`]>
             <div class="py-4">
               <h3 class="text-h6 font-weight-bold text-primary-3 mb-1">Paso 2: Selecciona Zonas y Actividades</h3>
               <p class="text-smtext-grey-darken-1 mb-4">
@@ -155,7 +155,7 @@
             </div>
           </template>
 
-          <template v-slot:item.3>
+          <template v-slot:[`item.3`]>
             <div class="py-4">
               <h3 class="text-h6 font-weight-bold text-primary-3 mb-2">Paso 3: Confirmación y Notas</h3>
               <p class="text-smtext-grey-darken-1 mb-4">

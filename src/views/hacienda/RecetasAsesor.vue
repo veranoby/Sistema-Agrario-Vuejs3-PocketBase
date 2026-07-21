@@ -414,7 +414,6 @@ const todayStr = new Date().toISOString().split('T')[0]
 const rejectDialog = ref(false)
 const motivoRechazo = ref('')
 
-const stepperItems = ['Siembra', 'Zonas & Bitácoras', 'Confirmar']
 const wizardOpen = ref(false)
 
 const frecuenciaOptions = [
@@ -506,11 +505,6 @@ const hasRecetaFor = (paqueteId) => {
 const getSiembraName = (id) => {
   const s = siembrasStore.siembras.find(x => x.id === id)
   return s ? s.nombre : 'Siembra'
-}
-
-const getActividadName = (id) => {
-  const a = actividadesStore.actividades.find(x => x.id === id)
-  return a ? a.nombre : 'Actividad Agrícola'
 }
 
 const getRecipeHeaderBg = (state) => {
