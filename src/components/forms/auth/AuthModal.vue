@@ -11,36 +11,39 @@
     @click:outside="closeDialog"
     @keydown.esc="closeDialog"
   >
-    <v-card>
-      <v-tabs v-model="tab" fixed-tabs hide-slider role="tablist" aria-label="Auth tabs">
-        <v-tab value="login" :class="tab === 'login' ? 'bg-primary-1' : 'bg-white'" role="tab" aria-selected="tab === 'login'" aria-controls="login-panel">
-          <v-icon icon="mdi-login"></v-icon> &nbsp; {{ t('auth.login') }}
-        </v-tab>
-        <v-tab value="register" :class="tab === 'register' ? 'bg-cyan-darken-1' : 'bg-white'" role="tab" aria-selected="tab === 'register'" aria-controls="register-panel">
-          <v-icon icon="mdi-account-plus"></v-icon> &nbsp; {{ t('auth.register') }}
-        </v-tab>
-      </v-tabs>
+    <v-card class="rounded-xl overflow-hidden elevation-10">
+      <v-row no-gutters>
+        <!-- Columna Izquierda: Arte y Branding -->
+        <v-col cols="12" md="5" class="bg-primary d-none d-md-flex align-center justify-center position-relative">
+          <div class="position-absolute w-100 h-100 bg-black opacity-20"></div>
+          <v-img :src="loginLogo" cover class="position-absolute w-100 h-100" style="opacity: 0.15;"></v-img>
+          <div class="pa-8 text-center position-relative" style="z-index: 2;">
+            <v-icon icon="mdi-leaf" size="64" color="white" class="mb-4"></v-icon>
+            <h2 class="text-h4 font-weight-bold mb-4 text-white">ConAgri</h2>
+            <p class="text-body-1 text-white opacity-90">Plataforma integral inteligente para la gestión y precisión del ecosistema agrícola.</p>
+          </div>
+        </v-col>
 
-      <v-card-text class="m-0 p-0">
-        <v-window v-model="tab" role="tabpanel">
-          <v-window-item value="login" class="m-0 p-0" role="tabpanel" aria-labelledby="login-tab" id="login-panel">
-            <v-row class="m-0 p-0">
-              <v-col class="m-0 p-0">
-                <v-img :src="loginLogo" height="200" cover class="m-0 p-0" alt="Inicio de sesión"></v-img>
-              </v-col>
-            </v-row>
-            <v-row class="m-2 p-2">
-              <v-col class="m-2 p-2">
+        <!-- Columna Derecha: Formularios -->
+        <v-col cols="12" md="7" class="bg-white">
+          <v-card-text class="pa-6 pa-md-10 h-100 d-flex flex-column justify-center">
+            <v-window v-model="tab" :touch="false">
+              <!-- VISTA DE LOGIN -->
+              <v-window-item value="login">
+                <div class="text-center mb-8">
+                  <h3 class="text-h5 font-weight-bold text-grey-darken-4 mb-2">{{ t('auth.login') }}</h3>
+                  <p class="text-body-2 text-grey-darken-1">Ingresa tus credenciales para acceder a tu panel</p>
+                </div>
+                
                 <v-form @submit.prevent="login" aria-label="Formulario de inicio de sesión">
-                  <v-row justify="center">
-                    <v-col cols="6">
-                      <label :for="usernameInputId" class="text-xs">{{ t('auth.login_by_user') }}</label>
+                  <v-row dense>
+                    <v-col cols="12">
+                      <label :for="usernameInputId" class="text-caption font-weight-bold text-grey-darken-2 ml-1">{{ t('auth.login_by_user') }}</label>
                       <v-text-field
                         v-model="loginForm.username"
                         :id="usernameInputId"
-                        class="pt-4"
+                        class="mt-1"
                         :label="t('auth.username')"
-                        aria-label="Nombre de usuario"
                         variant="outlined"
                         required
                         color="primary"
@@ -49,14 +52,13 @@
                         @input="loginForm.username = loginForm.username.toUpperCase()"
                       ></v-text-field>
                     </v-col>
-                    <v-col cols="6">
-                      <label :for="emailInputId" class="text-xs">{{ t('auth.login_by_email') }}</label>
+                    <v-col cols="12">
+                      <label :for="emailInputId" class="text-caption font-weight-bold text-grey-darken-2 ml-1">{{ t('auth.login_by_email') }}</label>
                       <v-text-field
                         v-model="loginForm.email"
                         :id="emailInputId"
-                        class="pt-4"
+                        class="mt-1"
                         :label="t('auth.email')"
-                        aria-label="Correo electrónico"
                         variant="outlined"
                         type="email"
                         required
@@ -69,9 +71,7 @@
                       <v-text-field
                         v-model="loginForm.password"
                         :id="passwordInputId"
-                        class=""
                         :label="t('auth.password')"
-                        aria-label="Contraseña"
                         variant="outlined"
                         required
                         color="primary"
@@ -83,66 +83,69 @@
                       ></v-text-field>
                     </v-col>
                   </v-row>
-                  <v-row class="m-0 p-0">
-                    <v-col class="m-0 p-0">
-                      <v-checkbox
-                        class=""
-                        v-model="loginForm.rememberMe"
-                        :label="t('auth.remember_me')"
-                        aria-label="Recordar mis credenciales"
-                      ></v-checkbox>
-                    </v-col>
-                    <v-col class="pt-4">
-                      <a
-                        class="text-xs text-decoration-none text-primary"
-                        href="#"
-                        rel="noopener noreferrer"
-                        @click.prevent="openForgotPasswordDialog"
-                        tabindex="0"
-                        @keydown.enter="openForgotPasswordDialog"
-                        @keydown.space.prevent="openForgotPasswordDialog"
-                        ><strong>{{ t('auth.forgot_password') }}</strong></a
-                      >
-                    </v-col>
-                  </v-row>
-                  <v-btn type="submit" color="primary" block :loading="uiFeedbackStore.globalLoading" aria-label="Iniciar sesión">{{ t('auth.login') }}</v-btn>
-                </v-form>
-              </v-col>
-            </v-row>
-          </v-window-item>
 
-          <v-window-item value="register" class="m-0 p-0">
-            <v-row class="m-0 p-0">
-              <v-col class="m-0 p-0">
-                <v-img :src="registerLogo" height="200" cover class="m-0 p-0"></v-img>
-              </v-col>
-            </v-row>
-            <v-row class="m-2 p-2">
-              <v-col class="m-2 p-2">
+                  <div class="d-flex align-center justify-space-between mt-1 mb-6">
+                    <v-checkbox
+                      v-model="loginForm.rememberMe"
+                      :label="t('auth.remember_me')"
+                      color="primary"
+                      density="compact"
+                      hide-details
+                      class="text-body-2"
+                    ></v-checkbox>
+                    <a
+                      class="text-caption font-weight-bold text-primary text-decoration-none cursor-pointer"
+                      @click.prevent="openForgotPasswordDialog"
+                      tabindex="0"
+                    >
+                      {{ t('auth.forgot_password') }}
+                    </a>
+                  </div>
+
+                  <v-btn type="submit" color="primary" block size="large" class="text-button font-weight-bold rounded-lg mb-6" :loading="uiFeedbackStore.globalLoading">
+                    {{ t('auth.login') }}
+                  </v-btn>
+
+                  <div class="text-center">
+                    <p class="text-body-2 text-grey-darken-1">
+                      ¿No tienes cuenta? 
+                      <a @click.prevent="tab = 'register'" class="text-primary font-weight-bold text-decoration-none cursor-pointer">
+                        Regístrate aquí
+                      </a>
+                    </p>
+                  </div>
+                </v-form>
+              </v-window-item>
+              <!-- VISTA DE REGISTRO -->
+              <v-window-item value="register">
+                <div class="text-center mb-6">
+                  <h3 class="text-h5 font-weight-bold text-grey-darken-4 mb-2">{{ t('auth.register') }}</h3>
+                  <p class="text-body-2 text-grey-darken-1">Crea tu cuenta y únete a la red inteligente</p>
+                </div>
+                
                 <v-form @submit.prevent="register">
-                  <v-row justify="center" v-if="!authStore.registrationSuccess">
-                    <v-col cols="12"> {{ t('auth.please_register') }} </v-col>
-                    
-                    <v-col cols="12" class="text-center mb-4">
-                      <v-btn-toggle v-model="accountType" color="primary" mandatory variant="outlined" class="w-100 d-flex">
-                        <v-btn value="hacienda" class="flex-grow-1">
-                          <v-icon start>mdi-home-silo</v-icon> Administro una Hacienda
+                  <v-row justify="center" v-if="!authStore.registrationSuccess" dense>
+                    <v-col cols="12" class="text-center mb-2">
+                      <v-btn-toggle v-model="accountType" color="primary" mandatory variant="outlined" class="w-100 d-flex rounded-lg">
+                        <v-btn value="hacienda" class="flex-grow-1 text-caption font-weight-bold">
+                          <v-icon start>mdi-home-silo</v-icon> Hacienda
                         </v-btn>
-                        <v-btn value="asesor" class="flex-grow-1">
-                          <v-icon start>mdi-account-hard-hat</v-icon> Soy Asesor Técnico
+                        <v-btn value="asesor" class="flex-grow-1 text-caption font-weight-bold">
+                          <v-icon start>mdi-account-hard-hat</v-icon> Asesor
                         </v-btn>
                       </v-btn-toggle>
                       
-                      <v-alert v-if="accountType === 'asesor'" type="warning" variant="tonal" class="mt-4 text-left" density="compact" icon="mdi-cash">
-                        El perfil de Asesor Técnico es un servicio pagado con un costo de $5.00/mes.
-                        Podrás completar tu registro y luego enviar tu comprobante de pago para activación.
+                      <v-alert v-if="accountType === 'asesor'" type="warning" variant="tonal" class="mt-3 text-left text-caption" density="compact" icon="mdi-cash">
+                        El perfil de Asesor Técnico tiene un costo de $5.00/mes.
+                        Completa tu registro y envía tu comprobante.
                       </v-alert>
                     </v-col>
                     
-                    <v-col cols="6">
+                    <v-col cols="12" class="pb-0">
+                      <label class="text-caption font-weight-bold text-grey-darken-2 ml-1">{{ t('auth.username') }}</label>
                       <v-text-field
                         v-model="registerForm.username"
-                        class="p-0"
+                        class="mt-1"
                         :label="t('auth.username')"
                         variant="outlined"
                         required
@@ -157,14 +160,16 @@
                         :loading="checkingUsername"
                       >
                         <template v-if="usernameChecked && usernameAvailable && !checkingUsername" v-slot:append-inner>
-                          <v-icon color="primary">mdi-check-circle</v-icon>
+                          <v-icon color="success">mdi-check-circle</v-icon>
                         </template>
                       </v-text-field>
                     </v-col>
-                    <v-col cols="6">
+
+                    <v-col cols="12" class="pb-0">
+                      <label class="text-caption font-weight-bold text-grey-darken-2 ml-1">{{ t('auth.email') }}</label>
                       <v-text-field
                         v-model="registerForm.email"
-                        class="p-0"
+                        class="mt-1"
                         :label="t('auth.email')"
                         variant="outlined"
                         type="email"
@@ -180,14 +185,14 @@
                         :loading="checkingEmail"
                       >
                         <template v-if="emailChecked && emailAvailable && !checkingEmail" v-slot:append-inner>
-                          <v-icon color="primary">mdi-check-circle</v-icon>
+                          <v-icon color="success">mdi-check-circle</v-icon>
                         </template>
                       </v-text-field>
                     </v-col>
-                    <v-col cols="6">
+
+                    <v-col cols="12" class="pb-0">
                       <v-text-field
                         v-model="registerForm.firstname"
-                        class="p-0"
                         :label="t('auth.firstname')"
                         variant="outlined"
                         required
@@ -199,10 +204,10 @@
                         @input="handleNameInput('firstname')"
                       ></v-text-field>
                     </v-col>
-                    <v-col cols="6">
+
+                    <v-col cols="12" class="pb-0">
                       <v-text-field
                         v-model="registerForm.lastname"
-                        class="p-0"
                         :label="t('auth.lastname')"
                         variant="outlined"
                         required
@@ -214,10 +219,12 @@
                         @input="handleNameInput('lastname')"
                       ></v-text-field>
                     </v-col>
-                    <v-col cols="12" v-if="accountType === 'hacienda'">
+
+                    <v-col cols="12" v-if="accountType === 'hacienda'" class="pb-0">
+                      <label class="text-caption font-weight-bold text-grey-darken-2 ml-1">{{ t('auth.hacienda') }}</label>
                       <v-text-field
                         v-model="registerForm.hacienda"
-                        class="p-0"
+                        class="mt-1"
                         :label="t('auth.hacienda')"
                         variant="outlined"
                         required
@@ -231,17 +238,15 @@
                         :loading="checkingHacienda"
                       >
                         <template v-if="haciendaChecked && haciendaAvailable && !checkingHacienda" v-slot:append-inner>
-                          <v-icon color="primary">mdi-check-circle</v-icon>
+                          <v-icon color="success">mdi-check-circle</v-icon>
                         </template>
                       </v-text-field>
                     </v-col>
 
-                    <!-- Campos del Asesor Técnico -->
                     <template v-if="accountType === 'asesor'">
-                      <v-col cols="12">
+                      <v-col cols="12" class="pb-0">
                         <v-text-field
                           v-model="registerForm.numero_colegiatura"
-                          class="p-0"
                           label="Nro. de Colegiatura SENESCYT"
                           variant="outlined"
                           required
@@ -251,7 +256,7 @@
                           prepend-inner-icon="mdi-badge-account-horizontal-outline"
                         ></v-text-field>
                       </v-col>
-                      <v-col cols="12">
+                      <v-col cols="12" class="pb-0">
                         <v-select
                           v-model="registerForm.especialidades"
                           :items="ESPECIALIDADES_ASESOR"
@@ -266,7 +271,7 @@
                           prepend-inner-icon="mdi-sprout-outline"
                         ></v-select>
                       </v-col>
-                      <v-col cols="12">
+                      <v-col cols="12" class="pb-0">
                         <v-select
                           v-model="registerForm.zonas_cobertura"
                           :items="PROVINCIAS_ECUADOR"
@@ -281,12 +286,12 @@
                           prepend-inner-icon="mdi-map-marker-outline"
                         ></v-select>
                       </v-col>
-                      <v-col cols="12">
+                      <v-col cols="12" class="pb-0">
                         <v-textarea
                           v-model="registerForm.bio_corta"
                           label="Biografía Corta (Opcional)"
                           variant="outlined"
-                          rows="3"
+                          rows="2"
                           maxlength="280"
                           counter
                           color="primary"
@@ -296,10 +301,9 @@
                       </v-col>
                     </template>
 
-                    <v-col cols="6">
+                    <v-col cols="12" class="pb-0">
                       <v-text-field
                         v-model="registerForm.password"
-                        class="p-0"
                         :label="t('auth.password')"
                         variant="outlined"
                         required
@@ -312,24 +316,22 @@
                         @input="v$.password.$touch()"
                         @click:append-inner="visible = !visible"
                       ></v-text-field>
-
-                      <!-- Password Strength Indicator -->
                       <v-progress-linear
                         v-if="registerForm.password"
                         :model-value="passwordStrength"
                         :color="strengthColor"
-                        :height="6"
+                        :height="4"
                         rounded
-                        class="mt-2"
+                        class="mt-1"
                       ></v-progress-linear>
-                      <p v-if="registerForm.password" class="text-xs mt-1" :class="`text-${strengthColor}`">
+                      <p v-if="registerForm.password" class="text-caption mt-1" :class="`text-${strengthColor}`">
                         {{ strengthLabel }}
                       </p>
                     </v-col>
-                    <v-col cols="6">
+
+                    <v-col cols="12" class="pb-0">
                       <v-text-field
                         v-model="registerForm.passwordConfirm"
-                        class="p-0"
                         :label="t('auth.confirm_password')"
                         variant="outlined"
                         required
@@ -343,28 +345,41 @@
                         @click:append-inner="visible = !visible"
                       ></v-text-field>
                     </v-col>
-                    <v-btn type="submit" color="blue" block :disabled="!formValid" :loading="uiFeedbackStore.globalLoading">{{ t('auth.register_now') }}</v-btn>
+
+                    <v-col cols="12" class="mt-4">
+                      <v-btn type="submit" color="primary" block size="large" class="text-button font-weight-bold rounded-lg" :disabled="!formValid" :loading="uiFeedbackStore.globalLoading">
+                        {{ t('auth.register_now') }}
+                      </v-btn>
+                    </v-col>
+
+                    <v-col cols="12" class="text-center mt-2">
+                      <p class="text-body-2 text-grey-darken-1">
+                        ¿Ya tienes cuenta? 
+                        <a @click.prevent="tab = 'login'" class="text-primary font-weight-bold text-decoration-none cursor-pointer">
+                          Inicia sesión aquí
+                        </a>
+                      </p>
+                    </v-col>
                   </v-row>
-                  <v-row justify="center" no-gutters v-else>
-                    <v-col cols="12"
-                      ><br />
-                      <h3 class="text-center text-primary">{{ t('auth.registration_success_title') }}</h3>
-                      <br />
-                      <p class="text-center text-sm">
+
+                  <v-row justify="center" align="center" class="h-100" no-gutters v-else>
+                    <v-col cols="12" class="text-center">
+                      <v-icon icon="mdi-check-circle" color="success" size="64" class="mb-4"></v-icon>
+                      <h3 class="text-h5 font-weight-bold text-primary mb-2">{{ t('auth.registration_success_title') }}</h3>
+                      <p class="text-body-2 text-grey-darken-1 mb-6">
                         {{ t('auth.registration_success_message') }}
                       </p>
-                      <br />
+                      <v-btn @click="closeModalAndNavigate" color="primary" size="large" class="rounded-lg font-weight-bold" block>
+                        {{ t('auth.verify_email') }}
+                      </v-btn>
                     </v-col>
-                    <v-btn @click="closeModalAndNavigate" color="primary" size="small" block>
-                      {{ t('auth.verify_email') }}
-                    </v-btn>
                   </v-row>
                 </v-form>
-              </v-col>
-            </v-row>
-          </v-window-item>
-        </v-window>
-      </v-card-text>
+              </v-window-item>
+            </v-window>
+          </v-card-text>
+        </v-col>
+      </v-row>
     </v-card>
   </v-dialog>
 
@@ -503,8 +518,8 @@ const loginForm = ref({
   rememberMe: false
 })
 
-onMounted(() => {
-  const rememberedUserData = syncStore.loadFromLocalStorage('rememberedUser')
+onMounted(async () => {
+  const rememberedUserData = await syncStore.loadFromLocalStorage('rememberedUser')
   // New log to always show what was loaded, before deciding to fill
   console.log(
     '[AUTHMODAL MOUNTED] Checking for rememberedUser in localStorage. Found:',

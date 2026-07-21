@@ -58,7 +58,7 @@ const routes = [
   },
   {
     path: '/hacienda/suscripciones',
-    redirect: to => {
+    redirect: () => {
       return { path: '/profile', query: { openPlans: 'true' } }
     }
   },
@@ -140,6 +140,15 @@ const routes = [
     path: '/bitacora',
     component: () => import('@/components/bitacora/BitacoraView.vue'),
     name: 'Bitácora',
+    meta: {
+      requiresAuth: true,
+      roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR, ROLES.OPERADOR]
+    }
+  },
+  {
+    path: '/asesores/marketplace',
+    component: () => import('@/views/asesores/MarketplaceAsesores.vue'),
+    name: 'Marketplace de Asesores',
     meta: {
       requiresAuth: true,
       roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR, ROLES.OPERADOR]

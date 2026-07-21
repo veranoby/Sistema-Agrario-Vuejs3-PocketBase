@@ -24,6 +24,32 @@
     </v-toolbar>
 
     <v-card-text class="pa-0 overflow-y-auto" style="max-height: 80vh;">
+      <!-- Banner contextual de completitud BPA (QW0-T3) -->
+      <v-alert
+        v-if="completenessBannerInfo"
+        type="warning"
+        variant="tonal"
+        density="compact"
+        icon="mdi-information-outline"
+        class="ma-4 mb-0 rounded-lg"
+      >
+        <div class="d-flex align-center justify-space-between flex-wrap gap-2">
+          <span class="text-xs font-weight-medium">
+            ℹ️ Completar <strong>{{ completenessBannerInfo.faltantes.length }}</strong> campos adicionales mejora tu puntaje BPA ({{ completenessBannerInfo.porcentaje }}%) y activa la Calculadora de Mezclas.
+          </span>
+          <v-btn
+            size="x-small"
+            color="amber-darken-3"
+            variant="flat"
+            class="text-white font-weight-bold"
+            @click="scrollToIncompleteFields"
+          >
+            Ver campos
+            <v-icon end size="x-small">mdi-arrow-down</v-icon>
+          </v-btn>
+        </div>
+      </v-alert>
+
       <v-form ref="bitacoraFormRef">
         <div class="flex flex-col gap-6 pa-6">
           
@@ -111,13 +137,28 @@
               :selected-siembras="formData.siembras_ids"
               class="ml-8 mt-4"
             />
+
+            <!-- Banner de Alerta de Carencia (QW2-T4) -->
+            <v-alert
+              v-if="carenciaWarningInfo"
+              type="error"
+              variant="flat"
+              density="compact"
+              icon="mdi-alert-octagon-outline"
+              class="ml-8 mt-4 rounded-lg text-white"
+            >
+              <div class="text-xs font-weight-medium">
+                {{ carenciaWarningInfo.mensaje }}
+              </div>
+            </v-alert>
           </div>
 
           <!-- SECCIÓN 3: Información de Bitácora (Componente Universal) -->
-          <div v-if="selectedActividadDetalles" class="mt-2">
+          <div v-if="selectedActividadDetalles" id="bpa-metrics-section" class="mt-2">
             <BatchGeneralDataForm
               is-single-entry
               :actividad-preview="selectedActividadDetalles"
+              :zonas-ids="formData.zonas_ids"
               v-model:observaciones="formData.notas"
               v-model:metricasSeleccionadas="metricasSeleccionadas"
               v-model:metricasValues="formData.metricas_values"
@@ -282,7 +323,6 @@
 
 <script setup>
 import { ref, reactive, onMounted, watch, computed } from 'vue';
-import { useRoute } from 'vue-router';
 import EvidenciasImageUpload from '@/components/common/EvidenciasImageUpload.vue';
 import { useActividadesStore } from '@/stores/actividadesStore';
 import { useSiembrasStore } from '@/stores/siembrasStore';
@@ -300,6 +340,8 @@ import ZonaSelectorList from './ZonaSelectorList.vue';
 import BatchGeneralDataForm from './BatchGeneralDataForm.vue';
 import BpaChecklist from '../bitacora/BpaChecklist.vue';
 import UniversalSignature from '@/components/common/UniversalSignature.vue';
+import { useFieldCompleteness } from '@/composables/useFieldCompleteness';
+import { useCarenciaSemaforo } from '@/composables/useCarenciaSemaforo';
 
 const props = defineProps({
   entryToEdit: {
@@ -366,6 +408,65 @@ const rules = {
 const isEditMode = computed(() => !!props.entryToEdit);
 const modoOrdenTrabajo = computed(() => !!props.programacionId);
 const formTitle = computed(() => isEditMode.value ? 'Editar Entrada' : 'Nueva Entrada');
+
+const { calculateCompleteness } = useFieldCompleteness();
+
+const completenessBannerInfo = computed(() => {
+  if (!isEditMode.value) return null;
+
+  const tipoOrActividad = selectedActividadDetalles.value?.expand?.tipo_actividades
+    || selectedActividadDetalles.value
+    || formData.actividad_realizada_id;
+
+  const completeness = calculateCompleteness(tipoOrActividad, formData.metricas_values || {});
+
+  if (completeness.porcentaje >= 100 || completeness.faltantes.length === 0) {
+    return null;
+  }
+
+  return completeness;
+});
+
+const scrollToIncompleteFields = () => {
+  const section = document.getElementById('bpa-metrics-section');
+  if (section) {
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+};
+
+const { calcularEstadoCarencia } = useCarenciaSemaforo();
+
+const carenciaWarningInfo = computed(() => {
+  const actividadNombre = (selectedActividadDetalles.value?.nombre || '').toLowerCase();
+  const tipoNombre = (selectedActividadDetalles.value?.expand?.tipo_actividades?.nombre || '').toLowerCase();
+  const isCosecha = actividadNombre.includes('cosecha') || tipoNombre.includes('cosecha') || formData.actividad_realizada_id === 'yhtpctztpakym9h';
+
+  if (!isCosecha) return null;
+
+  const zonasSeleccionadas = formData.zonas_ids || [];
+  if (!zonasSeleccionadas.length) return null;
+
+  const zonasBloqueadas = [];
+  for (const zonaId of zonasSeleccionadas) {
+    const estado = calcularEstadoCarencia(zonaId);
+    if (estado.estado === 'BLOQUEADO') {
+      const zonaObj = zonasStore.zonas.find(z => z.id === zonaId);
+      zonasBloqueadas.push({
+        zonaId,
+        nombre: zonaObj?.nombre || zonaId,
+        diasRestantes: estado.diasRestantes,
+        fechaLibre: estado.fechaLibre
+      });
+    }
+  }
+
+  if (!zonasBloqueadas.length) return null;
+
+  return {
+    zonasBloqueadas,
+    mensaje: `⚠️ ATENCIÓN: ${zonasBloqueadas.map(z => `El lote '${z.nombre}' está en período de carencia por ${z.diasRestantes} día(s) más`).join('. ')}. Cosechar ahora viola el Art. 16 BPA de Agrocalidad.`
+  };
+});
 
 const relevantSiembraIds = computed(() => {
   if (props.siembraIdContext) return [props.siembraIdContext];
@@ -709,11 +810,19 @@ async function submitForm() {
         }
     });
 
+    let finalNotas = formData.notas.trim();
+    if (carenciaWarningInfo.value) {
+      const advertenciaTexto = `[ADVERTENCIA BPA: Cosecha registrada durante periodo de carencia activo en ${carenciaWarningInfo.value.zonasBloqueadas.map(z => z.nombre).join(', ')}]`;
+      if (!finalNotas.includes(advertenciaTexto)) {
+        finalNotas = finalNotas ? `${finalNotas}\n${advertenciaTexto}` : advertenciaTexto;
+      }
+    }
+
     const dataToSubmit = {
       fecha_ejecucion: new Date(formData.fecha_ejecucion).toISOString(),
       actividad_realizada: formData.actividad_realizada_id,
       estado_ejecucion: formData.estado_ejecucion,
-      notas: formData.notas.trim(),
+      notas: finalNotas,
       siembras: formData.siembras_ids,
       zonas: formData.zonas_ids,
       metricas: filteredMetricas,

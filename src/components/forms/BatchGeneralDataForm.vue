@@ -28,6 +28,7 @@
           <!-- Selectable Metrics Section -->
           <FormularioMetricas
             :metricas-disponibles="metricasDisponibles"
+            :zonas-ids="zonasIds"
             v-model="metricasSeleccionadas"
             v-model:metricasValues="metricasValues"
           />
@@ -63,7 +64,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed } from 'vue';
 import { format } from 'date-fns';
 import FormularioMetricas from './FormularioMetricas.vue';
 
@@ -73,6 +74,7 @@ const props = defineProps({
   observaciones: { type: String, default: '' },
   metricasSeleccionadas: { type: Array, default: () => [] },
   metricasValues: { type: Object, default: () => ({}) },
+  zonasIds: { type: Array, default: () => [] },
   isSingleEntry: { type: Boolean, default: false }
 });
 
@@ -163,6 +165,10 @@ const observacionesAutomaticas = computed(() => {
   }
 });
 
+defineExpose({
+  form,
+  observacionesAutomaticas
+});
 </script>
 
 <style scoped>

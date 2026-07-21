@@ -115,6 +115,52 @@
         </v-col>
       </v-row>
 
+      <!-- Salud BPA Widget (QW0-T5) -->
+      <v-card class="elevation-2 rounded-lg border pa-4 mb-6 bg-white">
+        <div class="d-flex align-center justify-space-between flex-wrap gap-4">
+          <div class="d-flex align-center gap-3">
+            <v-avatar :color="bpaHealthColor" size="44">
+              <v-icon icon="mdi-clipboard-check-outline" color="white" size="24"></v-icon>
+            </v-avatar>
+            <div>
+              <div class="d-flex align-center gap-2">
+                <h4 class="text-subtitle-1 font-weight-bold text-grey-darken-3">Salud BPA de tu Hacienda</h4>
+                <v-chip :color="bpaHealthColor" size="x-small" variant="flat" class="font-weight-bold">
+                  {{ bpaAveragePercentage }}% Promedio
+                </v-chip>
+              </div>
+              <p class="text-caption text-grey-darken-1 mb-0 mt-1">
+                {{ bpaMotivadorMessage }}
+              </p>
+            </div>
+          </div>
+          
+          <div class="d-flex align-center gap-3">
+            <div style="min-width: 140px;" class="mr-2">
+              <v-progress-linear
+                :model-value="bpaAveragePercentage"
+                :color="bpaHealthColor"
+                height="8"
+                rounded
+              ></v-progress-linear>
+              <span class="text-xs text-grey-darken-1 mt-1 d-block text-right">{{ bpaIncompleteCount }} de {{ totalBitacorasAnalizadas }} bitácoras incompletas</span>
+            </div>
+
+            <v-btn
+              color="primary"
+              variant="tonal"
+              size="small"
+              class="font-weight-bold rounded-lg"
+              prepend-icon="mdi-filter-outline"
+              @click="verBitacorasIncompletas"
+            >
+              Ver bitácoras incompletas
+              <v-icon end size="small">mdi-arrow-right</v-icon>
+            </v-btn>
+          </div>
+        </div>
+      </v-card>
+
       <!-- Charts Section -->
       <v-row v-if="hasData">
         <!-- Distribution of Costs -->
@@ -209,10 +255,13 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAnalyticsStore } from '@/stores/analyticsStore'
 import { useFinanzaStore } from '@/stores/finanzaStore'
 import { useTarjasStore } from '@/stores/tarjasStore'
 import { useHaciendaStore } from '@/stores/haciendaStore'
+import { useBitacoraStore } from '@/stores/bitacoraStore'
+import { useFieldCompleteness } from '@/composables/useFieldCompleteness'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/authStore'
@@ -250,11 +299,82 @@ const analyticsStore = useAnalyticsStore()
 const finanzasStore = useFinanzaStore()
 const tarjasStore = useTarjasStore()
 const haciendaStore = useHaciendaStore()
+const bitacoraStore = useBitacoraStore()
 const authStore = useAuthStore()
+const router = useRouter()
+const { calculateCompleteness } = useFieldCompleteness()
 const { t } = useI18n()
 const { mobile } = useDisplay()
 const { userRole, avatarUrl } = storeToRefs(authStore)
 const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore)
+
+// Computados del Widget Salud BPA (QW0-T5)
+const bpaStats = computed(() => {
+  const entries = (bitacoraStore.getEnrichedBitacoraEntries || []).slice(0, 30)
+  if (!entries.length) {
+    return {
+      average: 100,
+      incompleteCount: 0,
+      total: 0,
+      nivelColor: 'verde'
+    }
+  }
+
+  let totalPorcentaje = 0
+  let incompleteCount = 0
+
+  entries.forEach(entry => {
+    const tipoOrActividad = entry.expand?.actividad_realizada?.expand?.tipo_actividades
+      || entry.expand?.actividad_realizada
+      || entry.actividad_realizada
+    const res = calculateCompleteness(tipoOrActividad, entry.metricas || {})
+    totalPorcentaje += res.porcentaje
+    if (res.porcentaje < 85) {
+      incompleteCount++
+    }
+  })
+
+  const average = Math.round(totalPorcentaje / entries.length)
+
+  let nivelColor = 'verde'
+  if (average <= 50) nivelColor = 'rojo'
+  else if (average <= 80) nivelColor = 'amarillo'
+
+  return {
+    average,
+    incompleteCount,
+    total: entries.length,
+    nivelColor
+  }
+})
+
+const bpaAveragePercentage = computed(() => bpaStats.value.average)
+const bpaIncompleteCount = computed(() => bpaStats.value.incompleteCount)
+const totalBitacorasAnalizadas = computed(() => bpaStats.value.total)
+
+const bpaHealthColor = computed(() => {
+  switch (bpaStats.value.nivelColor) {
+    case 'rojo': return 'error'
+    case 'amarillo': return 'warning'
+    case 'verde': return 'success'
+    default: return 'info'
+  }
+})
+
+const bpaMotivadorMessage = computed(() => {
+  const avg = bpaAveragePercentage.value
+  if (avg >= 85) {
+    return `¡Excelente! Tu hacienda mantiene un ${avg}% de completitud BPA. Estás listo para auditorías de Agrocalidad.`
+  } else if (avg >= 50) {
+    return `Tu hacienda tiene ${avg}% de completitud BPA. Completa los campos de carencia e insumos para alcanzar el 85% recomendado.`
+  } else {
+    return `Tu hacienda tiene un ${avg}% de completitud BPA. Hay bitácoras sin datos críticos de carencia y registros sanitarios.`
+  }
+})
+
+function verBitacorasIncompletas() {
+  router.push({ path: '/hacienda/bitacora' })
+}
 
 const loading = ref(false)
 const hasData = ref(false)

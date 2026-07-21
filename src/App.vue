@@ -160,7 +160,7 @@ const navigationLinks = computed(() => {
     links.push({ id: 7, to: '/metricas', icon: 'mdi-chart-areaspline', label: t('sidebar.metrics'), group: 'Análisis' })
     links.push({ id: 8, to: '/finanzas', icon: 'mdi-cash-multiple', label: t('sidebar.finances'), group: 'Análisis' })
     links.push({ id: 9, to: '/recordatorios', icon: 'mdi-alarm-light-outline', label: t('sidebar.reminders'), group: 'Extra' })
-    links.push({ id: 10, to: '/hacienda/directorio-asesores', icon: 'mdi-account-search', label: 'Asesores', group: 'Extra' })
+    links.push({ id: 10, to: '/asesores/marketplace', icon: 'mdi-account-tie', label: 'Marketplace Asesores BPA', group: 'Extra' })
     if (haciendaStore.isModuleActive('kardex_bodega')) {
       links.push({ id: 11, to: '/hacienda/bodega', icon: 'mdi-warehouse', label: 'Bodega', group: 'Operación' })
     }
@@ -315,7 +315,7 @@ const refreshTokenIfNeeded = async () => {
     }
   } catch (error) {
     const syncStore = useSyncStore()
-    const rememberMe = syncStore.loadFromLocalStorage('rememberMe')
+    const rememberMe = await syncStore.loadFromLocalStorage('rememberMe')
     if (rememberMe) {
       authStore.showLoginDialog = true
     }

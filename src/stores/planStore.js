@@ -117,7 +117,7 @@ export const usePlanStore = defineStore('plan', {
 
     async getGratisPlan() {
       const syncStore = useSyncStore()
-      const cachedPlan = syncStore.loadFromLocalStorage('gratisPlan')
+      const cachedPlan = await syncStore.loadFromLocalStorage('gratisPlan')
 
       if (cachedPlan) {
         return cachedPlan
@@ -144,7 +144,7 @@ export const usePlanStore = defineStore('plan', {
       this.loading = true
 
       // Cargar desde localStorage primero
-      const cachedPlans = syncStore.loadFromLocalStorage('plans')
+      const cachedPlans = await syncStore.loadFromLocalStorage('plans')
       if (cachedPlans?.length) {
         this.plans = cachedPlans
         this.loading = false

@@ -14,6 +14,7 @@ import { locationCoordinator } from '@/services/locationCoordinator'
 import { differenceInDays, format } from 'date-fns'
 import { autocompleteBitacora } from '@/services/aiService'
 import eventBus, { EVENTS } from '@/utils/eventBus'
+import { useCarenciaSemaforo } from '@/composables/useCarenciaSemaforo'
 
 // Helpers de Mapeo Backend <-> Frontend
 function mapToFrontend(entry) {
@@ -93,6 +94,31 @@ export const useBitacoraStore = defineStore('bitacora', {
   },
 
   getters: {
+    carenciasPorZona: (state) => {
+      const { calcularEstadoCarencia } = useCarenciaSemaforo()
+      const carenciasMap = {}
+      const zonaIdsSet = new Set()
+
+      state.bitacoraEntries.forEach(entry => {
+        if (Array.isArray(entry.zonas)) {
+          entry.zonas.forEach(zId => zonaIdsSet.add(typeof zId === 'string' ? zId : zId.id))
+        } else if (entry.zona_id) {
+          zonaIdsSet.add(entry.zona_id)
+        } else if (entry.expand?.zonas) {
+          entry.expand.zonas.forEach(z => zonaIdsSet.add(z.id))
+        }
+      })
+
+      zonaIdsSet.forEach(zonaId => {
+        carenciasMap[zonaId] = calcularEstadoCarencia(zonaId)
+      })
+
+      return carenciasMap
+    },
+    getCarenciaByZona: () => (zonaId) => {
+      const { calcularEstadoCarencia } = useCarenciaSemaforo()
+      return calcularEstadoCarencia(zonaId)
+    },
     getBitacoraByProgramacion: (state) => (programacionId) => {
       return state.bitacoraEntries.filter(entry => entry.programacion_origen === programacionId);
     },

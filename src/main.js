@@ -70,7 +70,7 @@ const vuetify = createVuetify({
   },
   defaults: {
     global: {
-      density: 'comfortable',
+      density: 'compact',
       font: {
         family: "'Plus Jakarta Sans', sans-serif"
       }
@@ -83,15 +83,15 @@ const vuetify = createVuetify({
     },
     VTextField: {
       variant: 'outlined',
-      density: 'comfortable'
+      density: 'compact'
     },
     VSelect: {
       variant: 'outlined',
-      density: 'comfortable'
+      density: 'compact'
     },
     VTextarea: {
       variant: 'outlined',
-      density: 'comfortable'
+      density: 'compact'
     }
   }
 })

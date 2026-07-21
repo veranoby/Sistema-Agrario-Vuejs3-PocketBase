@@ -9,6 +9,27 @@
       <span v-if="tipoActividadNombre"> | Tipo: {{ tipoActividadNombre }}</span>
     </v-card-subtitle>
 
+    <!-- Indicador de completitud BPA (QW0-T2) -->
+    <div class="px-4 pt-2 pb-1">
+      <v-tooltip location="bottom">
+        <template v-slot:activator="{ props: tooltipProps }">
+          <div v-bind="tooltipProps" class="cursor-pointer">
+            <div class="d-flex align-center justify-space-between text-caption text-grey-darken-1 mb-1">
+              <span class="d-flex align-center"><v-icon size="x-small" class="mr-1">mdi-clipboard-check-outline</v-icon>Completitud BPA</span>
+              <span class="font-weight-bold text-xs" :class="`text-${completenessProgressColor}`">{{ completenessInfo.porcentaje }}%</span>
+            </div>
+            <v-progress-linear
+              :model-value="completenessInfo.porcentaje"
+              :color="completenessProgressColor"
+              height="6"
+              rounded
+            ></v-progress-linear>
+          </div>
+        </template>
+        <span>{{ completenessTooltipText }}</span>
+      </v-tooltip>
+    </div>
+
     <v-divider></v-divider>
 
     <v-card-text>
@@ -128,10 +149,12 @@ import { useHaciendaStore } from '@/stores/haciendaStore'
 import { useBitacoraStore } from '@/stores/bitacoraStore'
 import { generateBpaReport } from '@/services/pdfGenerator'
 import UniversalSignature from '@/components/common/UniversalSignature.vue';
+import { useFieldCompleteness } from '@/composables/useFieldCompleteness'
 
 const authStore = useAuthStore()
 const haciendaStore = useHaciendaStore()
 const bitacoraStore = useBitacoraStore()
+const { calculateCompleteness } = useFieldCompleteness()
 
 const canEdit = computed(() => authStore.canEdit)
 const canDelete = computed(() => authStore.canDelete)
@@ -144,6 +167,33 @@ const props = defineProps({
 });
 
 const pdfLoading = ref(false)
+
+const completenessInfo = computed(() => {
+  const tipoOrActividad = props.entry.expand?.actividad_realizada?.expand?.tipo_actividades
+    || props.entry.expand?.actividad_realizada
+    || props.entry.actividad_realizada
+  return calculateCompleteness(tipoOrActividad, props.entry.metricas || {})
+})
+
+const completenessProgressColor = computed(() => {
+  switch (completenessInfo.value.nivelColor) {
+    case 'rojo': return 'error'
+    case 'amarillo': return 'warning'
+    case 'verde': return 'success'
+    default: return 'info'
+  }
+})
+
+const completenessTooltipText = computed(() => {
+  const info = completenessInfo.value
+  let text = `Completitud BPA: ${info.porcentaje}% (${info.camposCompletados}/${info.totalCampos})`
+  if (info.faltantesDetalle && info.faltantesDetalle.length > 0) {
+    const nombresFaltantes = info.faltantesDetalle.slice(0, 3).map(f => f.label || f.key).join(', ')
+    const mas = info.faltantesDetalle.length > 3 ? ` y ${info.faltantesDetalle.length - 3} más` : ''
+    text += `. Faltan: ${nombresFaltantes}${mas}`
+  }
+  return text
+})
 
 const isBpaActive = computed(() => {
   return haciendaStore.isModuleActive('pdf_bpa') && props.entry.signature?.hash

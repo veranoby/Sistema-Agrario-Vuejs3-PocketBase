@@ -152,7 +152,7 @@ export const useFinanzaStore = defineStore('finanzas', {
       this.loading = true
 
       try {
-        const registros = syncStore.loadFromLocalStorage('finanzas')
+        const registros = await syncStore.loadFromLocalStorage('finanzas')
         if (registros?.length) {
           this.registros = registros
           return registros
@@ -661,9 +661,9 @@ export const useFinanzaStore = defineStore('finanzas', {
       return useSyncStore().removeLocalItem('finanzas', id, this.registros)
     },
 
-    initFromLocalStorage() {
+    async initFromLocalStorage() {
       const syncStore = useSyncStore()
-      const localRegistros = syncStore.loadFromLocalStorage('finanzas')
+      const localRegistros = await syncStore.loadFromLocalStorage('finanzas')
       this.registros = localRegistros || []
       console.log('[FINANZA_STORE] Initialized from localStorage. Registros:', this.registros.length)
     }

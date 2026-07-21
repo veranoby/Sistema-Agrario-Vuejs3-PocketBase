@@ -26,6 +26,25 @@
           >
             Nueva Entrada
           </v-btn>
+          <v-tooltip location="bottom">
+            <template v-slot:activator="{ props: tooltipProps }">
+              <v-btn
+                v-bind="tooltipProps"
+                v-if="!isLoading && displayedEntries.length > 0"
+                prepend-icon="mdi-file-certificate-outline"
+                color="teal-darken-3"
+                variant="flat"
+                class="font-weight-bold text-white elevation-2 rounded-lg"
+                @click="exportBpaBasicoPDF"
+                :loading="exportingLightPdf"
+              >
+                PDF BPA (Gratis)
+              </v-btn>
+            </template>
+            <span class="text-xs">
+              PDF Básico BPA (Gratuito). Para firma oficial de Asesor Agrónomo, consulta el Plan Asesor.
+            </span>
+          </v-tooltip>
           <v-btn
             v-if="!isLoading && displayedEntries.length > 0"
             prepend-icon="mdi-file-pdf"
@@ -227,11 +246,12 @@ import BitacoraCalendar from './BitacoraCalendar.vue'; // Import the calendar co
 import UniversalHeader from '@/components/UniversalHeader.vue';
 import { pdfExporter } from '@/utils/exporters/pdfExporter';
 import { excelExporter } from '@/utils/exporters/excelExporter';
+import { exportLightweightBpaPdf } from '@/services/lightweightBpaPdfExporter';
 import { useUiFeedbackStore } from '@/stores/uiFeedbackStore';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/stores/authStore';
 import { useI18n } from 'vue-i18n';
-import { addMonths, subMonths, format, isSameMonth } from 'date-fns';
+import { addMonths, subMonths, format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 const bitacoraStore = useBitacoraStore();
@@ -245,6 +265,7 @@ const { userRole, avatarUrl } = storeToRefs(authStore);
 const { mi_hacienda, avatarHaciendaUrl } = storeToRefs(haciendaStore);
 
 const exportingPDF = ref(false);
+const exportingLightPdf = ref(false);
 const exportingExcel = ref(false);
 const showNewEntryDialog = ref(false);
 const entryToEdit = ref(null);
@@ -281,7 +302,7 @@ function goToToday() {
   currentDate.value = new Date();
 }
 
-function handleDayClick(date) {
+function handleDayClick() {
   // Can be used to open form pre-filled with date
 }
 
@@ -368,6 +389,11 @@ function loadMore() {
     currentPage.value += 1;
 }
 
+defineExpose({
+  loadMore,
+  handleDayClick
+});
+
 function abrirEdicion(entry) {
   showEntryDetailDialog.value = false;
   entryToEdit.value = entry;
@@ -395,6 +421,25 @@ async function handleBitacoraCreated() {
 }
 
 // Export functions
+async function exportBpaBasicoPDF() {
+  if (exportingLightPdf.value) return;
+
+  exportingLightPdf.value = true;
+  try {
+    await exportLightweightBpaPdf({
+      entries: filteredEntries.value || [],
+      hacienda: haciendaStore.mi_hacienda || {},
+      titulo: 'Reporte de Bitácora BPA (Versión Gratuita)'
+    });
+    uiFeedbackStore.showSnackbar('PDF BPA Básico generado y descargado correctamente', 'success');
+  } catch (error) {
+    console.error('Error generando PDF BPA:', error);
+    uiFeedbackStore.showSnackbar(`Error al generar PDF BPA: ${error.message}`, 'error');
+  } finally {
+    exportingLightPdf.value = false;
+  }
+}
+
 async function exportToPDF() {
   if (exportingPDF.value) return;
 

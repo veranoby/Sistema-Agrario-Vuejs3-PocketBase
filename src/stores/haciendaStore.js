@@ -286,7 +286,7 @@ export const useHaciendaStore = defineStore('hacienda', {
 
       try {
         if (!syncStore.isOnline) {
-          const users = syncStore.loadFromLocalStorage(`hacienda_users_${this.mi_hacienda.id}`) || []
+          const users = (await syncStore.loadFromLocalStorage(`hacienda_users_${this.mi_hacienda.id}`)) || []
           const userExiste = users.some((user) => user.id === userId)
           if (!userExiste) {
             uiFeedbackStore.hideLoading()
@@ -305,7 +305,7 @@ export const useHaciendaStore = defineStore('hacienda', {
         }
 
         await pb.collection('users').delete(userId)
-        const users = syncStore.loadFromLocalStorage(`hacienda_users_${this.mi_hacienda.id}`) || []
+        const users = (await syncStore.loadFromLocalStorage(`hacienda_users_${this.mi_hacienda.id}`)) || []
         const updatedUsers = users.filter((user) => user.id !== userId)
         syncStore.saveToLocalStorage(`hacienda_users_${this.mi_hacienda.id}`, updatedUsers)
 

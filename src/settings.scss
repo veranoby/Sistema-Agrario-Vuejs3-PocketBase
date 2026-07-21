@@ -1,0 +1,6 @@
+@use 'vuetify/settings' with (
+  $font-size-root: 14px,
+  $button-height: 36px,
+  $field-font-size: 14px,
+  $body-font-family: ("'Plus Jakarta Sans', sans-serif")
+);

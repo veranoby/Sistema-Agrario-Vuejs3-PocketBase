@@ -29,6 +29,8 @@ import { offlineGeoStorage } from '@/utils/offlineGeoStorage'
 import { locationCoordinator } from '@/services/locationCoordinator'
 import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import { useSyncStore } from '@/stores/sync'
+import { useBitacoraStore } from '@/stores/bitacoraStore'
+import { useCarenciaSemaforo } from '@/composables/useCarenciaSemaforo'
 import { logger } from '@/utils/logger'
 import { SIEMBRA_COLORS, POI_FALLBACK_COLOR, HACIENDA_CENTER_COLOR } from '@/constants/mapColors'
 
@@ -224,15 +226,38 @@ export default defineComponent({
       }
     }, { deep: true, immediate: true })    
 
+    const bitacoraStore = useBitacoraStore()
+    const { calcularEstadoCarencia } = useCarenciaSemaforo()
+
+    const getZonaCarenciaColorAndPopup = (zonaId, defaultColor = '#9E9E9E') => {
+      if (!zonaId) return { color: defaultColor, popupText: '', carencia: null }
+
+      const carencia = bitacoraStore.carenciasPorZona[zonaId] || calcularEstadoCarencia(zonaId)
+
+      let color = defaultColor
+      let popupText = ''
+
+      if (carencia.estado === 'BLOQUEADO') {
+        color = '#e53935' // Rojo semáforo carencia activa
+        popupText = `<br/><span class="text-xs text-red font-weight-bold">⛔ ${carencia.mensaje}</span>`
+      } else if (carencia.estado === 'LIBRE') {
+        color = '#43a047' // Verde semáforo cosecha libre
+        popupText = `<br/><span class="text-xs text-green font-weight-bold">✅ Cosecha libre (carencia cumplida)</span>`
+      } else {
+        color = '#9e9e9e' // Gris sin datos
+        popupText = `<br/><span class="text-xs text-grey font-weight-medium">ℹ️ Sin datos de carencia</span>`
+      }
+
+      return { color, popupText, carencia }
+    }
+
     const renderReferenceGeometries = () => {
       if (!map || !referenceLayerGroup) return
       referenceLayerGroup.clearLayers()
-      
-      // Contorno de hacienda
+
+      // Hacienda Contorno
       if (props.haciendaGeometry && props.haciendaGeometry.type === 'Polygon') {
-        const rings = props.haciendaGeometry.coordinates.map(ring =>
-          ring.map(c => [c[1], c[0]])
-        )
+        const rings = props.haciendaGeometry.coordinates.map(ring => ring.map(c => [c[1], c[0]]))
         L.polygon(rings, {
           pane: 'referencePane',
           color: '#1565C0',
@@ -245,37 +270,42 @@ export default defineComponent({
         .addTo(referenceLayerGroup)
       }
 
-      // Zonas existentes
+      // Zonas existentes con semáforo de carencia
       if (props.referenceGeometries) {
         for (const feature of props.referenceGeometries) {
           const geom = feature.geometry || feature
           const props2 = feature.properties || {}
-          const color = (props2.color && /^#([0-9A-F]{3,6})$/i.test(props2.color))
+          const fallbackColor = (props2.color && /^#([0-9A-F]{3,6})$/i.test(props2.color))
             ? props2.color
             : '#9E9E9E'
-          
+
+          const zonaId = props2.id || feature.id
+          const { color: carenciaColor, popupText } = getZonaCarenciaColorAndPopup(zonaId, fallbackColor)
+
           if (geom.type === 'Polygon') {
             const rings = geom.coordinates.map(ring => ring.map(c => [c[1], c[0]]))
             L.polygon(rings, {
               pane: 'referencePane',
-              color,
-              weight: 1.5,
-              fillColor: color,
-              fillOpacity: 0.15,
-              interactive: false
+              color: carenciaColor,
+              weight: 2,
+              fillColor: carenciaColor,
+              fillOpacity: 0.35,
+              interactive: true
             })
             .bindTooltip(props2.nombre || 'Zona', { permanent: true, direction: 'center', className: 'zone-label-permanent' })
+            .bindPopup(`<div class="pa-1"><strong>${props2.nombre || 'Zona'}</strong>${props2.tipoNombre ? '<br/><span class="text-xs">Tipo: ' + props2.tipoNombre + '</span>' : ''}${popupText}</div>`)
             .addTo(referenceLayerGroup)
           } else if (geom.type === 'Point') {
             L.circleMarker([geom.coordinates[1], geom.coordinates[0]], {
               pane: 'referencePane',
-              radius: 5,
-              color,
-              fillColor: color,
-              fillOpacity: 0.6,
-              interactive: false
+              radius: 6,
+              color: carenciaColor,
+              fillColor: carenciaColor,
+              fillOpacity: 0.8,
+              interactive: true
             })
             .bindTooltip(props2.nombre || 'Zona', { permanent: true, direction: 'center', className: 'zone-label-permanent' })
+            .bindPopup(`<div class="pa-1"><strong>${props2.nombre || 'Zona'}</strong>${props2.tipoNombre ? '<br/><span class="text-xs">Tipo: ' + props2.tipoNombre + '</span>' : ''}${popupText}</div>`)
             .addTo(referenceLayerGroup)
           }
         }
@@ -356,7 +386,7 @@ export default defineComponent({
       if (!map.getPane('referencePane')) {
         map.createPane('referencePane')
         map.getPane('referencePane').style.zIndex = '200'
-        map.getPane('referencePane').style.pointerEvents = 'none'
+        map.getPane('referencePane').style.pointerEvents = 'auto'
       }
       referenceLayerGroup = L.featureGroup([], { pane: 'referencePane' }).addTo(map)
 
@@ -770,7 +800,10 @@ export default defineComponent({
       mapContainer,
       saving,
       cachingTiles,
-      cacheTiles
+      cacheTiles,
+      calculatedArea,
+      onEachFeatureHandler,
+      savePolygon
     }
   }
 })
