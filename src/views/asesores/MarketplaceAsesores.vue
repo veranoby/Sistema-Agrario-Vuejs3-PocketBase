@@ -34,6 +34,59 @@
       </div>
     </v-card>
 
+    <!-- Barra de Filtros y Búsqueda Avanzada Vuetify -->
+    <v-card class="mt-4 pa-4 rounded-xl border border-grey-lighten-3 elevation-1">
+      <v-row align="center">
+        <v-col cols="12" md="4" lg="5">
+          <v-text-field
+            v-model="searchQuery"
+            prepend-inner-icon="mdi-magnify"
+            label="Buscar agrónomo por nombre o servicio..."
+            variant="outlined"
+            density="compact"
+            hide-details
+            clearable
+            color="primary"
+            class="rounded-lg"
+          ></v-text-field>
+        </v-col>
+
+        <v-col cols="12" sm="6" md="4" lg="3">
+          <v-select
+            v-model="selectedEspecialidades"
+            :items="ESPECIALIDADES"
+            prepend-inner-icon="mdi-sprout"
+            label="Especialidad Cultivos"
+            multiple
+            chips
+            clearable
+            variant="outlined"
+            density="compact"
+            hide-details
+            color="teal"
+            class="rounded-lg"
+          ></v-select>
+        </v-col>
+
+        <v-col cols="12" sm="6" md="4" lg="4">
+          <v-select
+            v-model="selectedProvincias"
+            :items="PROVINCIAS"
+            prepend-inner-icon="mdi-map-marker"
+            label="Provincias de Cobertura"
+            multiple
+            chips
+            clearable
+            variant="outlined"
+            density="compact"
+            hide-details
+            color="blue"
+            class="rounded-lg"
+          ></v-select>
+        </v-col>
+      </v-row>
+    </v-card>
+
     <!-- Sección de Asesores Destacados -->
     <div class="mt-6">
       <div class="d-flex align-center justify-between mb-4">
@@ -43,9 +96,15 @@
         </div>
       </div>
 
-      <v-row class="mt-1">
+      <div v-if="asesoresFiltrados.length === 0" class="text-center py-12">
+        <v-icon icon="mdi-account-search-outline" size="64" color="grey" class="mb-2"></v-icon>
+        <h4 class="text-subtitle-1 font-weight-bold text-grey-darken-2">No se encontraron agrónomos con esos criterios</h4>
+        <p class="text-caption text-grey">Intenta ajustar la búsqueda por nombre, especialidad o provincia de cobertura.</p>
+      </div>
+
+      <v-row v-else class="mt-1">
         <v-col
-          v-for="asesor in asesores"
+          v-for="asesor in asesoresFiltrados"
           :key="asesor.id"
           cols="12"
           md="6"
@@ -237,6 +296,13 @@ const enviandoSolicitud = ref(false)
 const solicitudValid = ref(false)
 const cargandoAsesores = ref(false)
 
+const searchQuery = ref('')
+const selectedEspecialidades = ref([])
+const selectedProvincias = ref([])
+
+const PROVINCIAS = ["Azuay", "Bolívar", "Cañar", "Carchi", "Chimborazo", "Cotopaxi", "El Oro", "Esmeraldas", "Galápagos", "Guayas", "Imbabura", "Loja", "Los Ríos", "Manabí", "Morona Santiago", "Napo", "Orellana", "Pastaza", "Pichincha", "Santa Elena", "Santo Domingo de los Tsáchilas", "Sucumbíos", "Tungurahua", "Zamora Chinchipe"]
+const ESPECIALIDADES = ["Banano", "Cacao", "Suelos", "Flores", "Frutales", "Pitahaya", "Riego", "Cítricos", "Hortalizas", "Ganadería", "Otro"]
+
 const formSolicitud = ref({
   servicio: null,
   haciendaId: null,
@@ -341,6 +407,33 @@ const asesores = computed(() => {
     })
   }
   return asesoresDemo
+})
+
+const asesoresFiltrados = computed(() => {
+  let list = asesores.value
+
+  if (searchQuery.value && searchQuery.value.trim()) {
+    const q = searchQuery.value.toLowerCase().trim()
+    list = list.filter(a =>
+      a.nombre.toLowerCase().includes(q) ||
+      a.titulo.toLowerCase().includes(q) ||
+      a.servicios.some(s => s.toLowerCase().includes(q))
+    )
+  }
+
+  if (selectedEspecialidades.value && selectedEspecialidades.value.length > 0) {
+    list = list.filter(a =>
+      a.especialidades.some(e => selectedEspecialidades.value.includes(e))
+    )
+  }
+
+  if (selectedProvincias.value && selectedProvincias.value.length > 0) {
+    list = list.filter(a =>
+      a.cobertura.some(c => selectedProvincias.value.includes(c) || c === 'Ecuador')
+    )
+  }
+
+  return list
 })
 
 function abrirSolicitudModal(asesor) {

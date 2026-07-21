@@ -19,12 +19,13 @@ El módulo de **Gestión de Asesores y Marketplace BPA** conecta a los administr
 
 ## 🚀 Guía Paso a Paso
 
-### 1. Explorar y Conectar un Asesor en el Marketplace
+### 1. Explorar, Filtrar y Conectar un Asesor en el Marketplace
 1. Dirígete a **Menú → Asesores y Marketplace BPA**.
-2. Selecciona la pestaña **"Marketplace & Descubrimiento"**.
-3. Revisa los perfiles de los agrónomos acreditados, su número de registro en Agrocalidad y sus áreas de cobertura.
-4. Haz clic en **"Solicitar Visita / Consulta Tech"**, elige tu hacienda y escribe los detalles del requerimiento.
-5. El asesor recibirá tu solicitud y se establecerá la **Vinculación Activa**.
+2. Selecciona la pestaña **"Marketplace & Búsqueda"**.
+3. Utiliza la **Barra de Filtros y Búsqueda Avanzada** para filtrar agrónomos por nombre, especialidad por cultivo (Banano, Cacao, Flores, Hortalizas, etc.) o provincia de cobertura.
+4. Revisa la **Garantía Anti-Churn de Datos RSA** y los servicios acreditados de cada profesional.
+5. Haz clic en **"Solicitar Visita / Consulta Tech"**, elige tu hacienda y escribe los detalles de tu requerimiento.
+6. El asesor recibirá tu solicitud y se establecerá la **Vinculación Activa**.
 
 ---
 
