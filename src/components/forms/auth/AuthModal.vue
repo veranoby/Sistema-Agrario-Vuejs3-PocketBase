@@ -84,22 +84,24 @@
                     </v-col>
                   </v-row>
 
-                  <div class="d-flex align-center justify-space-between mt-1 mb-6 flex-nowrap gap-2">
+                  <div class="mt-1 mb-6">
                     <v-checkbox
                       v-model="loginForm.rememberMe"
                       :label="t('auth.remember_me')"
                       color="primary"
                       density="compact"
                       hide-details
-                      class="text-caption text-no-wrap flex-shrink-0"
+                      class="text-caption mb-2"
                     ></v-checkbox>
-                    <a
-                      class="text-caption font-weight-bold text-primary text-decoration-none cursor-pointer text-no-wrap ml-2"
-                      @click.prevent="openForgotPasswordDialog"
-                      tabindex="0"
-                    >
-                      {{ t('auth.forgot_password') }}
-                    </a>
+                    <div class="d-flex justify-end">
+                      <a
+                        class="text-caption font-weight-bold text-primary text-decoration-none cursor-pointer"
+                        @click.prevent="openForgotPasswordDialog"
+                        tabindex="0"
+                      >
+                        {{ t('auth.forgot_password') }}
+                      </a>
+                    </div>
                   </div>
 
                   <v-btn type="submit" color="primary" block size="large" class="text-button font-weight-bold rounded-lg mb-6" :loading="uiFeedbackStore.globalLoading">
