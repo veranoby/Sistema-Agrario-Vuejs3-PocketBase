@@ -25,11 +25,17 @@
     <Header
       v-if="showHeader"
       :PaginaActual="currentPage"
-      @HandleDrawer="drawer = !drawer"
+      @HandleDrawer="toggleDrawer"
       @openAuthModal="showAuthModal = true"
     />
 
-    <v-navigation-drawer v-if="isLoggedIn" expand-on-hover rail v-model="drawer" theme="dark">
+    <v-navigation-drawer
+      v-if="isLoggedIn"
+      permanent
+      :rail="isRail"
+      expand-on-hover
+      theme="dark"
+    >
       <Sidebar :navigationLinks="navigationLinks" />
     </v-navigation-drawer>
 
@@ -106,9 +112,13 @@ const schedulerStore = useSchedulerStore()
 const haciendaStore = useHaciendaStore()
 const pwaStore = usePwaStore()
 const { t } = useI18n()
-
 const drawer = ref(true)
+const isRail = ref(true)
 const showAuthModal = ref(false)
+
+const toggleDrawer = () => {
+  isRail.value = !isRail.value
+}
 
 import { USER_ROLES } from '@/constants/roles'
 

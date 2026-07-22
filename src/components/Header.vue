@@ -28,27 +28,18 @@
           <span class="hidden sm:inline">{{ $t('header.contact_us') }}</span>
         </v-btn>
 
-        <!-- Desktop Login Button -->
-        <v-btn
-          variant="flat"
-          prepend-icon="mdi-login"
-          color="primary"
-          v-if="!isLoggedIn"
-          @click="$emit('openAuthModal')"
-          class="hidden-xs"
-        > {{ $t('header.login') }}</v-btn>
-        
-        <!-- Mobile Login Button (Rectangular) -->
+        <!-- Unified Responsive Login Button -->
         <v-btn
           variant="flat"
           color="primary"
           v-if="!isLoggedIn"
           @click="$emit('openAuthModal')"
-          class="hidden-sm-and-up px-2"
-          size="small"
-          style="min-width: 0;"
+          class="font-weight-bold rounded-lg px-2 sm:px-3 text-sm"
+          height="36"
+          style="min-width: 36px;"
         >
-          <v-icon size="22">mdi-login</v-icon>
+          <v-icon :class="{'mr-0': true, 'sm:mr-1': true}" size="20">mdi-login</v-icon>
+          <span class="hidden-xs">{{ $t('header.login') }}</span>
         </v-btn>
 
         <v-menu offset-y>
