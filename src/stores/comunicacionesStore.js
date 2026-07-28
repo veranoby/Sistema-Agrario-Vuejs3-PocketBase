@@ -96,6 +96,37 @@ export const useComunicacionesStore = defineStore('comunicaciones', {
       } catch (error) {
         console.warn('Error marcando mensaje como leído:', error)
       }
+    },
+
+    async subscribeToChat(vinculacionId) {
+      if (!vinculacionId) return
+      try {
+        await pb.collection('comunicaciones_asesoria').subscribe('*', async (e) => {
+          if (e.action === 'create' && e.record && e.record.vinculacion_id === vinculacionId) {
+            const exists = this.mensajes.some(m => m.id === e.record.id)
+            if (!exists) {
+              try {
+                const fullRecord = await pb.collection('comunicaciones_asesoria').getOne(e.record.id, {
+                  expand: 'emisor_id,paquete_id'
+                })
+                this.mensajes.push(fullRecord)
+              } catch (err) {
+                this.mensajes.push(e.record)
+              }
+            }
+          }
+        })
+      } catch (err) {
+        console.warn('[COMUNICACIONES] Error al suscribir a tiempo real:', err.message)
+      }
+    },
+
+    unsubscribeFromChat() {
+      try {
+        pb.collection('comunicaciones_asesoria').unsubscribe('*')
+      } catch (err) {
+        console.warn('[COMUNICACIONES] Error al cancelar suscripción:', err.message)
+      }
     }
   }
 })

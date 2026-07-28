@@ -501,14 +501,26 @@ onMounted(async () => {
     await checkPendingRequests()
     await settingsStore.fetchConfig()
     
-    if (route.query.openPlans === 'true') {
+    if (route.query.openPlans === 'true' || route.query.openModules === 'true') {
       await openChangePlanModal()
+      if (route.query.selectedModule) {
+        const selectedModId = route.query.selectedModule
+        if (!selectedModuleIds.value.includes(selectedModId)) {
+          selectedModuleIds.value.push(selectedModId)
+        }
+      }
     }
 })
 
-watch(() => route.query.openPlans, async (newVal) => {
-  if (newVal === 'true' && !changePlanModalOpen.value) {
+watch(() => [route.query.openPlans, route.query.openModules], async ([openPlans, openModules]) => {
+  if ((openPlans === 'true' || openModules === 'true') && !changePlanModalOpen.value) {
     await openChangePlanModal()
+    if (route.query.selectedModule) {
+      const selectedModId = route.query.selectedModule
+      if (!selectedModuleIds.value.includes(selectedModId)) {
+        selectedModuleIds.value.push(selectedModId)
+      }
+    }
   }
 })
 

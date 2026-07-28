@@ -5,12 +5,14 @@ import { handleError } from '@/utils/errorHandler'
 import { useUiFeedbackStore } from './uiFeedbackStore'
 import { useHaciendaStore } from './haciendaStore'
 import { useSyncStore } from '@/stores/sync/index'
+import { clearRouteCache } from '@/router'
 
 export const usePlanStore = defineStore('plan', {
   state: () => ({
     plans: [],
     availableModules: [],
     activeSubscriptions: [],
+    pendingRequests: [],
     loading: false,
     error: null
   }),
@@ -70,6 +72,25 @@ export const usePlanStore = defineStore('plan', {
         return []
       } finally {
         this.loading = false
+      }
+    },
+
+    async fetchPendingRequests(haciendaId) {
+      if (!haciendaId) {
+        this.pendingRequests = []
+        return []
+      }
+      try {
+        const result = await pb.collection('solicitudes_suscripcion').getFullList({
+          filter: `hacienda = "${haciendaId}" && estado = "pendiente"`,
+          expand: 'plan_solicitado'
+        })
+        this.pendingRequests = result || []
+        return this.pendingRequests
+      } catch (error) {
+        console.error('Error fetching pending requests:', error)
+        this.pendingRequests = []
+        return []
       }
     },
 
@@ -159,19 +180,13 @@ export const usePlanStore = defineStore('plan', {
       }
 
       try {
-        const plans = await pb.collection('planes').getFullList({ sort: 'precio' })
-        this.plans = markRaw(plans)
-        syncStore.saveToLocalStorage('plans', plans)
-
-        // GUARDAR el plan gratis en localStorage
-        const gratisPlan = plans.find((plan) => plan.nombre === 'gratis')
-        if (gratisPlan) {
-          syncStore.saveToLocalStorage('gratisPlan', gratisPlan)
-        }
-
-        return plans
+        const records = await pb.collection('planes').getFullList({
+          sort: 'precio'
+        })
+        this.plans = records
+        return records
       } catch (error) {
-        handleError(error, 'Error fetching available plans')
+        handleError(error, 'Error al obtener planes disponibles')
         return []
       } finally {
         this.loading = false
@@ -213,9 +228,10 @@ export const usePlanStore = defineStore('plan', {
           .collection('Haciendas')
           .update(haciendaStore.mi_hacienda.id, { plan: newPlanId })
 
-        // Actualizar estado local
+        // Actualizar estado local e invalidar caché de rutas
         haciendaStore.mi_hacienda = updatedHacienda
         syncStore.saveToLocalStorage('mi_hacienda', updatedHacienda)
+        clearRouteCache()
 
         // Forzar actualización de planes
         await this.fetchAvailablePlans()
@@ -233,7 +249,7 @@ export const usePlanStore = defineStore('plan', {
       return new Promise((resolve) => {
         if (
           confirm(
-            'This will reset the auditores and operadores users. Are you sure you want to continue?'
+            'Se desactivarán las cuentas de auditores y operadores excedentes. ¿Desea continuar?'
           )
         ) {
           resolve(true)
@@ -260,7 +276,7 @@ export const usePlanStore = defineStore('plan', {
         })
 
         for (const user of users) {
-          await pb.collection('users').delete(user.id)
+          await pb.collection('users').update(user.id, { status: 'disabled' })
         }
       } catch (error) {
         handleError(error, 'Error resetting hacienda users')

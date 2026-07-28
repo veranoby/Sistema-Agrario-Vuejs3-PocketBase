@@ -301,6 +301,7 @@ routerAdd("PUT", "/api/haciendas/:id/alerts", (e) => {
 }, $apis.requireAuth())
 
 // ============================================
+// ============================================
 // POST /api/modulos/:id/activate
 // ============================================
 routerAdd("POST", "/api/modulos/:id/activate", (e) => {
@@ -313,11 +314,13 @@ routerAdd("POST", "/api/modulos/:id/activate", (e) => {
   if (!haciendaId) return e.json(HTTP_STATUS.BAD_REQUEST, { error: "haciendaId required" })
   if (!moduloId) return e.json(HTTP_STATUS.BAD_REQUEST, { error: "moduloId required" })
 
-  // ── Validación de rol: solo superadmin puede activar módulos ──
+  // ── Validación de rol: superadmin o administrador de la hacienda ──
   const caller = info.authRecord
-  if (!caller || caller.get("role") !== "superadmin") {
+  const isSuperadmin = caller && caller.get("role") === "superadmin"
+  const isAdminOfHacienda = caller && caller.get("role") === "administrador" && caller.get("hacienda") === haciendaId
+  if (!caller || (!isSuperadmin && !isAdminOfHacienda)) {
     return e.json(HTTP_STATUS.UNAUTHORIZED, {
-      error: "Solo un superadmin puede activar módulos. Contacta al equipo de ConAgri."
+      error: "No tienes permisos para activar módulos en esta hacienda."
     })
   }
 
@@ -336,20 +339,39 @@ routerAdd("POST", "/api/modulos/:id/activate", (e) => {
         haciendaId, moduloId
       })
     )
+
+    let subId
     if (existing) {
-      return e.json(HTTP_STATUS.OK, { success: true, message: "Módulo ya activo", subscription_id: existing.id })
+      subId = existing.id
+    } else {
+      const newSub = $app.dao().createRecord(subscriptionsCollection, {
+        hacienda: haciendaId,
+        modulo: moduloId,
+        is_active: true,
+        start_date: new Date().toISOString().split('T')[0],
+        billing_cycle: "monthly",
+        activated_by: caller.id
+      })
+      subId = newSub.id
     }
 
-    const newSub = $app.dao().createRecord(subscriptionsCollection, {
-      hacienda: haciendaId,
-      modulo: moduloId,
-      is_active: true,
-      start_date: new Date().toISOString().split('T')[0],
-      billing_cycle: "monthly",
-      activated_by: caller.id
-    })
+    // Actualizar campo relacional active_modules en la colección Haciendas
+    try {
+      const hacienda = $app.dao().findRecordById("Haciendas", haciendaId)
+      if (hacienda) {
+        let activeMods = hacienda.get("active_modules") || []
+        if (!Array.isArray(activeMods)) activeMods = []
+        if (!activeMods.includes(moduloId)) {
+          activeMods.push(moduloId)
+          hacienda.set("active_modules", activeMods)
+          $app.dao().saveRecord(hacienda)
+        }
+      }
+    } catch (hErr) {
+      console.error("[activate] Error sincronizando active_modules en Hacienda:", hErr.message)
+    }
 
-    return e.json(HTTP_STATUS.OK, { success: true, subscription_id: newSub.id })
+    return e.json(HTTP_STATUS.OK, { success: true, subscription_id: subId })
 
   } catch (err) {
     console.error("[activate] Error:", err.message)
@@ -375,9 +397,11 @@ routerAdd("POST", "/api/modulos/:id/deactivate", (e) => {
   }
 
   const caller = info.authRecord
-  if (!caller || caller.get("role") !== "superadmin") {
+  const isSuperadmin = caller && caller.get("role") === "superadmin"
+  const isAdminOfHacienda = caller && caller.get("role") === "administrador" && caller.get("hacienda") === haciendaId
+  if (!caller || (!isSuperadmin && !isAdminOfHacienda)) {
     return e.json(HTTP_STATUS.UNAUTHORIZED, {
-      error: "Solo un superadmin puede desactivar módulos."
+      error: "No tienes permisos para desactivar módulos en esta hacienda."
     })
   }
 
@@ -393,18 +417,30 @@ routerAdd("POST", "/api/modulos/:id/deactivate", (e) => {
       })
     )
 
-    if (!subscription) {
-      return e.json(404, { error: "Active subscription not found" })
+    if (subscription) {
+      subscription.set("is_active", false)
+      $app.dao().saveRecord(subscription)
     }
 
-    // Desactivar suscripción
-    subscription.set("is_active", false)
-    $app.dao().saveRecord(subscription)
+    // Remover moduloId de active_modules en Haciendas
+    try {
+      const hacienda = $app.dao().findRecordById("Haciendas", haciendaId)
+      if (hacienda) {
+        let activeMods = hacienda.get("active_modules") || []
+        if (Array.isArray(activeMods)) {
+          activeMods = activeMods.filter(id => id !== moduloId)
+          hacienda.set("active_modules", activeMods)
+          $app.dao().saveRecord(hacienda)
+        }
+      }
+    } catch (hErr) {
+      console.error("[deactivate] Error removiendo active_modules en Hacienda:", hErr.message)
+    }
 
     return e.json(HTTP_STATUS.OK, {
       success: true,
       message: "Module deactivated",
-      subscription_id: subscription.id
+      subscription_id: subscription ? subscription.id : null
     })
 
   } catch (err) {

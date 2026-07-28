@@ -451,6 +451,45 @@ const processApprove = async () => {
           })
           haciendaPayload.active_modules = currentModules
         }
+
+        // Sincronizar registros en la colección 'subscriptions' para la Hacienda
+        const start = new Date()
+        let extraDays = 30
+        if (itemData.notas_admin && itemData.notas_admin.toLowerCase().includes('anual')) {
+          extraDays = 365
+        }
+        const end = new Date(start)
+        end.setDate(end.getDate() + extraDays)
+
+        for (const modId of newModules) {
+          if (!modId) continue
+          try {
+            const existingSubs = await pb.collection('subscriptions').getFullList({
+              filter: `hacienda = "${haciendaId}" && modulo = "${modId}"`
+            })
+
+            if (existingSubs.length > 0) {
+              await pb.collection('subscriptions').update(existingSubs[0].id, {
+                is_active: true,
+                start_date: start.toISOString(),
+                end_date: end.toISOString(),
+                billing_cycle: extraDays === 365 ? 'yearly' : 'monthly'
+              })
+            } else {
+              await pb.collection('subscriptions').create({
+                hacienda: haciendaId,
+                user: itemData.solicitante,
+                modulo: modId,
+                is_active: true,
+                start_date: start.toISOString(),
+                end_date: end.toISOString(),
+                billing_cycle: extraDays === 365 ? 'yearly' : 'monthly'
+              })
+            }
+          } catch (subErr) {
+            console.error('Error sincronizando suscripción de hacienda:', subErr)
+          }
+        }
       }
 
       await pb.collection('Haciendas').update(haciendaId, haciendaPayload)

@@ -68,8 +68,22 @@ export const useHaciendaStore = defineStore('hacienda', {
       const planName = this.mi_hacienda.expand?.plan?.nombre?.toLowerCase() || ''
       if (planName.includes('enterprise')) return true
 
-      // active_modules is a JSON array of module IDs (from PocketBase relation IDs)
-      // Map module codes to their PocketBase record IDs
+      // 1. Verificación dinámica desde planStore si cuenta con suscripciones activas cargadas
+      try {
+        const planStore = usePlanStore()
+        if (planStore.activeSubscriptions && planStore.activeSubscriptions.length > 0) {
+          const isSubscribed = planStore.activeSubscriptions.some(s => {
+            const modCode = s.modulo_code || s.expand?.modulo?.codigo || s.expand?.modulo?.nombre
+            const modId = s.modulo || s.expand?.modulo?.id
+            return modCode === moduleName || modId === moduleName
+          })
+          if (isSubscribed) return true
+        }
+      } catch (e) {
+        // Continuar a la verificación en mi_hacienda.active_modules
+      }
+
+      // 2. Verificación en el array relacional active_modules de la hacienda
       const MODULE_CODE_TO_ID = {
         'kardex_bodega':     'u7dfd1bxrytzkuq',
         'nomina_express':    '7jvb0vitecz5zof',
@@ -79,12 +93,10 @@ export const useHaciendaStore = defineStore('hacienda', {
         'ai_assistant_premium': 'ai8m6cipbyklaiq'
       }
 
-      const moduleId = MODULE_CODE_TO_ID[moduleName]
-      if (!moduleId) return false
-
       const activeModules = this.mi_hacienda.active_modules
       if (Array.isArray(activeModules)) {
-        return activeModules.includes(moduleId)
+        const targetId = MODULE_CODE_TO_ID[moduleName] || moduleName
+        return activeModules.includes(targetId) || activeModules.includes(moduleName)
       }
 
       return false

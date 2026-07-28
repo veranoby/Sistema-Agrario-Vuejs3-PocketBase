@@ -57,7 +57,8 @@
       >
         <ModuleCard
           :modulo="modulo"
-          :is-active="isModuleActive(modulo.id)"
+          :is-active="planStore.isModuleActive(modulo.id)"
+          :is-pending="isModulePending(modulo.id)"
           @toggle="toggleModule"
         />
       </v-col>
@@ -90,6 +91,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { MODULE_CATEGORIES, MODULE_TITLES } from '@/constants/modules'
 import { useEvents } from '@/composables/useEvents'
 import { EVENTS } from '@/utils/eventBus'
@@ -98,6 +100,7 @@ import CostSummary from './CostSummary.vue'
 import { useHaciendaStore } from '@/stores/haciendaStore'
 import { usePlanStore } from '@/stores/planStore'
 
+const router = useRouter()
 const haciendaStore = useHaciendaStore()
 const planStore = usePlanStore()
 const { emit } = useEvents()
@@ -143,24 +146,39 @@ const selectedModules = computed(() => {
 })
 
 onMounted(async () => {
+  const haciendaId = haciendaStore.mi_hacienda?.id
   await Promise.all([
     planStore.fetchModules(),
-    planStore.fetchSubscriptions(haciendaStore.mi_hacienda?.id)
+    planStore.fetchSubscriptions(haciendaId),
+    planStore.fetchPendingRequests(haciendaId)
   ])
 })
 
-// Toggle de módulo
-async function toggleModule(moduleId, activate) {
-  const haciendaId = haciendaStore.mi_hacienda?.id
-  const success = await planStore.toggleModule(moduleId, haciendaId, activate)
-  
-  if (success) {
-    // Emitir evento
-    if (activate) {
-      emit(EVENTS.MODULO_ACTIVADO, { moduleId, haciendaId })
-    } else {
-      emit(EVENTS.MODULO_DESACTIVADO, { moduleId, haciendaId })
+function isModulePending(moduleId) {
+  if (!planStore.pendingRequests?.length) return false
+  return planStore.pendingRequests.some(r => {
+    if (!r.modulo_solicitado) return false
+    try {
+      const ids = r.modulo_solicitado.startsWith('[') ? JSON.parse(r.modulo_solicitado) : [r.modulo_solicitado]
+      return ids.includes(moduleId)
+    } catch (e) {
+      return r.modulo_solicitado === moduleId
     }
+  })
+}
+
+// Redirección segura a la vista de planes y comprobantes
+async function toggleModule(moduleId, activate) {
+  if (activate) {
+    showSnackbar('Redirigiendo a la plataforma de pago y carga de comprobante...', 'info')
+    setTimeout(() => {
+      router.push({
+        path: '/hacienda/plan-suscripcion',
+        query: { openModules: 'true', selectedModule: moduleId }
+      })
+    }, 600)
+  } else {
+    showSnackbar('Las solicitudes de cancelación deben gestionarse desde la administración de planes.', 'warning')
   }
 }
 

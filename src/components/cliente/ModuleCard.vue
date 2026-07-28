@@ -23,6 +23,10 @@
           <v-icon start size="small">mdi-check-circle</v-icon>
           ACTIVO
         </v-chip>
+        <v-chip v-else-if="isPending" color="warning" size="small">
+          <v-icon start size="small">mdi-clock-outline</v-icon>
+          PENDIENTE APROBACIÓN
+        </v-chip>
       </div>
 
       <!-- Descripción -->
@@ -47,12 +51,13 @@
       <!-- Toggle Switch -->
       <div class="d-flex justify-space-between align-center">
         <span class="text-md">
-          {{ isActive ? 'Módulo activado' : 'Activar módulo' }}
+          {{ isActive ? 'Módulo activado' : (isPending ? 'Solicitud en revisión' : 'Activar módulo') }}
         </span>
         <v-switch
           v-model="isActiveLocal"
           color="primary"
           hide-details
+          :disabled="isPending"
           @update:model-value="$emit('toggle', modulo.id, $event)"
         />
       </div>
@@ -70,6 +75,10 @@ const props = defineProps({
     required: true
   },
   isActive: {
+    type: Boolean,
+    default: false
+  },
+  isPending: {
     type: Boolean,
     default: false
   }

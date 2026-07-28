@@ -102,7 +102,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useComunicacionesStore } from '@/stores/comunicacionesStore'
 import { useAuthStore } from '@/stores/authStore'
 import { pb } from '@/utils/pocketbase'
@@ -139,12 +139,21 @@ const openImagePreview = (url) => {
 onMounted(async () => {
   if (props.vinculacionId) {
     await loadMessages()
+    comunicacionesStore.subscribeToChat(props.vinculacionId)
   }
 })
 
-watch(() => props.vinculacionId, async (newVal) => {
+onUnmounted(() => {
+  comunicacionesStore.unsubscribeFromChat()
+})
+
+watch(() => props.vinculacionId, async (newVal, oldVal) => {
+  if (oldVal) {
+    comunicacionesStore.unsubscribeFromChat()
+  }
   if (newVal) {
     await loadMessages()
+    comunicacionesStore.subscribeToChat(newVal)
   }
 })
 

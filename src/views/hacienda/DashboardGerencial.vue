@@ -255,7 +255,8 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
+import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import { useAnalyticsStore } from '@/stores/analyticsStore'
 import { useFinanzaStore } from '@/stores/finanzaStore'
 import { useTarjasStore } from '@/stores/tarjasStore'
@@ -565,8 +566,14 @@ const exportarDatos = async () => {
   }
 }
 
+const route = useRoute()
+
 onMounted(() => {
   cargarDatos()
+  if (route.query.moduleDisabled) {
+    const uiFeedbackStore = useUiFeedbackStore()
+    uiFeedbackStore.showSnackbar(`El módulo "${route.query.moduleDisabled}" no está activo en su plan actual.`, 'warning')
+  }
 })
 </script>
 

@@ -344,6 +344,12 @@ export const useAuthStore = defineStore('auth', {
     async handleSuccessfulLogin(authData, rememberMe = false) {
       logger.auth('Iniciando handleSuccessfulLogin, rememberMe:', rememberMe)
 
+      // Validar si la cuenta de correo ha sido verificada
+      if (authData.record && !authData.record.verified) {
+        const uiFeedbackStore = useUiFeedbackStore()
+        uiFeedbackStore.showSnackbar('Tu cuenta aún no ha sido verificada por correo electrónico.', 'warning')
+      }
+
       // Validar si la cuenta está suspendida directamente
       if (authData.record.status === 'suspended') {
         await this.logout()
@@ -623,7 +629,7 @@ export const useAuthStore = defineStore('auth', {
           throw new Error('No se pudo obtener el plan gratuito')
         }
 
-        if (formData.hacienda && formData.hacienda.length !== 15) {
+        if (formData.hacienda && !/^[a-z0-9]{15}$/.test(formData.hacienda)) {
           newHacienda = await haciendaStore.createHacienda(formData.hacienda, gratisPlan.id)
           formData.hacienda = newHacienda.id
         }

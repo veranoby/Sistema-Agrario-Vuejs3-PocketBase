@@ -6,6 +6,7 @@ import { useEvents } from '@/composables/useEvents'
 import { EVENTS } from '@/utils/eventBus'
 import { logger } from '@/utils/logger'
 import { useSyncStore } from '@/stores/sync'
+import { usePlanStore } from './planStore'
 
 export const useUserStore = defineStore('user', {
   state: () => ({
@@ -112,6 +113,22 @@ export const useUserStore = defineStore('user', {
       const syncStore = useSyncStore()
 
       try {
+        // Validar límite de cuota del plan activo si no es rol administrador
+        if (data.role && data.role !== 'administrador') {
+          try {
+            const planStore = usePlanStore()
+            const currentPlan = planStore.currentPlan
+            if (currentPlan) {
+              const activeRoleUsers = this.users.filter(u => u.role === data.role && u.status !== 'disabled')
+              const maxAllowed = data.role === 'auditor' ? currentPlan.auditores : currentPlan.operadores
+              if (maxAllowed !== undefined && maxAllowed !== null && activeRoleUsers.length >= maxAllowed) {
+                throw new Error(`Ha alcanzado el límite máximo de usuarios para el rol ${data.role} (${maxAllowed}) en su plan actual.`)
+              }
+            }
+          } catch (planErr) {
+            if (planErr.message.includes('límite máximo')) throw planErr
+          }
+        }
         if (!syncStore.isOnline) {
           // Modo offline: encolar operación
           const tempId = await syncStore.queueOperation({
