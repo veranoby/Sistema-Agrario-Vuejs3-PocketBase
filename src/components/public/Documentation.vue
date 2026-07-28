@@ -68,6 +68,13 @@
                     <span class="text-xs text-muted-foreground dark:text-gray-300">Marketplace, chat y recetas</span>
                   </div>
                 </router-link>
+                <router-link to="/manuales/suscripciones_pagos" target="_blank" class="flex items-center p-4 border border-green-100 dark:border-[#333] bg-white dark:bg-[#1e1e1e] rounded-lg shadow-sm hover:-translate-y-1 hover:shadow-md transition-all text-decoration-none">
+                  <v-icon color="primary" class="mr-3" size="32">mdi-credit-card-check</v-icon>
+                  <div>
+                    <h4 class="font-bold text-primary text-sm">Suscripciones y Pagos</h4>
+                    <span class="text-xs text-muted-foreground dark:text-gray-300">Comprobantes y aprobación</span>
+                  </div>
+                </router-link>
               </div>
             </section>
 
@@ -155,6 +162,16 @@
                 <v-expansion-panel
                   title="¿Cuáles son los roles del sistema y qué puede hacer cada uno?"
                   text="El Administrador tiene control total y acceso a métricas y facturación. El Auditor tiene permiso de lectura de bitácoras y validación de firmas (ideal para entes certificadores). El Operador tiene permiso exclusivo para registrar y firmar tareas asignadas en campo."
+                ></v-expansion-panel>
+
+                <v-expansion-panel
+                  title="¿Cómo activo un nuevo módulo o realizo un cambio de plan?"
+                  text="Diríjase a la sección Mercado de Módulos o Plan y Suscripción. Al seleccionar la opción deseada, adjunte la foto o PDF de su comprobante bancario de transferencia. Su solicitud quedará en estado 'Pendiente de Aprobación' y un SuperAdministrador la habilitará en pocos minutos tras revisar la transacción."
+                ></v-expansion-panel>
+
+                <v-expansion-panel
+                  title="¿Qué significa el estado 'PENDIENTE APROBACIÓN' en un módulo?"
+                  text="Indica que su comprobante de pago ha sido recibido correctamente y se encuentra en la cola de verificación del SuperAdmin. El módulo se activará de forma automática y transparente una vez aprobado."
                 ></v-expansion-panel>
               </v-expansion-panels>
             </section>
