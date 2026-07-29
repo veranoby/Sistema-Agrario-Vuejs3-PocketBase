@@ -125,6 +125,13 @@ function mapPocketBaseError(error, friendlyMessage) {
       const authStore = useAuthStore()
       authStore.logout(true)
     }).catch(() => {})
+
+    // Fallback explícito de redirección al router con guard anti-loop
+    import('@/router').then(({ default: router }) => {
+      if (router?.currentRoute?.value?.path && router.currentRoute.value.path !== '/login') {
+        router.push('/login')
+      }
+    }).catch(() => {})
     
     return new AuthError(friendlyMessage, status)
   }

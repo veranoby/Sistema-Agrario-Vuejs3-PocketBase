@@ -502,7 +502,12 @@ export const useAuthStore = defineStore('auth', {
       this.user = record
       this.token = authProvider.authStore.token
       this.isLoggedIn = true
-      // this.subscribeToSessionEvents() // Desactivado por ERR_HTTP2_PROTOCOL_ERROR (Proxy Buffering)
+      // Intenta suscripción SSE para detección de sesión remota en tiempo real; si el entorno bloquea SSE por proxy buffering, cae en fallback silencioso atendido por el interceptor 401
+      try {
+        this.subscribeToSessionEvents()
+      } catch (err) {
+        logger.auth('[AUTH] No se pudo inicializar SSE para eventos de sesión:', err?.message)
+      }
     },
 
     setUser(record) {
