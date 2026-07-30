@@ -33,8 +33,8 @@
               {{ item.name }} {{ item.lastname }}
             </template>
             <template v-slot:item.status="{ item }">
-              <v-chip :color="item.status === 'active' ? 'success' : 'warning'" size="small">
-                {{ item.status === 'active' ? 'Activo' : 'Suspendido' }}
+              <v-chip :color="getUserStatusColor(item.status)" size="small">
+                {{ formatUserStatus(item.status) || 'Pendiente' }}
               </v-chip>
             </template>
           </v-data-table>
@@ -248,7 +248,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
-import { formatDate } from '@/utils/formatters'
+import { formatDate, formatUserStatus, getUserStatusColor } from '@/utils/formatters'
 import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 
 const uiFeedbackStore = useUiFeedbackStore()

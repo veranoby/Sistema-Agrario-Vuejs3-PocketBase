@@ -292,6 +292,12 @@
           </div>
         </div>
       </v-form>
+      <!-- Asistente de IA para llenado de Bitácora (Guardia de inmutabilidad: no renderizar si está firmado) -->
+      <AiAssistant
+        v-if="!formData.signature"
+        mode="bitacora_fill"
+        :actividad="selectedActividadDetalles"
+      />
     </v-card-text>
 
     <v-divider />
@@ -323,6 +329,7 @@
 
 <script setup>
 import { ref, reactive, onMounted, watch, computed } from 'vue';
+import AiAssistant from '@/components/AiAssistant.vue';
 import EvidenciasImageUpload from '@/components/common/EvidenciasImageUpload.vue';
 import { useActividadesStore } from '@/stores/actividadesStore';
 import { useSiembrasStore } from '@/stores/siembrasStore';

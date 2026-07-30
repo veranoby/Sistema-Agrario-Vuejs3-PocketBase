@@ -8,6 +8,41 @@ import { transformMetricasByTipo } from '@/utils/bitacoraMetricTransformer'
 import { differenceInDays, parseISO } from 'date-fns'
 
 /**
+ * Elimina recursivamente propiedades con valor null, undefined, '', [] o {}
+ * para optimizar el consumo de tokens en llamadas a modelos LLM.
+ */
+export function pruneObject(obj) {
+  if (obj === null || obj === undefined) return undefined
+  if (typeof obj !== 'object') return obj
+  if (obj instanceof Date) return obj.toISOString()
+
+  if (Array.isArray(obj)) {
+    const prunedArray = obj
+      .map(pruneObject)
+      .filter(val => val !== undefined && val !== null && val !== '')
+    return prunedArray.length > 0 ? prunedArray : undefined
+  }
+
+  const prunedObj = {}
+  let keysCount = 0
+
+  for (const [key, value] of Object.entries(obj)) {
+    const prunedValue = pruneObject(value)
+    if (
+      prunedValue !== undefined &&
+      prunedValue !== null &&
+      prunedValue !== '' &&
+      !(typeof prunedValue === 'object' && Object.keys(prunedValue).length === 0)
+    ) {
+      prunedObj[key] = prunedValue
+      keysCount++
+    }
+  }
+
+  return keysCount > 0 ? prunedObj : undefined
+}
+
+/**
  * Construye contexto completo de siembra para el asistente AI
  * @param {Object} siembra - Datos de la siembra
  * @param {Array} actividades - Lista de actividades asociadas
@@ -17,7 +52,7 @@ import { differenceInDays, parseISO } from 'date-fns'
 export function buildSiembraContext(siembra, actividades, zonas) {
   if (!siembra) return null
 
-  return {
+  const rawContext = {
     siembra: {
       nombre: siembra.nombre,
       area: siembra.area_total,
@@ -41,6 +76,8 @@ export function buildSiembraContext(siembra, actividades, zonas) {
     })),
     alertas: detectAlerts(siembra, actividades, zonas)
   }
+
+  return pruneObject(rawContext) || {}
 }
 
 /**

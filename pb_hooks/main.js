@@ -1797,7 +1797,7 @@ routerAdd("DELETE", "/api/reports/scheduled/:id", (e) => {
 // ============================================
 routerAdd("POST", "/api/ai/chat", (e) => {
   const info = e.requestInfo()
-  const { prompt, context, haciendaId } = info.json || {}
+  const { prompt, context, haciendaId, mode } = info.json || {}
 
   if (!prompt) return e.json(HTTP_STATUS.BAD_REQUEST, { error: "prompt required" })
   if (!haciendaId) return e.json(HTTP_STATUS.BAD_REQUEST, { error: "haciendaId required" })
@@ -1876,7 +1876,29 @@ routerAdd("POST", "/api/ai/chat", (e) => {
 
   // ── Llamada a OpenRouter ──
   try {
-    const systemPrompt = `Eres un asistente agrícola experto para ConAgri.
+    const isBitacoraFill = mode === 'bitacora_fill'
+    const systemPrompt = isBitacoraFill
+      ? `Eres un asistente agrícola experto para ConAgri especializado en llenado de bitácoras.
+Analizas los datos de la actividad y siembra asociadas para brindar recomendaciones de llenado e insumos/métricas a registrar.
+Responde SIEMPRE con este JSON exacto, sin texto adicional fuera del JSON:
+
+{
+  "diagnostico": "Texto en 2-3 oraciones con sugerencias de datos clave a registrar para esta bitácora.",
+  "acciones": [
+    {
+      "id": "accion_1",
+      "tipo": "info",
+      "titulo": "Sugerencia de registro",
+      "descripcion": "Descripción detallada de la recomendación de llenado",
+      "prioridad": "media",
+      "data": {}
+    }
+  ]
+}
+
+Máximo 3 sugerencias. Responde en español. Usa tipo "info". NO generes acciones de creación o modificación de otras colecciones.
+CRÍTICO: responde SOLO el JSON, sin markdown, sin bloques de código, sin texto adicional.`
+      : `Eres un asistente agrícola experto para ConAgri.
 Analizas datos reales de siembras, actividades y zonas para dar recomendaciones concretas y accionables.
 Responde SIEMPRE con este JSON exacto, sin texto adicional fuera del JSON:
 
@@ -1904,7 +1926,7 @@ Máximo 4 acciones. Responde en español. Si no hay acciones concretas que tomar
 CRÍTICO: responde SOLO el JSON, sin markdown, sin bloques de código, sin texto adicional.`;
 
     const userMessage = context
-      ? "Contexto actual:\n" + JSON.stringify(context, null, 2) + "\n\nConsulta: " + prompt
+      ? "Contexto actual:\n" + JSON.stringify(context) + "\n\nConsulta: " + prompt
       : prompt
 
     const url = aiConfig.provider === 'openrouter' ? "https://openrouter.ai/api/v1/chat/completions" : (aiConfig.base_url || "https://api.openai.com/v1/chat/completions")

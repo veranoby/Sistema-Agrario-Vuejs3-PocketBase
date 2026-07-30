@@ -199,14 +199,15 @@ import { useRecordatoriosStore } from '@/stores/recordatoriosStore'
 import { useProgramacionesStore } from '@/stores/programaciones/programacionesStore'
 import { useActividadesStore } from '@/stores/actividadesStore'
 import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
-import { buildSiembraContext } from '@/services/aiContextBuilder'
+import { buildSiembraContext, pruneObject } from '@/services/aiContextBuilder'
 
 const props = defineProps({
   siembra:    { type: Object, default: null },
   actividad:  { type: Object, default: null },
   zona:       { type: Object, default: null },
   actividades:{ type: Array,  default: () => [] },
-  zonas:      { type: Array,  default: () => [] }
+  zonas:      { type: Array,  default: () => [] },
+  mode:       { type: String, default: 'analisis' }
 })
 
 // Stores
@@ -229,7 +230,12 @@ const usageDisplay = ref('...')
 // Computed
 const hasBYOK        = computed(() => !!haciendaStore.mi_hacienda?.ai_config?.auth_token)
 const isModuleActive = computed(() => {
-  return hasBYOK.value || haciendaStore.isModuleActive('ai_assistant_premium');
+  if (haciendaStore.isModuleActive('ai_assistant_premium')) return true
+  if (hasBYOK.value) {
+    if (props.mode === 'bitacora_fill') return true
+    return !!props.siembra || !!props.actividad
+  }
+  return false
 })
 
 const keyInfo = computed(() => hasBYOK.value
@@ -238,6 +244,7 @@ const keyInfo = computed(() => hasBYOK.value
 )
 
 const contextLabel = computed(() => {
+  if (props.mode === 'bitacora_fill') return 'Formulario Bitácora'
   if (props.actividad) return `Actividad: ${props.actividad.nombre}`
   if (props.zona)      return `Zona: ${props.zona.nombre}`
   if (props.siembra)   return `Siembra: ${props.siembra.nombre}`
@@ -257,6 +264,24 @@ const actionIconColor = (accion) => accion.tipo === 'info' ? 'blue' : 'green-dar
 
 const prioridadColor = (p) => ({ alta: 'error', media: 'warning', baja: 'success' }[p] || 'grey')
 
+// Helper Exponential Backoff con Jitter
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
+
+const fetchWithBackoff = async (fetchFn, maxRetries = 3, baseDelay = 500, maxDelay = 8000) => {
+  let attempt = 0
+  while (true) {
+    const res = await fetchFn()
+    if (res.status === 429 && attempt < maxRetries) {
+      attempt++
+      const jitter = Math.random() * 500
+      const delay = Math.min(baseDelay * Math.pow(2, attempt - 1), maxDelay) + jitter
+      await sleep(delay)
+      continue
+    }
+    return res
+  }
+}
+
 // ── Análisis principal ──
 const analyze = async () => {
   loading.value = true
@@ -270,18 +295,20 @@ const analyze = async () => {
     if (props.siembra) {
       context = buildSiembraContext(props.siembra, props.actividades, props.zonas)
     } else if (props.actividad) {
-      context = { actividad: props.actividad, siembra: props.siembra }
+      context = pruneObject({ actividad: props.actividad, siembra: props.siembra })
     } else if (props.zona) {
-      context = { zona: props.zona, bpa_estado: props.zona.bpa_estado }
+      context = pruneObject({ zona: props.zona, bpa_estado: props.zona.bpa_estado })
     }
 
-    const prompt = props.actividad
-      ? `Analiza esta actividad agrícola y recomienda acciones.`
-      : props.zona
-        ? `Analiza el estado de esta zona agrícola (BPA: ${props.zona.bpa_estado}%) y recomienda acciones.`
-        : `Analiza el estado de esta siembra y recomienda acciones prioritarias.`
+    const prompt = props.mode === 'bitacora_fill'
+      ? `Sugiere recomendaciones y valores para el llenado de la bitácora basándote en la actividad y siembra asociada.`
+      : props.actividad
+        ? `Analiza esta actividad agrícola y recomienda acciones.`
+        : props.zona
+          ? `Analiza el estado de esta zona agrícola (BPA: ${props.zona.bpa_estado}%) y recomienda acciones.`
+          : `Analiza el estado de esta siembra y recomienda acciones prioritarias.`
 
-    const res = await fetch('/api/ai/chat', {
+    const res = await fetchWithBackoff(() => fetch('/api/ai/chat', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -290,9 +317,10 @@ const analyze = async () => {
       body: JSON.stringify({
         prompt,
         context,
-        haciendaId: haciendaStore.mi_hacienda?.id
+        haciendaId: haciendaStore.mi_hacienda?.id,
+        mode: props.mode
       })
-    })
+    }))
 
     if (res.status === 429) {
       const data = await res.json()

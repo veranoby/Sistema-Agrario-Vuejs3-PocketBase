@@ -527,6 +527,15 @@ const processApprove = async () => {
       }
     }
 
+    // 3.5. Activar el estado del usuario solicitante
+    if (itemData.solicitante) {
+      try {
+        await pb.collection('users').update(itemData.solicitante, { status: 'active' })
+      } catch (userErr) {
+        console.error('Error al actualizar el estado del usuario solicitante a activo:', userErr)
+      }
+    }
+
     // 4. Patch a Solicitud (marcar como aprobada)
     await pb.collection('solicitudes_suscripcion').update(itemData.id, {
       estado: 'aprobada',
