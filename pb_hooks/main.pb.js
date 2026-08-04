@@ -216,9 +216,9 @@ const EMAIL_TEMPLATES = {
 }
 
 // ============================================
-// GET /api/haciendas/:id/alerts
+// GET /api/haciendas/{id}/alerts
 // ============================================
-routerAdd("GET", "/api/haciendas/:id/alerts", (e) => {
+routerAdd("GET", "/api/haciendas/{id}/alerts", (e) => {
   const info = e.requestInfo()
   const haciendaId = info.pathParam("id")
 
@@ -255,9 +255,9 @@ routerAdd("GET", "/api/haciendas/:id/alerts", (e) => {
 }, $apis.requireAuth())
 
 // ============================================
-// PUT /api/haciendas/:id/alerts
+// PUT /api/haciendas/{id}/alerts
 // ============================================
-routerAdd("PUT", "/api/haciendas/:id/alerts", (e) => {
+routerAdd("PUT", "/api/haciendas/{id}/alerts", (e) => {
   const info = e.requestInfo()
   const body = info.json
   const haciendaId = info.pathParam("id")
@@ -302,9 +302,9 @@ routerAdd("PUT", "/api/haciendas/:id/alerts", (e) => {
 
 // ============================================
 // ============================================
-// POST /api/modulos/:id/activate
+// POST /api/modulos/{id}/activate
 // ============================================
-routerAdd("POST", "/api/modulos/:id/activate", (e) => {
+routerAdd("POST", "/api/modulos/{id}/activate", (e) => {
   const info = e.requestInfo()
   const body = info.json
   const moduloId = info.pathParam("id")
@@ -380,9 +380,9 @@ routerAdd("POST", "/api/modulos/:id/activate", (e) => {
 }, $apis.requireAuth())
 
 // ============================================
-// POST /api/modulos/:id/deactivate
+// POST /api/modulos/{id}/deactivate
 // ============================================
-routerAdd("POST", "/api/modulos/:id/deactivate", (e) => {
+routerAdd("POST", "/api/modulos/{id}/deactivate", (e) => {
   const info = e.requestInfo()
   const body = info.json
   const moduloId = info.pathParam("id")
@@ -539,9 +539,9 @@ routerAdd("POST", "/api/admin/users", (e) => {
 }, $apis.requireAuth())
 
 // ============================================
-// PUT /api/admin/users/:id
+// PUT /api/admin/users/{id}
 // ============================================
-routerAdd("PUT", "/api/admin/users/:id", (e) => {
+routerAdd("PUT", "/api/admin/users/{id}", (e) => {
   const info = e.requestInfo()
   const userId = info.pathParam("id")
   const body = info.json
@@ -599,9 +599,9 @@ routerAdd("PUT", "/api/admin/users/:id", (e) => {
 }, $apis.requireAuth())
 
 // ============================================
-// DELETE /api/admin/users/:id
+// DELETE /api/admin/users/{id}
 // ============================================
-routerAdd("DELETE", "/api/admin/users/:id", (e) => {
+routerAdd("DELETE", "/api/admin/users/{id}", (e) => {
   const info = e.requestInfo()
   const userId = info.pathParam("id")
 
@@ -638,9 +638,9 @@ routerAdd("DELETE", "/api/admin/users/:id", (e) => {
 }, $apis.requireAuth())
 
 // ============================================
-// POST /api/admin/users/:id/reset-password
+// POST /api/admin/users/{id}/reset-password
 // ============================================
-routerAdd("POST", "/api/admin/users/:id/reset-password", (e) => {
+routerAdd("POST", "/api/admin/users/{id}/reset-password", (e) => {
   const info = e.requestInfo()
   const userId = info.pathParam("id")
   const body = info.json
@@ -678,9 +678,9 @@ routerAdd("POST", "/api/admin/users/:id/reset-password", (e) => {
 }, $apis.requireAuth())
 
 // ============================================
-// POST /api/admin/users/:id/disconnect
+// POST /api/admin/users/{id}/disconnect
 // ============================================
-routerAdd("POST", "/api/admin/users/:id/disconnect", (e) => {
+routerAdd("POST", "/api/admin/users/{id}/disconnect", (e) => {
   const info = e.requestInfo()
   const userId = info.pathParam("id")
   const caller = info.authRecord
@@ -721,9 +721,9 @@ routerAdd("POST", "/api/admin/users/:id/disconnect", (e) => {
 }, $apis.requireAuth())
 
 // ============================================
-// POST /api/admin/users/:id/haciendas
+// POST /api/admin/users/{id}/haciendas
 // ============================================
-routerAdd("POST", "/api/admin/users/:id/haciendas", (e) => {
+routerAdd("POST", "/api/admin/users/{id}/haciendas", (e) => {
   const info = e.requestInfo()
   const userId = info.pathParam("id")
   const body = info.json
@@ -760,9 +760,9 @@ routerAdd("POST", "/api/admin/users/:id/haciendas", (e) => {
 }, $apis.requireAuth())
 
 // ============================================
-// POST /api/admin/users/:id/roles
+// POST /api/admin/users/{id}/roles
 // ============================================
-routerAdd("POST", "/api/admin/users/:id/roles", (e) => {
+routerAdd("POST", "/api/admin/users/{id}/roles", (e) => {
   const info = e.requestInfo()
   const userId = info.pathParam("id")
   const body = info.json
@@ -874,9 +874,9 @@ routerAdd("POST", "/api/admin/haciendas", (e) => {
 }, $apis.requireAuth())
 
 // ============================================
-// PUT /api/admin/haciendas/:id
+// PUT /api/admin/haciendas/{id}
 // ============================================
-routerAdd("PUT", "/api/admin/haciendas/:id", (e) => {
+routerAdd("PUT", "/api/admin/haciendas/{id}", (e) => {
   const info = e.requestInfo()
   const haciendaId = info.pathParam("id")
   const body = info.json
@@ -924,9 +924,9 @@ routerAdd("PUT", "/api/admin/haciendas/:id", (e) => {
 }, $apis.requireAuth())
 
 // ============================================
-// DELETE /api/admin/haciendas/:id
+// DELETE /api/admin/haciendas/{id}
 // ============================================
-routerAdd("DELETE", "/api/admin/haciendas/:id", (e) => {
+routerAdd("DELETE", "/api/admin/haciendas/{id}", (e) => {
   const info = e.requestInfo()
   const haciendaId = info.pathParam("id")
 
@@ -963,9 +963,9 @@ routerAdd("DELETE", "/api/admin/haciendas/:id", (e) => {
 }, $apis.requireAuth())
 
 // ============================================
-// POST /api/admin/haciendas/:id/owner
+// POST /api/admin/haciendas/{id}/owner
 // ============================================
-routerAdd("POST", "/api/admin/haciendas/:id/owner", (e) => {
+routerAdd("POST", "/api/admin/haciendas/{id}/owner", (e) => {
   const info = e.requestInfo()
   const haciendaId = info.pathParam("id")
   const body = info.json
@@ -1002,9 +1002,9 @@ routerAdd("POST", "/api/admin/haciendas/:id/owner", (e) => {
 }, $apis.requireAuth())
 
 // ============================================
-// POST /api/admin/haciendas/:id/plan
+// POST /api/admin/haciendas/{id}/plan
 // ============================================
-routerAdd("POST", "/api/admin/haciendas/:id/plan", (e) => {
+routerAdd("POST", "/api/admin/haciendas/{id}/plan", (e) => {
   const info = e.requestInfo()
   const haciendaId = info.pathParam("id")
   const body = info.json
@@ -1044,9 +1044,9 @@ routerAdd("POST", "/api/admin/haciendas/:id/plan", (e) => {
 }, $apis.requireAuth())
 
 // ============================================
-// POST /api/admin/haciendas/:id/reactivate
+// POST /api/admin/haciendas/{id}/reactivate
 // ============================================
-routerAdd("POST", "/api/admin/haciendas/:id/reactivate", (e) => {
+routerAdd("POST", "/api/admin/haciendas/{id}/reactivate", (e) => {
   const info = e.requestInfo()
   const haciendaId = info.pathParam("id")
 
@@ -1083,9 +1083,9 @@ routerAdd("POST", "/api/admin/haciendas/:id/reactivate", (e) => {
 }, $apis.requireAuth())
 
 // ============================================
-// GET /api/admin/haciendas/:id/metrics
+// GET /api/admin/haciendas/{id}/metrics
 // ============================================
-routerAdd("GET", "/api/admin/haciendas/:id/metrics", async (e) => {
+routerAdd("GET", "/api/admin/haciendas/{id}/metrics", async (e) => {
   const info = e.requestInfo()
   const haciendaId = info.pathParam("id")
 
@@ -1722,10 +1722,10 @@ routerAdd("POST", "/api/reports/scheduled", (e) => {
 })
 
 /**
- * PUT /api/reports/scheduled/:id
+ * PUT /api/reports/scheduled/{id}
  * Actualizar reporte programado existente
  */
-routerAdd("PUT", "/api/reports/scheduled/:id", (e) => {
+routerAdd("PUT", "/api/reports/scheduled/{id}", (e) => {
   try {
     const authRecord = $apis.requireAuth()(e)
     const id = e.pathParam("id")
@@ -1768,10 +1768,10 @@ routerAdd("PUT", "/api/reports/scheduled/:id", (e) => {
 })
 
 /**
- * DELETE /api/reports/scheduled/:id
+ * DELETE /api/reports/scheduled/{id}
  * Eliminar reporte programado
  */
-routerAdd("DELETE", "/api/reports/scheduled/:id", (e) => {
+routerAdd("DELETE", "/api/reports/scheduled/{id}", (e) => {
   try {
     const authRecord = $apis.requireAuth()(e)
     const id = e.pathParam("id")
