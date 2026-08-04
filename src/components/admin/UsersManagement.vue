@@ -37,6 +37,21 @@
           </v-col>
           <v-col cols="12" md="2">
             <v-select
+              v-model="filterVerified"
+              label="Verificación Email"
+              :items="[
+                { title: 'Todos', value: null },
+                { title: 'Verificados', value: true },
+                { title: 'Sin Verificar', value: false }
+              ]"
+              clearable
+              dense
+              outlined
+              hide-details
+            />
+          </v-col>
+          <v-col cols="12" md="2">
+            <v-select
               v-model="filterStatus"
               label="Estado"
               :items="[
@@ -267,6 +282,7 @@ const users = ref([])
 const haciendas = ref([])
 const searchQuery = ref('')
 const filterRole = ref(null)
+const filterVerified = ref(null)
 const filterStatus = ref(null)
 const filterHacienda = ref(null)
 const userDialog = ref(false)
@@ -299,13 +315,13 @@ const headers = [
   { title: 'Rol', key: 'role', sortable: true },
   { title: 'Email Verificado', key: 'verified', sortable: true },
   { title: 'Haciendas', key: 'haciendas', sortable: false },
-  { title: 'Estado', key: 'status', sortable: true },
+  { title: 'Estado Cuenta', key: 'status', sortable: true },
   { title: 'Acciones', key: 'actions', sortable: false, align: 'end' }
 ]
 
-// Usuarios filtrados
+// Usuarios filtrados (excluye Asesores Técnicos)
 const filteredUsers = computed(() => {
-  let result = users.value
+  let result = users.value.filter(u => u.role !== USER_ROLES.ASESOR)
 
   // Filtro por búsqueda
   if (searchQuery.value) {
@@ -322,6 +338,11 @@ const filteredUsers = computed(() => {
   // Filtro por rol
   if (filterRole.value) {
     result = result.filter(u => u.role === filterRole.value)
+  }
+
+  // Filtro por verificación de email
+  if (filterVerified.value !== null && filterVerified.value !== undefined) {
+    result = result.filter(u => !!u.verified === filterVerified.value)
   }
 
   // Filtro por estado

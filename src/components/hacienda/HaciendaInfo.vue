@@ -160,7 +160,7 @@ const showAvatarDialog = ref(false)
 const editedHacienda = ref(null)
 
 const openEditDialog = () => {
-  editedHacienda.value = mi_hacienda.value ? JSON.parse(JSON.stringify(mi_hacienda.value)) : {}
+  editedHacienda.value = mi_hacienda.value ? structuredClone(mi_hacienda.value) : {}
   editDialog.value = true
 }
 

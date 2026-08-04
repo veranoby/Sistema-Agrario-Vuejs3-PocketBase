@@ -100,8 +100,8 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
         this.recordatorios = records
         this.lastSync = Date.now()
 
-        // CORRECTO: Sanitizar con JSON.parse(JSON.stringify()) para IndexedDB
-        syncStore.saveToLocalStorage('recordatorios', JSON.parse(JSON.stringify(this.recordatorios)));
+        // CORRECTO: Sanitizar con structuredClone() para IndexedDB
+        syncStore.saveToLocalStorage('recordatorios', structuredClone(this.recordatorios));
 
         return records
       } catch (error) {
@@ -149,7 +149,7 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
 
         this.recordatorios.unshift(tempRecordatorio)
         // CORRECTO: Sanitizar para IndexedDB
-        syncStore.saveToLocalStorage('recordatorios', JSON.parse(JSON.stringify(this.recordatorios)));
+        syncStore.saveToLocalStorage('recordatorios', structuredClone(this.recordatorios));
 
         await syncStore.queueOperation({
           type: 'create',
@@ -168,7 +168,7 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
         })
         this.recordatorios.push(record)
         // CORRECTO: Sanitizar para IndexedDB
-        syncStore.saveToLocalStorage('recordatorios', JSON.parse(JSON.stringify(this.recordatorios)));
+        syncStore.saveToLocalStorage('recordatorios', structuredClone(this.recordatorios));
         return record
       } catch (error) {
         handleError(error, 'Error al crear recordatorio')
@@ -227,7 +227,7 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
 
         uiFeedbackStore.hideLoading()
         // CORRECTO: Sanitizar para IndexedDB
-        syncStore.saveToLocalStorage('recordatorios', JSON.parse(JSON.stringify(this.recordatorios)));
+        syncStore.saveToLocalStorage('recordatorios', structuredClone(this.recordatorios));
         return this.recordatorios[index]
       }
 
@@ -241,7 +241,7 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
           this.recordatorios[index] = record
         }
         // CORRECTO: Sanitizar para IndexedDB
-        syncStore.saveToLocalStorage('recordatorios', JSON.parse(JSON.stringify(this.recordatorios)));
+        syncStore.saveToLocalStorage('recordatorios', structuredClone(this.recordatorios));
         return record
       } catch (error) {
         handleError(error, 'Error al actualizar recordatorio')
@@ -277,7 +277,7 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
         })
         uiFeedbackStore.hideLoading()
         // CORRECTO: Sanitizar para IndexedDB
-        syncStore.saveToLocalStorage('recordatorios', JSON.parse(JSON.stringify(this.recordatorios)));
+        syncStore.saveToLocalStorage('recordatorios', structuredClone(this.recordatorios));
         return true
       }
 
@@ -285,7 +285,7 @@ export const useRecordatoriosStore = defineStore('recordatorios', {
         await pb.collection('recordatorios').delete(id)
         this.recordatorios = this.recordatorios.filter((r) => r.id !== id)
         // CORRECTO: Sanitizar para IndexedDB
-        syncStore.saveToLocalStorage('recordatorios', JSON.parse(JSON.stringify(this.recordatorios)));
+        syncStore.saveToLocalStorage('recordatorios', structuredClone(this.recordatorios));
         return true
       } catch (error) {
         handleError(error, 'Error al eliminar recordatorio')

@@ -167,8 +167,8 @@ export const useZonasStore = defineStore('zonas', {
 
 
         this.lastSync = Date.now();
-        // CORRECTO: Sanitizar con JSON.parse(JSON.stringify()) para IndexedDB
-        syncStore.saveToLocalStorage('zonas', JSON.parse(JSON.stringify(this.zonas)));
+        // CORRECTO: Sanitizar con structuredClone() para IndexedDB
+        syncStore.saveToLocalStorage('zonas', structuredClone(this.zonas));
 
         // Persistir geometrías en IndexedDB
         for (const zona of result.items) {
@@ -429,7 +429,7 @@ export const useZonasStore = defineStore('zonas', {
         // markRaw: lookup data doesn't need deep reactivity
         this.tiposZonas = markRaw(records)
         // GUARDAR zonas en localStorage para uso offline
-        useSyncStore().saveToLocalStorage('tiposZonas', JSON.parse(JSON.stringify(this.tiposZonas)))
+        useSyncStore().saveToLocalStorage('tiposZonas', structuredClone(this.tiposZonas))
       } catch (error) {
         handleError(error, 'Error al cargar tipos de zonas')
       }

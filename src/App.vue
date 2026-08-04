@@ -131,11 +131,10 @@ const navigationLinks = computed(() => {
 
   if (role === USER_ROLES.SUPERADMIN) {
     return [
-      { id: 'sa1', to: '/admin', icon: 'mdi-shield-crown', label: 'Admin Dashboard' },
+      { id: 'sa1', to: '/admin', icon: 'mdi-cash-register', label: 'Solicitudes y Pagos' },
       { id: 'sa2', to: '/admin/users', icon: 'mdi-account-group', label: 'Gestión de Usuarios' },
       { id: 'sa3', to: '/admin/haciendas', icon: 'mdi-home-group', label: 'Gestión de Haciendas' },
       { id: 'sa11', to: '/admin/asesores', icon: 'mdi-account-tie-hat', label: 'Gestión de Asesores' },
-      { id: 'sa12', to: '/admin/suscripciones', icon: 'mdi-cash-register', label: 'Solicitudes y Pagos' },
       { id: 'sa4', to: '/admin/settings', icon: 'mdi-cog', label: 'Configuración del Sistema' },
       { id: 'sa5', to: '/admin/logs', icon: 'mdi-text-box-search', label: 'Visor de Logs' },
       { id: 'sa6', to: '/admin/exports', icon: 'mdi-export', label: 'Exportaciones' },

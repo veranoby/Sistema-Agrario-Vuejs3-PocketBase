@@ -408,7 +408,7 @@ const parseGeometry = (geo) => {
   if (!geo) return null
   try {
     let parsed = typeof geo === 'string' ? JSON.parse(geo) : geo
-    return JSON.parse(JSON.stringify(parsed))
+    return structuredClone(parsed)
   } catch (e) {
     console.warn('[SIEMBRAS_DASHBOARD] Error parsing geometry', e)
     return null

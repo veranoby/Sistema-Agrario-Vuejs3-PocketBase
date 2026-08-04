@@ -98,7 +98,7 @@ export class IndexedDBStorage {
         const tx = this.db.transaction(this.storeName, 'readwrite')
         const store = tx.objectStore(this.storeName)
         // CORRECCIÓN: Sanitizar valor para evitar DataCloneError
-        const sanitizedValue = JSON.parse(JSON.stringify(value))
+        const sanitizedValue = structuredClone(value)
         const request = store.put(sanitizedValue, key)
         
         request.onsuccess = () => resolve()
@@ -117,7 +117,7 @@ export class IndexedDBStorage {
         console.error('[IndexedDBStorage] Error en setItem (catch):', error, 'key:', key)
         // Intentar fallback
         try {
-          const sanitizedValue = JSON.parse(JSON.stringify(value))
+          const sanitizedValue = structuredClone(value)
           localStorage.setItem(`idb_fallback_${key}`, JSON.stringify(sanitizedValue))
           this.useFallback = true
         } catch (e) {

@@ -687,7 +687,7 @@ function initializeMetricasValues() {
       return;
     }
 
-    const actividadMetricas = JSON.parse(JSON.stringify(selectedActividadDetalles.value.metricas));
+    const actividadMetricas = structuredClone(selectedActividadDetalles.value.metricas);
 
     if (actividadMetricas.producto_fertilizante && actividadMetricas.producto_fertilizante.valor) {
       if (actividadMetricas.producto_fertilizante_1 && (actividadMetricas.producto_fertilizante_1.valor === null || actividadMetricas.producto_fertilizante_1.valor === undefined || actividadMetricas.producto_fertilizante_1.valor === '')) {

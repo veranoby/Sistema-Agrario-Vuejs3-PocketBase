@@ -72,7 +72,7 @@ export const STATUS_LABELS = {
   [USER_STATUS.INACTIVE]: 'Inactivo',
   [USER_STATUS.SUSPENDED]: 'Suspendido',
   [USER_STATUS.PENDING]: 'Pendiente',
-  '': 'Pendiente'
+  '': 'Activo'
 }
 
 /**
@@ -84,5 +84,5 @@ export const STATUS_COLORS = {
   [USER_STATUS.INACTIVE]: 'error',
   [USER_STATUS.SUSPENDED]: 'error',
   [USER_STATUS.PENDING]: 'warning',
-  '': 'warning'
+  '': 'success'
 }

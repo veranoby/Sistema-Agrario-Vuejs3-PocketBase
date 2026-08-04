@@ -41,21 +41,33 @@ export const reportingModule = {
    * @param {string} format - Formato (pdf, excel, csv, json, html)
    */
   async export(report, format) {
-    const exporters = await import('@/utils/exporters')
-    
     switch (format) {
-      case 'pdf':
-        return exporters.exportToPDF(report)
-      case 'excel':
-        return exporters.excelExporter.exportBitacoras(report.data) // Simplified for now
-      case 'csv':
-        return exporters.exportToCSV(report.data)
-      case 'json':
-        return exporters.exportToJSON(report)
-      case 'html':
-        return exporters.exportToHTML(report)
-      case 'md':
-        return exporters.exportToMD(report)
+      case 'pdf': {
+        const { exportToPDF } = await import('@/utils/exporters/pdfExporter')
+        return exportToPDF(report)
+      }
+      case 'excel': {
+        const { excelExporter } = await import('@/utils/exporters/excelExporter')
+        return excelExporter.exportBitacoras(report.data)
+      }
+      case 'csv': {
+        const { exportToCSV } = await import('@/utils/exporters/csvExporter')
+        return exportToCSV(report.data)
+      }
+      case 'json': {
+        const { downloadFile } = await import('@/utils/fileDownload')
+        const json = JSON.stringify(report, null, 2)
+        downloadFile(json, 'export.json', 'application/json;charset=utf-8;')
+        return true
+      }
+      case 'html': {
+        const { exportToHTML } = await import('@/utils/exporters/htmlExporter')
+        return exportToHTML(report)
+      }
+      case 'md': {
+        const { exportToMD } = await import('@/utils/exporters/markdownExporter')
+        return exportToMD(report)
+      }
       default:
         throw new Error(`Formato no soportado: ${format}`)
     }

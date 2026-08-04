@@ -302,7 +302,7 @@ import { pb } from '@/utils/pocketbase'
 import { logger } from '@/utils/logger'
 import { cache, CacheKeys } from '@/utils/cacheManager'
 import { formatDate } from '@/utils/formatters'
-import { exportToCSV } from '@/utils/exporters'
+import { exportToCSV } from '@/utils/exporters/csvExporter'
 
 const tab = ref('growth')
 const loading = ref(false)

@@ -441,7 +441,7 @@ const { t } = useI18n()
 const haciendaStore = useHaciendaStore()
 const uiFeedback = useUiFeedbackStore()
 
-const formData = ref(JSON.parse(JSON.stringify(props.initialData)))
+const formData = ref(structuredClone(props.initialData))
 
 // Estado para vértices de polígono
 const polygonVertices = ref([])

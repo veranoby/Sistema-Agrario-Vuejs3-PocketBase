@@ -101,8 +101,8 @@ export const useSiembrasStore = defineStore('siembras', {
         this.currentPage = resultList.page
         this.totalPages = resultList.totalPages
 
-        // CORRECTO: Sanitizar con JSON.parse(JSON.stringify()) para IndexedDB
-        syncStore.saveToLocalStorage('siembras', JSON.parse(JSON.stringify(this.siembras)));
+        // CORRECTO: Sanitizar con structuredClone() para IndexedDB
+        syncStore.saveToLocalStorage('siembras', structuredClone(this.siembras));
         
         for (const siembra of resultList.items) {
           if (siembra.gps || siembra.geometria) {
@@ -331,7 +331,7 @@ export const useSiembrasStore = defineStore('siembras', {
           this.siembras.push(record)
         }
         // CORRECTO: Sanitizar para IndexedDB
-        syncStore.saveToLocalStorage('siembras', JSON.parse(JSON.stringify(this.siembras)));
+        syncStore.saveToLocalStorage('siembras', structuredClone(this.siembras));
         return record
       }
 

@@ -315,8 +315,8 @@ const routes = [
 // Enable /admin route for superadmin
 const adminRoute = {
   path: '/admin',
-  component: () => import('@/components/admin/SuperAdminDashboard.vue'),
-  name: 'Super Admin Dashboard',
+  component: () => import('@/components/admin/SuperAdminSuscripciones.vue'),
+  name: 'Gestión de Suscripciones',
   meta: {
     requiresAuth: true,
     requiresSuperAdmin: true,
@@ -386,13 +386,7 @@ const adminAsesoresRoute = {
 
 const adminSubscriptionsRoute = {
   path: '/admin/suscripciones',
-  component: () => import('@/components/admin/SuperAdminSuscripciones.vue'),
-  name: 'Gestión de Suscripciones',
-  meta: {
-    requiresAuth: true,
-    requiresSuperAdmin: true,
-    roles: [ROLES.SUPERADMIN]
-  }
+  redirect: '/admin'
 }
 
 const adminSettingsRoute = {

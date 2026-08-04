@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
 import { logger } from '@/utils/logger'
-import { exportToCSV } from '@/utils/exporters'
+import { exportToCSV } from '@/utils/exporters/csvExporter'
 
 export const useAnalyticsStore = defineStore('analytics', {
   state: () => ({

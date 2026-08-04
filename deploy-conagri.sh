@@ -120,9 +120,9 @@ set -e
 
 chmod +x /var/www/conagri/pocketbase/pocketbase
 
-# Nginx — solo si no existe aún
+# Nginx — solo si no existe aún (para no borrar config de Certbot)
 if [ ! -f /etc/nginx/sites-available/conagri.conespacio.org ]; then
-  echo "Creando config Nginx..."
+  echo "Creando config base Nginx para conagri.conespacio.org..."
   cat > /etc/nginx/sites-available/conagri.conespacio.org << 'NGINX'
 server {
     listen 80;
@@ -144,12 +144,15 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
     }
 
-    # PocketBase API
+    # PocketBase API & Realtime (SSE)
     location /api/ {
         proxy_pass http://localhost:8091/api/;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header Connection '';
+        proxy_buffering off;
+        proxy_read_timeout 86400s;
     }
 }
 NGINX

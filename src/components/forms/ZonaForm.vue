@@ -699,7 +699,7 @@ const haciendaGeometry = computed(() => {
   const geom = mi_hacienda.value?.geometria
   if (!geom) return null
   try {
-    return typeof geom === 'string' ? JSON.parse(geom) : JSON.parse(JSON.stringify(geom))
+    return typeof geom === 'string' ? JSON.parse(geom) : structuredClone(geom)
   } catch { return null }
 })
 
@@ -931,7 +931,7 @@ async function autoLocate() {
  */
 function centerOnGPS() {
   const rawGps = zonaLocal.gps || {}
-  const gps = JSON.parse(JSON.stringify(rawGps))
+  const gps = structuredClone(rawGps)
   const lat = Number(gps.lat)
   const lng = Number(gps.lng)
   if (gps.lat !== null && gps.lng !== null && !isNaN(lat) && !isNaN(lng)) {
@@ -952,7 +952,7 @@ function centerOnHaciendaGPS() {
     try { rawGps = JSON.parse(rawGps) } catch (e) { rawGps = null }
   }
   
-  const gps = JSON.parse(JSON.stringify(rawGps))
+  const gps = structuredClone(rawGps)
   const lat = Number(gps?.lat)
   const lng = Number(gps?.lng)
 
@@ -992,7 +992,7 @@ async function guardar() {
 
   try {
     // Sanitizar objeto para evitar proxies y campos de sistema de PocketBase
-    const rawData = JSON.parse(JSON.stringify(zonaLocal))
+    const rawData = structuredClone(zonaLocal)
     
     const zonaToSave = {
       ...rawData,
@@ -1056,7 +1056,7 @@ watch(
   (newZona) => {
     if (newZona && Object.keys(newZona).length > 0) {
       // Modo edición - Preservar los valores existentes con un clon profundo para evitar mutar props
-      const cleanZona = JSON.parse(JSON.stringify(newZona))
+      const cleanZona = structuredClone(newZona)
       
       // Procesar GPS: asegurar que sea objeto {lat, lng}
       let gpsObj = { lat: null, lng: null }
@@ -1084,7 +1084,7 @@ watch(
       // Procesar Geometría: asegurar que sea objeto plano y desempaquetar si es necesario
       if (cleanZona.geometria) {
         let geom = typeof cleanZona.geometria === 'string' ? JSON.parse(cleanZona.geometria) : cleanZona.geometria
-        cleanZona.geometria = JSON.parse(JSON.stringify(geom))
+        cleanZona.geometria = structuredClone(geom)
 
         // Inicializar vértices para edición si es un polígono
         if (cleanZona.geometria.type === 'Polygon') {

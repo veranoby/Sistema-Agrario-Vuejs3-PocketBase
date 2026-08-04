@@ -462,7 +462,7 @@ import { required, minLength, sameAs, helpers } from '@vuelidate/validators'
 import { useSyncStore } from '@/stores/sync'
 import { debounce } from '@/utils/debounce'
 import { useRouter } from 'vue-router'
-import { calculatePasswordStrength, getPasswordStrengthColor, getPasswordStrengthLabel } from '@/utils/validators/index'
+import { calculatePasswordStrength, getPasswordStrengthColor, getPasswordStrengthLabel } from '@/utils/validators/core'
 
 const props = defineProps({
   isOpen: Boolean,
@@ -524,14 +524,14 @@ onMounted(async () => {
   // New log to always show what was loaded, before deciding to fill
   console.log(
     '[AUTHMODAL MOUNTED] Checking for rememberedUser in localStorage. Found:',
-    JSON.parse(JSON.stringify(rememberedUserData))
+    structuredClone(rememberedUserData)
   )
 
   if (rememberedUserData && (rememberedUserData.username || rememberedUserData.email)) {
     // Ensure there's actually data to fill
     console.log(
       '[AUTHMODAL MOUNTED] Pre-filling login form with rememberedUser data:',
-      JSON.parse(JSON.stringify(rememberedUserData))
+      structuredClone(rememberedUserData)
     )
     loginForm.value.username = rememberedUserData.username || ''
     loginForm.value.email = rememberedUserData.email || ''

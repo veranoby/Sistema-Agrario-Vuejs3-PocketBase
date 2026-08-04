@@ -99,10 +99,51 @@
                 density="compact"
               ></v-text-field>
             </v-col>
+            <!-- Campos dinámicos por Rol -->
+            <v-col cols="12" md="6">
+              <v-text-field
+                v-model="formData.phone"
+                label="Teléfono de Contacto"
+                prepend-inner-icon="mdi-phone"
+                variant="outlined"
+                density="compact"
+              ></v-text-field>
+            </v-col>
+
+            <v-col cols="12" md="6" v-if="formData.role === USER_ROLES.OPERADOR || formData.role === USER_ROLES.AUDITOR">
+              <v-text-field
+                v-model="formData.cargo"
+                label="Cargo / Turno Operativo"
+                prepend-inner-icon="mdi-badge-account"
+                variant="outlined"
+                density="compact"
+              ></v-text-field>
+            </v-col>
+
+            <v-col cols="12" md="6" v-else-if="formData.role === USER_ROLES.ASESOR">
+              <v-text-field
+                v-model="formData.cargo"
+                label="Especialidad Técnica"
+                prepend-inner-icon="mdi-school"
+                variant="outlined"
+                density="compact"
+              ></v-text-field>
+            </v-col>
+
+            <v-col cols="12" md="6" v-else-if="formData.role === USER_ROLES.ADMINISTRADOR">
+              <v-text-field
+                v-model="formData.cargo"
+                label="Departamento / Área"
+                prepend-inner-icon="mdi-domain"
+                variant="outlined"
+                density="compact"
+              ></v-text-field>
+            </v-col>
+
             <v-col cols="12">
               <v-textarea
                 v-model="formData.info"
-                label="Información Adicional (Info)"
+                label="Observaciones Adicionales"
                 variant="outlined"
                 density="compact"
                 rows="2"
@@ -113,9 +154,9 @@
           <v-divider class="mb-4"></v-divider>
 
           <!-- Roles y Estados -->
-          <h3 class="  font-weight-bold mb-2">Configuración de Acceso</h3>
+          <h3 class="font-weight-bold mb-2">Configuración de Acceso</h3>
           <v-row>
-            <v-col cols="12" md="6">
+            <v-col cols="12" md="4">
               <span class="text-xs">Rol</span>
               <v-radio-group v-model="formData.role" inline>
                 <v-radio label="Admin" :value="USER_ROLES.ADMINISTRADOR"></v-radio>
@@ -124,11 +165,18 @@
                 <v-radio label="Asesor" :value="USER_ROLES.ASESOR"></v-radio>
               </v-radio-group>
             </v-col>
-            <v-col cols="12" md="6">
-              <span class="text-xs">Estado</span>
+            <v-col cols="12" md="4">
+              <span class="text-xs">Estado de Cuenta</span>
               <v-radio-group v-model="formData.status" inline>
                 <v-radio label="Activo" :value="USER_STATUS.ACTIVE"></v-radio>
                 <v-radio label="Suspendido" value="suspended"></v-radio>
+              </v-radio-group>
+            </v-col>
+            <v-col cols="12" md="4">
+              <span class="text-xs">Email Verificado</span>
+              <v-radio-group v-model="formData.verified" inline>
+                <v-radio label="Sí" :value="true"></v-radio>
+                <v-radio label="No" :value="false"></v-radio>
               </v-radio-group>
             </v-col>
           </v-row>
@@ -233,6 +281,8 @@ const formData = ref({
   password: '',
   role: USER_ROLES.OPERADOR,
   info: '',
+  phone: '',
+  cargo: '',
   cedula: '',
   direccion: '',
   status: USER_STATUS.ACTIVE,
@@ -332,16 +382,26 @@ async function submit() {
 
   loading.value = true;
   try {
+    // Combinar campos estructurados si se definieron
+    let finalInfo = formData.value.info || '';
+    const details = [];
+    if (formData.value.phone) details.push(`Tel: ${formData.value.phone}`);
+    if (formData.value.cargo) details.push(`Cargo/Esp: ${formData.value.cargo}`);
+    if (details.length > 0) {
+      finalInfo = details.join(' | ') + (finalInfo ? `\n${finalInfo}` : '');
+    }
+
     const payload = {
       email: formData.value.email,
       username: formData.value.username,
       name: formData.value.name,
       lastname: formData.value.lastname,
       role: formData.value.role,
-      info: formData.value.info,
+      info: finalInfo,
       cedula: formData.value.cedula,
       direccion: formData.value.direccion,
       status: formData.value.status,
+      verified: formData.value.verified
     };
 
     if (isEditing.value) {
@@ -349,10 +409,11 @@ async function submit() {
       if (editPayload.email === props.editingUser.email) delete editPayload.email;
       if (editPayload.username === props.editingUser.username) delete editPayload.username;
       
-      delete editPayload.verified;
-      
       editPayload.hacienda = formData.value.haciendaId || "";
-      await pb.collection('users').update(props.editingUser.id, editPayload);
+      await pb.send(`/api/admin/users/${props.editingUser.id}`, {
+        method: 'PUT',
+        body: editPayload
+      });
 
       // Si se provee una nueva contraseña, resetearla
       if (formData.value.newPassword) {
@@ -367,7 +428,6 @@ async function submit() {
       payload.password = formData.value.password;
       payload.passwordConfirm = formData.value.password;
       payload.emailVisibility = true;
-      delete payload.verified; // PocketBase rejects verified=true via client API on creation
 
       // Check hacienda logic
       let haciendaToAssign = "";
@@ -398,7 +458,11 @@ async function submit() {
       }
       payload.hacienda = haciendaToAssign;
 
-      const newUser = await pb.collection('users').create(payload);
+      const response = await pb.send('/api/admin/users', {
+        method: 'POST',
+        body: payload
+      });
+      const newUser = response.user;
 
       if (newHaciendaId) {
         await pb.collection('Haciendas').update(newHaciendaId, { owner: newUser.id });

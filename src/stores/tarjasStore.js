@@ -78,7 +78,7 @@ export const useTarjasStore = defineStore('tarjas', {
         this.tarjas = resultList.items
 
         // Guardar en IndexedDB
-        syncStore.saveToLocalStorage('tarjas', JSON.parse(JSON.stringify(this.tarjas)))
+        syncStore.saveToLocalStorage('tarjas', structuredClone(this.tarjas))
         return this.tarjas
       } catch (error) {
         handleError(error, 'Error al cargar registros de cosecha (tarjas)')

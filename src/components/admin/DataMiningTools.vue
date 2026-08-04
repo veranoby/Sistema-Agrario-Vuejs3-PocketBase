@@ -163,7 +163,7 @@ import { pb } from '@/utils/pocketbase'
 import { logger } from '@/utils/logger'
 import { useAnalyticsStore } from '@/stores/analyticsStore'
 import { formatDate } from '@/utils/formatters'
-import { exportToCSV } from '@/utils/exporters'
+import { exportToCSV } from '@/utils/exporters/csvExporter'
 
 const analyticsStore = useAnalyticsStore()
 const loading = ref(false)

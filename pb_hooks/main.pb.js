@@ -516,6 +516,10 @@ routerAdd("POST", "/api/admin/users", (e) => {
       lastname: body.lastname,
       role: body.role || "operador",
       status: body.status || "active",
+      info: body.info || "",
+      cedula: body.cedula || "",
+      direccion: body.direccion || "",
+      verified: !!body.verified,
       haciendas: body.hacienda ? [body.hacienda] : [],
       password: body.password,
       passwordConfirm: body.password
@@ -564,6 +568,11 @@ routerAdd("PUT", "/api/admin/users/:id", (e) => {
     if (body.lastname) user.set("lastname", body.lastname)
     if (body.role) user.set("role", body.role)
     if (body.status) user.set("status", body.status)
+    if (body.info !== undefined) user.set("info", body.info)
+    if (body.cedula !== undefined) user.set("cedula", body.cedula)
+    if (body.direccion !== undefined) user.set("direccion", body.direccion)
+    if (body.verified !== undefined) user.set("verified", !!body.verified)
+    
     if (body.hacienda !== undefined) {
       user.set("haciendas", body.hacienda ? [body.hacienda] : [])
     }
