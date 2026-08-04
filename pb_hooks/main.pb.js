@@ -227,10 +227,10 @@ routerAdd("GET", "/api/haciendas/{id}/alerts", (e) => {
   }
 
   try {
-    const collection = $app.dao().findCollectionByNameOrId("haciendas")
-    const record = $app.dao().findFirstRecordByFilter(
+    const collection = $app.findCollectionByNameOrId("haciendas")
+    const record = $app.findFirstRecordByFilter(
       collection,
-      $app.dao().filter("id = {:id}", { id: haciendaId })
+      "id = {:id}", { id: haciendaId }
     )
 
     if (!record) {
@@ -271,10 +271,10 @@ routerAdd("PUT", "/api/haciendas/{id}/alerts", (e) => {
   }
 
   try {
-    const collection = $app.dao().findCollectionByNameOrId("haciendas")
-    const record = $app.dao().findFirstRecordByFilter(
+    const collection = $app.findCollectionByNameOrId("haciendas")
+    const record = $app.findFirstRecordByFilter(
       collection,
-      $app.dao().filter("id = {:id}", { id: haciendaId })
+      "id = {:id}", { id: haciendaId }
     )
 
     if (!record) {
@@ -289,7 +289,7 @@ routerAdd("PUT", "/api/haciendas/{id}/alerts", (e) => {
       emergencyAlerts: body.emergencyAlerts || false
     })
 
-    $app.dao().saveRecord(record)
+    $app.save(record)
     return e.json(HTTP_STATUS.OK, { success: true })
   } catch (err) {
     console.error("Error saving alert config:", err.message)
@@ -325,26 +325,26 @@ routerAdd("POST", "/api/modulos/{id}/activate", (e) => {
   }
 
   try {
-    const modulosCollection = $app.dao().findCollectionByNameOrId("modulos")
-    const modulo = $app.dao().findFirstRecordByFilter(
+    const modulosCollection = $app.findCollectionByNameOrId("modulos")
+    const modulo = $app.findFirstRecordByFilter(
       modulosCollection,
-      $app.dao().filter("id = {:id}", { id: moduloId })
+      "id = {:id}", { id: moduloId }
     )
     if (!modulo) return e.json(404, { error: "Módulo no encontrado" })
 
-    const subscriptionsCollection = $app.dao().findCollectionByNameOrId("subscriptions")
-    const existing = $app.dao().findFirstRecordByFilter(
+    const subscriptionsCollection = $app.findCollectionByNameOrId("subscriptions")
+    const existing = $app.findFirstRecordByFilter(
       subscriptionsCollection,
-      $app.dao().filter("hacienda = {:haciendaId} && modulo = {:moduloId} && is_active = true", {
+      "hacienda = {:haciendaId} && modulo = {:moduloId} && is_active = true", {
         haciendaId, moduloId
-      })
+      }
     )
 
     let subId
     if (existing) {
       subId = existing.id
     } else {
-      const newSub = $app.dao().createRecord(subscriptionsCollection, {
+      const newSub = (function(c,d){ const r = new Record(c); r.load(d); $app.save(r); return r; })(subscriptionsCollection, {
         hacienda: haciendaId,
         modulo: moduloId,
         is_active: true,
@@ -357,14 +357,14 @@ routerAdd("POST", "/api/modulos/{id}/activate", (e) => {
 
     // Actualizar campo relacional active_modules en la colección Haciendas
     try {
-      const hacienda = $app.dao().findRecordById("Haciendas", haciendaId)
+      const hacienda = $app.findRecordById("Haciendas", haciendaId)
       if (hacienda) {
         let activeMods = hacienda.get("active_modules") || []
         if (!Array.isArray(activeMods)) activeMods = []
         if (!activeMods.includes(moduloId)) {
           activeMods.push(moduloId)
           hacienda.set("active_modules", activeMods)
-          $app.dao().saveRecord(hacienda)
+          $app.save(hacienda)
         }
       }
     } catch (hErr) {
@@ -406,31 +406,31 @@ routerAdd("POST", "/api/modulos/{id}/deactivate", (e) => {
   }
 
   try {
-    const subscriptionsCollection = $app.dao().findCollectionByNameOrId("subscriptions")
+    const subscriptionsCollection = $app.findCollectionByNameOrId("subscriptions")
 
     // Buscar suscripción activa
-    const subscription = $app.dao().findFirstRecordByFilter(
+    const subscription = $app.findFirstRecordByFilter(
       subscriptionsCollection,
-      $app.dao().filter("hacienda = {:haciendaId} && modulo = {:moduloId} && is_active = true", {
+      "hacienda = {:haciendaId} && modulo = {:moduloId} && is_active = true", {
         haciendaId,
         moduloId
-      })
+      }
     )
 
     if (subscription) {
       subscription.set("is_active", false)
-      $app.dao().saveRecord(subscription)
+      $app.save(subscription)
     }
 
     // Remover moduloId de active_modules en Haciendas
     try {
-      const hacienda = $app.dao().findRecordById("Haciendas", haciendaId)
+      const hacienda = $app.findRecordById("Haciendas", haciendaId)
       if (hacienda) {
         let activeMods = hacienda.get("active_modules") || []
         if (Array.isArray(activeMods)) {
           activeMods = activeMods.filter(id => id !== moduloId)
           hacienda.set("active_modules", activeMods)
-          $app.dao().saveRecord(hacienda)
+          $app.save(hacienda)
         }
       }
     } catch (hErr) {
@@ -457,7 +457,7 @@ routerAdd("POST", "/api/modulos/{id}/deactivate", (e) => {
 // ============================================
 routerAdd("GET", "/api/admin/users", async (e) => {
   try {
-    const usersCollection = $app.dao().findCollectionByNameOrId("users")
+    const usersCollection = $app.findCollectionByNameOrId("users")
     const page = e.request?.query?.get("page") || 1
     const perPage = e.request?.query?.get("perPage") || 50
     const role = e.request?.query?.get("role")
@@ -471,7 +471,7 @@ routerAdd("GET", "/api/admin/users", async (e) => {
       filter = parts.join(" && ")
     }
 
-    const result = await $app.dao().findRecordsByFilter(
+    const result = await $app.findRecordsByFilter(
       usersCollection,
       filter,
       "-created",
@@ -507,9 +507,9 @@ routerAdd("POST", "/api/admin/users", (e) => {
   }
 
   try {
-    const usersCollection = $app.dao().findCollectionByNameOrId("users")
+    const usersCollection = $app.findCollectionByNameOrId("users")
 
-    const newUser = $app.dao().createRecord(usersCollection, {
+    const newUser = (function(c,d){ const r = new Record(c); r.load(d); $app.save(r); return r; })(usersCollection, {
       email: body.email,
       username: body.username,
       name: body.name,
@@ -551,10 +551,10 @@ routerAdd("PUT", "/api/admin/users/{id}", (e) => {
   }
 
   try {
-    const usersCollection = $app.dao().findCollectionByNameOrId("users")
-    const user = $app.dao().findFirstRecordByFilter(
+    const usersCollection = $app.findCollectionByNameOrId("users")
+    const user = $app.findFirstRecordByFilter(
       usersCollection,
-      $app.dao().filter("id = {:id}", { id: userId })
+      "id = {:id}", { id: userId }
     )
 
     if (!user) {
@@ -583,7 +583,7 @@ routerAdd("PUT", "/api/admin/users/{id}", (e) => {
       user.set("passwordConfirm", body.password)
     }
 
-    $app.dao().saveRecord(user)
+    $app.save(user)
 
     return e.json(HTTP_STATUS.OK, {
       success: true,
@@ -610,10 +610,10 @@ routerAdd("DELETE", "/api/admin/users/{id}", (e) => {
   }
 
   try {
-    const usersCollection = $app.dao().findCollectionByNameOrId("users")
-    const user = $app.dao().findFirstRecordByFilter(
+    const usersCollection = $app.findCollectionByNameOrId("users")
+    const user = $app.findFirstRecordByFilter(
       usersCollection,
-      $app.dao().filter("id = {:id}", { id: userId })
+      "id = {:id}", { id: userId }
     )
 
     if (!user) {
@@ -622,7 +622,7 @@ routerAdd("DELETE", "/api/admin/users/{id}", (e) => {
 
     // Soft delete: cambiar status a inactive
     user.set("status", "inactive")
-    $app.dao().saveRecord(user)
+    $app.save(user)
 
     return e.json(HTTP_STATUS.OK, {
       success: true,
@@ -650,10 +650,10 @@ routerAdd("POST", "/api/admin/users/{id}/reset-password", (e) => {
   }
 
   try {
-    const usersCollection = $app.dao().findCollectionByNameOrId("users")
-    const user = $app.dao().findFirstRecordByFilter(
+    const usersCollection = $app.findCollectionByNameOrId("users")
+    const user = $app.findFirstRecordByFilter(
       usersCollection,
-      $app.dao().filter("id = {:id}", { id: userId })
+      "id = {:id}", { id: userId }
     )
 
     if (!user) {
@@ -662,7 +662,7 @@ routerAdd("POST", "/api/admin/users/{id}/reset-password", (e) => {
 
     user.set("password", body.password)
     user.set("passwordConfirm", body.password)
-    $app.dao().saveRecord(user)
+    $app.save(user)
 
     return e.json(HTTP_STATUS.OK, {
       success: true,
@@ -694,10 +694,10 @@ routerAdd("POST", "/api/admin/users/{id}/disconnect", (e) => {
   }
 
   try {
-    const usersCollection = $app.dao().findCollectionByNameOrId("users")
-    const user = $app.dao().findFirstRecordByFilter(
+    const usersCollection = $app.findCollectionByNameOrId("users")
+    const user = $app.findFirstRecordByFilter(
       usersCollection,
-      $app.dao().filter("id = {:id}", { id: userId })
+      "id = {:id}", { id: userId }
     )
 
     if (!user) {
@@ -705,7 +705,7 @@ routerAdd("POST", "/api/admin/users/{id}/disconnect", (e) => {
     }
 
     user.setTokenKey($security.randomString(50))
-    $app.dao().saveRecord(user)
+    $app.save(user)
 
     return e.json(HTTP_STATUS.OK, {
       success: true,
@@ -733,10 +733,10 @@ routerAdd("POST", "/api/admin/users/{id}/haciendas", (e) => {
   }
 
   try {
-    const usersCollection = $app.dao().findCollectionByNameOrId("users")
-    const user = $app.dao().findFirstRecordByFilter(
+    const usersCollection = $app.findCollectionByNameOrId("users")
+    const user = $app.findFirstRecordByFilter(
       usersCollection,
-      $app.dao().filter("id = {:id}", { id: userId })
+      "id = {:id}", { id: userId }
     )
 
     if (!user) {
@@ -744,7 +744,7 @@ routerAdd("POST", "/api/admin/users/{id}/haciendas", (e) => {
     }
 
     user.set("haciendas", [body.haciendaId])
-    $app.dao().saveRecord(user)
+    $app.save(user)
 
     return e.json(HTTP_STATUS.OK, {
       success: true,
@@ -772,10 +772,10 @@ routerAdd("POST", "/api/admin/users/{id}/roles", (e) => {
   }
 
   try {
-    const usersCollection = $app.dao().findCollectionByNameOrId("users")
-    const user = $app.dao().findFirstRecordByFilter(
+    const usersCollection = $app.findCollectionByNameOrId("users")
+    const user = $app.findFirstRecordByFilter(
       usersCollection,
-      $app.dao().filter("id = {:id}", { id: userId })
+      "id = {:id}", { id: userId }
     )
 
     if (!user) {
@@ -783,7 +783,7 @@ routerAdd("POST", "/api/admin/users/{id}/roles", (e) => {
     }
 
     user.set("role", body.role)
-    $app.dao().saveRecord(user)
+    $app.save(user)
 
     return e.json(HTTP_STATUS.OK, {
       success: true,
@@ -803,7 +803,7 @@ routerAdd("POST", "/api/admin/users/{id}/roles", (e) => {
 // ============================================
 routerAdd("GET", "/api/admin/haciendas", async (e) => {
   try {
-    const haciendasCollection = $app.dao().findCollectionByNameOrId("Haciendas")
+    const haciendasCollection = $app.findCollectionByNameOrId("Haciendas")
     const page = e.request?.query?.get("page") || 1
     const perPage = e.request?.query?.get("perPage") || 50
     const status = e.request?.query?.get("status")
@@ -813,7 +813,7 @@ routerAdd("GET", "/api/admin/haciendas", async (e) => {
       filter = `status = "${status}"`
     }
 
-    const result = await $app.dao().findRecordsByFilter(
+    const result = await $app.findRecordsByFilter(
       haciendasCollection,
       filter,
       "-created",
@@ -849,9 +849,9 @@ routerAdd("POST", "/api/admin/haciendas", (e) => {
   }
 
   try {
-    const haciendasCollection = $app.dao().findCollectionByNameOrId("Haciendas")
+    const haciendasCollection = $app.findCollectionByNameOrId("Haciendas")
 
-    const newHacienda = $app.dao().createRecord(haciendasCollection, {
+    const newHacienda = (function(c,d){ const r = new Record(c); r.load(d); $app.save(r); return r; })(haciendasCollection, {
       name: body.name,
       descripcion: body.descripcion,
       ubicacion: body.ubicacion,
@@ -886,10 +886,10 @@ routerAdd("PUT", "/api/admin/haciendas/{id}", (e) => {
   }
 
   try {
-    const haciendasCollection = $app.dao().findCollectionByNameOrId("Haciendas")
-    const hacienda = $app.dao().findFirstRecordByFilter(
+    const haciendasCollection = $app.findCollectionByNameOrId("Haciendas")
+    const hacienda = $app.findFirstRecordByFilter(
       haciendasCollection,
-      $app.dao().filter("id = {:id}", { id: haciendaId })
+      "id = {:id}", { id: haciendaId }
     )
 
     if (!hacienda) {
@@ -908,7 +908,7 @@ routerAdd("PUT", "/api/admin/haciendas/{id}", (e) => {
     if (body.storage_limit) hacienda.set("storage_limit", body.storage_limit)
     if (body.suspension_reason !== undefined) hacienda.set("suspension_reason", body.suspension_reason)
 
-    $app.dao().saveRecord(hacienda)
+    $app.save(hacienda)
 
     return e.json(HTTP_STATUS.OK, {
       success: true,
@@ -935,10 +935,10 @@ routerAdd("DELETE", "/api/admin/haciendas/{id}", (e) => {
   }
 
   try {
-    const haciendasCollection = $app.dao().findCollectionByNameOrId("Haciendas")
-    const hacienda = $app.dao().findFirstRecordByFilter(
+    const haciendasCollection = $app.findCollectionByNameOrId("Haciendas")
+    const hacienda = $app.findFirstRecordByFilter(
       haciendasCollection,
-      $app.dao().filter("id = {:id}", { id: haciendaId })
+      "id = {:id}", { id: haciendaId }
     )
 
     if (!hacienda) {
@@ -947,7 +947,7 @@ routerAdd("DELETE", "/api/admin/haciendas/{id}", (e) => {
 
     // Soft delete: cambiar status a inactive
     hacienda.set("status", "inactive")
-    $app.dao().saveRecord(hacienda)
+    $app.save(hacienda)
 
     return e.json(HTTP_STATUS.OK, {
       success: true,
@@ -975,10 +975,10 @@ routerAdd("POST", "/api/admin/haciendas/{id}/owner", (e) => {
   }
 
   try {
-    const haciendasCollection = $app.dao().findCollectionByNameOrId("Haciendas")
-    const hacienda = $app.dao().findFirstRecordByFilter(
+    const haciendasCollection = $app.findCollectionByNameOrId("Haciendas")
+    const hacienda = $app.findFirstRecordByFilter(
       haciendasCollection,
-      $app.dao().filter("id = {:id}", { id: haciendaId })
+      "id = {:id}", { id: haciendaId }
     )
 
     if (!hacienda) {
@@ -986,7 +986,7 @@ routerAdd("POST", "/api/admin/haciendas/{id}/owner", (e) => {
     }
 
     hacienda.set("owner", body.userId)
-    $app.dao().saveRecord(hacienda)
+    $app.save(hacienda)
 
     return e.json(HTTP_STATUS.OK, {
       success: true,
@@ -1014,10 +1014,10 @@ routerAdd("POST", "/api/admin/haciendas/{id}/plan", (e) => {
   }
 
   try {
-    const haciendasCollection = $app.dao().findCollectionByNameOrId("Haciendas")
-    const hacienda = $app.dao().findFirstRecordByFilter(
+    const haciendasCollection = $app.findCollectionByNameOrId("Haciendas")
+    const hacienda = $app.findFirstRecordByFilter(
       haciendasCollection,
-      $app.dao().filter("id = {:id}", { id: haciendaId })
+      "id = {:id}", { id: haciendaId }
     )
 
     if (!hacienda) {
@@ -1028,7 +1028,7 @@ routerAdd("POST", "/api/admin/haciendas/{id}/plan", (e) => {
     if (body.user_limit) hacienda.set("user_limit", body.user_limit)
     if (body.storage_limit) hacienda.set("storage_limit", body.storage_limit)
 
-    $app.dao().saveRecord(hacienda)
+    $app.save(hacienda)
 
     return e.json(HTTP_STATUS.OK, {
       success: true,
@@ -1055,10 +1055,10 @@ routerAdd("POST", "/api/admin/haciendas/{id}/reactivate", (e) => {
   }
 
   try {
-    const haciendasCollection = $app.dao().findCollectionByNameOrId("Haciendas")
-    const hacienda = $app.dao().findFirstRecordByFilter(
+    const haciendasCollection = $app.findCollectionByNameOrId("Haciendas")
+    const hacienda = $app.findFirstRecordByFilter(
       haciendasCollection,
-      $app.dao().filter("id = {:id}", { id: haciendaId })
+      "id = {:id}", { id: haciendaId }
     )
 
     if (!hacienda) {
@@ -1067,7 +1067,7 @@ routerAdd("POST", "/api/admin/haciendas/{id}/reactivate", (e) => {
 
     hacienda.set("status", "active")
     hacienda.set("suspension_reason", null)
-    $app.dao().saveRecord(hacienda)
+    $app.save(hacienda)
 
     return e.json(HTTP_STATUS.OK, {
       success: true,
@@ -1095,17 +1095,17 @@ routerAdd("GET", "/api/admin/haciendas/{id}/metrics", async (e) => {
 
   try {
     // Obtener usuarios activos
-    const usersCollection = $app.dao().findCollectionByNameOrId("users")
-    const userCount = await $app.dao().countRecords(
+    const usersCollection = $app.findCollectionByNameOrId("users")
+    const userCount = await $app.countRecords(
       usersCollection,
-      $app.dao().filter(`haciendas ~ "{:haciendaId}" && status = "active"`, { haciendaId })
+      `haciendas ~ "{:haciendaId}" && status = "active"`, { haciendaId }
     )
 
     // Obtener suscripciones activas
-    const subscriptionsCollection = $app.dao().findCollectionByNameOrId("subscriptions")
-    const activeModules = await $app.dao().countRecords(
+    const subscriptionsCollection = $app.findCollectionByNameOrId("subscriptions")
+    const activeModules = await $app.countRecords(
       subscriptionsCollection,
-      $app.dao().filter(`hacienda = "{:haciendaId}" && is_active = true`, { haciendaId })
+      `hacienda = "{:haciendaId}" && is_active = true`, { haciendaId }
     )
 
     return e.json(HTTP_STATUS.OK, {
@@ -1188,20 +1188,20 @@ routerAdd("GET", "/api/analytics/global", async (e) => {
     }
 
     // 1. Queries paralelas (reducir ~400ms → ~75ms)
-    const usersCollection = $app.dao().findCollectionByNameOrId("users")
+    const usersCollection = $app.findCollectionByNameOrId("users")
     const [totalUsers, activeUsers, usersToday, usersWeek] = await Promise.all([
-      $app.dao().countRecords(usersCollection, ""),
-      $app.dao().countRecords(usersCollection, $app.dao().filter(`status = "active" && created >= {:startDate}`, { startDate: startDate.toISOString() })),
-      $app.dao().countRecords(usersCollection, $app.dao().filter(`created >= {:todayStart}`, { todayStart: todayStart.toISOString() })),
-      $app.dao().countRecords(usersCollection, $app.dao().filter(`created >= {:weekStart}`, { weekStart: weekStart.toISOString() }))
+      $app.countRecords(usersCollection, ""),
+      $app.countRecords(usersCollection, `status = "active" && created >= {:startDate}`, { startDate: startDate.toISOString() }),
+      $app.countRecords(usersCollection, `created >= {:todayStart}`, { todayStart: todayStart.toISOString() }),
+      $app.countRecords(usersCollection, `created >= {:weekStart}`, { weekStart: weekStart.toISOString() })
     ])
 
     // 2. Haciendas por plan (countRecords en lugar de findRecordsByFilter)
-    const haciendasCollection = $app.dao().findCollectionByNameOrId("Haciendas")
+    const haciendasCollection = $app.findCollectionByNameOrId("Haciendas")
     const [haciendasFree, haciendasPro, haciendasEnterprise] = await Promise.all([
-      $app.dao().countRecords(haciendasCollection, $app.dao().filter(`plan = "free"`)),
-      $app.dao().countRecords(haciendasCollection, $app.dao().filter(`plan = "pro"`)),
-      $app.dao().countRecords(haciendasCollection, $app.dao().filter(`plan = "enterprise"`))
+      $app.countRecords(haciendasCollection, `plan = "free"`),
+      $app.countRecords(haciendasCollection, `plan = "pro"`),
+      $app.countRecords(haciendasCollection, `plan = "enterprise"`)
     ])
 
     const haciendasByPlan = {
@@ -1211,8 +1211,8 @@ routerAdd("GET", "/api/analytics/global", async (e) => {
     }
 
     // 3. Módulos más usados (subscriptions activas)
-    const subscriptionsCollection = $app.dao().findCollectionByNameOrId("subscriptions")
-    const activeSubs = await $app.dao().findRecordsByFilter(
+    const subscriptionsCollection = $app.findCollectionByNameOrId("subscriptions")
+    const activeSubs = await $app.findRecordsByFilter(
       subscriptionsCollection,
       "is_active = true",
       "-created",
@@ -1305,10 +1305,10 @@ routerAdd("GET", "/api/analytics/usage", async (e) => {
     // Si no existe, usamos bitacora como fallback
     let collection
     try {
-      collection = $app.dao().findCollectionByNameOrId("logs_actividad")
+      collection = $app.findCollectionByNameOrId("logs_actividad")
     } catch (err) {
       // Fallback a bitacora
-      collection = $app.dao().findCollectionByNameOrId("bitacora")
+      collection = $app.findCollectionByNameOrId("bitacora")
     }
 
     // Construir filtro
@@ -1320,7 +1320,7 @@ routerAdd("GET", "/api/analytics/usage", async (e) => {
 
     const filterString = filterParts.join(" && ")
 
-    const logs = await $app.dao().findRecordsByFilter(
+    const logs = await $app.findRecordsByFilter(
       collection,
       filterString,
       "-created",
@@ -1434,7 +1434,7 @@ routerAdd("GET", "/api/analytics/patterns", async (e) => {
 
     if (type === "siembra" || type === "fertilizacion" || type === "rendimiento") {
       try {
-        collection = $app.dao().findCollectionByNameOrId("siembras")
+        collection = $app.findCollectionByNameOrId("siembras")
       } catch (err) {
         return e.json(HTTP_STATUS.BAD_REQUEST, { error: "Collection 'siembras' not found" })
       }
@@ -1446,7 +1446,7 @@ routerAdd("GET", "/api/analytics/patterns", async (e) => {
     const filterString = filterParts.join(" && ")
 
     // Obtener registros
-    const records = await $app.dao().findRecordsByFilter(
+    const records = await $app.findRecordsByFilter(
       collection,
       filterString,
       "-created",
@@ -1588,13 +1588,13 @@ routerAdd("GET", "/api/reports/scheduled", async (e) => {
 
     let scheduledCollection
     try {
-      scheduledCollection = $app.dao().findCollectionByNameOrId("scheduled_reports")
+      scheduledCollection = $app.findCollectionByNameOrId("scheduled_reports")
     } catch (err) {
       // Colección no existe - retornar lista vacía
       return e.json(HTTP_STATUS.OK, { items: [] })
     }
 
-    const reports = $app.dao().findRecordsByFilter(
+    const reports = $app.findRecordsByFilter(
       scheduledCollection,
       `user = {:userId}`,
       "-created",
@@ -1629,7 +1629,7 @@ routerAdd("POST", "/api/reports/scheduled", (e) => {
 
     let scheduledCollection
     try {
-      scheduledCollection = $app.dao().findCollectionByNameOrId("scheduled_reports")
+      scheduledCollection = $app.findCollectionByNameOrId("scheduled_reports")
     } catch (err) {
       // Crear colección si no existe
       const collection = new Collection({
@@ -1694,7 +1694,7 @@ routerAdd("POST", "/api/reports/scheduled", (e) => {
         })
       )
 
-      $app.dao().saveCollection(collection)
+      $app.saveCollection(collection)
       scheduledCollection = collection
     }
 
@@ -1713,7 +1713,7 @@ routerAdd("POST", "/api/reports/scheduled", (e) => {
     record.set("isActive", data.isActive !== false)
     record.set("nextExecution", nextExecution)
 
-    $app.dao().saveRecord(record)
+    $app.save(record)
 
     return e.json(201, record)
   } catch (err) {
@@ -1732,14 +1732,14 @@ routerAdd("PUT", "/api/reports/scheduled/{id}", (e) => {
 
     let scheduledCollection
     try {
-      scheduledCollection = $app.dao().findCollectionByNameOrId("scheduled_reports")
+      scheduledCollection = $app.findCollectionByNameOrId("scheduled_reports")
     } catch (err) {
       return e.json(HTTP_STATUS.SERVER_ERROR, {
         error: "Collection not found"
       })
     }
 
-    const record = $app.dao().findRecordById(scheduledCollection, id)
+    const record = $app.findRecordById(scheduledCollection, id)
 
     // Verificar propiedad
     if (record.get("user") !== authRecord.id) {
@@ -1759,7 +1759,7 @@ routerAdd("PUT", "/api/reports/scheduled/{id}", (e) => {
     if (data.format !== undefined) record.set("format", data.format)
     if (data.isActive !== undefined) record.set("isActive", data.isActive)
 
-    $app.dao().saveRecord(record)
+    $app.save(record)
 
     return e.json(HTTP_STATUS.OK, record)
   } catch (err) {
@@ -1778,21 +1778,21 @@ routerAdd("DELETE", "/api/reports/scheduled/{id}", (e) => {
 
     let scheduledCollection
     try {
-      scheduledCollection = $app.dao().findCollectionByNameOrId("scheduled_reports")
+      scheduledCollection = $app.findCollectionByNameOrId("scheduled_reports")
     } catch (err) {
       return e.json(HTTP_STATUS.SERVER_ERROR, {
         error: "Collection not found"
       })
     }
 
-    const record = $app.dao().findRecordById(scheduledCollection, id)
+    const record = $app.findRecordById(scheduledCollection, id)
 
     // Verificar propiedad
     if (record.get("user") !== authRecord.id) {
       return e.json(HTTP_STATUS.UNAUTHORIZED, { error: "Forbidden" })
     }
 
-    $app.dao().deleteRecord(record)
+    $app.delete(record)
 
     return e.json(204, null)
   } catch (err) {
@@ -1819,10 +1819,10 @@ routerAdd("POST", "/api/ai/chat", (e) => {
   let isGlobalKey = false
 
   try {
-    const haciendaCol = $app.dao().findCollectionByNameOrId("Haciendas")
-    const hacienda = $app.dao().findFirstRecordByFilter(
+    const haciendaCol = $app.findCollectionByNameOrId("Haciendas")
+    const hacienda = $app.findFirstRecordByFilter(
       haciendaCol,
-      $app.dao().filter("id = {:id}", { id: haciendaId })
+      "id = {:id}", { id: haciendaId }
     )
     aiConfig = hacienda ? hacienda.get("ai_config") : null
   } catch (_) { }
@@ -1847,9 +1847,9 @@ routerAdd("POST", "/api/ai/chat", (e) => {
     // Leer uso del día desde system_config (campo temporal en params)
     let usageToday = 0
     try {
-      const paramRecord = $app.dao().findFirstRecordByFilter(
-        $app.dao().findCollectionByNameOrId("_params"),
-        $app.dao().filter("key = {:key}", { key: rateLimitKey })
+      const paramRecord = $app.findFirstRecordByFilter(
+        $app.findCollectionByNameOrId("_params"),
+        "key = {:key}", { key: rateLimitKey }
       )
       usageToday = paramRecord ? parseInt(paramRecord.get("value") || "0") : 0
     } catch (_) { }
@@ -1866,16 +1866,16 @@ routerAdd("POST", "/api/ai/chat", (e) => {
     // Incrementar contador (fire-and-forget)
     setTimeout(() => {
       try {
-        const paramsCol = $app.dao().findCollectionByNameOrId("_params")
+        const paramsCol = $app.findCollectionByNameOrId("_params")
         try {
-          const existing = $app.dao().findFirstRecordByFilter(
+          const existing = $app.findFirstRecordByFilter(
             paramsCol,
-            $app.dao().filter("key = {:key}", { key: rateLimitKey })
+            "key = {:key}", { key: rateLimitKey }
           )
           existing.set("value", String(usageToday + 1))
-          $app.dao().saveRecord(existing)
+          $app.save(existing)
         } catch (_) {
-          $app.dao().createRecord(paramsCol, { key: rateLimitKey, value: "1" })
+          (function(c,d){ const r = new Record(c); r.load(d); $app.save(r); return r; })(paramsCol, { key: rateLimitKey, value: "1" })
         }
       } catch (err) {
         console.error("[AI rate limit] Error updating counter:", err.message)
