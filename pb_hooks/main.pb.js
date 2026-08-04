@@ -220,7 +220,7 @@ const EMAIL_TEMPLATES = {
 // ============================================
 routerAdd("GET", "/api/haciendas/{id}/alerts", (e) => {
   const info = e.requestInfo()
-  const haciendaId = info.pathParam("id")
+  const haciendaId = e.request.pathValue("id")
 
   if (!haciendaId) {
     return e.json(HTTP_STATUS.BAD_REQUEST, { error: "Hacienda ID required" })
@@ -259,8 +259,8 @@ routerAdd("GET", "/api/haciendas/{id}/alerts", (e) => {
 // ============================================
 routerAdd("PUT", "/api/haciendas/{id}/alerts", (e) => {
   const info = e.requestInfo()
-  const body = info.json
-  const haciendaId = info.pathParam("id")
+  const body = info.body
+  const haciendaId = e.request.pathValue("id")
 
   if (!haciendaId) {
     return e.json(HTTP_STATUS.BAD_REQUEST, { error: "Hacienda ID required" })
@@ -306,8 +306,8 @@ routerAdd("PUT", "/api/haciendas/{id}/alerts", (e) => {
 // ============================================
 routerAdd("POST", "/api/modulos/{id}/activate", (e) => {
   const info = e.requestInfo()
-  const body = info.json
-  const moduloId = info.pathParam("id")
+  const body = info.body
+  const moduloId = e.request.pathValue("id")
   const { haciendaId } = body || {}
 
   // ── Validación de inputs ──
@@ -384,8 +384,8 @@ routerAdd("POST", "/api/modulos/{id}/activate", (e) => {
 // ============================================
 routerAdd("POST", "/api/modulos/{id}/deactivate", (e) => {
   const info = e.requestInfo()
-  const body = info.json
-  const moduloId = info.pathParam("id")
+  const body = info.body
+  const moduloId = e.request.pathValue("id")
   const { haciendaId } = body || {}
 
   if (!haciendaId) {
@@ -543,8 +543,8 @@ routerAdd("POST", "/api/admin/users", (e) => {
 // ============================================
 routerAdd("PUT", "/api/admin/users/{id}", (e) => {
   const info = e.requestInfo()
-  const userId = info.pathParam("id")
-  const body = info.json
+  const userId = e.request.pathValue("id")
+  const body = info.body
 
   if (!userId) {
     return e.json(HTTP_STATUS.BAD_REQUEST, { error: "userId required" })
@@ -603,7 +603,7 @@ routerAdd("PUT", "/api/admin/users/{id}", (e) => {
 // ============================================
 routerAdd("DELETE", "/api/admin/users/{id}", (e) => {
   const info = e.requestInfo()
-  const userId = info.pathParam("id")
+  const userId = e.request.pathValue("id")
 
   if (!userId) {
     return e.json(HTTP_STATUS.BAD_REQUEST, { error: "userId required" })
@@ -642,8 +642,8 @@ routerAdd("DELETE", "/api/admin/users/{id}", (e) => {
 // ============================================
 routerAdd("POST", "/api/admin/users/{id}/reset-password", (e) => {
   const info = e.requestInfo()
-  const userId = info.pathParam("id")
-  const body = info.json
+  const userId = e.request.pathValue("id")
+  const body = info.body
 
   if (!userId || !body?.password) {
     return e.json(HTTP_STATUS.BAD_REQUEST, { error: "userId and password required" })
@@ -682,7 +682,7 @@ routerAdd("POST", "/api/admin/users/{id}/reset-password", (e) => {
 // ============================================
 routerAdd("POST", "/api/admin/users/{id}/disconnect", (e) => {
   const info = e.requestInfo()
-  const userId = info.pathParam("id")
+  const userId = e.request.pathValue("id")
   const caller = info.authRecord
 
   if (!caller || caller.get("role") !== "superadmin") {
@@ -725,8 +725,8 @@ routerAdd("POST", "/api/admin/users/{id}/disconnect", (e) => {
 // ============================================
 routerAdd("POST", "/api/admin/users/{id}/haciendas", (e) => {
   const info = e.requestInfo()
-  const userId = info.pathParam("id")
-  const body = info.json
+  const userId = e.request.pathValue("id")
+  const body = info.body
 
   if (!userId || !body?.haciendaId) {
     return e.json(HTTP_STATUS.BAD_REQUEST, { error: "userId and haciendaId required" })
@@ -764,8 +764,8 @@ routerAdd("POST", "/api/admin/users/{id}/haciendas", (e) => {
 // ============================================
 routerAdd("POST", "/api/admin/users/{id}/roles", (e) => {
   const info = e.requestInfo()
-  const userId = info.pathParam("id")
-  const body = info.json
+  const userId = e.request.pathValue("id")
+  const body = info.body
 
   if (!userId || !body?.role) {
     return e.json(HTTP_STATUS.BAD_REQUEST, { error: "userId and role required" })
@@ -878,8 +878,8 @@ routerAdd("POST", "/api/admin/haciendas", (e) => {
 // ============================================
 routerAdd("PUT", "/api/admin/haciendas/{id}", (e) => {
   const info = e.requestInfo()
-  const haciendaId = info.pathParam("id")
-  const body = info.json
+  const haciendaId = e.request.pathValue("id")
+  const body = info.body
 
   if (!haciendaId) {
     return e.json(HTTP_STATUS.BAD_REQUEST, { error: "haciendaId required" })
@@ -928,7 +928,7 @@ routerAdd("PUT", "/api/admin/haciendas/{id}", (e) => {
 // ============================================
 routerAdd("DELETE", "/api/admin/haciendas/{id}", (e) => {
   const info = e.requestInfo()
-  const haciendaId = info.pathParam("id")
+  const haciendaId = e.request.pathValue("id")
 
   if (!haciendaId) {
     return e.json(HTTP_STATUS.BAD_REQUEST, { error: "haciendaId required" })
@@ -967,8 +967,8 @@ routerAdd("DELETE", "/api/admin/haciendas/{id}", (e) => {
 // ============================================
 routerAdd("POST", "/api/admin/haciendas/{id}/owner", (e) => {
   const info = e.requestInfo()
-  const haciendaId = info.pathParam("id")
-  const body = info.json
+  const haciendaId = e.request.pathValue("id")
+  const body = info.body
 
   if (!haciendaId || !body?.userId) {
     return e.json(HTTP_STATUS.BAD_REQUEST, { error: "haciendaId and userId required" })
@@ -1006,8 +1006,8 @@ routerAdd("POST", "/api/admin/haciendas/{id}/owner", (e) => {
 // ============================================
 routerAdd("POST", "/api/admin/haciendas/{id}/plan", (e) => {
   const info = e.requestInfo()
-  const haciendaId = info.pathParam("id")
-  const body = info.json
+  const haciendaId = e.request.pathValue("id")
+  const body = info.body
 
   if (!haciendaId || !body?.plan) {
     return e.json(HTTP_STATUS.BAD_REQUEST, { error: "haciendaId and plan required" })
@@ -1048,7 +1048,7 @@ routerAdd("POST", "/api/admin/haciendas/{id}/plan", (e) => {
 // ============================================
 routerAdd("POST", "/api/admin/haciendas/{id}/reactivate", (e) => {
   const info = e.requestInfo()
-  const haciendaId = info.pathParam("id")
+  const haciendaId = e.request.pathValue("id")
 
   if (!haciendaId) {
     return e.json(HTTP_STATUS.BAD_REQUEST, { error: "haciendaId required" })
@@ -1087,7 +1087,7 @@ routerAdd("POST", "/api/admin/haciendas/{id}/reactivate", (e) => {
 // ============================================
 routerAdd("GET", "/api/admin/haciendas/{id}/metrics", async (e) => {
   const info = e.requestInfo()
-  const haciendaId = info.pathParam("id")
+  const haciendaId = e.request.pathValue("id")
 
   if (!haciendaId) {
     return e.json(HTTP_STATUS.BAD_REQUEST, { error: "haciendaId required" })
@@ -1728,7 +1728,7 @@ routerAdd("POST", "/api/reports/scheduled", (e) => {
 routerAdd("PUT", "/api/reports/scheduled/{id}", (e) => {
   try {
     const authRecord = $apis.requireAuth()(e)
-    const id = e.pathParam("id")
+    const id = e.request.pathValue("id")
 
     let scheduledCollection
     try {
@@ -1774,7 +1774,7 @@ routerAdd("PUT", "/api/reports/scheduled/{id}", (e) => {
 routerAdd("DELETE", "/api/reports/scheduled/{id}", (e) => {
   try {
     const authRecord = $apis.requireAuth()(e)
-    const id = e.pathParam("id")
+    const id = e.request.pathValue("id")
 
     let scheduledCollection
     try {
@@ -1806,7 +1806,7 @@ routerAdd("DELETE", "/api/reports/scheduled/{id}", (e) => {
 // ============================================
 routerAdd("POST", "/api/ai/chat", (e) => {
   const info = e.requestInfo()
-  const { prompt, context, haciendaId, mode } = info.json || {}
+  const { prompt, context, haciendaId, mode } = info.body || {}
 
   if (!prompt) return e.json(HTTP_STATUS.BAD_REQUEST, { error: "prompt required" })
   if (!haciendaId) return e.json(HTTP_STATUS.BAD_REQUEST, { error: "haciendaId required" })
@@ -1992,7 +1992,7 @@ CRÍTICO: responde SOLO el JSON, sin markdown, sin bloques de código, sin texto
 // ============================================
 routerAdd("POST", "/api/ai/test-connection", (e) => {
   const info = e.requestInfo()
-  const { provider, base_url, model, auth_token } = info.json || {}
+  const { provider, base_url, model, auth_token } = info.body || {}
 
   if (!auth_token) return e.json(HTTP_STATUS.BAD_REQUEST, { error: "auth_token required" })
 
