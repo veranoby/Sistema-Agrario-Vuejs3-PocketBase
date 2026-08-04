@@ -1,5 +1,5 @@
 export function deepClone(obj) {
-  return structuredClone(obj)
+  return JSON.parse(JSON.stringify(obj))
 }
 
 export function groupBy(data, key) {

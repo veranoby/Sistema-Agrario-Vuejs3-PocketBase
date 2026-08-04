@@ -524,14 +524,14 @@ onMounted(async () => {
   // New log to always show what was loaded, before deciding to fill
   console.log(
     '[AUTHMODAL MOUNTED] Checking for rememberedUser in localStorage. Found:',
-    structuredClone(rememberedUserData)
+    JSON.parse(JSON.stringify(rememberedUserData))
   )
 
   if (rememberedUserData && (rememberedUserData.username || rememberedUserData.email)) {
     // Ensure there's actually data to fill
     console.log(
       '[AUTHMODAL MOUNTED] Pre-filling login form with rememberedUser data:',
-      structuredClone(rememberedUserData)
+      JSON.parse(JSON.stringify(rememberedUserData))
     )
     loginForm.value.username = rememberedUserData.username || ''
     loginForm.value.email = rememberedUserData.email || ''

@@ -49,7 +49,7 @@ export const useNominaStore = defineStore('nomina', {
         semana_fin: nominaData.semana_fin,
         estado: nominaData.estado,
         total_pagado: Number(nominaData.total_pagado),
-        detalles: structuredClone(nominaData.detalles)
+        detalles: JSON.parse(JSON.stringify(nominaData.detalles))
       }
 
       try {

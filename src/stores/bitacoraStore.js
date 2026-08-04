@@ -283,7 +283,7 @@ export const useBitacoraStore = defineStore('bitacora', {
         }
         
         this.lastSync = Date.now();
-        syncStore.saveToLocalStorage('bitacoraEntries', structuredClone(this.bitacoraEntries));
+        syncStore.saveToLocalStorage('bitacoraEntries', JSON.parse(JSON.stringify(this.bitacoraEntries)));
         logger.debug(`[BITACORA_STORE] Fetched page ${page}: ${entries.length} items (Total: ${result.totalItems})`);
         
         return {

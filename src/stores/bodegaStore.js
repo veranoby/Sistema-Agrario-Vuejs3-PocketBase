@@ -87,7 +87,7 @@ export const useBodegaStore = defineStore('bodega', {
         this.items = resultList.items
 
         // Sanitizar y guardar en IndexedDB
-        syncStore.saveToLocalStorage('bodega_items', structuredClone(this.items))
+        syncStore.saveToLocalStorage('bodega_items', JSON.parse(JSON.stringify(this.items)))
         return this.items
       } catch (error) {
         // Error 400 significa colección no disponible (módulo no pagado/desactivado en servidor)

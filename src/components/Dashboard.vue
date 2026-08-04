@@ -288,7 +288,7 @@ const parseGeometry = (geo) => {
   try {
     let parsed = typeof geo === 'string' ? JSON.parse(geo) : geo
     // Clonación profunda para asegurar objeto plano sin Proxies de Vue
-    return structuredClone(parsed)
+    return JSON.parse(JSON.stringify(parsed))
   } catch (e) {
     console.warn('[DASHBOARD] Error parsing geometry', e)
     return null

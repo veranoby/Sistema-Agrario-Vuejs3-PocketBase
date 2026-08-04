@@ -132,8 +132,8 @@ export const useActividadesStore = defineStore('actividades', {
           this.buildActivityLookup()
         }
 
-        // CORRECTO: Sanitizar con structuredClone() para IndexedDB
-        syncStore.saveToLocalStorage('actividades', structuredClone(this.actividades));
+        // CORRECTO: Sanitizar con JSON.parse(JSON.stringify()) para IndexedDB
+        syncStore.saveToLocalStorage('actividades', JSON.parse(JSON.stringify(this.actividades)));
         return resultList
       } catch (error) {
         handleError(error, 'Error al cargar actividades')
@@ -196,7 +196,7 @@ export const useActividadesStore = defineStore('actividades', {
         if (!(this.activityLookupMap instanceof Map)) this.buildActivityLookup()
         this.activityLookupMap.set(tempId, tempActividad)
         // CORRECTO: Sanitizar para IndexedDB
-        syncStore.saveToLocalStorage('actividades', structuredClone(this.actividades));
+        syncStore.saveToLocalStorage('actividades', JSON.parse(JSON.stringify(this.actividades)));
 
         await syncStore.queueOperation({
           type: 'create',
@@ -215,7 +215,7 @@ export const useActividadesStore = defineStore('actividades', {
         if (!(this.activityLookupMap instanceof Map)) this.buildActivityLookup()
         this.activityLookupMap.set(record.id, record)
         // CORRECTO: Sanitizar para IndexedDB
-        syncStore.saveToLocalStorage('actividades', structuredClone(this.actividades));
+        syncStore.saveToLocalStorage('actividades', JSON.parse(JSON.stringify(this.actividades)));
         
         // Invalidar cache de la lista paginada para que la interfaz se refresque sola
         tieredCache.invalidatePattern('actividades')
@@ -288,7 +288,7 @@ export const useActividadesStore = defineStore('actividades', {
         if (!(this.activityLookupMap instanceof Map)) this.buildActivityLookup()
         this.activityLookupMap.set(id, this.actividades[index])
         // CORRECTO: Sanitizar para IndexedDB
-        syncStore.saveToLocalStorage('actividades', structuredClone(this.actividades));
+        syncStore.saveToLocalStorage('actividades', JSON.parse(JSON.stringify(this.actividades)));
         uiFeedbackStore.hideLoading()
         return this.actividades[index]
       }
@@ -304,7 +304,7 @@ export const useActividadesStore = defineStore('actividades', {
         if (!(this.activityLookupMap instanceof Map)) this.buildActivityLookup()
         this.activityLookupMap.set(id, record)
         // CORRECTO: Sanitizar para IndexedDB
-        syncStore.saveToLocalStorage('actividades', structuredClone(this.actividades));
+        syncStore.saveToLocalStorage('actividades', JSON.parse(JSON.stringify(this.actividades)));
         tieredCache.invalidatePattern('actividades')
         return record
       } catch (error) {
@@ -344,7 +344,7 @@ export const useActividadesStore = defineStore('actividades', {
 
         uiFeedbackStore.hideLoading()
         // CORRECTO: Sanitizar para IndexedDB
-        syncStore.saveToLocalStorage('actividades', structuredClone(this.actividades));
+        syncStore.saveToLocalStorage('actividades', JSON.parse(JSON.stringify(this.actividades)));
         return true
       }
 
@@ -353,7 +353,7 @@ export const useActividadesStore = defineStore('actividades', {
         this.actividades = this.actividades.filter((a) => a.id !== id)
         if (this.activityLookupMap instanceof Map) this.activityLookupMap.delete(id)
         // CORRECTO: Sanitizar para IndexedDB
-        syncStore.saveToLocalStorage('actividades', structuredClone(this.actividades));
+        syncStore.saveToLocalStorage('actividades', JSON.parse(JSON.stringify(this.actividades)));
         tieredCache.invalidatePattern('actividades')
         return true
       } catch (error) {
@@ -399,7 +399,7 @@ export const useActividadesStore = defineStore('actividades', {
             this.actividades.push(record)
           }
           // CORRECTO: Sanitizar para IndexedDB
-          syncStore.saveToLocalStorage('actividades', structuredClone(this.actividades));
+          syncStore.saveToLocalStorage('actividades', JSON.parse(JSON.stringify(this.actividades)));
           this.buildActivityLookup()
           return record
         }
@@ -501,7 +501,7 @@ export const useActividadesStore = defineStore('actividades', {
           datos_bpa: record.datos_bpa,
           metricas: record.metricas
         })))
-        useSyncStore().saveToLocalStorage('tiposActividades', structuredClone(this.tiposActividades));
+        useSyncStore().saveToLocalStorage('tiposActividades', JSON.parse(JSON.stringify(this.tiposActividades)));
       } catch (error) {
         handleError(error, 'Error al cargar tipos de actividades')
       } finally {

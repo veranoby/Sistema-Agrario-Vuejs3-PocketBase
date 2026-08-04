@@ -56,8 +56,8 @@ const ALL_STORES = [
 const syncCache = {
   async save(key, data) {
     try {
-      // CORRECTO: Sanitizar datos con structuredClone() para evitar DataCloneError
-      const sanitizedData = structuredClone(data)
+      // CORRECTO: Sanitizar datos con JSON.parse(JSON.stringify()) para evitar DataCloneError
+      const sanitizedData = JSON.parse(JSON.stringify(data))
       await indexedDBStorage.setItem(`agri_sync_${key}`, sanitizedData)
     } catch (e) {
       logger.error('[SYNC] Error guardando en IndexedDB:', { error: e, key: `agri_sync_${key}` })
@@ -276,7 +276,7 @@ export const useSyncStore = defineStore('sync', {
 
     saveToLocalStorage(key, value) {
       // CORRECTO: Sanitizar valor antes de guardar
-      const sanitizedValue = structuredClone(value)
+      const sanitizedValue = JSON.parse(JSON.stringify(value))
       syncCache.save(key, sanitizedValue)
     },
 

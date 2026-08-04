@@ -87,7 +87,7 @@ export const useBodegaMovimientosStore = defineStore('bodegaMovimientos', {
         this.movimientos = resultList.items
 
         // Sanitizar y guardar en IndexedDB
-        syncStore.saveToLocalStorage('bodega_movimientos', structuredClone(this.movimientos))
+        syncStore.saveToLocalStorage('bodega_movimientos', JSON.parse(JSON.stringify(this.movimientos)))
         return this.movimientos
       } catch (error) {
         if (error?.status === 400 || error?.response?.code === 400) {

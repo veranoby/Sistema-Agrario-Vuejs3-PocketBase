@@ -539,7 +539,7 @@ export default defineComponent({
         let data = null;
         try {
           // Clonación profunda es el método más fiable para Leaflet
-          data = structuredClone(parsed);
+          data = JSON.parse(JSON.stringify(parsed));
         } catch (e) {
           data = parsed;
         }
