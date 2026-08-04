@@ -416,13 +416,13 @@ function viewUser(user) {
   viewDialog.value = true
 }
 
-// Confirmar eliminación
+// Confirmar eliminación / suspensión
 async function confirmDelete(user) {
   const confirmed = await uiFeedbackStore.showConfirm(
-    'Confirmar Eliminación',
-    `¿Está seguro de eliminar al usuario **${user.email}**?\n\nEsta acción eliminará también la hacienda vinculada, así como a los usuarios operadores y auditores, y las recetas entregadas a la hacienda. No se eliminarán los asesores.`,
-    'error',
-    'mdi-delete'
+    'Confirmar Suspensión',
+    `¿Está seguro de suspender al usuario **${user.email}**?\n\nEsta acción SUSPENDERÁ (soft-delete) la hacienda vinculada, así como a los usuarios operadores y auditores vinculados a la misma.`,
+    'warning',
+    'mdi-account-off'
   )
 
   if (confirmed) {
@@ -430,10 +430,10 @@ async function confirmDelete(user) {
     try {
       await userStore.deleteUser(user.id, { soft: true })
       emit(EVENTS.USUARIO_REMOVED, { userId: user.id, soft: true })
-      showSnackbar('Usuario eliminado correctamente', 'success')
+      uiFeedbackStore.showSnackbar('Usuario suspendido correctamente', 'success')
       await fetchUsers()
     } catch (error) {
-      handleError(error, 'Error al eliminar usuario')
+      handleError(error, 'Error al suspender usuario')
     } finally {
       loading.value = false
     }
