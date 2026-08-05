@@ -14,14 +14,17 @@
               class="mr-1"
               @click="$emit('back')"
             ></v-btn>
-            {{ title }}
+            <slot name="title">{{ title }}</slot>
             <!-- Slot para que la vista inyecte sus chips -->
             <slot name="chips"></slot>
           </h3>
         </div>
         
         <!-- Bloque Derecho: Botones y Acciones -->
-        <div class="actions-wrapper z-10 w-full sm:w-auto d-flex flex-wrap gap-2 justify-start sm:justify-end mt-3 sm:mt-0">
+        <div
+          class="actions-wrapper z-10 w-full sm:w-auto d-flex flex-wrap gap-2 justify-start sm:justify-end mt-3 sm:mt-0"
+          :class="{ 'header-actions-with-bg': !!bgImage }"
+        >
           <slot name="actions"></slot>
         </div>
       </div>
@@ -38,7 +41,7 @@
 defineProps({
   title: {
     type: String,
-    required: true
+    default: ''
   },
   bgImage: {
     type: String,
@@ -55,4 +58,9 @@ defineEmits(['back'])
 
 <style scoped>
 /* Las clases .profile-container, .profile-title y .avatar-container ya están definidas globalmente en main.css */
+@media (min-width: 641px) {
+  .header-actions-with-bg {
+    margin-right: 210px;
+  }
+}
 </style>

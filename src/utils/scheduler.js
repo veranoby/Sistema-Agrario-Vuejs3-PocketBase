@@ -186,7 +186,7 @@ export class Scheduler {
           // 2. Paquetes evaluados por asesores
           try {
             const paquetes = await pb.collection('paquetes_evaluacion').getList(1, 1, {
-              filter: `hacienda_id = "${haciendaId}" && estado = "evaluado"`,
+              filter: `hacienda_id = "${haciendaId}" && (estado = "visto" || estado = "revisado")`,
               $cancelKey: 'hacienda_paq_sched'
             })
             if (paquetes.totalItems > 0) {
@@ -270,7 +270,7 @@ export class Scheduler {
       // 2. Paquetes entrantes (paquetes_evaluacion pendientes)
       try {
         const paquetes = await pb.collection('paquetes_evaluacion').getList(1, 1, {
-          filter: `asesor_id = "${user.id}" && estado = "pendiente"`,
+          filter: `asesor_id = "${user.id}" && estado = "enviado"`,
           $cancelKey: 'asesor_paq_sched'
         })
         if (paquetes.totalItems > 0) {

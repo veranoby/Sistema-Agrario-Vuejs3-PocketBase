@@ -106,11 +106,43 @@ export const useHaciendaStore = defineStore('hacienda', {
       const authStore = useAuthStore()
       if (authStore.isAsesor) return
 
-      if (!this.haciendaUsers.length) {
-        await this.fetchHaciendaUsers()
-      }
       if (!this.mi_hacienda) {
         await this.fetchHaciendaFromCache()
+      }
+      if (this.mi_hacienda?.id && !this.haciendaUsers.length) {
+        await this.fetchHaciendaUsers()
+      }
+      if (this.mi_hacienda?.id) {
+        await this.loadDependentStores()
+      }
+    },
+
+    async loadDependentStores() {
+      if (!this.mi_hacienda?.id) return
+      try {
+        const [
+          { useActividadesStore },
+          { useZonasStore },
+          { useSiembrasStore },
+          { useRecordatoriosStore },
+          { useProgramacionesStore }
+        ] = await Promise.all([
+          import('@/stores/actividadesStore'),
+          import('@/stores/zonasStore'),
+          import('@/stores/siembrasStore'),
+          import('@/stores/recordatoriosStore'),
+          import('@/stores/programaciones/programacionesStore')
+        ])
+
+        await Promise.allSettled([
+          useActividadesStore().init(),
+          useZonasStore().init(),
+          useSiembrasStore().init(),
+          useRecordatoriosStore().init(),
+          useProgramacionesStore().init()
+        ])
+      } catch (err) {
+        console.warn('[HACIENDA_STORE] Error cargando stores dependientes:', err)
       }
     },
 
@@ -120,6 +152,7 @@ export const useHaciendaStore = defineStore('hacienda', {
       if (cachedHacienda) {
         this.mi_hacienda = cachedHacienda
         this.baseImageUrl = await syncStore.loadFromLocalStorage('baseImageUrl') || ''
+        await this.loadDependentStores()
       }
     },
 
@@ -250,6 +283,10 @@ export const useHaciendaStore = defineStore('hacienda', {
         }
       } finally {
         this.loading = false
+      }
+
+      if (this.mi_hacienda?.id) {
+        await this.loadDependentStores()
       }
 
       return this.mi_hacienda

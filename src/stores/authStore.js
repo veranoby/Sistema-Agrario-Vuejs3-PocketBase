@@ -465,13 +465,8 @@ export const useAuthStore = defineStore('auth', {
       })
 
       setTimeout(async () => {
-        logger.auth('Loading deferred stores in background')
+        logger.auth('Loading deferred global stores in background')
         const planStore = usePlanStore()
-        const actividadesStore = useActividadesStore()
-        const zonasStore = useZonasStore()
-        const siembrasStore = useSiembrasStore()
-        const recordatoriosStore = useRecordatoriosStore()
-        const programacionesStore = useProgramacionesStore()
 
         try {
           const { useNotificationStore } = await import('@/stores/notificationStore')
@@ -482,18 +477,10 @@ export const useAuthStore = defineStore('auth', {
         }
 
         try {
-          await Promise.all([
-            planStore.fetchAvailablePlans(),
-            actividadesStore.init(),
-            zonasStore.init(),
-            siembrasStore.init(),
-            recordatoriosStore.init(),
-            programacionesStore.init()
-          ])
-          logger.auth('Deferred stores loaded successfully')
+          await planStore.fetchAvailablePlans()
+          logger.auth('Deferred global stores loaded successfully')
         } catch (error) {
-          logger.auth('Error loading deferred stores:', error.message)
-          handleError(error, 'Error loading initial data')
+          logger.auth('Error loading deferred global stores:', error.message)
         }
       }, 100)
     },

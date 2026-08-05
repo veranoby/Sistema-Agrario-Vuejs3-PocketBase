@@ -109,6 +109,11 @@ export const useActividadesStore = defineStore('actividades', {
         return this.actividades
       }
 
+      if (!haciendaStore.mi_hacienda?.id) {
+        this.loading = false
+        return this.actividades
+      }
+
       try {
         const cacheConfig = CacheKeys.paginatedResult('actividades', page, { hacienda: haciendaStore.mi_hacienda?.id })
         
