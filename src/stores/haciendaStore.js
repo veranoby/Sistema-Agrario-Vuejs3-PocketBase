@@ -26,6 +26,12 @@ export const useHaciendaStore = defineStore('hacienda', {
     _lastFetchedAt: 0  // timestamp del último fetch exitoso (para TTL)
   }),
 
+  persist: {
+    key: 'hacienda',
+    storage: localStorage,
+    paths: ['mi_hacienda', 'haciendaUsers']
+  },
+
   getters: {
     isPlanExpired: (state) => {
       if (!state.mi_hacienda?.subscription_end) return false

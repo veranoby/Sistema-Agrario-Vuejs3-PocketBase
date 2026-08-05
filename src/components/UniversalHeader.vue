@@ -4,7 +4,7 @@
       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 w-full">
         <!-- Bloque Izquierdo: Título y Chips -->
         <div class="w-full sm:flex-grow">
-          <h3 class="profile-title text-sm sm:text-lg mb-2 sm:mb-0 d-flex align-center flex-wrap gap-2">
+          <div class="profile-title text-sm sm:text-lg mb-2 sm:mb-0 d-flex align-center flex-wrap gap-2">
             <v-btn
               v-if="showBack"
               icon="mdi-arrow-left"
@@ -14,10 +14,12 @@
               class="mr-1"
               @click="$emit('back')"
             ></v-btn>
-            <slot name="title">{{ title }}</slot>
+            <slot name="title">
+              <span class="font-bold text-sm sm:text-lg">{{ title }}</span>
+            </slot>
             <!-- Slot para que la vista inyecte sus chips -->
             <slot name="chips"></slot>
-          </h3>
+          </div>
         </div>
         
         <!-- Bloque Derecho: Botones y Acciones -->
@@ -60,7 +62,9 @@ defineEmits(['back'])
 /* Las clases .profile-container, .profile-title y .avatar-container ya están definidas globalmente en main.css */
 @media (min-width: 641px) {
   .header-actions-with-bg {
-    margin-right: 210px;
+    margin-right: 220px !important;
+    position: relative;
+    z-index: 20;
   }
 }
 </style>
