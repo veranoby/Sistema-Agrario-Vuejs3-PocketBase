@@ -164,14 +164,16 @@ echo "Nginx OK"
 
 # PocketBase via PM2
 if pm2 describe conagri-pb > /dev/null 2>&1; then
-  pm2 restart conagri-pb
-else
-  pm2 start /var/www/conagri/pocketbase/pocketbase \
-    --name conagri-pb \
-    -- serve \
-    --http=0.0.0.0:8091 \
-    --dir=/var/www/conagri/pocketbase/pb_data
+  pm2 delete conagri-pb
 fi
+
+pm2 start /var/www/conagri/pocketbase/pocketbase \
+  --name conagri-pb \
+  -- serve \
+  --http=0.0.0.0:8091 \
+  --dir=/var/www/conagri/pocketbase/pb_data \
+  --hooksDir=/var/www/conagri/pocketbase/pb_hooks
+
 
 pm2 save
 echo "PocketBase OK en :8091"
