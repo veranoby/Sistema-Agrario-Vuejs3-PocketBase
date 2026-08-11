@@ -15,7 +15,7 @@
  */
 
 // Constants (module scope - evaluated once)
-const HTTP_STATUS = { BAD_REQUEST: 400, UNAUTHORIZED: 401, SERVER_ERROR: 500, OK: 200 }
+const HTTP_STATUS = { BAD_REQUEST: 400, UNAUTHORIZED: 401, FORBIDDEN: 403, NOT_FOUND: 404, SERVER_ERROR: 500, INTERNAL_ERROR: 500, OK: 200, CREATED: 201 }
 const VALID_ALERT_TYPES = ["actividad_critica", "bpa_vencido", "recordatorio", "actividad_asignada", "zona_atencion", "weekly_digest", "emergency"]
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const RESEND_API_URL = "https://api.resend.com/emails"
