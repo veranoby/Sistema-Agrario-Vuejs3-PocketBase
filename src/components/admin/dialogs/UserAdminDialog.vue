@@ -185,8 +185,26 @@
 
           <!-- Hacienda Details -->
           <template v-if="formData.role !== USER_ROLES.ASESOR">
-            <h3 class="  font-weight-bold mb-2">Vinculación de Hacienda</h3>
-            <v-row v-if="isEditing || formData.role === USER_ROLES.OPERADOR || formData.role === USER_ROLES.AUDITOR">
+            <h3 class="font-weight-bold mb-2">Vinculación de Haciendas</h3>
+            <v-row v-if="isEditing">
+              <v-col cols="12">
+                <v-select
+                  v-model="formData.haciendas"
+                  :items="haciendasList"
+                  item-title="nombre"
+                  item-value="id"
+                  label="Haciendas Asignadas (Multi-selección)"
+                  variant="outlined"
+                  density="compact"
+                  multiple
+                  chips
+                  clearable
+                  hint="Un usuario puede estar asignado a múltiples haciendas simultáneamente"
+                  persistent-hint
+                ></v-select>
+              </v-col>
+            </v-row>
+            <v-row v-else-if="formData.role === USER_ROLES.OPERADOR || formData.role === USER_ROLES.AUDITOR">
               <v-col cols="12">
                 <v-select
                   v-model="formData.haciendaId"
@@ -197,7 +215,7 @@
                   variant="outlined"
                   density="compact"
                   clearable
-                  :rules="(formData.role === USER_ROLES.OPERADOR || formData.role === USER_ROLES.AUDITOR) ? [v => !!v || 'Debe seleccionar una hacienda'] : []"
+                  :rules="[v => !!v || 'Debe seleccionar una hacienda']"
                 ></v-select>
               </v-col>
             </v-row>
@@ -235,6 +253,43 @@
                 ></v-select>
               </v-col>
             </v-row>
+          </template>
+
+          <!-- Sección de Seguridad (Solo edición) -->
+          <template v-if="isEditing">
+            <v-divider class="my-4"></v-divider>
+            <h3 class="font-weight-bold mb-2 text-warning">Seguridad y Sesión</h3>
+            <v-card variant="outlined" class="pa-3 bg-grey-lighten-4">
+              <v-row align="center">
+                <v-col cols="12" md="6">
+                  <p class="text-caption mb-1"><strong>Último acceso / actualización:</strong></p>
+                  <p class="text-body-2 mb-0">{{ props.editingUser?.updated ? new Date(props.editingUser.updated).toLocaleString() : 'N/A' }}</p>
+                </v-col>
+                <v-col cols="12" md="6" class="text-md-end">
+                  <v-btn
+                    color="info"
+                    size="small"
+                    variant="tonal"
+                    class="mr-2 mb-2 mb-md-0"
+                    prepend-icon="mdi-email-sync"
+                    @click="inlineResendVerification"
+                    :loading="verificationLoading"
+                  >
+                    Reenviar verificación
+                  </v-btn>
+                  <v-btn
+                    color="warning"
+                    size="small"
+                    variant="flat"
+                    prepend-icon="mdi-account-off"
+                    @click="inlineDisconnect"
+                    :loading="disconnectLoading"
+                  >
+                    Forzar Desconexión
+                  </v-btn>
+                </v-col>
+              </row>
+            </v-card>
           </template>
         </v-form>
       </v-card-text>
@@ -287,12 +342,15 @@ const formData = ref({
   direccion: '',
   status: USER_STATUS.ACTIVE,
   haciendaId: null,
+  haciendas: [],
   haciendaCreationOption: 'none',
   newHaciendaName: '',
   newPassword: ''
 });
 
 const isEditing = ref(false);
+const disconnectLoading = ref(false);
+const verificationLoading = ref(false);
 
 watch(() => props.modelValue, async (val) => {
   dialog.value = val;
@@ -302,6 +360,16 @@ watch(() => props.modelValue, async (val) => {
       isEditing.value = true;
       const u = props.editingUser;
       hasAvatar.value = !!u.avatar;
+      
+      let initialHaciendas = [];
+      if (Array.isArray(u.haciendas)) {
+        initialHaciendas = u.haciendas;
+      } else if (u.haciendas) {
+        initialHaciendas = [u.haciendas];
+      } else if (u.hacienda) {
+        initialHaciendas = [u.hacienda];
+      }
+
       formData.value = {
         email: u.email || '',
         verified: u.verified || false,
@@ -314,7 +382,8 @@ watch(() => props.modelValue, async (val) => {
         cedula: u.cedula || '',
         direccion: u.direccion || '',
         status: u.status || USER_STATUS.ACTIVE,
-        haciendaId: u.hacienda || null,
+        haciendaId: initialHaciendas[0] || null,
+        haciendas: initialHaciendas,
         haciendaCreationOption: 'none',
         newHaciendaName: '',
         newPassword: ''
@@ -336,6 +405,7 @@ watch(() => props.modelValue, async (val) => {
         direccion: '',
         status: USER_STATUS.ACTIVE,
         haciendaId: null,
+        haciendas: [],
         haciendaCreationOption: 'none',
         newHaciendaName: '',
         newPassword: ''
@@ -343,6 +413,32 @@ watch(() => props.modelValue, async (val) => {
     }
   }
 });
+
+async function inlineDisconnect() {
+  if (!props.editingUser?.id) return;
+  disconnectLoading.value = true;
+  try {
+    await pb.send(`/api/admin/users/${props.editingUser.id}/disconnect`, { method: 'POST' });
+    uiFeedbackStore.showSnackbar(`Sesión desconectada para ${props.editingUser.email}`, 'success');
+  } catch (error) {
+    handleError(error, 'Error al desconectar usuario');
+  } finally {
+    disconnectLoading.value = false;
+  }
+}
+
+async function inlineResendVerification() {
+  if (!props.editingUser?.id) return;
+  verificationLoading.value = true;
+  try {
+    await pb.send(`/api/admin/users/${props.editingUser.id}/verify`, { method: 'POST' });
+    uiFeedbackStore.showSnackbar(`Correo de verificación reenviado a ${props.editingUser.email}`, 'success');
+  } catch (error) {
+    handleError(error, 'Error al reenviar verificación');
+  } finally {
+    verificationLoading.value = false;
+  }
+}
 
 watch(dialog, (val) => {
   emit('update:modelValue', val);
@@ -409,7 +505,7 @@ async function submit() {
       if (editPayload.email === props.editingUser.email) delete editPayload.email;
       if (editPayload.username === props.editingUser.username) delete editPayload.username;
       
-      editPayload.hacienda = formData.value.haciendaId || "";
+      editPayload.haciendas = formData.value.haciendas || [];
       await pb.send(`/api/admin/users/${props.editingUser.id}`, {
         method: 'PUT',
         body: editPayload

@@ -243,7 +243,7 @@ async function loadData() {
       pb.collection('Haciendas').getFullList(),
       pb.collection('tipo_actividades').getFullList(),
       pb.collection('tipos_zonas').getFullList(),
-      pb.collection('siembras').getFullList(),
+      pb.collection('Siembras').getFullList(),
       pb.collection('actividades').getFullList(),
       pb.collection('programaciones').getFullList()
     ])

@@ -393,6 +393,14 @@ async function loadData() {
 async function loadMetrics() {
   loadingMetrics.value = true
   try {
+    const globalAnalytics = await pb.send('/api/analytics/global', { method: 'GET' }).catch(() => null)
+    if (globalAnalytics && globalAnalytics.topHaciendas) {
+      topHaciendas.value = globalAnalytics.topHaciendas
+      moduleUsage.value = globalAnalytics.moduleUsage || {}
+      logger.info('[ADMIN_ANALYTICS] Métricas obtenidas desde /api/analytics/global')
+      return
+    }
+
     const actividades = await pb.collection('actividades').getFullList()
 
     const actividadPorHacienda = {}

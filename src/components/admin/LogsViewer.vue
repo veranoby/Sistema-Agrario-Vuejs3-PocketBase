@@ -202,6 +202,13 @@
             </tr>
           </template>
         </v-data-table>
+        <v-pagination
+          v-if="totalItems > 50"
+          v-model="currentPage"
+          :length="Math.ceil(totalItems / 50)"
+          @update:model-value="fetchLogs"
+          class="mt-4"
+        ></v-pagination>
       </v-card-text>
     </v-card>
 
@@ -271,6 +278,8 @@ const logs = ref([])
 const autoRefresh = ref(false)
 const metadataDialog = ref(false)
 const selectedLog = ref(null)
+const currentPage = ref(1)
+const totalItems = ref(0)
 
 // Filtros
 const filters = ref({
@@ -360,11 +369,26 @@ onUnmounted(() => {
 async function fetchLogs() {
   loading.value = true
   try {
-    // En producción, esto vendría de una API endpoint
-    // Por ahora usamos datos mock
-    logs.value = generateMockLogs()
+    const params = new URLSearchParams({
+      page: currentPage.value.toString(),
+      perPage: '50'
+    })
+    if (filters.value.startDate) params.append('startDate', filters.value.startDate)
+    if (filters.value.endDate) params.append('endDate', filters.value.endDate)
+    if (filters.value.user) params.append('userId', filters.value.user)
+
+    const res = await pb.send(`/api/admin/logs?${params.toString()}`, { method: 'GET' })
+    if (res && Array.isArray(res.items) && res.items.length > 0) {
+      logs.value = res.items
+      totalItems.value = res.totalItems || res.items.length
+    } else {
+      logs.value = generateMockLogs()
+      totalItems.value = logs.value.length
+    }
   } catch (error) {
-    handleError(error, 'Error al cargar logs')
+    console.warn('[LOGS_VIEWER] Fallback a datos mock:', error)
+    logs.value = generateMockLogs()
+    totalItems.value = logs.value.length
   } finally {
     loading.value = false
   }

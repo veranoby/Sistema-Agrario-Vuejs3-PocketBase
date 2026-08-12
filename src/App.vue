@@ -131,6 +131,7 @@ const navigationLinks = computed(() => {
 
   if (role === USER_ROLES.SUPERADMIN) {
     return [
+      { id: 'sa0', to: '/admin/dashboard', icon: 'mdi-view-dashboard', label: 'Dashboard SA' },
       { id: 'sa1', to: '/admin', icon: 'mdi-cash-register', label: 'Solicitudes y Pagos' },
       { id: 'sa2', to: '/admin/users', icon: 'mdi-account-group', label: 'Gestión de Usuarios' },
       { id: 'sa3', to: '/admin/haciendas', icon: 'mdi-home-group', label: 'Gestión de Haciendas' },

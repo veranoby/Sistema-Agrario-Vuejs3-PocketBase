@@ -87,6 +87,35 @@
       </v-card-text>
     </v-card>
 
+    <!-- Acciones en Lote -->
+    <v-alert
+      v-if="selectedUsers.length > 0"
+      type="info"
+      variant="tonal"
+      class="mb-4 d-flex align-center justify-space-between"
+    >
+      <span>{{ selectedUsers.length }} usuarios seleccionados</span>
+      <div>
+        <v-btn
+          color="warning"
+          size="small"
+          class="mr-2"
+          prepend-icon="mdi-account-off"
+          @click="handleBulkDisconnect"
+        >
+          Desconectar seleccionados
+        </v-btn>
+        <v-btn
+          color="error"
+          size="small"
+          prepend-icon="mdi-account-cancel"
+          @click="handleBulkSuspend"
+        >
+          Suspender seleccionados
+        </v-btn>
+      </div>
+    </v-alert>
+
     <!-- Tabla de Usuarios -->
     <v-card>
       <v-data-table
@@ -125,13 +154,35 @@
 
         <!-- Haciendas -->
         <template v-slot:item.haciendas="{ item }">
-          {{ item.expand?.hacienda?.nombre || item.expand?.hacienda?.name || 'Sin Hacienda' }}
+          <span v-if="Array.isArray(item.expand?.haciendas) && item.expand.haciendas.length > 0">
+            {{ item.expand.haciendas.map(h => h.nombre || h.name).join(', ') }}
+          </span>
+          <span v-else-if="item.expand?.hacienda?.nombre || item.expand?.hacienda?.name">
+            {{ item.expand.hacienda.nombre || item.expand.hacienda.name }}
+          </span>
+          <span v-else class="text-grey">Sin Hacienda</span>
+        </template>
+
+        <!-- Último acceso -->
+        <template v-slot:item.updated="{ item }">
+          <span :title="'Último login/guardado: ' + item.updated">
+            {{ formatDate(item.updated) }}
+          </span>
         </template>
 
         <!-- Actions -->
         <template v-slot:item.actions="{ item }">
-          <v-btn icon="mdi-eye" size="small" variant="text" @click="viewUser(item)" />
-          <v-btn v-role="'USERS_MANAGE'" icon="mdi-pencil" size="small" variant="text" @click="editUser(item)" />
+          <v-btn icon="mdi-eye" size="small" variant="text" title="Ver detalle" @click="viewUser(item)" />
+          <v-btn v-role="'USERS_MANAGE'" icon="mdi-pencil" size="small" variant="text" title="Editar" @click="editUser(item)" />
+          <v-btn
+            v-role="'USERS_MANAGE'"
+            icon="mdi-email-sync-outline"
+            size="small"
+            variant="text"
+            color="info"
+            title="Reenviar verificación de email"
+            @click="resendVerification(item)"
+          />
           <v-btn
             v-role="'USERS_MANAGE'"
             icon="mdi-account-off-outline"
@@ -147,6 +198,7 @@
             size="small"
             variant="text"
             color="error"
+            title="Eliminar"
             @click="confirmDelete(item)"
           />
         </template>
@@ -316,6 +368,7 @@ const headers = [
   { title: 'Email Verificado', key: 'verified', sortable: true },
   { title: 'Haciendas', key: 'haciendas', sortable: false },
   { title: 'Estado Cuenta', key: 'status', sortable: true },
+  { title: 'Último acceso', key: 'updated', sortable: true },
   { title: 'Acciones', key: 'actions', sortable: false, align: 'end' }
 ]
 
@@ -375,7 +428,7 @@ onMounted(async () => {
 async function fetchUsers() {
   loading.value = true
   try {
-    const records = await userStore.fetchUsers({ expand: 'hacienda' })
+    const records = await userStore.fetchUsers({ expand: 'haciendas' })
     // Mapear haciendas
     users.value = records.map(u => ({
       ...u,
@@ -520,6 +573,54 @@ function closeDialog() {
 // Selección múltiple
 function onSelectionChange(selection) {
   selectedUsers.value = selection
+}
+
+// Reenviar verificación de correo
+async function resendVerification(user) {
+  loading.value = true
+  try {
+    await userStore.resendVerification(user.id)
+    showSnackbar(`Correo de verificación reenviado a ${user.email}`, 'success')
+  } catch (error) {
+    handleError(error, 'Error al reenviar verificación')
+  } finally {
+    loading.value = false
+  }
+}
+
+// Acciones en lote: Desconectar
+async function handleBulkDisconnect() {
+  if (!selectedUsers.value.length) return
+  if (!confirm(`¿Desconectar sesión a los ${selectedUsers.value.length} usuarios seleccionados?`)) return
+
+  loading.value = true
+  try {
+    const ids = selectedUsers.value.map(u => u.id)
+    const result = await userStore.bulkDisconnect(ids)
+    showSnackbar(`Desconexión masiva: ${result.success} exitosos, ${result.failed} fallidos`, result.failed ? 'warning' : 'success')
+  } catch (error) {
+    handleError(error, 'Error en desconexión masiva')
+  } finally {
+    loading.value = false
+  }
+}
+
+// Acciones en lote: Suspender
+async function handleBulkSuspend() {
+  if (!selectedUsers.value.length) return
+  if (!confirm(`¿Suspender la cuenta de los ${selectedUsers.value.length} usuarios seleccionados?`)) return
+
+  loading.value = true
+  try {
+    const ids = selectedUsers.value.map(u => u.id)
+    const result = await userStore.bulkSuspend(ids)
+    showSnackbar(`Suspensión masiva: ${result.success} suspendidos correctamente`, 'success')
+    await fetchUsers()
+  } catch (error) {
+    handleError(error, 'Error en suspensión masiva')
+  } finally {
+    loading.value = false
+  }
 }
 
 // Exportar a Markdown

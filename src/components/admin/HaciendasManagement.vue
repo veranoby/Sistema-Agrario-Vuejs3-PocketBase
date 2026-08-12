@@ -281,93 +281,136 @@
       </v-card>
     </v-dialog>
 
-    <!-- Dialog: Ver Hacienda -->
+    <!-- Dialog: Ver Hacienda con Tabs -->
     <v-dialog v-model="viewDialog" max-width="1000">
       <v-card>
-        <v-card-title style="background-color: #3F51B5; color: white;">Detalles de: {{ selectedHacienda?.name || selectedHacienda?.nombre }} 
-          <v-chip class="ml-4"
-            color="primary"
-            size="small"
-            variant="flat"
-          >
-            <v-icon icon="mdi-label" start></v-icon>Plan: {{ selectedHacienda?.plan?.name || selectedHacienda?.plan?.nombre || 'N/A' }}</v-chip>
-          
-                          <v-chip class="ml-4"            variant="flat"
- :color="getStatusColor(selectedHacienda?.status)" size="small"><v-icon icon="mdi-information" start></v-icon>
-                      {{ formatStatus(selectedHacienda?.status) }}
-                    </v-chip>
+        <v-card-title class="bg-indigo text-white d-flex align-center justify-space-between py-3">
+          <div>
+            <span class="text-h6">Detalles de: {{ selectedHacienda?.name || selectedHacienda?.nombre }}</span>
+            <v-chip class="ml-3" color="white" size="small" variant="outlined">
+              Plan: {{ selectedHacienda?.plan?.name || selectedHacienda?.plan?.nombre || 'N/A' }}
+            </v-chip>
+            <v-chip class="ml-2" :color="getStatusColor(selectedHacienda?.status)" size="small">
+              {{ formatStatus(selectedHacienda?.status) }}
+            </v-chip>
+          </div>
+          <v-btn icon="mdi-close" variant="text" color="white" @click="viewDialog = false"></v-btn>
+        </v-card-title>
 
-                          <v-chip class="ml-4 " style="color: white;"       variant="flat"
- color="secondary" size="small"><v-icon icon="mdi-calendar-clock" start></v-icon>Creado:
-                      {{ formatDate(selectedHacienda?.created) }}
-                    </v-chip>
+        <v-tabs v-model="activeTab" bg-color="indigo-lighten-5" color="indigo" grow>
+          <v-tab value="resumen" prepend-icon="mdi-view-dashboard">Resumen & Métricas</v-tab>
+          <v-tab value="usuarios" prepend-icon="mdi-account-group">Usuarios</v-tab>
+          <v-tab value="plan" prepend-icon="mdi-package-variant-closed">Plan & Módulos</v-tab>
+          <v-tab value="asesores" prepend-icon="mdi-briefcase-account">Asesores</v-tab>
+          <v-tab value="seguridad" prepend-icon="mdi-shield-alert">Seguridad</v-tab>
+        </v-tabs>
 
-          </v-card-title>
         <v-card-text class="pt-4">
-          <v-row>
-            <!-- Columna Izquierda: Detalles Básicos -->
-            <v-col cols="12" md="4">
-              <v-list density="compact">
-                <v-list-item>
-                  <v-list-item-title class="font-weight-bold">Descripción</v-list-item-title>
-                  <v-list-item-subtitle style="white-space: pre-wrap" v-html="selectedHacienda?.info || selectedHacienda?.descripcion || 'N/A'"></v-list-item-subtitle>
-                </v-list-item>
-                <v-list-item>
-                  <v-list-item-title class="font-weight-bold">Ubicación</v-list-item-title>
-                  <v-list-item-subtitle>{{ selectedHacienda?.location || selectedHacienda?.ubicacion || 'N/A' }}</v-list-item-subtitle>
-                </v-list-item>
+          <v-window v-model="activeTab">
+            <!-- TAB 1: Resumen & Métricas -->
+            <v-window-item value="resumen">
+              <v-row class="mb-4">
+                <v-col cols="12" md="6">
+                  <v-card variant="tonal" color="primary">
+                    <v-card-text class="d-flex align-center justify-space-between">
+                      <div>
+                        <div class="text-overline">Usuarios Activos</div>
+                        <div class="text-h4 font-weight-bold">{{ haciendaMetrics?.userCount || 0 }}</div>
+                      </div>
+                      <v-icon size="48" opacity="0.6">mdi-account-multiple</v-icon>
+                    </v-card-text>
+                  </v-card>
+                </v-col>
+                <v-col cols="12" md="6">
+                  <v-card variant="tonal" color="secondary">
+                    <v-card-text class="d-flex align-center justify-space-between">
+                      <div>
+                        <div class="text-overline">Módulos Activos</div>
+                        <div class="text-h4 font-weight-bold">{{ haciendaMetrics?.activeModules || selectedHacienda?.active_modules?.length || 0 }}</div>
+                      </div>
+                      <v-icon size="48" opacity="0.6">mdi-view-module</v-icon>
+                    </v-card-text>
+                  </v-card>
+                </v-col>
+              </v-row>
 
-                <v-list-item>
-
-                  <v-list-item-subtitle>
-
-                    <div v-if="selectedHacienda?.status === 'suspended'" class="text-xs mt-1 text-error">
-                      Razón: {{ selectedHacienda?.suspension_reason || 'N/A' }}
-                    </div>
-                  </v-list-item-subtitle>
-                </v-list-item>
-                <v-list-item>
-                  <v-list-item-title class="font-weight-bold">Módulos activos</v-list-item-title>
-                  <v-list-item-subtitle>
-                    <v-chip-group column v-if="selectedHacienda?.active_modules?.length">
-                      <v-chip
-                        v-for="moduleId in selectedHacienda.active_modules"
-                        :key="moduleId"
-                        color="secondary"
-                        size="small"
-                      >
-                        {{ getModuleName(moduleId) }}
-                      </v-chip>
-                    </v-chip-group>
-                    <span v-else>Ninguno</span>
-                  </v-list-item-subtitle>
-                </v-list-item>
-
-                <v-list-item>
-                  <v-list-item-title class="font-weight-bold mb-2">Operadores / Auditores</v-list-item-title>
-                  <v-list-item-subtitle>
-                    <v-list density="compact" class="bg-transparent pa-0" v-if="getHaciendaUsers(selectedHacienda?.id).length">
-                      <v-list-item
-                        v-for="user in getHaciendaUsers(selectedHacienda?.id)"
-                        :key="user.id"
-                        class="px-0 py-1"
-                      >
-                        <template v-slot:prepend>
-                          <v-icon icon="mdi-account-circle" color="primary" size="small" class="mr-2"></v-icon>
-                        </template>
-                        <v-list-item-title class="text-md">{{ user.label }}</v-list-item-title>
-                      </v-list-item>
-                    </v-list>
-                    <span v-else class="text-xs">Ninguno</span>
-                  </v-list-item-subtitle>
-                </v-list-item>
-              </v-list>
-            </v-col>
-
-            <!-- Columna Derecha: Tablas de Operación -->
-            <v-col cols="12" md="8">
               <v-card variant="outlined" class="mb-4">
-                <v-card-title class=" ">Vinculaciones Asesor</v-card-title>
+                <v-card-title class="text-subtitle-1 font-weight-bold">Información General</v-card-title>
+                <v-card-text>
+                  <p><strong>Descripción:</strong> {{ selectedHacienda?.info || selectedHacienda?.descripcion || 'N/A' }}</p>
+                  <p><strong>Ubicación:</strong> {{ selectedHacienda?.location || selectedHacienda?.ubicacion || 'N/A' }}</p>
+                  <p><strong>Propietario / Admin:</strong> {{ getOwnerName(selectedHacienda) }}</p>
+                  <p><strong>Fecha de Creación:</strong> {{ formatDate(selectedHacienda?.created) }}</p>
+                </v-card-text>
+              </v-card>
+
+              <!-- Última Actividad del Sistema -->
+              <v-card variant="outlined">
+                <v-card-title class="text-subtitle-1 font-weight-bold">Últimos Eventos de Actividad</v-card-title>
+                <v-data-table
+                  :headers="[
+                    { title: 'Fecha', key: 'timestamp' },
+                    { title: 'Usuario', key: 'user' },
+                    { title: 'Acción', key: 'action' },
+                    { title: 'Detalle', key: 'message' }
+                  ]"
+                  :items="haciendaActivity"
+                  density="compact"
+                  hide-default-footer
+                  :items-per-page="5"
+                  :loading="metricsLoading"
+                >
+                  <template v-slot:item.timestamp="{ item }">
+                    {{ formatDate(item.timestamp) }}
+                  </template>
+                </v-data-table>
+              </v-card>
+            </v-window-item>
+
+            <!-- TAB 2: Usuarios -->
+            <v-window-item value="usuarios">
+              <v-card variant="outlined">
+                <v-card-title class="d-flex justify-space-between align-center">
+                  <span>Roster de Usuarios</span>
+                </v-card-title>
+                <v-list density="compact" v-if="getHaciendaUsers(selectedHacienda?.id).length">
+                  <v-list-item
+                    v-for="user in getHaciendaUsers(selectedHacienda?.id)"
+                    :key="user.id"
+                  >
+                    <template v-slot:prepend>
+                      <v-icon icon="mdi-account-circle" color="primary" class="mr-2"></v-icon>
+                    </template>
+                    <v-list-item-title class="font-weight-medium">{{ user.label }}</v-list-item-title>
+                    <v-list-item-subtitle>{{ user.email || 'Sin correo registrado' }}</v-list-item-subtitle>
+                  </v-list-item>
+                </v-list>
+                <div v-else class="pa-4 text-center text-grey">No hay usuarios vinculados a esta hacienda.</div>
+              </v-card>
+            </v-window-item>
+
+            <!-- TAB 3: Plan & Módulos -->
+            <v-window-item value="plan">
+              <v-card variant="outlined" class="pa-4">
+                <h4 class="font-weight-bold mb-3">Módulos Habilitados</h4>
+                <v-chip-group column v-if="selectedHacienda?.active_modules?.length">
+                  <v-chip
+                    v-for="moduleId in selectedHacienda.active_modules"
+                    :key="moduleId"
+                    color="primary"
+                    size="small"
+                  >
+                    {{ getModuleName(moduleId) }}
+                  </v-chip>
+                </v-chip-group>
+                <p v-else class="text-grey">Sin módulos habilitados actualmente.</p>
+              </v-card>
+            </v-window-item>
+
+            <!-- TAB 4: Asesores -->
+            <v-window-item value="asesores">
+              <v-card variant="outlined" class="mb-4">
+                <v-card-title>Asesores Técnicos Vinculados</v-card-title>
                 <v-data-table
                   :headers="[{ title: 'Asesor', key: 'asesorName' }, { title: 'Acciones', key: 'actions', align: 'end' }]"
                   :items="relaciones.vinculaciones"
@@ -384,50 +427,59 @@
                   </template>
                 </v-data-table>
               </v-card>
+            </v-window-item>
 
-              <v-card variant="outlined" class="mb-4">
-                <v-card-title class=" ">Paquetes de Evaluación</v-card-title>
-                <v-data-table
-                  :headers="[{ title: 'Título', key: 'titulo' }, { title: 'Estado', key: 'estado' }, { title: 'Acciones', key: 'actions', align: 'end' }]"
-                  :items="relaciones.paquetes"
-                  density="compact"
-                  hide-default-footer
-                  :items-per-page="5"
-                >
-                  <template v-slot:item.actions="{ item }">
-                    <v-btn icon="mdi-eye" size="small" variant="text" color="primary" @click="showDetailItem('paquete', item)" />
-                    <v-btn icon="mdi-delete" size="small" variant="text" color="error" @click="deleteItem('paquetes_evaluacion', item.id)" />
-                  </template>
-                </v-data-table>
-              </v-card>
+            <!-- TAB 5: Seguridad & Suspensión -->
+            <v-window-item value="seguridad">
+              <v-card variant="outlined" class="pa-4">
+                <h4 class="font-weight-bold mb-2">Estado Operativo de la Hacienda</h4>
 
-              <v-card variant="outlined">
-                <v-card-title class=" ">Recetas</v-card-title>
-                <v-data-table
-                  :headers="[{ title: 'Código', key: 'codigo' }, { title: 'Asesor', key: 'asesorName' }, { title: 'Acciones', key: 'actions', align: 'end' }]"
-                  :items="relaciones.recetas"
-                  density="compact"
-                  hide-default-footer
-                  :items-per-page="5"
-                >
-                  <template v-slot:item.asesorName="{ item }">
-                    {{ item.expand?.asesor_id?.email || 'Desconocido' }}
-                  </template>
-                  <template v-slot:item.actions="{ item }">
-                    <v-btn icon="mdi-eye" size="small" variant="text" color="primary" @click="showDetailItem('receta', item)" />
-                    <v-btn icon="mdi-delete" size="small" variant="text" color="error" @click="deleteItem('recetas', item.id)" />
-                  </template>
-                </v-data-table>
+                <div v-if="selectedHacienda?.status === 'suspended'" class="mb-4">
+                  <v-alert type="error" variant="tonal" class="mb-3">
+                    <strong>Hacienda Suspendida.</strong>
+                    <div class="text-body-2 mt-1">Motivo: {{ selectedHacienda?.suspension_reason || 'Sin motivo registrado' }}</div>
+                  </v-alert>
+                  <v-btn
+                    color="success"
+                    variant="flat"
+                    prepend-icon="mdi-check-circle"
+                    @click="handleReactivateFromView"
+                    :loading="suspensionLoading"
+                  >
+                    Reactivar Hacienda
+                  </v-btn>
+                </div>
+
+                <div v-else class="mb-4">
+                  <v-alert type="success" variant="tonal" class="mb-3">
+                    Esta hacienda se encuentra <strong>Activa</strong> y operando normalmente.
+                  </v-alert>
+                  <v-textarea
+                    v-model="suspensionReason"
+                    label="Motivo de suspensión"
+                    rows="2"
+                    variant="outlined"
+                    density="compact"
+                    placeholder="Escriba la razón de suspensión para notificar al administrador"
+                    class="mb-2"
+                  ></v-textarea>
+                  <v-btn
+                    color="error"
+                    variant="flat"
+                    prepend-icon="mdi-pause-circle"
+                    @click="handleSuspendFromView"
+                    :loading="suspensionLoading"
+                  >
+                    Suspender Hacienda
+                  </v-btn>
+                </div>
               </v-card>
-            </v-col>
-          </v-row>
+            </v-window-item>
+          </v-window>
         </v-card-text>
         <v-card-actions class="pb-4 pr-4">
-          <v-btn color="primary" variant="text" @click="exportHaciendaToMarkdown(selectedHacienda)">
-            Exportar a MD
-          </v-btn>
-          <v-spacer />
-          <v-btn color="grey" variant="elevated" @click="viewDialog = false">Cerrar</v-btn>
+          <v-spacer></v-spacer>
+          <v-btn color="grey" variant="text" @click="viewDialog = false">Cerrar</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -542,6 +594,13 @@ const selectedHacienda = ref(null)
 const formValid = ref(false)
 const haciendaForm = ref(null)
 const hasAvatar = ref(false)
+
+const haciendaMetrics = ref(null)
+const metricsLoading = ref(false)
+const haciendaActivity = ref([])
+const activeTab = ref('resumen')
+const suspensionReason = ref('')
+const suspensionLoading = ref(false)
 
 const relaciones = ref({
   vinculaciones: [],
@@ -696,17 +755,69 @@ async function editHacienda(hacienda) {
 
 // Ver hacienda
 async function viewHacienda(hacienda) {
-  // Fetch datos frescos desde PocketBase para tener active_modules actualizado
   try {
-    const fresh = await pb.collection('Haciendas').getOne(hacienda.id, { expand: 'plan' })
-    // Preservar el plan expandido si vino de la lista
+    const fresh = await pb.collection('Haciendas').getOne(hacienda.id, { expand: 'plan,owner' })
     selectedHacienda.value = { ...fresh, plan: fresh.expand?.plan || hacienda.plan }
   } catch (e) {
     console.warn('No se pudo refrescar hacienda, usando copia local', e)
     selectedHacienda.value = hacienda
   }
+
+  suspensionReason.value = selectedHacienda.value?.suspension_reason || ''
+  activeTab.value = 'resumen'
+  metricsLoading.value = true
+
+  try {
+    const [metrics, activity] = await Promise.all([
+      haciendaManagementStore.getHaciendaMetrics(hacienda.id),
+      haciendaManagementStore.fetchHaciendaActivity(hacienda.id)
+    ])
+    haciendaMetrics.value = metrics
+    haciendaActivity.value = activity
+  } catch (e) {
+    console.warn('Error cargando métricas o actividad', e)
+  } finally {
+    metricsLoading.value = false
+  }
+
   await fetchRelaciones(hacienda.id)
   viewDialog.value = true
+}
+
+async function handleSuspendFromView() {
+  if (!selectedHacienda.value?.id) return
+  if (!suspensionReason.value) {
+    uiFeedbackStore.showSnackbar('Debe especificar un motivo de suspensión', 'warning')
+    return
+  }
+  suspensionLoading.value = true
+  try {
+    await haciendaManagementStore.suspendHacienda(selectedHacienda.value.id, suspensionReason.value)
+    selectedHacienda.value.status = 'suspended'
+    selectedHacienda.value.suspension_reason = suspensionReason.value
+    uiFeedbackStore.showSnackbar('Hacienda suspendida correctamente', 'success')
+    await fetchHaciendas()
+  } catch (err) {
+    handleError(err, 'Error al suspender hacienda')
+  } finally {
+    suspensionLoading.value = false
+  }
+}
+
+async function handleReactivateFromView() {
+  if (!selectedHacienda.value?.id) return
+  suspensionLoading.value = true
+  try {
+    await haciendaManagementStore.reactivateHacienda(selectedHacienda.value.id)
+    selectedHacienda.value.status = 'active'
+    selectedHacienda.value.suspension_reason = null
+    uiFeedbackStore.showSnackbar('Hacienda reactivada correctamente', 'success')
+    await fetchHaciendas()
+  } catch (err) {
+    handleError(err, 'Error al reactivar hacienda')
+  } finally {
+    suspensionLoading.value = false
+  }
 }
 
 async function fetchRelaciones(haciendaId) {

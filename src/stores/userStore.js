@@ -279,7 +279,11 @@ export const useUserStore = defineStore('user', {
       const { emit } = useEvents()
       
       try {
-        const data = createUserUpdateData(formData, role, haciendaId)
+        const haciendaArray = Array.isArray(haciendaId) ? haciendaId : (haciendaId ? [haciendaId] : [])
+        const data = createUserUpdateData(formData, role, haciendaArray[0] || null)
+        if (haciendaArray.length > 0) {
+          data.haciendas = haciendaArray
+        }
         const user = await pb.collection('users').update(userId, data)
         
         const index = this.users.findIndex(u => u.id === userId)
@@ -287,12 +291,64 @@ export const useUserStore = defineStore('user', {
           this.users[index] = user
         }
         
-        emit(EVENTS.HACIENDA_UPDATED, { userId, haciendaId, role })
-        logger.info('[USER_STORE] Usuario actualizado', { userId, haciendaId })
+        emit(EVENTS.HACIENDA_UPDATED, { userId, haciendaId: haciendaArray[0] || null, role })
+        logger.info('[USER_STORE] Usuario actualizado', { userId, haciendaId: haciendaArray })
         
         return user
       } catch (error) {
         handleError(error, 'Error al actualizar usuario')
+        throw error
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async bulkSuspend(userIds) {
+      this.loading = true
+      let successCount = 0
+      let failCount = 0
+      try {
+        await Promise.all(userIds.map(async (id) => {
+          try {
+            await pb.collection('users').update(id, { status: 'suspended' })
+            const idx = this.users.findIndex(u => u.id === id)
+            if (idx !== -1) this.users[idx].status = 'suspended'
+            successCount++
+          } catch (e) {
+            failCount++
+          }
+        }))
+        return { success: successCount, failed: failCount }
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async bulkDisconnect(userIds) {
+      this.loading = true
+      let successCount = 0
+      let failCount = 0
+      try {
+        await Promise.all(userIds.map(async (id) => {
+          try {
+            await pb.send(`/api/admin/users/${id}/disconnect`, { method: 'POST' })
+            successCount++
+          } catch (e) {
+            failCount++
+          }
+        }))
+        return { success: successCount, failed: failCount }
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async resendVerification(userId) {
+      this.loading = true
+      try {
+        return await pb.send(`/api/admin/users/${userId}/verify`, { method: 'POST' })
+      } catch (error) {
+        handleError(error, 'Error al reenviar verificación')
         throw error
       } finally {
         this.loading = false

@@ -312,6 +312,18 @@ const routes = [
   // }
 ]
 
+// Enable /admin/dashboard route for superadmin
+const adminDashboardRoute = {
+  path: '/admin/dashboard',
+  component: () => import('@/views/superadmin/SuperAdminDashboard.vue'),
+  name: 'Dashboard Superadmin',
+  meta: {
+    requiresAuth: true,
+    requiresSuperAdmin: true,
+    roles: [ROLES.SUPERADMIN]
+  }
+}
+
 // Enable /admin route for superadmin
 const adminRoute = {
   path: '/admin',
@@ -423,6 +435,7 @@ const adminExportsRoute = {
 }
 
 // Add admin routes to routes array
+routes.push(adminDashboardRoute)
 routes.push(adminRoute)
 routes.push(adminAnalyticsRoute)
 routes.push(adminDataMiningRoute)
@@ -625,7 +638,7 @@ router.beforeEach(async (to, from, next) => {
         if (userRole === ROLES.ASESOR) {
           fallbackPath = '/asesor/dashboard';
         } else if (userRole === ROLES.SUPERADMIN) {
-          fallbackPath = '/admin';
+          fallbackPath = '/admin/dashboard';
         }
         
         next({
