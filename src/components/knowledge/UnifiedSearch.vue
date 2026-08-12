@@ -1,8 +1,8 @@
 <template>
   <v-container fluid class="unified-search">
-    <h3 class="text-md mb-4">Búsqueda Unificada de Conocimiento</h3>
-    <p class="  text-grey mb-6">
-      Busca en todas las entidades del sistema: siembras, programaciones, actividades, tipos de actividades y más.
+    <h3 class="text-h5 font-weight-bold mb-2">Búsqueda Rápida de Registros</h3>
+    <p class="text-subtitle-2 text-grey mb-6">
+      Consulta y busca rápidamente en todas las entidades registradas del sistema: siembras, programaciones, actividades y más.
     </p>
 
     <!-- Barra de Búsqueda -->

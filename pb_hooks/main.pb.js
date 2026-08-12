@@ -572,12 +572,28 @@ routerAdd("PUT", "/api/admin/users/{id}", (e) => {
     if (body.cedula !== undefined) user.set("cedula", body.cedula)
     if (body.direccion !== undefined) user.set("direccion", body.direccion)
     if (body.verified !== undefined) user.set("verified", !!body.verified)
-    
-    if (body.haciendas !== undefined) {
-      const haciendaArray = Array.isArray(body.haciendas) ? body.haciendas : (body.haciendas ? [body.haciendas] : [])
-      user.set("haciendas", haciendaArray)
-    } else if (body.hacienda !== undefined) {
-      user.set("haciendas", body.hacienda ? [body.hacienda] : [])
+
+    if (body.hacienda !== undefined || body.haciendas !== undefined) {
+      const targetHaciendaId = body.hacienda || (Array.isArray(body.haciendas) ? body.haciendas[0] : body.haciendas)
+      if (targetHaciendaId) {
+        const haciendaCol = $app.findCollectionByNameOrId("Haciendas")
+        const haciendaRec = $app.findFirstRecordByFilter(haciendaCol, "id = {:id}", { id: targetHaciendaId })
+        if (haciendaRec) {
+          const planId = haciendaRec.get("plan")
+          let limit = 999
+          if (planId) {
+            const planRec = $app.findRecordById("planes", planId)
+            limit = (planRec.get("operadores") || 0) + (planRec.get("auditores") || 0)
+          }
+          const currentCount = $app.countRecords("users", `hacienda = "${targetHaciendaId}" && id != "${userId}"`)
+          if (limit > 0 && currentCount >= limit) {
+            return e.json(HTTP_STATUS.BAD_REQUEST, { error: `Límite de usuarios alcanzado (${limit}) para esta hacienda. Actualice el plan.` })
+          }
+        }
+        user.set("hacienda", targetHaciendaId)
+      } else {
+        user.set("hacienda", "")
+      }
     }
 
     // Solo actualizar password si se proporciona
@@ -2134,6 +2150,38 @@ routerAdd("POST", "/api/ai/test-connection", (e) => {
     }
   } catch (err) {
     return e.json(500, { error: "Error de conexión", details: err.message })
+  }
+}, $apis.requireAuth())
+
+// ============================================
+// POST /api/admin/test-resend
+// ============================================
+routerAdd("POST", "/api/admin/test-resend", (e) => {
+  const info = e.requestInfo()
+  const body = info.body || {}
+  const apiKey = body.apiKey
+
+  if (!apiKey) {
+    return e.json(HTTP_STATUS.BAD_REQUEST, { error: "apiKey es requerida" })
+  }
+
+  try {
+    const response = $http.send({
+      url: "https://api.resend.com/domains",
+      method: "GET",
+      headers: {
+        "Authorization": "Bearer " + apiKey
+      },
+      timeout: 10000
+    })
+
+    if (response.statusCode === 200 || response.statusCode === 201) {
+      return e.json(200, { success: true, message: "Conexión con Resend verificada exitosamente" })
+    } else {
+      return e.json(400, { error: "Fallo de autenticación con Resend", details: response.json || response.raw })
+    }
+  } catch (err) {
+    return e.json(500, { error: "Error de conexión con Resend", details: err.message })
   }
 }, $apis.requireAuth())
 

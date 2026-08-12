@@ -462,6 +462,89 @@ export const useHaciendaManagementStore = defineStore('haciendaManagement', {
     },
 
     /**
+     * Asociar un usuario a una hacienda (vía users.hacienda)
+     */
+    async addUserToHacienda(userId, haciendaId) {
+      try {
+        const res = await pb.send(`/api/admin/users/${userId}`, {
+          method: 'PUT',
+          body: JSON.stringify({ hacienda: haciendaId })
+        })
+        return res
+      } catch (error) {
+        handleError(error, 'Error al asociar usuario a la hacienda')
+        throw error
+      }
+    },
+
+    /**
+     * Remover un usuario de una hacienda (vía users.hacienda)
+     */
+    async removeUserFromHacienda(userId) {
+      try {
+        const res = await pb.send(`/api/admin/users/${userId}`, {
+          method: 'PUT',
+          body: JSON.stringify({ hacienda: '' })
+        })
+        return res
+      } catch (error) {
+        handleError(error, 'Error al remover usuario de la hacienda')
+        throw error
+      }
+    },
+
+    /**
+     * Obtener vinculaciones de asesor para una hacienda
+     */
+    async fetchVinculacionesHacienda(haciendaId) {
+      try {
+        const records = await pb.collection('vinculaciones_asesor').getFullList({
+          filter: `hacienda_id = "${haciendaId}"`,
+          expand: 'asesor_id'
+        })
+        return records
+      } catch (error) {
+        handleError(error, 'Error al obtener vinculaciones de asesor')
+        return []
+      }
+    },
+
+    /**
+     * Crear vinculación de asesor a hacienda
+     */
+    async addAsesorVinculacion(haciendaId, asesorId) {
+      try {
+        const currentUserId = pb.authStore.record?.id || ''
+        const record = await pb.collection('vinculaciones_asesor').create({
+          hacienda_id: haciendaId,
+          asesor_id: asesorId,
+          estado: 'activa',
+          iniciada_por: currentUserId,
+          fecha_vinculacion: new Date().toISOString()
+        })
+        return record
+      } catch (error) {
+        handleError(error, 'Error al vincular asesor a la hacienda')
+        throw error
+      }
+    },
+
+    /**
+     * Revocar vinculación de asesor
+     */
+    async revocarAsesorVinculacion(vinculacionId) {
+      try {
+        const record = await pb.collection('vinculaciones_asesor').update(vinculacionId, {
+          estado: 'revocada'
+        })
+        return record
+      } catch (error) {
+        handleError(error, 'Error al revocar vinculación de asesor')
+        throw error
+      }
+    },
+
+    /**
      * Actualizar filtros
      */
     setFilters(filters) {

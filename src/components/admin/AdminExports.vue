@@ -1,150 +1,253 @@
 <template>
   <v-container fluid class="admin-exports">
-    <h3 class="text-md mb-4">Exportaciones de Datos</h3>
-    <p class="  text-grey mb-6">
-      Exporta datos del sistema a formato Markdown para alimentar IAs externas y generar manuales.
-    </p>
+    <div class="d-flex align-center justify-space-between mb-4">
+      <div>
+        <h3 class="text-h5 font-weight-bold">Exportación de Datos & Data Mining</h3>
+        <p class="text-subtitle-2 text-grey">
+          Exporta datos del sistema a formato Markdown y CSV o realiza consultas filtradas avanzadas.
+        </p>
+      </div>
+    </div>
 
-    <!-- Tarjetas de Exportación -->
-    <v-row>
-      <!-- Usuarios -->
-      <v-col cols="12" md="6" lg="4">
-        <v-card hover class="export-card">
+    <v-tabs v-model="exportTab" bg-color="indigo-lighten-5" color="indigo" class="mb-4" rounded>
+      <v-tab value="masiva" prepend-icon="mdi-export">Exportación Masiva (Markdown)</v-tab>
+      <v-tab value="consultas" prepend-icon="mdi-database-search">Consultas Filtradas (Data Mining)</v-tab>
+      <v-tab value="historial" prepend-icon="mdi-history">Historial de Exportaciones</v-tab>
+    </v-tabs>
+
+    <v-window v-model="exportTab">
+      <!-- TAB 1: Exportación Masiva -->
+      <v-window-item value="masiva">
+        <!-- Tarjetas de Exportación -->
+        <v-row>
+          <!-- Usuarios -->
+          <v-col cols="12" md="6" lg="4">
+            <v-card hover class="export-card">
+              <v-card-text>
+                <div class="d-flex align-center mb-3">
+                  <v-icon size="40" color="primary" class="mr-3">mdi-account-group</v-icon>
+                  <h3 class="text-h6">Usuarios</h3>
+                </div>
+                <p class="text-sm text-grey mb-3">
+                  Exporta todos los usuarios con sus roles, haciendas asignadas y estado.
+                </p>
+                <v-divider class="my-3" />
+                <div class="text-md">
+                  <p><strong>Campos:</strong> Email, nombre, rol, haciendas, estado</p>
+                  <p><strong>Formato:</strong> Markdown</p>
+                  <p><strong>Total:</strong> {{ stats.users }}</p>
+                </div>
+              </v-card-text>
+              <v-card-actions>
+                <v-btn color="primary" variant="tonal" block @click="exportData('users')">
+                  <v-icon start>mdi-download</v-icon>
+                  Exportar Usuarios
+                </v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-col>
+
+          <!-- Haciendas -->
+          <v-col cols="12" md="6" lg="4">
+            <v-card hover class="export-card">
+              <v-card-text>
+                <div class="d-flex align-center mb-3">
+                  <v-icon size="40" color="secondary" class="mr-3">mdi-barn</v-icon>
+                  <h3 class="text-h6">Haciendas</h3>
+                </div>
+                <p class="text-sm text-grey mb-3">
+                  Exporta todas las haciendas con configuración, planes y módulos activos.
+                </p>
+                <v-divider class="my-3" />
+                <div class="text-md">
+                  <p><strong>Campos:</strong> Nombre, ubicación, plan, módulos, usuarios</p>
+                  <p><strong>Formato:</strong> Markdown</p>
+                  <p><strong>Total:</strong> {{ stats.haciendas }}</p>
+                </div>
+              </v-card-text>
+              <v-card-actions>
+                <v-btn color="secondary" variant="tonal" block @click="exportData('haciendas')">
+                  <v-icon start>mdi-download</v-icon>
+                  Exportar Haciendas
+                </v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-col>
+
+          <!-- Tipos de Actividades -->
+          <v-col cols="12" md="6" lg="4">
+            <v-card hover class="export-card">
+              <v-card-text>
+                <div class="d-flex align-center mb-3">
+                  <v-icon size="40" color="primary" class="mr-3">mdi-check-all</v-icon>
+                  <h3 class="text-h6">Tipos de Actividades</h3>
+                </div>
+                <p class="text-sm text-grey mb-3">
+                  Exporta catálogo completo de tipos de actividades con métricas BPA.
+                </p>
+                <v-divider class="my-3" />
+                <div class="text-md">
+                  <p><strong>Campos:</strong> Nombre, descripción, categoría, métricas BPA</p>
+                  <p><strong>Formato:</strong> Markdown</p>
+                  <p><strong>Total:</strong> {{ stats.actividades }}</p>
+                </div>
+              </v-card-text>
+              <v-card-actions>
+                <v-btn color="primary" variant="tonal" block @click="exportData('actividades')">
+                  <v-icon start>mdi-download</v-icon>
+                  Exportar Actividades
+                </v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-col>
+
+          <!-- Tipos de Zonas -->
+          <v-col cols="12" md="6" lg="4">
+            <v-card hover class="export-card">
+              <v-card-text>
+                <div class="d-flex align-center mb-3">
+                  <v-icon size="40" color="info" class="mr-3">mdi-map-marker</v-icon>
+                  <h3 class="text-h6">Tipos de Zonas</h3>
+                </div>
+                <p class="text-sm text-grey mb-3">
+                  Exporta catálogo de tipos de zonas utilizadas en el sistema.
+                </p>
+                <v-divider class="my-3" />
+                <div class="text-md">
+                  <p><strong>Campos:</strong> Nombre, descripción</p>
+                  <p><strong>Formato:</strong> Markdown</p>
+                  <p><strong>Total:</strong> {{ stats.zonas }}</p>
+                </div>
+              </v-card-text>
+              <v-card-actions>
+                <v-btn color="info" variant="tonal" block @click="exportData('zonas')">
+                  <v-icon start>mdi-download</v-icon>
+                  Exportar Zonas
+                </v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-col>
+
+          <!-- Knowledge Hub Completo -->
+          <v-col cols="12" md="6" lg="4">
+            <v-card hover class="export-card featured">
+              <v-card-text>
+                <div class="d-flex align-center mb-3">
+                  <v-icon size="40" color="purple" class="mr-3">mdi-book-open-page-variant</v-icon>
+                  <h3 class="text-h6">Knowledge Hub Completo</h3>
+                </div>
+                <p class="text-sm text-grey mb-3">
+                  Exporta TODO el conocimiento del sistema en un solo archivo Markdown estructurado.
+                </p>
+                <v-divider class="my-3" />
+                <div class="text-md">
+                  <p><strong>Incluye:</strong> Usuarios, haciendas, siembras, actividades, programaciones</p>
+                  <p><strong>Formato:</strong> Markdown con índice</p>
+                  <p><strong>Total entidades:</strong> {{ stats.total }}</p>
+                </div>
+              </v-card-text>
+              <v-card-actions>
+                <v-btn color="purple" variant="tonal" block size="large" @click="exportData('knowledge')">
+                  <v-icon start>mdi-download</v-icon>
+                  Exportar Knowledge Hub
+                </v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-col>
+        </v-row>
+      </v-window-item>
+
+      <!-- TAB 2: Consultas Filtradas (Data Mining) -->
+      <v-window-item value="consultas">
+        <v-card variant="outlined" class="pa-4">
+          <v-card-title class="font-weight-bold">Consultas Avanzadas & Data Mining</v-card-title>
+          <v-card-subtitle class="mb-4">Filtra actividades y patrones para análisis y exportación a CSV</v-card-subtitle>
           <v-card-text>
-            <div class="d-flex align-center mb-3">
-              <v-icon size="40" color="primary" class="mr-3">mdi-account-group</v-icon>
-              <h3 class="text-h6">Usuarios</h3>
-            </div>
-            <p class="text-smtext-grey mb-3">
-              Exporta todos los usuarios con sus roles, haciendas asignadas y estado.
-            </p>
-            <v-divider class="my-3" />
-            <div class="text-md">
-              <p><strong>Campos:</strong> Email, nombre, rol, haciendas, estado</p>
-              <p><strong>Formato:</strong> Markdown</p>
-              <p><strong>Total:</strong> {{ stats.users }}</p>
+            <v-form @submit.prevent="runMiningQuery">
+              <v-row>
+                <v-col cols="12" sm="6" md="3">
+                  <v-text-field
+                    v-model="miningFilters.dateFrom"
+                    label="Desde"
+                    type="date"
+                    variant="outlined"
+                    density="compact"
+                    clearable
+                  />
+                </v-col>
+                <v-col cols="12" sm="6" md="3">
+                  <v-text-field
+                    v-model="miningFilters.dateTo"
+                    label="Hasta"
+                    type="date"
+                    variant="outlined"
+                    density="compact"
+                    clearable
+                  />
+                </v-col>
+                <v-col cols="12" sm="6" md="3">
+                  <v-autocomplete
+                    v-model="miningFilters.hacienda"
+                    :items="haciendasItems"
+                    label="Hacienda"
+                    variant="outlined"
+                    density="compact"
+                    clearable
+                  />
+                </v-col>
+                <v-col cols="12" sm="6" md="3">
+                  <v-autocomplete
+                    v-model="miningFilters.tipo"
+                    :items="tiposActividadesItems"
+                    label="Tipo Actividad"
+                    variant="outlined"
+                    density="compact"
+                    clearable
+                  />
+                </v-col>
+              </v-row>
+
+              <div class="d-flex gap-2 mb-4">
+                <v-btn color="primary" type="submit" :loading="miningLoading" prepend-icon="mdi-magnify">
+                  Ejecutar Query
+                </v-btn>
+                <v-btn v-if="miningResults.length > 0" color="success" prepend-icon="mdi-file-excel" @click="exportMiningResults">
+                  Exportar CSV
+                </v-btn>
+                <v-btn v-if="miningResults.length > 0" variant="outlined" color="grey" prepend-icon="mdi-delete" @click="clearMiningResults">
+                  Limpiar
+                </v-btn>
+              </div>
+            </v-form>
+
+            <v-alert v-if="miningResults.length > 0" type="info" variant="tonal" density="compact" class="mb-4">
+              <strong>{{ miningResults.length }}</strong> resultados encontrados
+            </v-alert>
+
+            <v-data-table
+              v-if="miningResults.length > 0"
+              :headers="miningHeaders"
+              :items="miningResults"
+              :items-per-page="20"
+              :loading="miningLoading"
+              density="compact"
+              hover
+            >
+              <template v-slot:item.created="{ item }">
+                {{ formatDate(item.created) }}
+              </template>
+            </v-data-table>
+
+            <div v-if="miningResults.length === 0 && !miningLoading" class="pa-6 text-center text-grey">
+              Seleccione filtros y ejecute una consulta para ver resultados.
             </div>
           </v-card-text>
-          <v-card-actions>
-            <v-btn color="primary" variant="tonal" block @click="exportData('users')">
-              <v-icon start>mdi-download</v-icon>
-              Exportar Usuarios
-            </v-btn>
-          </v-card-actions>
         </v-card>
-      </v-col>
+      </v-window-item>
 
-      <!-- Haciendas -->
-      <v-col cols="12" md="6" lg="4">
-        <v-card hover class="export-card">
-          <v-card-text>
-            <div class="d-flex align-center mb-3">
-              <v-icon size="40" color="secondary" class="mr-3">mdi-barn</v-icon>
-              <h3 class="text-h6">Haciendas</h3>
-            </div>
-            <p class="text-smtext-grey mb-3">
-              Exporta todas las haciendas con configuración, planes y módulos activos.
-            </p>
-            <v-divider class="my-3" />
-            <div class="text-md">
-              <p><strong>Campos:</strong> Nombre, ubicación, plan, módulos, usuarios</p>
-              <p><strong>Formato:</strong> Markdown</p>
-              <p><strong>Total:</strong> {{ stats.haciendas }}</p>
-            </div>
-          </v-card-text>
-          <v-card-actions>
-            <v-btn color="secondary" variant="tonal" block @click="exportData('haciendas')">
-              <v-icon start>mdi-download</v-icon>
-              Exportar Haciendas
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-col>
-
-      <!-- Tipos de Actividades -->
-      <v-col cols="12" md="6" lg="4">
-        <v-card hover class="export-card">
-          <v-card-text>
-            <div class="d-flex align-center mb-3">
-              <v-icon size="40" color="primary" class="mr-3">mdi-check-all</v-icon>
-              <h3 class="text-h6">Tipos de Actividades</h3>
-            </div>
-            <p class="text-smtext-grey mb-3">
-              Exporta catálogo completo de tipos de actividades con métricas BPA.
-            </p>
-            <v-divider class="my-3" />
-            <div class="text-md">
-              <p><strong>Campos:</strong> Nombre, descripción, categoría, métricas BPA</p>
-              <p><strong>Formato:</strong> Markdown</p>
-              <p><strong>Total:</strong> {{ stats.actividades }}</p>
-            </div>
-          </v-card-text>
-          <v-card-actions>
-            <v-btn color="primary" variant="tonal" block @click="exportData('actividades')">
-              <v-icon start>mdi-download</v-icon>
-              Exportar Actividades
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-col>
-
-      <!-- Tipos de Zonas -->
-      <v-col cols="12" md="6" lg="4">
-        <v-card hover class="export-card">
-          <v-card-text>
-            <div class="d-flex align-center mb-3">
-              <v-icon size="40" color="info" class="mr-3">mdi-map-marker</v-icon>
-              <h3 class="text-h6">Tipos de Zonas</h3>
-            </div>
-            <p class="text-smtext-grey mb-3">
-              Exporta catálogo de tipos de zonas utilizadas en el sistema.
-            </p>
-            <v-divider class="my-3" />
-            <div class="text-md">
-              <p><strong>Campos:</strong> Nombre, descripción</p>
-              <p><strong>Formato:</strong> Markdown</p>
-              <p><strong>Total:</strong> {{ stats.zonas }}</p>
-            </div>
-          </v-card-text>
-          <v-card-actions>
-            <v-btn color="info" variant="tonal" block @click="exportData('zonas')">
-              <v-icon start>mdi-download</v-icon>
-              Exportar Zonas
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-col>
-
-      <!-- Knowledge Hub Completo -->
-      <v-col cols="12" md="6" lg="4">
-        <v-card hover class="export-card featured">
-          <v-card-text>
-            <div class="d-flex align-center mb-3">
-              <v-icon size="40" color="purple" class="mr-3">mdi-book-open-page-variant</v-icon>
-              <h3 class="text-h6">Knowledge Hub Completo</h3>
-            </div>
-            <p class="text-smtext-grey mb-3">
-              Exporta TODO el conocimiento del sistema en un solo archivo Markdown estructurado.
-            </p>
-            <v-divider class="my-3" />
-            <div class="text-md">
-              <p><strong>Incluye:</strong> Usuarios, haciendas, siembras, actividades, programaciones</p>
-              <p><strong>Formato:</strong> Markdown con índice</p>
-              <p><strong>Total entidades:</strong> {{ stats.total }}</p>
-            </div>
-          </v-card-text>
-          <v-card-actions>
-            <v-btn color="purple" variant="tonal" block size="large" @click="exportData('knowledge')">
-              <v-icon start>mdi-download</v-icon>
-              Exportar Knowledge Hub
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-col>
-
-      <!-- Historial de Exportaciones -->
-      <v-col cols="12" lg="12">
-        <v-card>
+      <!-- TAB 3: Historial -->
+      <v-window-item value="historial">
+        <v-card variant="outlined" class="pa-2">
           <v-card-title>
             <v-icon start color="grey">mdi-history</v-icon>
             Historial de Exportaciones
@@ -173,8 +276,8 @@
             </v-data-table>
           </v-card-text>
         </v-card>
-      </v-col>
-    </v-row>
+      </v-window-item>
+    </v-window>
 
   </v-container>
 </template>
@@ -183,6 +286,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
+import { formatDate } from '@/utils/formatters'
+import { exportToCSV } from '@/utils/exporters/csvExporter'
+import { useAnalyticsStore } from '@/stores/analyticsStore'
 import {
   exportUsersToMarkdown,
   exportHaciendasToMarkdown,
@@ -193,6 +299,91 @@ import {
 import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 
 const uiFeedbackStore = useUiFeedbackStore()
+const analyticsStore = useAnalyticsStore()
+
+const exportTab = ref('masiva')
+
+// Data Mining State
+const miningLoading = ref(false)
+const miningResults = ref([])
+const haciendasItems = ref([])
+const tiposActividadesItems = ref([])
+const miningFilters = ref({
+  dateFrom: null,
+  dateTo: null,
+  hacienda: null,
+  tipo: null
+})
+
+const miningHeaders = [
+  { key: 'nombre', title: 'Nombre', sortable: true },
+  { key: 'tipo_actividades', title: 'Tipo', sortable: true },
+  { key: 'hacienda', title: 'Hacienda', sortable: true },
+  { key: 'estado', title: 'Estado', sortable: true },
+  { key: 'created', title: 'Fecha', sortable: true }
+]
+
+async function loadMiningFilterOptions() {
+  try {
+    const [haciendasRes, tiposRes] = await Promise.all([
+      pb.collection('Haciendas').getList(1, 100),
+      pb.collection('tipo_actividades').getList(1, 100)
+    ])
+    haciendasItems.value = haciendasRes.items.map(h => ({ value: h.id, title: h.name }))
+    tiposActividadesItems.value = tiposRes.items.map(t => ({ value: t.id, title: t.nombre }))
+  } catch (err) {
+    console.error('Error cargando filtros de mining', err)
+  }
+}
+
+async function runMiningQuery() {
+  miningLoading.value = true
+  try {
+    const patternType = miningFilters.value.tipo || 'siembra'
+    await analyticsStore.fetchPatterns({
+      type: patternType,
+      region: miningFilters.value.hacienda,
+      cultivo: null
+    })
+
+    if (analyticsStore.patterns?.patterns) {
+      miningResults.value = analyticsStore.patterns.patterns.map(p => ({
+        id: `${p.cultivo}-${p.mes || p.promedio}`,
+        nombre: p.cultivo,
+        tipo_actividades: patternType,
+        hacienda: miningFilters.value.hacienda || 'Todas',
+        estado: 'analizado',
+        created: new Date().toISOString(),
+        ...p
+      }))
+    }
+  } catch (err) {
+    handleError(err, 'Error ejecutando consulta Data Mining')
+  } finally {
+    miningLoading.value = false
+  }
+}
+
+function clearMiningResults() {
+  miningResults.value = []
+  miningFilters.value = { dateFrom: null, dateTo: null, hacienda: null, tipo: null }
+}
+
+function exportMiningResults() {
+  if (miningResults.value.length === 0) return
+  const exportData = miningResults.value.map(r => ({
+    nombre: r.nombre,
+    tipo: r.tipo_actividades,
+    hacienda: r.hacienda,
+    mes: r.mes || '',
+    cultivo: r.cultivo || '',
+    probabilidad: r.probabilidad || '',
+    promedio: r.promedio || '',
+    count: r.count || 0
+  }))
+  exportToCSV(exportData, `data_mining_${new Date().toISOString().split('T')[0]}.csv`)
+  uiFeedbackStore.showSnackbar('Resultados exportados a CSV', 'success')
+}
 
 // Estado
 const stats = ref({
@@ -225,6 +416,7 @@ const historyHeaders = [
 onMounted(async () => {
   await loadData()
   loadExportHistory()
+  loadMiningFilterOptions()
 })
 
 // Cargar datos

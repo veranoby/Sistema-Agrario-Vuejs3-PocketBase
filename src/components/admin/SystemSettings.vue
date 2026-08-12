@@ -104,6 +104,29 @@
                 />
               </v-col>
             </v-row>
+
+            <div class="d-flex gap-2 mt-2">
+              <v-btn
+                color="orange"
+                variant="tonal"
+                size="small"
+                prepend-icon="mdi-lan-check"
+                :loading="testingAI"
+                @click="testAiConnection"
+              >
+                Probar Conexión IA
+              </v-btn>
+              <v-btn
+                color="blue"
+                variant="tonal"
+                size="small"
+                prepend-icon="mdi-email-check"
+                :loading="testingResend"
+                @click="testResendKey"
+              >
+                Verificar Clave Resend
+              </v-btn>
+            </div>
           </v-card-text>
         </v-card>
       </v-col>
@@ -207,6 +230,8 @@ const uiFeedbackStore = useUiFeedbackStore()
 
 const planesList = ref([])
 const modulosList = ref([])
+const testingAI = ref(false)
+const testingResend = ref(false)
 
 const localConfig = ref({
   system_name: '',
@@ -265,6 +290,40 @@ async function updateModulo(modulo) {
     showSnackbar('Módulo actualizado', 'success')
   } catch (err) {
     handleError(err, 'Error al actualizar módulo')
+  }
+}
+
+async function testAiConnection() {
+  testingAI.value = true
+  try {
+    const res = await pb.send('/api/ai/test-connection', {
+      method: 'POST',
+      body: JSON.stringify(localConfig.value.global_ai_config)
+    })
+    showSnackbar(res.message || 'Conexión con el proveedor IA exitosa', 'success')
+  } catch (err) {
+    showSnackbar('Error en prueba de conexión IA: ' + (err.message || err), 'error')
+  } finally {
+    testingAI.value = false
+  }
+}
+
+async function testResendKey() {
+  if (!localConfig.value.resend_api_key) {
+    showSnackbar('Ingrese una clave de Resend para verificar', 'warning')
+    return
+  }
+  testingResend.value = true
+  try {
+    const res = await pb.send('/api/admin/test-resend', {
+      method: 'POST',
+      body: JSON.stringify({ apiKey: localConfig.value.resend_api_key })
+    })
+    showSnackbar(res.message || 'Clave de Resend verificada exitosamente', 'success')
+  } catch (err) {
+    showSnackbar('Error verificando clave Resend: ' + (err.message || err), 'error')
+  } finally {
+    testingResend.value = false
   }
 }
 

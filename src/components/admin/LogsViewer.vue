@@ -135,6 +135,25 @@
     <!-- Tabla de Logs -->
     <v-card>
       <v-card-text>
+        <v-alert
+          v-if="fetchError"
+          type="error"
+          variant="tonal"
+          class="mb-4"
+          closable
+          @click:close="fetchError = null"
+        >
+          {{ fetchError }}
+        </v-alert>
+        <v-alert
+          v-if="!loading && !fetchError && filteredLogs.length === 0"
+          type="info"
+          variant="tonal"
+          class="mb-4"
+        >
+          No hay registros de bitácora/logs en la base de datos para los filtros seleccionados.
+        </v-alert>
+
         <v-data-table
           :headers="headers"
           :items="filteredLogs"
@@ -274,6 +293,7 @@ const uiFeedbackStore = useUiFeedbackStore()
 
 // Estado
 const loading = ref(false)
+const fetchError = ref(null)
 const logs = ref([])
 const autoRefresh = ref(false)
 const metadataDialog = ref(false)
@@ -368,6 +388,7 @@ onUnmounted(() => {
 // Obtener logs
 async function fetchLogs() {
   loading.value = true
+  fetchError.value = null
   try {
     const params = new URLSearchParams({
       page: currentPage.value.toString(),
@@ -378,17 +399,13 @@ async function fetchLogs() {
     if (filters.value.user) params.append('userId', filters.value.user)
 
     const res = await pb.send(`/api/admin/logs?${params.toString()}`, { method: 'GET' })
-    if (res && Array.isArray(res.items) && res.items.length > 0) {
-      logs.value = res.items
-      totalItems.value = res.totalItems || res.items.length
-    } else {
-      logs.value = generateMockLogs()
-      totalItems.value = logs.value.length
-    }
+    logs.value = res?.items ?? []
+    totalItems.value = res?.totalItems ?? (res?.items?.length || 0)
   } catch (error) {
-    console.warn('[LOGS_VIEWER] Fallback a datos mock:', error)
-    logs.value = generateMockLogs()
-    totalItems.value = logs.value.length
+    console.error('[LOGS_VIEWER] Error al obtener logs:', error)
+    fetchError.value = error.message || 'Error al conectar con el servicio de logs'
+    logs.value = []
+    totalItems.value = 0
   } finally {
     loading.value = false
   }
@@ -504,36 +521,6 @@ function showSnackbar(message, color = 'success') {
   uiFeedbackStore.showSnackbar(message, color)
 }
 
-// Mock logs generator (para demo)
-function generateMockLogs() {
-  const levels = ['INFO', 'WARNING', 'ERROR', 'DEBUG']
-  const modules = ['auth', 'haciendas', 'siembras', 'actividades', 'sync', 'cache']
-  const actions = ['create', 'update', 'delete', 'login', 'logout', 'sync', 'export']
-  const messages = [
-    'Usuario autenticado exitosamente',
-    'Error al sincronizar datos',
-    'Cache miss para key:',
-    'Hacienda creada correctamente',
-    'Advertencia: Cola de sincronización llena',
-    'Error de conexión con PocketBase',
-    'Backup completado',
-    'Exportación a PDF generada'
-  ]
-
-  return Array.from({ length: 50 }, (_, i) => ({
-    id: `log_${i}`,
-    level: levels[Math.floor(Math.random() * levels.length)],
-    timestamp: new Date(Date.now() - Math.random() * 86400000).toISOString(),
-    user: `usuario${Math.floor(Math.random() * 10)}@example.com`,
-    module: modules[Math.floor(Math.random() * modules.length)],
-    action: actions[Math.floor(Math.random() * actions.length)],
-    message: messages[Math.floor(Math.random() * messages.length)],
-    metadata: { requestId: `req_${i}`, duration: Math.floor(Math.random() * 1000) },
-    ip: `192.168.1.${Math.floor(Math.random() * 255)}`,
-    userAgent: 'Mozilla/5.0',
-    stack: Math.random() > 0.8 ? 'Error: Something went wrong\n    at file.js:123' : null
-  }))
-}
 </script>
 
 <style scoped>

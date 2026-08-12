@@ -218,6 +218,44 @@ export const useAsesoresStore = defineStore('asesores', {
       } finally {
         this.loading = false
       }
+    },
+
+    async updateAsesor(userId, formData) {
+      this.loading = true
+      try {
+        let infoObj = {}
+        if (formData.infoRaw) {
+          try {
+            infoObj = typeof formData.infoRaw === 'string' ? JSON.parse(formData.infoRaw) : formData.infoRaw
+          } catch (e) {}
+        }
+        infoObj.colegiatura = formData.colegiatura || ''
+        infoObj.especialidades = formData.especialidades || []
+        infoObj.bio = formData.bio || ''
+
+        const payload = {
+          name: formData.name,
+          lastname: formData.lastname,
+          cedula: formData.cedula,
+          info: JSON.stringify(infoObj)
+        }
+
+        const res = await pb.send(`/api/admin/users/${userId}`, {
+          method: 'PUT',
+          body: JSON.stringify(payload)
+        })
+
+        const idx = this.allAsesores.findIndex(a => a.id === userId)
+        if (idx > -1) {
+          this.allAsesores[idx] = { ...this.allAsesores[idx], ...res }
+        }
+        return res
+      } catch (error) {
+        handleError(error, 'Error al actualizar perfil de asesor')
+        throw error
+      } finally {
+        this.loading = false
+      }
     }
   }
 })

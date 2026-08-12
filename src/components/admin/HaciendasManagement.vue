@@ -370,9 +370,23 @@
             <!-- TAB 2: Usuarios -->
             <v-window-item value="usuarios">
               <v-card variant="outlined">
-                <v-card-title class="d-flex justify-space-between align-center">
-                  <span>Roster de Usuarios</span>
+                <v-card-title class="d-flex justify-space-between align-center py-2 px-4">
+                  <div class="d-flex align-center">
+                    <span class="font-weight-bold">Roster de Usuarios</span>
+                    <v-chip class="ml-3" size="small" color="primary" variant="outlined">
+                      {{ getHaciendaUsers(selectedHacienda?.id).length }} / {{ getHaciendaQuota(selectedHacienda) }} usuarios
+                    </v-chip>
+                  </div>
+                  <v-btn
+                    color="primary"
+                    size="small"
+                    prepend-icon="mdi-account-plus"
+                    @click="openAddUserModal"
+                  >
+                    Agregar Usuario
+                  </v-btn>
                 </v-card-title>
+                <v-divider></v-divider>
                 <v-list density="compact" v-if="getHaciendaUsers(selectedHacienda?.id).length">
                   <v-list-item
                     v-for="user in getHaciendaUsers(selectedHacienda?.id)"
@@ -383,6 +397,16 @@
                     </template>
                     <v-list-item-title class="font-weight-medium">{{ user.label }}</v-list-item-title>
                     <v-list-item-subtitle>{{ user.email || 'Sin correo registrado' }}</v-list-item-subtitle>
+                    <template v-slot:append>
+                      <v-btn
+                        icon="mdi-account-remove"
+                        size="small"
+                        color="error"
+                        variant="text"
+                        title="Quitar de hacienda"
+                        @click="handleRemoveUserFromHacienda(user.id)"
+                      />
+                    </template>
                   </v-list-item>
                 </v-list>
                 <div v-else class="pa-4 text-center text-grey">No hay usuarios vinculados a esta hacienda.</div>
@@ -410,20 +434,48 @@
             <!-- TAB 4: Asesores -->
             <v-window-item value="asesores">
               <v-card variant="outlined" class="mb-4">
-                <v-card-title>Asesores Técnicos Vinculados</v-card-title>
+                <v-card-title class="d-flex justify-space-between align-center py-2 px-4">
+                  <span class="font-weight-bold">Asesores Técnicos Vinculados</span>
+                  <v-btn
+                    color="indigo"
+                    size="small"
+                    prepend-icon="mdi-link-plus"
+                    @click="openVincularAsesorModal"
+                  >
+                    Vincular Asesor
+                  </v-btn>
+                </v-card-title>
+                <v-divider></v-divider>
                 <v-data-table
-                  :headers="[{ title: 'Asesor', key: 'asesorName' }, { title: 'Acciones', key: 'actions', align: 'end' }]"
+                  :headers="[
+                    { title: 'Asesor', key: 'asesorName' },
+                    { title: 'Estado', key: 'estado' },
+                    { title: 'Acciones', key: 'actions', align: 'end' }
+                  ]"
                   :items="relaciones.vinculaciones"
                   density="compact"
                   hide-default-footer
-                  :items-per-page="5"
+                  :items-per-page="10"
                 >
                   <template v-slot:item.asesorName="{ item }">
-                    {{ item.expand?.asesor_id?.email || item.expand?.asesor_id?.username || 'Desconocido' }}
+                    {{ item.expand?.asesor_id?.name || item.expand?.asesor_id?.username || 'Desconocido' }} ({{ item.expand?.asesor_id?.email || 'N/A' }})
+                  </template>
+                  <template v-slot:item.estado="{ item }">
+                    <v-chip :color="item.estado === 'activa' ? 'success' : 'grey'" size="x-small">
+                      {{ item.estado }}
+                    </v-chip>
                   </template>
                   <template v-slot:item.actions="{ item }">
                     <v-btn icon="mdi-eye" size="small" variant="text" color="primary" @click="showDetailItem('vinculacion', item)" />
-                    <v-btn icon="mdi-delete" size="small" variant="text" color="error" @click="deleteItem('vinculaciones_asesor', item.id)" />
+                    <v-btn
+                      v-if="item.estado === 'activa'"
+                      icon="mdi-link-off"
+                      size="small"
+                      variant="text"
+                      color="warning"
+                      title="Revocar Vinculación"
+                      @click="handleRevocarAsesorVinculacion(item.id)"
+                    />
                   </template>
                 </v-data-table>
               </v-card>
@@ -562,6 +614,54 @@
       </v-card>
     </v-dialog>
 
+    <!-- Dialog: Agregar Usuario a Hacienda -->
+    <v-dialog v-model="addUserModal" max-width="500">
+      <v-card>
+        <v-card-title class="bg-primary text-white">Agregar Usuario a Hacienda</v-card-title>
+        <v-card-text class="pt-4">
+          <v-autocomplete
+            v-model="selectedUserToAdd"
+            :items="availableUsersToAdd"
+            item-title="label"
+            item-value="id"
+            label="Seleccionar Usuario"
+            variant="outlined"
+            density="compact"
+            clearable
+          />
+        </v-card-text>
+        <v-card-actions class="pb-4 pr-4">
+          <v-spacer />
+          <v-btn color="grey" variant="text" @click="addUserModal = false">Cancelar</v-btn>
+          <v-btn color="primary" variant="elevated" :disabled="!selectedUserToAdd" @click="handleAddUserToHacienda">Asociar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Dialog: Vincular Asesor a Hacienda -->
+    <v-dialog v-model="vincularAsesorModal" max-width="500">
+      <v-card>
+        <v-card-title class="bg-indigo text-white">Vincular Asesor Técnico</v-card-title>
+        <v-card-text class="pt-4">
+          <v-autocomplete
+            v-model="selectedAsesorToVincular"
+            :items="allAsesoresList"
+            item-title="label"
+            item-value="id"
+            label="Seleccionar Asesor"
+            variant="outlined"
+            density="compact"
+            clearable
+          />
+        </v-card-text>
+        <v-card-actions class="pb-4 pr-4">
+          <v-spacer />
+          <v-btn color="grey" variant="text" @click="vincularAsesorModal = false">Cancelar</v-btn>
+          <v-btn color="indigo" variant="elevated" :disabled="!selectedAsesorToVincular" @click="handleAddAsesorVinculacion">Vincular</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
   </v-container>
 </template>
 
@@ -594,6 +694,18 @@ const selectedHacienda = ref(null)
 const formValid = ref(false)
 const haciendaForm = ref(null)
 const hasAvatar = ref(false)
+
+const addUserModal = ref(false)
+const selectedUserToAdd = ref(null)
+const vincularAsesorModal = ref(false)
+const selectedAsesorToVincular = ref(null)
+const allAsesoresList = ref([])
+
+const availableUsersToAdd = computed(() => {
+  if (!selectedHacienda.value?.id) return []
+  const currentMembers = getHaciendaUsers(selectedHacienda.value.id).map(u => u.id)
+  return usersList.value.filter(u => !currentMembers.includes(u.id))
+})
 
 const haciendaMetrics = ref(null)
 const metricsLoading = ref(false)
@@ -845,6 +957,93 @@ async function deleteItem(collection, id) {
     }
   } catch(err) {
     uiFeedbackStore.showSnackbar('Error al eliminar', 'error');
+  }
+}
+
+function getHaciendaQuota(hacienda) {
+  if (!hacienda) return '∞'
+  const plan = planesList.value.find(p => p.id === hacienda.plan)
+  if (!plan) return '∞'
+  const limit = (plan.operadores || 0) + (plan.auditores || 0)
+  return limit > 0 ? limit : '∞'
+}
+
+function openAddUserModal() {
+  selectedUserToAdd.value = null
+  addUserModal.value = true
+}
+
+async function handleAddUserToHacienda() {
+  if (!selectedUserToAdd.value || !selectedHacienda.value?.id) return
+  try {
+    await haciendaManagementStore.addUserToHacienda(selectedUserToAdd.value, selectedHacienda.value.id)
+    uiFeedbackStore.showSnackbar('Usuario asociado a la hacienda exitosamente', 'success')
+    addUserModal.value = false
+    await fetchUsers()
+  } catch (err) {
+    handleError(err, 'Error al asociar usuario a hacienda')
+  }
+}
+
+async function handleRemoveUserFromHacienda(userId) {
+  const confirmed = await uiFeedbackStore.showConfirm(
+    'Remover Usuario',
+    '¿Está seguro de remover este usuario de la hacienda?',
+    'warning',
+    'mdi-account-remove'
+  )
+  if (!confirmed) return
+  try {
+    await haciendaManagementStore.removeUserFromHacienda(userId)
+    uiFeedbackStore.showSnackbar('Usuario removido de la hacienda', 'success')
+    await fetchUsers()
+  } catch (err) {
+    handleError(err, 'Error al remover usuario de hacienda')
+  }
+}
+
+async function openVincularAsesorModal() {
+  selectedAsesorToVincular.value = null
+  try {
+    const asesores = await pb.collection('users').getFullList({ filter: 'role = "asesor"' })
+    allAsesoresList.value = asesores.map(a => ({
+      id: a.id,
+      label: `${a.name || a.username} (${a.email})`
+    }))
+  } catch (err) {
+    console.error('Error al cargar asesores:', err)
+  }
+  vincularAsesorModal.value = true
+}
+
+async function handleAddAsesorVinculacion() {
+  if (!selectedAsesorToVincular.value || !selectedHacienda.value?.id) return
+  try {
+    await haciendaManagementStore.addAsesorVinculacion(selectedHacienda.value.id, selectedAsesorToVincular.value)
+    uiFeedbackStore.showSnackbar('Asesor vinculado exitosamente', 'success')
+    vincularAsesorModal.value = false
+    await fetchRelaciones(selectedHacienda.value.id)
+  } catch (err) {
+    handleError(err, 'Error al vincular asesor')
+  }
+}
+
+async function handleRevocarAsesorVinculacion(vinculacionId) {
+  const confirmed = await uiFeedbackStore.showConfirm(
+    'Revocar Vinculación',
+    '¿Está seguro de revocar la vinculación de este asesor?',
+    'warning',
+    'mdi-link-off'
+  )
+  if (!confirmed) return
+  try {
+    await haciendaManagementStore.revocarAsesorVinculacion(vinculacionId)
+    uiFeedbackStore.showSnackbar('Vinculación de asesor revocada', 'success')
+    if (selectedHacienda.value) {
+      await fetchRelaciones(selectedHacienda.value.id)
+    }
+  } catch (err) {
+    handleError(err, 'Error al revocar vinculación de asesor')
   }
 }
 

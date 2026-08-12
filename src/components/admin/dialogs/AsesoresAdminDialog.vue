@@ -25,7 +25,26 @@
         <v-window v-model="activeTab">
           <!-- TAB 1: Perfil -->
           <v-window-item value="perfil">
-            <v-row>
+            <div class="d-flex justify-space-between align-center mb-3">
+              <span class="text-subtitle-1 font-weight-bold">Información Profesional & Personal</span>
+              <v-btn
+                v-if="!editMode"
+                color="indigo"
+                size="small"
+                variant="outlined"
+                prepend-icon="mdi-account-edit"
+                @click="openEditMode"
+              >
+                Editar Perfil
+              </v-btn>
+              <div v-else class="d-flex gap-2">
+                <v-btn size="small" variant="text" color="grey" @click="editMode = false">Cancelar</v-btn>
+                <v-btn size="small" color="indigo" variant="elevated" :loading="saveLoading" @click="saveProfile">Guardar</v-btn>
+              </div>
+            </div>
+
+            <!-- MODO LECTURA -->
+            <v-row v-if="!editMode">
               <v-col cols="12" md="6">
                 <v-list density="compact">
                   <v-list-item>
@@ -40,6 +59,10 @@
                     <v-list-item-title class="font-weight-bold">Nombre de Usuario</v-list-item-title>
                     <v-list-item-subtitle>{{ asesor.username }}</v-list-item-subtitle>
                   </v-list-item>
+                  <v-list-item>
+                    <v-list-item-title class="font-weight-bold">Nº Colegiatura</v-list-item-title>
+                    <v-list-item-subtitle>{{ parsedInfo.colegiatura || 'N/A' }}</v-list-item-subtitle>
+                  </v-list-item>
                 </v-list>
               </v-col>
               <v-col cols="12" md="6">
@@ -53,10 +76,59 @@
                     <v-list-item-subtitle>{{ asesor.direccion || 'N/A' }}</v-list-item-subtitle>
                   </v-list-item>
                   <v-list-item>
-                    <v-list-item-title class="font-weight-bold">Última actualización / Login</v-list-item-title>
+                    <v-list-item-title class="font-weight-bold">Bio / Perfil Técnico</v-list-item-title>
+                    <v-list-item-subtitle>{{ parsedInfo.bio || 'N/A' }}</v-list-item-subtitle>
+                  </v-list-item>
+                  <v-list-item>
+                    <v-list-item-title class="font-weight-bold">Última actualización</v-list-item-title>
                     <v-list-item-subtitle>{{ formatDate(asesor.updated) }}</v-list-item-subtitle>
                   </v-list-item>
                 </v-list>
+              </v-col>
+            </v-row>
+
+            <!-- MODO EDICIÓN -->
+            <v-row v-else class="pt-2">
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="editForm.name"
+                  label="Nombre"
+                  variant="outlined"
+                  density="compact"
+                />
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="editForm.lastname"
+                  label="Apellido"
+                  variant="outlined"
+                  density="compact"
+                />
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="editForm.cedula"
+                  label="Cédula / Identificación"
+                  variant="outlined"
+                  density="compact"
+                />
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="editForm.colegiatura"
+                  label="Nº Colegiatura Profesional"
+                  variant="outlined"
+                  density="compact"
+                />
+              </v-col>
+              <v-col cols="12">
+                <v-textarea
+                  v-model="editForm.bio"
+                  label="Bio / Perfil Técnico Profesional"
+                  rows="3"
+                  variant="outlined"
+                  density="compact"
+                />
               </v-col>
             </v-row>
           </v-window-item>
@@ -195,7 +267,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { formatDate } from '@/utils/formatters'
 import { useAsesoresStore } from '@/stores/asesoresStore'
 import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
@@ -215,10 +287,53 @@ const uiFeedbackStore = useUiFeedbackStore()
 const dialog = ref(props.modelValue)
 const activeTab = ref('perfil')
 const loadingAction = ref('')
+const editMode = ref(false)
+const saveLoading = ref(false)
+const editForm = ref({ name: '', lastname: '', cedula: '', colegiatura: '', bio: '' })
+
+const parsedInfo = computed(() => {
+  if (!props.asesor?.info) return {}
+  try {
+    return typeof props.asesor.info === 'string' ? JSON.parse(props.asesor.info) : props.asesor.info
+  } catch (e) {
+    return { bio: props.asesor.info }
+  }
+})
+
+function openEditMode() {
+  const infoData = parsedInfo.value
+  editForm.value = {
+    name: props.asesor?.name || props.asesor?.firstname || '',
+    lastname: props.asesor?.lastname || '',
+    cedula: props.asesor?.cedula || '',
+    colegiatura: infoData.colegiatura || '',
+    bio: infoData.bio || '',
+    infoRaw: props.asesor?.info || ''
+  }
+  editMode.value = true
+}
+
+async function saveProfile() {
+  if (!props.asesor?.id) return
+  saveLoading.value = true
+  try {
+    await asesoresStore.updateAsesor(props.asesor.id, editForm.value)
+    uiFeedbackStore.showSnackbar('Perfil de asesor actualizado exitosamente', 'success')
+    editMode.value = false
+    emit('updated')
+  } catch (err) {
+    uiFeedbackStore.showSnackbar('Error al actualizar el perfil del asesor', 'error')
+  } finally {
+    saveLoading.value = false
+  }
+}
 
 watch(() => props.modelValue, (val) => {
   dialog.value = val
-  if (val) activeTab.value = 'perfil'
+  if (val) {
+    activeTab.value = 'perfil'
+    editMode.value = false
+  }
 })
 
 watch(dialog, (val) => {

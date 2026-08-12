@@ -324,9 +324,14 @@ const adminDashboardRoute = {
   }
 }
 
-// Enable /admin route for superadmin
+// Enable /admin route for superadmin (redirect to dashboard)
 const adminRoute = {
   path: '/admin',
+  redirect: '/admin/dashboard'
+}
+
+const adminSubscriptionsRoute = {
+  path: '/admin/suscripciones',
   component: () => import('@/components/admin/SuperAdminSuscripciones.vue'),
   name: 'Gestión de Suscripciones',
   meta: {
@@ -350,17 +355,6 @@ const adminAnalyticsRoute = {
 }
 
 
-// Add admin data mining route
-const adminDataMiningRoute = {
-  path: '/admin/data-mining',
-  component: () => import('@/components/admin/DataMiningTools.vue'),
-  name: 'Data Mining Tools',
-  meta: {
-    requiresAuth: true,
-    requiresSuperAdmin: true,
-    roles: [ROLES.SUPERADMIN]
-  }
-}
 
 // Nuevas rutas Admin Panel - Gestión de Usuarios y Haciendas
 const adminUsersRoute = {
@@ -396,10 +390,7 @@ const adminAsesoresRoute = {
   }
 }
 
-const adminSubscriptionsRoute = {
-  path: '/admin/suscripciones',
-  redirect: '/admin'
-}
+
 
 const adminSettingsRoute = {
   path: '/admin/settings',
@@ -438,7 +429,6 @@ const adminExportsRoute = {
 routes.push(adminDashboardRoute)
 routes.push(adminRoute)
 routes.push(adminAnalyticsRoute)
-routes.push(adminDataMiningRoute)
 routes.push(adminUsersRoute)
 routes.push(adminHaciendasRoute)
 routes.push(adminAsesoresRoute)

@@ -75,7 +75,10 @@ export default {
     const isLoggedIn = computed(() => authStore.isLoggedIn)
 
     const isActive = (linkPath) => {
-      return route.path.startsWith(linkPath)
+      if (!linkPath) return false
+      if (route.path === linkPath) return true
+      if (linkPath.length > 1 && linkPath !== '/' && linkPath !== '/admin' && route.path.startsWith(linkPath + '/')) return true
+      return false
     }
 
     watch(isLoggedIn, (newValue) => {
