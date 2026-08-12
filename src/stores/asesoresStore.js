@@ -138,6 +138,86 @@ export const useAsesoresStore = defineStore('asesores', {
       } finally {
         uiFeedback.hideLoading()
       }
+    },
+
+    /**
+     * Acciones de SuperAdmin
+     */
+    async fetchAllAsesoresForAdmin() {
+      this.loading = true
+      try {
+        const list = await pb.collection('users').getFullList({
+          filter: 'role = "asesor"',
+          expand: 'haciendas',
+          sort: '-created'
+        })
+        this.asesores = list
+        return list
+      } catch (error) {
+        handleError(error, 'Error al obtener todos los asesores para administración')
+        return []
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async toggleAsesorStatus(userId, newStatus) {
+      this.loading = true
+      try {
+        const updated = await pb.collection('users').update(userId, { status: newStatus })
+        const idx = this.asesores.findIndex(a => a.id === userId)
+        if (idx !== -1) {
+          this.asesores[idx] = { ...this.asesores[idx], status: newStatus }
+        }
+        return updated
+      } catch (error) {
+        handleError(error, 'Error al cambiar estado del asesor')
+        throw error
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async getAsesorStats(userId) {
+      try {
+        const [vincRes, recetasRes, paquetesRes] = await Promise.all([
+          pb.collection('vinculaciones_asesor').getList(1, 1, { filter: `asesor_id = "${userId}"` }),
+          pb.collection('recetas').getList(1, 1, { filter: `asesor = "${userId}"` }),
+          pb.collection('paquetes_evaluacion').getList(1, 1, { filter: `asesor_id = "${userId}"` })
+        ])
+        return {
+          haciendas_activas: vincRes.totalItems || 0,
+          recetas_emitidas: recetasRes.totalItems || 0,
+          paquetes_enviados: paquetesRes.totalItems || 0
+        }
+      } catch (error) {
+        handleError(error, 'Error al obtener estadísticas del asesor')
+        return { haciendas_activas: 0, recetas_emitidas: 0, paquetes_enviados: 0 }
+      }
+    },
+
+    async disconnectAsesor(userId) {
+      this.loading = true
+      try {
+        return await pb.send(`/api/admin/users/${userId}/disconnect`, { method: 'POST' })
+      } catch (error) {
+        handleError(error, 'Error al desconectar sesión del asesor')
+        throw error
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async resendVerificationAsesor(userId) {
+      this.loading = true
+      try {
+        return await pb.send(`/api/admin/users/${userId}/verify`, { method: 'POST' })
+      } catch (error) {
+        handleError(error, 'Error al reenviar verificación al asesor')
+        throw error
+      } finally {
+        this.loading = false
+      }
     }
   }
 })

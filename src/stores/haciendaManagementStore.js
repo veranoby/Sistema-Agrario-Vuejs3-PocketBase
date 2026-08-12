@@ -283,18 +283,16 @@ export const useHaciendaManagementStore = defineStore('haciendaManagement', {
       this.error = null
 
       try {
-        const hacienda = await pb.collection('Haciendas').update(haciendaId, {
-          owner: userId
+        const res = await pb.send(`/api/admin/haciendas/${haciendaId}/owner`, {
+          method: 'POST',
+          body: { userId }
         })
 
-        // Actualizar en estado local
-        const index = this.haciendas.findIndex(h => h.id === haciendaId)
-        if (index !== -1) {
-          this.haciendas[index] = hacienda
-        }
+        // Refrescar haciendas
+        await this.fetchHaciendas({ page: this.pagination.page, perPage: this.pagination.perPage })
 
         logger.info('[HACIENDA_MANAGEMENT] Propietario asignado', { haciendaId, userId })
-        return hacienda
+        return res
       } catch (error) {
         handleError(error, 'Error asignando propietario')
         this.error = error.message
@@ -314,23 +312,23 @@ export const useHaciendaManagementStore = defineStore('haciendaManagement', {
       try {
         const { emit } = useEvents()
 
-        const hacienda = await pb.collection('Haciendas').update(haciendaId, {
-          plan: planData.plan,
-          user_limit: planData.user_limit,
-          storage_limit: planData.storage_limit
+        const res = await pb.send(`/api/admin/haciendas/${haciendaId}/plan`, {
+          method: 'POST',
+          body: {
+            plan: planData.plan,
+            user_limit: planData.user_limit,
+            storage_limit: planData.storage_limit
+          }
         })
 
-        // Actualizar en estado local
-        const index = this.haciendas.findIndex(h => h.id === haciendaId)
-        if (index !== -1) {
-          this.haciendas[index] = hacienda
-        }
+        // Refrescar haciendas
+        await this.fetchHaciendas({ page: this.pagination.page, perPage: this.pagination.perPage })
 
         // Emitir evento
         emit(EVENTS.HACIENDA_UPDATED, { haciendaId, plan: planData.plan })
 
         logger.info('[HACIENDA_MANAGEMENT] Plan configurado', { haciendaId, plan: planData.plan })
-        return hacienda
+        return res
       } catch (error) {
         handleError(error, 'Error configurando plan')
         this.error = error.message
@@ -380,20 +378,22 @@ export const useHaciendaManagementStore = defineStore('haciendaManagement', {
         const { emit } = useEvents()
 
         await pb.collection('Haciendas').update(haciendaId, {
-          status: 'inactive',
-          suspension_reason: reason || 'Sin motivo especificado'
+          status: 'suspended',
+          suspension_reason: reason,
+          suspended_at: new Date().toISOString()
         })
 
         // Actualizar en estado local
         const index = this.haciendas.findIndex(h => h.id === haciendaId)
         if (index !== -1) {
-          this.haciendas[index].status = 'inactive'
+          this.haciendas[index].status = 'suspended'
+          this.haciendas[index].suspension_reason = reason
         }
 
         // Emitir evento
-        emit(EVENTS.HACIENDA_UPDATED, { haciendaId, status: 'inactive' })
+        emit(EVENTS.HACIENDA_SUSPENDED, { haciendaId, reason })
 
-        logger.info('[HACIENDA_MANAGEMENT] Hacienda suspendida', { haciendaId, reason })
+        logger.warn('[HACIENDA_MANAGEMENT] Hacienda suspendida', { haciendaId, reason })
       } catch (error) {
         handleError(error, 'Error suspendiendo hacienda')
         this.error = error.message
@@ -413,19 +413,17 @@ export const useHaciendaManagementStore = defineStore('haciendaManagement', {
       try {
         const { emit } = useEvents()
 
-        await pb.collection('Haciendas').update(haciendaId, {
-          status: 'active',
-          suspension_reason: null
-        })
+        await pb.send(`/api/admin/haciendas/${haciendaId}/reactivate`, { method: 'POST' })
 
         // Actualizar en estado local
         const index = this.haciendas.findIndex(h => h.id === haciendaId)
         if (index !== -1) {
           this.haciendas[index].status = 'active'
+          this.haciendas[index].suspension_reason = null
         }
 
         // Emitir evento
-        emit(EVENTS.HACIENDA_UPDATED, { haciendaId, status: 'active' })
+        emit(EVENTS.HACIENDA_REACTIVATED, { haciendaId })
 
         logger.info('[HACIENDA_MANAGEMENT] Hacienda reactivada', { haciendaId })
       } catch (error) {
@@ -438,28 +436,28 @@ export const useHaciendaManagementStore = defineStore('haciendaManagement', {
     },
 
     /**
-     * Obtener métricas de uso de hacienda
+     * Obtener métricas de uso de hacienda desde endpoint admin
      */
     async getHaciendaMetrics(haciendaId) {
       try {
-        // Obtener usuarios activos
-        const users = await pb.collection('users').getFullList({
-          filter: `haciendas ~ "${haciendaId}" && status = "active"`
-        })
-
-        // Obtener suscripciones activas
-        const subscriptions = await pb.collection('subscriptions').getFullList({
-          filter: `hacienda = "${haciendaId}" && is_active = true`
-        })
-
-        return {
-          userCount: users.length,
-          activeModules: subscriptions.length,
-          lastUpdated: new Date().toISOString()
-        }
+        return await pb.send(`/api/admin/haciendas/${haciendaId}/metrics`, { method: 'GET' })
       } catch (error) {
-        handleError(error, 'Error obteniendo métricas')
-        throw error
+        handleError(error, 'Error obteniendo métricas de hacienda')
+        return { userCount: 0, activeModules: 0, lastUpdated: new Date().toISOString() }
+      }
+    },
+
+    /**
+     * Obtener últimas actividades de una hacienda desde logs
+     */
+    async fetchHaciendaActivity(haciendaId, options = {}) {
+      try {
+        const perPage = options.perPage || 10
+        const res = await pb.send(`/api/admin/logs?haciendaId=${haciendaId}&perPage=${perPage}`, { method: 'GET' })
+        return res.items || []
+      } catch (error) {
+        handleError(error, 'Error al obtener actividad de la hacienda')
+        return []
       }
     },
 

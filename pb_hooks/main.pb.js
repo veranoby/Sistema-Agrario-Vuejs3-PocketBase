@@ -573,7 +573,10 @@ routerAdd("PUT", "/api/admin/users/{id}", (e) => {
     if (body.direccion !== undefined) user.set("direccion", body.direccion)
     if (body.verified !== undefined) user.set("verified", !!body.verified)
     
-    if (body.hacienda !== undefined) {
+    if (body.haciendas !== undefined) {
+      const haciendaArray = Array.isArray(body.haciendas) ? body.haciendas : (body.haciendas ? [body.haciendas] : [])
+      user.set("haciendas", haciendaArray)
+    } else if (body.hacienda !== undefined) {
       user.set("haciendas", body.hacienda ? [body.hacienda] : [])
     }
 
@@ -1117,6 +1120,116 @@ routerAdd("GET", "/api/admin/haciendas/{id}/metrics", async (e) => {
     console.error("Error fetching metrics:", err.message)
     return e.json(HTTP_STATUS.SERVER_ERROR, {
       error: "Failed to fetch metrics",
+      details: err.message
+    })
+  }
+}, $apis.requireAuth())
+
+// ============================================
+// GET /api/admin/logs
+// ============================================
+routerAdd("GET", "/api/admin/logs", async (e) => {
+  try {
+    const info = e.requestInfo()
+    const caller = info.authRecord
+    if (!caller || caller.get("role") !== "superadmin") {
+      return e.json(HTTP_STATUS.UNAUTHORIZED, { error: "Forbidden: Superadmin role required" })
+    }
+
+    const query = e.request?.query || new Map()
+    const haciendaId = query.get("haciendaId")
+    const userId = query.get("userId")
+    const startDate = query.get("startDate")
+    const endDate = query.get("endDate")
+    const page = parseInt(query.get("page") || "1", 10)
+    const perPage = parseInt(query.get("perPage") || "50", 10)
+
+    let collection
+    try {
+      collection = $app.findCollectionByNameOrId("logs_actividad")
+    } catch (err) {
+      collection = $app.findCollectionByNameOrId("bitacora")
+    }
+
+    const filterParts = []
+    if (haciendaId) filterParts.push(`hacienda = "${haciendaId}"`)
+    if (userId) filterParts.push(`user_responsable = "${userId}"`)
+    if (startDate) filterParts.push(`created >= "${startDate}"`)
+    if (endDate) filterParts.push(`created <= "${endDate}"`)
+    const filter = filterParts.join(" && ")
+
+    const result = await $app.findRecordsByFilter(
+      collection,
+      filter,
+      "-created",
+      perPage,
+      page
+    )
+
+    const items = result.items.map(rec => ({
+      id: rec.id,
+      timestamp: rec.get("created"),
+      level: "INFO",
+      user: rec.get("user_responsable") || rec.get("usuario") || "Sistema",
+      module: collection.name,
+      action: rec.get("accion") || rec.get("tipo") || "registro",
+      message: rec.get("descripcion") || rec.get("nota") || rec.get("accion") || "Registro de actividad",
+      hacienda: rec.get("hacienda") || ""
+    }))
+
+    return e.json(HTTP_STATUS.OK, {
+      items,
+      page: result.page,
+      perPage: result.perPage,
+      totalItems: result.totalItems,
+      totalPages: result.totalPages
+    })
+  } catch (err) {
+    console.error("Error fetching admin logs:", err.message)
+    return e.json(HTTP_STATUS.SERVER_ERROR, {
+      error: "Failed to fetch logs",
+      details: err.message
+    })
+  }
+}, $apis.requireAuth())
+
+// ============================================
+// POST /api/admin/users/{id}/verify
+// ============================================
+routerAdd("POST", "/api/admin/users/{id}/verify", async (e) => {
+  const info = e.requestInfo()
+  const userId = e.request.pathValue("id")
+  const caller = info.authRecord
+
+  if (!caller || caller.get("role") !== "superadmin") {
+    return e.json(HTTP_STATUS.UNAUTHORIZED, { error: "Forbidden: Superadmin role required" })
+  }
+
+  if (!userId) {
+    return e.json(HTTP_STATUS.BAD_REQUEST, { error: "userId required" })
+  }
+
+  try {
+    const usersCollection = $app.findCollectionByNameOrId("users")
+    const user = $app.findFirstRecordByFilter(
+      usersCollection,
+      "id = {:id}", { id: userId }
+    )
+
+    if (!user) {
+      return e.json(404, { error: "User not found" })
+    }
+
+    $app.sendRecordVerificationEmail(user)
+
+    return e.json(HTTP_STATUS.OK, {
+      success: true,
+      message: "Verification email sent successfully"
+    })
+  } catch (err) {
+    console.error("Error sending verification email:", err.message)
+    return e.json(HTTP_STATUS.SERVER_ERROR, {
+      error: "Failed to send verification email",
       details: err.message
     })
   }

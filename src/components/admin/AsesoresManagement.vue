@@ -30,12 +30,21 @@
             @click:row="selectAsesor"
           >
             <template v-slot:item.fullName="{ item }">
-              {{ item.name }} {{ item.lastname }}
+              {{ item.name || item.firstname }} {{ item.lastname }}
             </template>
             <template v-slot:item.status="{ item }">
-              <v-chip :color="getUserStatusColor(item.status)" size="small">
-                {{ formatUserStatus(item.status) || 'Pendiente' }}
+              <v-chip
+                :color="item.status === 'active' ? 'success' : 'error'"
+                size="small"
+                style="cursor: pointer"
+                title="Click para cambiar estado"
+                @click.stop="toggleStatusInline(item)"
+              >
+                {{ item.status === 'active' ? 'Activo' : 'Suspendido' }}
               </v-chip>
+            </template>
+            <template v-slot:item.updated="{ item }">
+              {{ formatDate(item.updated) }}
             </template>
           </v-data-table>
         </v-card>
@@ -44,14 +53,25 @@
       <!-- Panel de Detalles y Operaciones -->
       <v-col cols="12" md="7">
         <v-card v-if="selectedAsesor" class="advisor-detail-card">
-          <v-card-title class="bg-primary text-white d-flex align-center">
-            <v-avatar color="white" class="mr-3" size="40">
-              <v-icon color="primary">mdi-account-tie-hat</v-icon>
-            </v-avatar>
-            <div>
-              <div class="text-h6">{{ selectedAsesor.name }} {{ selectedAsesor.lastname }}</div>
-              <span class="text-xs">{{ selectedAsesor.email }}</span>
+          <v-card-title class="bg-primary text-white d-flex align-center justify-space-between">
+            <div class="d-flex align-center">
+              <v-avatar color="white" class="mr-3" size="40">
+                <v-icon color="primary">mdi-account-tie-hat</v-icon>
+              </v-avatar>
+              <div>
+                <div class="text-h6">{{ selectedAsesor.name || selectedAsesor.firstname }} {{ selectedAsesor.lastname }}</div>
+                <span class="text-xs">{{ selectedAsesor.email }}</span>
+              </div>
             </div>
+            <v-btn
+              color="white"
+              variant="outlined"
+              size="small"
+              prepend-icon="mdi-shield-account"
+              @click="showAdminDialog = true"
+            >
+              Administrar Asesor
+            </v-btn>
           </v-card-title>
 
           <v-card-text class="pt-4">
@@ -241,6 +261,16 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Dialog: Administrar Asesor (Superadmin) -->
+    <AsesoresAdminDialog
+      v-model="showAdminDialog"
+      :asesor="selectedAsesor"
+      :stats="asesorStats"
+      :vinculaciones="relaciones.vinculaciones"
+      @updated="fetchAsesores"
+      @delete-vinculacion="deleteRelItem('vinculaciones_asesor', $event)"
+    />
   </v-container>
 </template>
 
@@ -250,14 +280,19 @@ import { pb } from '@/utils/pocketbase'
 import { handleError } from '@/utils/errorHandler'
 import { formatDate, formatUserStatus, getUserStatusColor } from '@/utils/formatters'
 import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
+import { useAsesoresStore } from '@/stores/asesoresStore'
+import AsesoresAdminDialog from './dialogs/AsesoresAdminDialog.vue'
 
 const uiFeedbackStore = useUiFeedbackStore()
+const asesoresStore = useAsesoresStore()
 
 // Listado de Asesores
 const loading = ref(false)
 const asesores = ref([])
 const searchQuery = ref('')
 const selectedAsesor = ref(null)
+const showAdminDialog = ref(false)
+const asesorStats = ref({ haciendas_activas: 0, recetas_emitidas: 0, paquetes_enviados: 0 })
 
 // Relaciones
 const activeTab = ref('vinculaciones')
@@ -276,7 +311,8 @@ const selectedItem = ref(null)
 const headers = [
   { title: 'Email', key: 'email', sortable: true },
   { title: 'Nombre', key: 'fullName', sortable: false },
-  { title: 'Estado', key: 'status', sortable: true }
+  { title: 'Estado', key: 'status', sortable: true },
+  { title: 'Último Acceso', key: 'updated', sortable: true }
 ]
 
 const vincHeaders = [
@@ -331,10 +367,7 @@ onMounted(async () => {
 async function fetchAsesores() {
   loading.value = true
   try {
-    asesores.value = await pb.collection('users').getFullList({
-      filter: 'role = "asesor"',
-      sort: '-created'
-    })
+    asesores.value = await asesoresStore.fetchAllAsesoresForAdmin()
   } catch (err) {
     handleError(err, 'Error al cargar asesores')
   } finally {
@@ -344,7 +377,21 @@ async function fetchAsesores() {
 
 async function selectAsesor(event, { item }) {
   selectedAsesor.value = item
-  await fetchRelaciones(item.id)
+  await Promise.all([
+    fetchRelaciones(item.id),
+    asesoresStore.getAsesorStats(item.id).then(stats => asesorStats.value = stats)
+  ])
+}
+
+async function toggleStatusInline(item) {
+  const newStatus = item.status === 'active' ? 'suspended' : 'active'
+  try {
+    await asesoresStore.toggleAsesorStatus(item.id, newStatus)
+    uiFeedbackStore.showSnackbar(`Asesor ${item.email} cambiado a: ${newStatus}`, 'success')
+    await fetchAsesores()
+  } catch (err) {
+    handleError(err, 'Error al cambiar estado')
+  }
 }
 
 async function fetchRelaciones(asesorId) {

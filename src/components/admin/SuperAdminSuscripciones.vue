@@ -412,8 +412,8 @@ const processApprove = async () => {
         // 2. Validación y Ejecución de Downgrade
         const currentPlanId = hacienda.plan
         if (currentPlanId) {
-            const currentPlan = await pb.collection('Planes').getOne(currentPlanId)
-            const newPlan = await pb.collection('Planes').getOne(itemData.plan_solicitado)
+            const currentPlan = await pb.collection('planes').getOne(currentPlanId)
+            const newPlan = await pb.collection('planes').getOne(itemData.plan_solicitado)
             
             const isDowngrade = (newPlan.operadores < currentPlan.operadores) || (newPlan.auditores < currentPlan.auditores)
             
