@@ -177,10 +177,10 @@ onMounted(async () => {
 async function loadDashboardData() {
   loading.value = true
   try {
-    const [allHaciendas, uTotales, aTotales, solicitudes, logsRes] = await Promise.all([
+    const [allHaciendas, uRes, aRes, solicitudes, logsRes] = await Promise.all([
       pb.collection('Haciendas').getFullList().catch(() => []),
-      pb.collection('users').getFullList().catch(() => []),
-      pb.collection('users').getFullList({ filter: 'role = "asesor"' }).catch(() => []),
+      pb.send('/api/admin/users?perPage=1', { method: 'GET' }).catch(() => null),
+      pb.send('/api/admin/users?role=asesor&perPage=1', { method: 'GET' }).catch(() => null),
       pb.collection('solicitudes_suscripcion').getFullList({ filter: 'estado = "pendiente"' }).catch(() => []),
       pb.send('/api/admin/logs?perPage=8', { method: 'GET' }).catch(() => ({ items: [] }))
     ])
@@ -188,11 +188,27 @@ async function loadDashboardData() {
     const hSuspendidasCount = allHaciendas.filter(h => h.status === 'suspended').length
     const hActivasCount = allHaciendas.filter(h => h.status !== 'suspended' && h.status !== 'inactive').length
 
+    let totalUsersCount = 0
+    if (uRes && typeof uRes.totalItems === 'number') {
+      totalUsersCount = uRes.totalItems
+    } else {
+      const fallbackUsers = await pb.collection('users').getFullList().catch(() => [])
+      totalUsersCount = fallbackUsers.length
+    }
+
+    let totalAsesoresCount = 0
+    if (aRes && typeof aRes.totalItems === 'number') {
+      totalAsesoresCount = aRes.totalItems
+    } else {
+      const fallbackAsesores = await pb.collection('users').getFullList({ filter: 'role = "asesor"' }).catch(() => [])
+      totalAsesoresCount = fallbackAsesores.length
+    }
+
     stats.value = {
       haciendasActivas: hActivasCount,
       haciendasSuspendidas: hSuspendidasCount,
-      usuariosTotales: Array.isArray(uTotales) ? uTotales.length : (uTotales.totalItems || 0),
-      asesoresTotales: Array.isArray(aTotales) ? aTotales.length : (aTotales.totalItems || 0)
+      usuariosTotales: totalUsersCount,
+      asesoresTotales: totalAsesoresCount
     }
 
     solicitudesPendientes.value = solicitudes
