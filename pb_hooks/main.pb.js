@@ -571,6 +571,10 @@ routerAdd("PUT", "/api/admin/users/{id}", (e) => {
       const validStatus = (body.status === 'suspended') ? 'suspended' : 'active'
       user.set("status", validStatus)
     }
+    if (body.info !== undefined) user.set("info", body.info)
+    if (body.cedula !== undefined) user.set("cedula", body.cedula)
+    if (body.direccion !== undefined) user.set("direccion", body.direccion)
+    if (body.verified !== undefined) user.set("verified", !!body.verified)
 
     if (body.hacienda !== undefined || body.haciendas !== undefined) {
       let rawTarget = body.hacienda || (Array.isArray(body.haciendas) ? body.haciendas[0] : body.haciendas)
