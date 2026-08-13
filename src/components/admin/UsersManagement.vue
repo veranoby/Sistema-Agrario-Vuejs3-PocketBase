@@ -428,13 +428,25 @@ onMounted(async () => {
 async function fetchUsers() {
   loading.value = true
   try {
-    const records = await userStore.fetchUsers({ expand: 'haciendas' })
-    // Mapear haciendas
-    users.value = records.map(u => ({
-      ...u,
-      haciendas: u.expand?.hacienda ? [u.expand.hacienda] : [],
-      status: u.status ?? 'active'
-    }))
+    const records = await userStore.fetchUsers({ expand: 'hacienda' })
+    // Mapear haciendas manteniendo compatibilidad con hacienda singular y haciendas plural
+    users.value = records.map(u => {
+      let haciendasList = []
+      if (Array.isArray(u.haciendas) && u.haciendas.length > 0) {
+        haciendasList = u.haciendas
+      } else if (u.hacienda) {
+        haciendasList = [u.hacienda]
+      } else if (u.expand?.hacienda) {
+        haciendasList = [u.expand.hacienda]
+      }
+
+      return {
+        ...u,
+        hacienda: typeof u.hacienda === 'string' ? u.hacienda : (u.expand?.hacienda?.id || ''),
+        haciendas: haciendasList,
+        status: u.status ?? 'active'
+      }
+    })
   } catch (error) {
     handleError(error, 'Error al cargar usuarios')
   } finally {

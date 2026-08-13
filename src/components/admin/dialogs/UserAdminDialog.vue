@@ -184,9 +184,9 @@
           <v-divider class="mb-4"></v-divider>
 
           <!-- Hacienda Details -->
-          <template v-if="formData.role !== USER_ROLES.ASESOR">
+          <template v-if="isEditing">
             <h3 class="font-weight-bold mb-2">Vinculación de Haciendas</h3>
-            <v-row v-if="isEditing">
+            <v-row>
               <v-col cols="12">
                 <v-select
                   v-model="formData.haciendas"
@@ -199,12 +199,16 @@
                   multiple
                   chips
                   clearable
-                  hint="Un usuario puede estar asignado a múltiples haciendas simultáneamente"
+                  hint="Seleccione una o varias haciendas para vincular al usuario"
                   persistent-hint
+                  @update:model-value="(val) => { formData.haciendaId = val && val.length ? val[0] : null }"
                 ></v-select>
               </v-col>
             </v-row>
-            <v-row v-else-if="formData.role === USER_ROLES.OPERADOR || formData.role === USER_ROLES.AUDITOR">
+          </template>
+          <template v-else>
+            <h3 class="font-weight-bold mb-2">Vinculación de Haciendas</h3>
+            <v-row v-if="formData.role === USER_ROLES.OPERADOR || formData.role === USER_ROLES.AUDITOR">
               <v-col cols="12">
                 <v-select
                   v-model="formData.haciendaId"
@@ -216,6 +220,7 @@
                   density="compact"
                   clearable
                   :rules="[v => !!v || 'Debe seleccionar una hacienda']"
+                  @update:model-value="(val) => { formData.haciendas = val ? [val] : [] }"
                 ></v-select>
               </v-col>
             </v-row>
@@ -250,6 +255,7 @@
                   density="compact"
                   clearable
                   :rules="[v => !!v || 'Debe seleccionar una hacienda']"
+                  @update:model-value="(val) => { formData.haciendas = val ? [val] : [] }"
                 ></v-select>
               </v-col>
             </v-row>
@@ -364,12 +370,12 @@ watch(() => props.modelValue, async (val) => {
       let rawHaciendas = [];
       if (Array.isArray(u.haciendas) && u.haciendas.length > 0) {
         rawHaciendas = u.haciendas;
-      } else if (u.haciendas) {
-        rawHaciendas = [u.haciendas];
       } else if (Array.isArray(u.hacienda) && u.hacienda.length > 0) {
         rawHaciendas = u.hacienda;
-      } else if (u.hacienda) {
-        rawHaciendas = [u.hacienda];
+      } else if (typeof u.hacienda === 'string' && u.hacienda.trim()) {
+        rawHaciendas = [u.hacienda.trim()];
+      } else if (typeof u.haciendas === 'string' && u.haciendas.trim()) {
+        rawHaciendas = [u.haciendas.trim()];
       } else if (u.expand?.hacienda) {
         rawHaciendas = [u.expand.hacienda];
       } else if (u.expand?.haciendas) {
@@ -517,6 +523,7 @@ async function submit() {
       if (editPayload.email === props.editingUser.email) delete editPayload.email;
       if (editPayload.username === props.editingUser.username) delete editPayload.username;
       
+      editPayload.hacienda = formData.value.haciendaId || (formData.value.haciendas && formData.value.haciendas[0]) || '';
       editPayload.haciendas = formData.value.haciendas || [];
       await pb.send(`/api/admin/users/${props.editingUser.id}`, {
         method: 'PUT',
