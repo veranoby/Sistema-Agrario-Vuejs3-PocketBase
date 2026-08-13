@@ -523,8 +523,22 @@ async function submit() {
       if (editPayload.email === props.editingUser.email) delete editPayload.email;
       if (editPayload.username === props.editingUser.username) delete editPayload.username;
       
-      editPayload.hacienda = formData.value.haciendaId || (formData.value.haciendas && formData.value.haciendas[0]) || '';
-      editPayload.haciendas = formData.value.haciendas || [];
+      const extractCleanId = (v) => {
+        if (!v) return '';
+        if (typeof v === 'string') return v.trim();
+        if (typeof v === 'object' && v.id) return String(v.id).trim();
+        return '';
+      };
+
+      let hId = extractCleanId(formData.value.haciendaId);
+      let hList = Array.isArray(formData.value.haciendas) 
+        ? formData.value.haciendas.map(extractCleanId).filter(Boolean)
+        : (hId ? [hId] : []);
+
+      if (!hId && hList.length > 0) hId = hList[0];
+
+      editPayload.hacienda = hId;
+      editPayload.haciendas = hList;
       await pb.send(`/api/admin/users/${props.editingUser.id}`, {
         method: 'PUT',
         body: editPayload

@@ -567,23 +567,33 @@ routerAdd("PUT", "/api/admin/users/{id}", (e) => {
     if (body.name) user.set("name", body.name)
     if (body.lastname) user.set("lastname", body.lastname)
     if (body.role) user.set("role", body.role)
-    if (body.status) user.set("status", body.status)
-    if (body.info !== undefined) user.set("info", body.info)
-    if (body.cedula !== undefined) user.set("cedula", body.cedula)
-    if (body.direccion !== undefined) user.set("direccion", body.direccion)
-    if (body.verified !== undefined) user.set("verified", !!body.verified)
+    if (body.status) {
+      const validStatus = (body.status === 'suspended') ? 'suspended' : 'active'
+      user.set("status", validStatus)
+    }
 
     if (body.hacienda !== undefined || body.haciendas !== undefined) {
-      const targetHaciendaId = body.hacienda || (Array.isArray(body.haciendas) ? body.haciendas[0] : body.haciendas)
-      if (targetHaciendaId) {
+      let rawTarget = body.hacienda || (Array.isArray(body.haciendas) ? body.haciendas[0] : body.haciendas)
+      if (rawTarget && typeof rawTarget === 'object' && rawTarget.id) {
+        rawTarget = rawTarget.id
+      }
+      const targetHaciendaId = (typeof rawTarget === 'string') ? rawTarget.trim() : ''
+
+      if (targetHaciendaId && targetHaciendaId.length === 15) {
         const haciendaCol = $app.findCollectionByNameOrId("Haciendas")
         const haciendaRec = $app.findFirstRecordByFilter(haciendaCol, "id = {:id}", { id: targetHaciendaId })
         if (haciendaRec) {
           const planId = haciendaRec.get("plan")
           let limit = 999
           if (planId) {
-            const planRec = $app.findRecordById("planes", planId)
-            limit = (planRec.get("operadores") || 0) + (planRec.get("auditores") || 0)
+            try {
+              const planRec = $app.findRecordById("planes", planId)
+              if (planRec) {
+                limit = (planRec.get("operadores") || 0) + (planRec.get("auditores") || 0)
+              }
+            } catch (pErr) {
+              $app.logger().warn("Plan not found for limit check: " + planId)
+            }
           }
           const currentCount = $app.countRecords("users", `hacienda = "${targetHaciendaId}" && id != "${userId}"`)
           if (limit > 0 && currentCount >= limit) {
