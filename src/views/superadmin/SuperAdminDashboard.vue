@@ -177,20 +177,22 @@ onMounted(async () => {
 async function loadDashboardData() {
   loading.value = true
   try {
-    const [hActivas, hSuspendidas, uTotales, aTotales, solicitudes, logsRes] = await Promise.all([
-      pb.collection('Haciendas').getList(1, 1, { filter: 'status = "active"' }),
-      pb.collection('Haciendas').getList(1, 1, { filter: 'status = "suspended"' }),
-      pb.collection('users').getList(1, 1),
-      pb.collection('users').getList(1, 1, { filter: 'role = "asesor"' }),
+    const [allHaciendas, uTotales, aTotales, solicitudes, logsRes] = await Promise.all([
+      pb.collection('Haciendas').getFullList().catch(() => []),
+      pb.collection('users').getList(1, 1).catch(() => ({ totalItems: 0 })),
+      pb.collection('users').getList(1, 1, { filter: 'role = "asesor"' }).catch(() => ({ totalItems: 0 })),
       pb.collection('solicitudes_suscripcion').getFullList({ filter: 'estado = "pendiente"' }).catch(() => []),
       pb.send('/api/admin/logs?perPage=8', { method: 'GET' }).catch(() => ({ items: [] }))
     ])
 
+    const hSuspendidasCount = allHaciendas.filter(h => h.status === 'suspended').length
+    const hActivasCount = allHaciendas.filter(h => h.status !== 'suspended' && h.status !== 'inactive').length
+
     stats.value = {
-      haciendasActivas: hActivas.totalItems,
-      haciendasSuspendidas: hSuspendidas.totalItems,
-      usuariosTotales: uTotales.totalItems,
-      asesoresTotales: aTotales.totalItems
+      haciendasActivas: hActivasCount,
+      haciendasSuspendidas: hSuspendidasCount,
+      usuariosTotales: uTotales.totalItems || 0,
+      asesoresTotales: aTotales.totalItems || 0
     }
 
     solicitudesPendientes.value = solicitudes

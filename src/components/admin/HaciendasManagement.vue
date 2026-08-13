@@ -130,6 +130,7 @@
       :planes-list="planesList"
       :modulos-list="modulosList"
       @updated="refreshData"
+      @edit="editHacienda"
     />
   </v-container>
 </template>

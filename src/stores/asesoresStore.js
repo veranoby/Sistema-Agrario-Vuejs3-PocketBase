@@ -181,8 +181,8 @@ export const useAsesoresStore = defineStore('asesores', {
     async getAsesorStats(userId) {
       try {
         const [vincRes, recetasRes, paquetesRes] = await Promise.all([
-          pb.collection('vinculaciones_asesor').getList(1, 1, { filter: `asesor_id = "${userId}"` }),
-          pb.collection('recetas').getList(1, 1, { filter: `asesor = "${userId}"` }),
+          pb.collection('vinculaciones_asesor').getList(1, 1, { filter: `asesor_id = "${userId}" && estado = "activa"` }),
+          pb.collection('recetas').getList(1, 1, { filter: `asesor_id = "${userId}"` }),
           pb.collection('paquetes_evaluacion').getList(1, 1, { filter: `asesor_id = "${userId}"` })
         ])
         return {

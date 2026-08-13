@@ -11,7 +11,19 @@
             {{ formatStatus(hacienda.status) }}
           </v-chip>
         </div>
-        <v-btn icon="mdi-close" variant="text" color="white" @click="closeModal" />
+        <div class="d-flex align-center">
+          <v-btn
+            color="white"
+            variant="outlined"
+            size="small"
+            prepend-icon="mdi-pencil"
+            class="mr-2"
+            @click="triggerEdit"
+          >
+            Editar Configuración
+          </v-btn>
+          <v-btn icon="mdi-close" variant="text" color="white" @click="closeModal" />
+        </div>
       </v-card-title>
 
       <v-tabs v-model="activeTab" bg-color="indigo-lighten-5" color="indigo" grow>
@@ -308,7 +320,12 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['update:modelValue', 'updated'])
+const emit = defineEmits(['update:modelValue', 'updated', 'edit'])
+
+function triggerEdit() {
+  closeModal()
+  emit('edit', props.hacienda)
+}
 
 const haciendaManagementStore = useHaciendaManagementStore()
 const uiFeedbackStore = useUiFeedbackStore()

@@ -32,7 +32,9 @@ export const useHaciendaManagementStore = defineStore('haciendaManagement', {
     filters: {
       search: '',
       status: ''
-    }
+    },
+    planes: [],
+    modulos: []
   }),
 
   getters: {
@@ -101,6 +103,37 @@ export const useHaciendaManagementStore = defineStore('haciendaManagement', {
       } finally {
         this.loading = false
       }
+    },
+
+    async fetchPlanes() {
+      try {
+        const records = await pb.collection('planes').getFullList({ sort: 'nombre' }).catch(() => [])
+        this.planes = records || []
+        return this.planes
+      } catch (error) {
+        this.planes = []
+        return []
+      }
+    },
+
+    async fetchModulos() {
+      try {
+        const records = await pb.collection('modulos').getFullList().catch(() => [])
+        if (records && records.length > 0) {
+          this.modulos = records
+          return records
+        }
+      } catch (error) {
+        // Ignore
+      }
+      this.modulos = [
+        { id: 'bitacoras_avanzadas', name: 'Bitácoras Avanzadas' },
+        { id: 'programaciones_inteligentes', name: 'Programaciones Inteligentes' },
+        { id: 'alertas_proactivas', name: 'Alertas Proactivas' },
+        { id: 'auditoria_bpa', name: 'Auditoría BPA' },
+        { id: 'ai', name: 'IA Assistant' }
+      ]
+      return this.modulos
     },
 
     /**
