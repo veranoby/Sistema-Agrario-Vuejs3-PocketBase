@@ -179,8 +179,8 @@ async function loadDashboardData() {
   try {
     const [allHaciendas, uTotales, aTotales, solicitudes, logsRes] = await Promise.all([
       pb.collection('Haciendas').getFullList().catch(() => []),
-      pb.collection('users').getList(1, 1).catch(() => ({ totalItems: 0 })),
-      pb.collection('users').getList(1, 1, { filter: 'role = "asesor"' }).catch(() => ({ totalItems: 0 })),
+      pb.collection('users').getFullList().catch(() => []),
+      pb.collection('users').getFullList({ filter: 'role = "asesor"' }).catch(() => []),
       pb.collection('solicitudes_suscripcion').getFullList({ filter: 'estado = "pendiente"' }).catch(() => []),
       pb.send('/api/admin/logs?perPage=8', { method: 'GET' }).catch(() => ({ items: [] }))
     ])
@@ -191,8 +191,8 @@ async function loadDashboardData() {
     stats.value = {
       haciendasActivas: hActivasCount,
       haciendasSuspendidas: hSuspendidasCount,
-      usuariosTotales: uTotales.totalItems || 0,
-      asesoresTotales: aTotales.totalItems || 0
+      usuariosTotales: Array.isArray(uTotales) ? uTotales.length : (uTotales.totalItems || 0),
+      asesoresTotales: Array.isArray(aTotales) ? aTotales.length : (aTotales.totalItems || 0)
     }
 
     solicitudesPendientes.value = solicitudes

@@ -144,19 +144,76 @@
 
           <!-- TAB 3: Plan & Módulos -->
           <v-window-item value="plan">
-            <v-card variant="outlined" class="pa-4">
-              <h4 class="font-weight-bold mb-3">Módulos Habilitados</h4>
-              <v-chip-group column v-if="hacienda.active_modules?.length">
-                <v-chip
-                  v-for="moduleId in hacienda.active_modules"
-                  :key="moduleId"
-                  color="primary"
+            <v-card variant="outlined" class="pa-4 mb-4">
+              <div class="d-flex justify-space-between align-center mb-3">
+                <h4 class="font-weight-bold">Plan de Suscripción</h4>
+                <v-btn
+                  color="indigo"
                   size="small"
+                  prepend-icon="mdi-content-save"
+                  :loading="planSaving"
+                  @click="handleSavePlan"
                 >
-                  {{ getModuleName(moduleId) }}
-                </v-chip>
-              </v-chip-group>
-              <p v-else class="text-grey">Sin módulos habilitados actualmente.</p>
+                  Guardar Cambios de Plan
+                </v-btn>
+              </div>
+              <v-radio-group v-model="selectedPlan" inline density="compact" class="mt-2">
+                <v-radio
+                  v-for="planItem in (planesList && planesList.length ? planesList : [
+                    { id: 'free', name: 'Gratuito / Básico' },
+                    { id: 'pro', name: 'Profesional (Pro)' },
+                    { id: 'enterprise', name: 'Empresarial (Enterprise)' }
+                  ])"
+                  :key="planItem.id"
+                  :label="planItem.name || planItem.nombre || planItem.id"
+                  :value="planItem.id"
+                  color="indigo"
+                  class="mr-4"
+                ></v-radio>
+              </v-radio-group>
+            </v-card>
+
+            <v-card variant="outlined" class="pa-4">
+              <div class="d-flex justify-space-between align-center mb-3">
+                <h4 class="font-weight-bold">Módulos Habilitados</h4>
+                <v-btn
+                  color="indigo"
+                  size="small"
+                  prepend-icon="mdi-content-save"
+                  :loading="modulesSaving"
+                  @click="handleSaveModules"
+                >
+                  Guardar Módulos
+                </v-btn>
+              </div>
+              <p class="text-caption text-grey mb-3">
+                Marque o desmarque los módulos a los que esta hacienda tiene acceso activo:
+              </p>
+              <v-row dense>
+                <v-col
+                  v-for="mod in (modulosList && modulosList.length ? modulosList : [
+                    { id: 'siembras', name: 'Siembras y Lotes' },
+                    { id: 'actividades', name: 'Bitácora y Actividades' },
+                    { id: 'finanzas', name: 'Finanzas y Costos' },
+                    { id: 'bodega', name: 'Bodega e Inventario' },
+                    { id: 'nomina', name: 'Nómina y Mano de Obra' },
+                    { id: 'reportes', name: 'Reportes y Analítica' }
+                  ])"
+                  :key="mod.id"
+                  cols="12"
+                  sm="6"
+                  md="4"
+                >
+                  <v-checkbox
+                    v-model="selectedModules"
+                    :label="mod.name || mod.nombre || mod.id"
+                    :value="mod.id"
+                    color="primary"
+                    density="compact"
+                    hide-details
+                  ></v-checkbox>
+                </v-col>
+              </v-row>
             </v-card>
           </v-window-item>
 
@@ -338,6 +395,12 @@ const relaciones = ref({ vinculaciones: [], paquetes: [], recetas: [] })
 const suspensionReason = ref('')
 const suspensionLoading = ref(false)
 
+// Estados para edición inline en Tab 3 (Plan & Módulos)
+const selectedPlan = ref('free')
+const selectedModules = ref([])
+const planSaving = ref(false)
+const modulesSaving = ref(false)
+
 // Estados para sub-modales
 const addUserModal = ref(false)
 const vincularAsesorModal = ref(false)
@@ -387,21 +450,51 @@ const haciendaQuota = computed(() => {
 watch(() => props.modelValue, (val) => {
   if (val && props.hacienda?.id) {
     activeTab.value = 'resumen'
+    selectedPlan.value = props.hacienda.plan?.id || props.hacienda.plan || 'free'
+    selectedModules.value = Array.isArray(props.hacienda.active_modules) ? [...props.hacienda.active_modules] : []
     loadHaciendaDetails(props.hacienda.id)
   }
 })
 
+async function handleSavePlan() {
+  if (!props.hacienda?.id) return
+  planSaving.value = true
+  try {
+    await haciendaManagementStore.configurePlan(props.hacienda.id, { plan: selectedPlan.value })
+    uiFeedbackStore.showSnackbar('Plan actualizado correctamente', 'success')
+    emit('updated')
+  } catch (err) {
+    uiFeedbackStore.showSnackbar(err.message || 'Error al actualizar el plan', 'error')
+  } finally {
+    planSaving.value = false
+  }
+}
+
+async function handleSaveModules() {
+  if (!props.hacienda?.id) return
+  modulesSaving.value = true
+  try {
+    await haciendaManagementStore.toggleModules(props.hacienda.id, selectedModules.value)
+    uiFeedbackStore.showSnackbar('Módulos actualizados correctamente', 'success')
+    emit('updated')
+  } catch (err) {
+    uiFeedbackStore.showSnackbar(err.message || 'Error al actualizar los módulos', 'error')
+  } finally {
+    modulesSaving.value = false
+  }
+}
+
 async function loadHaciendaDetails(haciendaId) {
   metricsLoading.value = true
   try {
-    const [metrics, activity, rels] = await Promise.all([
-      haciendaManagementStore.fetchHaciendaMetrics(haciendaId),
+    const [metrics, activity, vincs] = await Promise.all([
+      haciendaManagementStore.getHaciendaMetrics(haciendaId),
       haciendaManagementStore.fetchHaciendaActivity(haciendaId),
-      haciendaManagementStore.fetchRelaciones(haciendaId)
+      haciendaManagementStore.fetchVinculacionesHacienda(haciendaId)
     ])
     haciendaMetrics.value = metrics
     haciendaActivity.value = activity || []
-    relaciones.value = rels || { vinculaciones: [], paquetes: [], recetas: [] }
+    relaciones.value = { vinculaciones: vincs || [], paquetes: [], recetas: [] }
   } catch (err) {
     console.error('Error al cargar detalles de hacienda:', err)
   } finally {

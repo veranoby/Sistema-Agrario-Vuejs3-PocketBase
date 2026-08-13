@@ -361,14 +361,26 @@ watch(() => props.modelValue, async (val) => {
       const u = props.editingUser;
       hasAvatar.value = !!u.avatar;
       
-      let initialHaciendas = [];
-      if (Array.isArray(u.haciendas)) {
-        initialHaciendas = u.haciendas;
+      let rawHaciendas = [];
+      if (Array.isArray(u.haciendas) && u.haciendas.length > 0) {
+        rawHaciendas = u.haciendas;
       } else if (u.haciendas) {
-        initialHaciendas = [u.haciendas];
+        rawHaciendas = [u.haciendas];
+      } else if (Array.isArray(u.hacienda) && u.hacienda.length > 0) {
+        rawHaciendas = u.hacienda;
       } else if (u.hacienda) {
-        initialHaciendas = [u.hacienda];
+        rawHaciendas = [u.hacienda];
+      } else if (u.expand?.hacienda) {
+        rawHaciendas = [u.expand.hacienda];
+      } else if (u.expand?.haciendas) {
+        rawHaciendas = Array.isArray(u.expand.haciendas) ? u.expand.haciendas : [u.expand.haciendas];
       }
+
+      const initialHaciendas = rawHaciendas.map(item => {
+        if (typeof item === 'string') return item;
+        if (item && typeof item === 'object') return item.id || item.value || '';
+        return '';
+      }).filter(Boolean);
 
       formData.value = {
         email: u.email || '',

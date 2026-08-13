@@ -59,6 +59,16 @@
                   Exporta todas las haciendas con configuración, planes y módulos activos.
                 </p>
                 <v-divider class="my-3" />
+                <v-autocomplete
+                  v-model="selectedExportHacienda"
+                  :items="haciendasItems"
+                  label="Filtrar por Hacienda (opcional)"
+                  variant="outlined"
+                  density="compact"
+                  clearable
+                  hide-details
+                  class="mb-3"
+                ></v-autocomplete>
                 <div class="text-md">
                   <p><strong>Campos:</strong> Nombre, ubicación, plan, módulos, usuarios</p>
                   <p><strong>Formato:</strong> Markdown</p>
@@ -307,6 +317,7 @@ const exportTab = ref('masiva')
 const miningLoading = ref(false)
 const miningResults = ref([])
 const haciendasItems = ref([])
+const selectedExportHacienda = ref(null)
 const tiposActividadesItems = ref([])
 const miningFilters = ref({
   dateFrom: null,
@@ -478,11 +489,15 @@ async function exportData(type) {
         filename = 'usuarios.md'
         records = users.value.length
         break
-      case 'haciendas':
-        markdown = exportHaciendasToMarkdown(haciendas.value)
-        filename = 'haciendas.md'
-        records = haciendas.value.length
+      case 'haciendas': {
+        const targetHaciendas = selectedExportHacienda.value
+          ? haciendas.value.filter(h => h.id === selectedExportHacienda.value)
+          : haciendas.value
+        markdown = exportHaciendasToMarkdown(targetHaciendas)
+        filename = selectedExportHacienda.value ? `hacienda_${selectedExportHacienda.value}.md` : 'haciendas.md'
+        records = targetHaciendas.length
         break
+      }
       case 'actividades':
         markdown = exportTiposActividadesToMarkdown(tiposActividades.value)
         filename = 'tipos_actividades.md'
