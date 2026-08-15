@@ -298,6 +298,33 @@ const routes = [
       requiresAuth: true,
       roles: [ROLES.ASESOR]
     }
+  },
+  {
+    path: '/asesor/tienda',
+    component: () => import('@/views/asesor/TiendaAsesor.vue'),
+    name: 'Tienda Asesor',
+    meta: {
+      requiresAuth: true,
+      roles: [ROLES.ASESOR]
+    }
+  },
+  {
+    path: '/hacienda/tienda',
+    component: () => import('@/views/hacienda/TiendaInsumos.vue'),
+    name: 'Tienda Insumos',
+    meta: {
+      requiresAuth: true,
+      roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR, ROLES.OPERADOR]
+    }
+  },
+  {
+    path: '/hacienda/mis-pedidos',
+    component: () => import('@/views/hacienda/MisPedidosTienda.vue'),
+    name: 'Mis Pedidos Tienda',
+    meta: {
+      requiresAuth: true,
+      roles: [ROLES.ADMINISTRADOR, ROLES.AUDITOR, ROLES.OPERADOR]
+    }
   }
   // Future: Super Admin Dashboard
   // {
@@ -425,6 +452,17 @@ const adminExportsRoute = {
   }
 }
 
+const adminTiendaRoute = {
+  path: '/admin/tienda',
+  component: () => import('@/components/admin/TiendaMarketplaceAdmin.vue'),
+  name: 'Supervisión de Tienda',
+  meta: {
+    requiresAuth: true,
+    requiresSuperAdmin: true,
+    roles: [ROLES.SUPERADMIN]
+  }
+}
+
 // Add admin routes to routes array
 routes.push(adminDashboardRoute)
 routes.push(adminRoute)
@@ -432,6 +470,7 @@ routes.push(adminAnalyticsRoute)
 routes.push(adminUsersRoute)
 routes.push(adminHaciendasRoute)
 routes.push(adminAsesoresRoute)
+routes.push(adminTiendaRoute)
 routes.push(adminSettingsRoute)
 routes.push(adminLogsRoute)
 routes.push(adminExportsRoute)

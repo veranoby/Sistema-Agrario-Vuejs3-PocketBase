@@ -91,19 +91,35 @@
             </v-chip-group>
           </v-card-text>
 
-          <v-card-actions>
-            <v-btn icon="mdi-eye" size="small" variant="text" @click="viewHacienda(hacienda)" />
-            <v-btn v-role="'HACIENDAS_MANAGE'" icon="mdi-pencil" size="small" variant="text" @click="editHacienda(hacienda)" />
+          <v-card-actions class="d-flex align-center px-4 pb-3">
+            <v-btn
+              color="primary"
+              variant="tonal"
+              size="small"
+              prepend-icon="mdi-cog"
+              class="text-none font-weight-medium"
+              @click="manageHacienda(hacienda)"
+            >
+              Gestionar Hacienda
+            </v-btn>
+            <v-spacer />
+            <v-btn
+              icon="mdi-language-markdown"
+              size="small"
+              variant="text"
+              color="secondary"
+              title="Exportar esta hacienda"
+              @click="exportHaciendaToMarkdown(hacienda)"
+            />
             <v-btn
               v-role="'HACIENDAS_MANAGE'"
               icon="mdi-delete"
               size="small"
               color="error"
               variant="text"
+              title="Eliminar hacienda"
               @click="confirmDelete(hacienda)"
             />
-            <v-spacer />
-            <v-btn icon="mdi-language-markdown" size="small" variant="text" color="secondary" title="Exportar esta hacienda" @click="exportHaciendaToMarkdown(hacienda)" />
           </v-card-actions>
         </v-card>
       </v-col>
@@ -116,10 +132,8 @@
     <!-- Diálogos Encapsulados -->
     <HaciendaCreateEditDialog
       v-model="haciendaDialog"
-      :hacienda-data="editingHacienda"
       :users-list="usersList"
       :planes-list="planesList"
-      :modulos-list="modulosList"
       @saved="refreshData"
     />
 
@@ -130,7 +144,6 @@
       :planes-list="planesList"
       :modulos-list="modulosList"
       @updated="refreshData"
-      @edit="editHacienda"
     />
   </v-container>
 </template>
@@ -156,7 +169,6 @@ const filterStatus = ref(null)
 // Estados para modales
 const haciendaDialog = ref(false)
 const viewDialog = ref(false)
-const editingHacienda = ref(null)
 const selectedHacienda = ref(null)
 const usersList = ref([])
 
@@ -224,7 +236,10 @@ async function fetchUsers() {
       label: `${u.name || u.nombre || u.email || 'Sin nombre'} (${u.email || 'N/A'})`,
       email: u.email,
       hacienda: u.hacienda,
-      name: u.name || u.nombre
+      name: u.name || u.nombre,
+      role: u.role || 'operador',
+      status: u.status || 'active',
+      avatar: u.avatar
     }))
   } catch (error) {
     handleError(error, 'Error al cargar lista de usuarios')
@@ -232,23 +247,10 @@ async function fetchUsers() {
 }
 
 function openCreateDialog() {
-  editingHacienda.value = null
   haciendaDialog.value = true
 }
 
-async function editHacienda(hacienda) {
-  let h = hacienda
-  try {
-    const fresh = await pb.collection('Haciendas').getOne(hacienda.id, { expand: 'plan' })
-    h = { ...fresh, plan: fresh.expand?.plan || hacienda.plan }
-  } catch (e) {
-    console.warn('No se pudo refrescar hacienda, usando copia local', e)
-  }
-  editingHacienda.value = h
-  haciendaDialog.value = true
-}
-
-async function viewHacienda(hacienda) {
+async function manageHacienda(hacienda) {
   let h = hacienda
   try {
     const fresh = await pb.collection('Haciendas').getOne(hacienda.id, { expand: 'plan' })

@@ -1,207 +1,54 @@
 {
-  "stores": [
-    {
-      "name": "actividades",
-      "path": "src/stores/actividadesStore.js",
-      "usage": "CRUD Actividades, BPA Status calc, Activity Lookup Map",
-      "state_persistence": "Yes (localStorage)",
-      "audit_status": "✅ 100% - Verificado. Soporta paginación y caché de tipos."
+  "stores": {
+    "authStore": {
+      "file": "src/stores/authStore.js",
+      "purpose": "Sesión, tokens de PocketBase, roles (superadmin, administrador, auditor, operador, asesor) y vinculación a hacienda.",
+      "state_keys": ["user", "token", "isLoggedIn", "isSuperAdmin", "isAsesor", "role"]
     },
-    {
-      "name": "aiUsage",
-      "path": "src/stores/aiUsageStore.js",
-      "usage": "Internal usage tracking for AI limits",
-      "state_persistence": "Yes (localStorage)",
-      "audit_status": "✅ 100% - Verificado."
+    "tiendaAsesorStore": {
+      "file": "src/stores/tiendaAsesorStore.js",
+      "purpose": "Catálogo público con filtros geográficos y de categoría, gestión de insumos del asesor, carrito de compras, emisión de órdenes, validación de pagos y firma de recepción.",
+      "state_keys": ["productos", "misProductos", "misVentas", "misCompras", "cart", "filtros", "loadingProductos", "loadingMisProductos", "loadingMisVentas", "loadingMisCompras"]
     },
-    {
-      "name": "analytics",
-      "path": "src/stores/analyticsStore.js",
-      "usage": "Global Usage/Patterns (SuperAdmin)",
-      "state_persistence": "No",
-      "audit_status": "🟡 60% - Lógica backend existe, frontend requiere visualizaciones complejas."
+    "haciendaStore": {
+      "file": "src/stores/haciendaStore.js",
+      "purpose": "Datos de la hacienda activa, módulos activos (kardex_bodega, nomina_express, tarjas_campo, costo_por_hectarea), días de suscripción y configuración de IA.",
+      "state_keys": ["currentHacienda", "activeModules", "daysUntilExpiration", "aiConfig"]
     },
-    {
-      "name": "asesores",
-      "path": "src/stores/asesoresStore.js",
-      "usage": "Directorio de asesores profesionales, vinculación entre haciendas y asesores",
-      "state_persistence": "Yes (localStorage)",
-      "audit_status": "✅ 100% - Verificado y alineado con el rol 'asesor' en users."
+    "bodegaStore": {
+      "file": "src/stores/bodegaStore.js",
+      "purpose": "Inventario de agroquímicos y fertilizantes, movimientos de kardex y alertas de stock.",
+      "state_keys": ["items", "movimientos", "loading"]
     },
-    {
-      "name": "auth",
-      "path": "src/stores/authStore.js",
-      "usage": "RBAC, JWT, Profile Management, Session Refresh",
-      "state_persistence": "Yes (localStorage)",
-      "audit_status": "✅ 100% - Matriz de roles verificada."
+    "nominaStore": {
+      "file": "src/stores/nominaStore.js",
+      "purpose": "Cálculo de jornales, destajos semanales y generación de roles de pago de trabajadores de campo.",
+      "state_keys": ["trabajadores", "semanas", "asistencias", "loading"]
     },
-    {
-      "name": "avatar",
-      "path": "src/stores/avatarStore.js",
-      "usage": "Helper para gestión de URLs de imágenes y optimización",
-      "state_persistence": "Yes (localStorage)",
-      "audit_status": "✅ 100% - Verificado."
+    "tarjasStore": {
+      "file": "src/stores/tarjasStore.js",
+      "purpose": "Registro de cosechas, cajas, racimos o unidades por cuadrilla y lote.",
+      "state_keys": ["tarjas", "loading"]
     },
-    {
-      "name": "bitacora",
-      "path": "src/stores/bitacoraStore.js",
-      "usage": "Field logs, Digital Signatures (RSA-PSS), AI Autocomplete",
-      "state_persistence": "Yes (IndexedDB via Sync)",
-      "audit_status": "✅ 100% - Firmas RSA funcionales. Refactor de modos UX completado."
+    "siembrasStore": {
+      "file": "src/stores/siembrasStore.js",
+      "purpose": "Ciclos productivos, lotes de cultivo y estimación de rendimiento.",
+      "state_keys": ["siembras", "siembraActiva", "loading"]
     },
-    {
-      "name": "finanza",
-      "path": "src/stores/finanzaStore.js",
-      "usage": "Income/Expense CRUD, Filters, Excel Export",
-      "state_persistence": "Yes (localStorage)",
-      "audit_status": "✅ 80% - Enlace automático con bitácora completado (FIN-1). Falta integración SRI legal."
+    "bitacoraStore": {
+      "file": "src/stores/bitacoraStore.js",
+      "purpose": "Registro de labores agrícolas, insumos aplicados, control fitosanitario y trazabilidad BPA.",
+      "state_keys": ["entradas", "loading"]
     },
-    {
-      "name": "haciendaManagement",
-      "path": "src/stores/haciendaManagementStore.js",
-      "usage": "CRUD administrativo de todas las Haciendas (SuperAdmin)",
-      "state_persistence": "No",
-      "audit_status": "✅ 100% - Verificado."
+    "finanzaStore": {
+      "file": "src/stores/finanzaStore.js",
+      "purpose": "Registro de ingresos, egresos por categoría de costo y flujo de caja.",
+      "state_keys": ["transacciones", "loading"]
     },
-    {
-      "name": "hacienda",
-      "path": "src/stores/haciendaStore.js",
-      "usage": "Hacienda Context, Expiry, Module Access, Plan Status",
-      "state_persistence": "Yes (localStorage)",
-      "audit_status": "✅ 100% - Expiración y avisos críticos verificados."
-    },
-    {
-      "name": "notification",
-      "path": "src/stores/notificationStore.js",
-      "usage": "In-app alerts, UI feedback, Persistent notifications",
-      "state_persistence": "Yes (localStorage)",
-      "audit_status": "✅ 100% - Verificado. Alertas asíncronas, cron jobs y backend integrados."
-    },
-    {
-      "name": "plan",
-      "path": "src/stores/planStore.js",
-      "usage": "Subscription limits, Available modules, Activation state",
-      "state_persistence": "Yes (localStorage)",
-      "audit_status": "✅ 100% - Bloqueo reactivo de UI de cuotas integrado en HaciendaUserManagement.vue."
-    },
-    {
-      "name": "programaciones",
-      "path": "src/stores/programaciones/programacionesStore.js",
-      "usage": "Activity planners, Recurrence calculation, AI Suggestions",
-      "state_persistence": "Yes (IndexedDB via Sync)",
-      "audit_status": "✅ 100% - Modularizado. Lógica de finalizeProgramacionExecution atómica verificada."
-    },
-    {
-      "name": "recordatorios",
-      "path": "src/stores/recordatoriosStore.js",
-      "usage": "Event scheduling, Priorities, Association with Siembras/Zonas",
-      "state_persistence": "Yes (localStorage)",
-      "audit_status": "🟡 90% - Verificado localmente, pero falta disparador de alertas remotas (push/email)."
-    },
-    {
-      "name": "report",
-      "path": "src/stores/reportStore.js",
-      "usage": "Internal state for report generation",
-      "state_persistence": "No",
-      "audit_status": "✅ 100% - Verificado."
-    },
-    {
-      "name": "scheduler",
-      "path": "src/stores/schedulerStore.js",
-      "usage": "Internal helper for calendar operations",
-      "state_persistence": "Yes (localStorage)",
-      "audit_status": "✅ 100% - Verificado."
-    },
-    {
-      "name": "settings",
-      "path": "src/stores/settingsStore.js",
-      "usage": "User preferences and system config",
-      "state_persistence": "No",
-      "audit_status": "✅ 100% - Verificado."
-    },
-    {
-      "name": "siembras",
-      "path": "src/stores/siembrasStore.js",
-      "usage": "Agricultural Projects, Harvest projections, GIS integration",
-      "state_persistence": "Yes (localStorage)",
-      "audit_status": "✅ 100% - Verificado."
-    },
-    {
-      "name": "sync",
-      "path": "src/stores/sync/index.js",
-      "usage": "Offline Queue, IndexedDB caching, Network monitor, Conflict Resolution",
-      "state_persistence": "Yes (IndexedDB)",
-      "audit_status": "✅ 100% - Estado industrial verificado."
-    },
-    {
-      "name": "theme",
-      "path": "src/stores/themeStore.js",
-      "usage": "UI appearance management",
-      "state_persistence": "Yes (localStorage)",
-      "audit_status": "✅ 100% - Verificado."
-    },
-    {
-      "name": "uiFeedback",
-      "path": "src/stores/uiFeedbackStore.js",
-      "usage": "Global Loading, Snackbars, Dialog controls",
-      "state_persistence": "No",
-      "audit_status": "✅ 100% - Verificado."
-    },
-    {
-      "name": "user",
-      "path": "src/stores/userStore.js",
-      "usage": "Internal helper for user profile extension",
-      "state_persistence": "Yes (localStorage)",
-      "audit_status": "✅ 100% - Verificado."
-    },
-    {
-      "name": "zonas",
-      "path": "src/stores/zonasStore.js",
-      "usage": "GIS GeoJSON (Lotes/Puntos), BPA Status calc, Offline Cache",
-      "state_persistence": "Yes (localStorage + OfflineGeoStorage)",
-      "audit_status": "✅ 100% - Verificado."
-    },
-    {
-      "name": "bodegaItems",
-      "path": "src/stores/bodegaItemsStore.js",
-      "usage": "CRUD items de bodega",
-      "state_persistence": "Yes",
-      "audit_status": "✅ 100% - Agregado"
-    },
-    {
-      "name": "bodegaMovimientos",
-      "path": "src/stores/bodegaMovimientosStore.js",
-      "usage": "Registro de ingresos y egresos de bodega",
-      "state_persistence": "Yes",
-      "audit_status": "✅ 100% - Agregado"
-    },
-    {
-      "name": "nominaAsistencia",
-      "path": "src/stores/nominaAsistenciaStore.js",
-      "usage": "Control de asistencia de trabajadores",
-      "state_persistence": "Yes",
-      "audit_status": "✅ 100% - Agregado"
-    },
-    {
-      "name": "nominaSemanas",
-      "path": "src/stores/nominaSemanasStore.js",
-      "usage": "Gestión de semanas de nómina",
-      "state_persistence": "Yes",
-      "audit_status": "✅ 100% - Agregado"
-    },
-    {
-      "name": "plantillaNomina",
-      "path": "src/stores/plantillaNominaStore.js",
-      "usage": "Plantillas base para cálculo de nómina",
-      "state_persistence": "Yes",
-      "audit_status": "✅ 100% - Agregado"
-    },
-    {
-      "name": "tarjas",
-      "path": "src/stores/tarjasStore.js",
-      "usage": "Registro de labores y destajos",
-      "state_persistence": "Yes",
-      "audit_status": "✅ 100% - Agregado"
+    "asesorStore": {
+      "file": "src/stores/asesorStore.js",
+      "purpose": "Gestión de paquetes de evaluación, comunicaciones con la hacienda y emisión de recetas con firma RSA.",
+      "state_keys": ["vinculaciones", "paquetes", "recetas", "loading"]
     }
-  ]
+  }
 }

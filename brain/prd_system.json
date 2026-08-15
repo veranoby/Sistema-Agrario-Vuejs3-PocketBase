@@ -1,94 +1,55 @@
 {
-  "system_name": "ConAgri / Gestión Agri",
-  "version": "1.1.0",
-  "audit_type": "Deep Code Verification (Owl Protocol)",
-  "last_audit": "2026-06-30",
-  "modules": {
-    "core_operativo": {
-      "status": "✅",
-      "progress": 95,
-      "audit_status": "VERIFIED CODE. Bitacora CRUD + offline sync funcional. BitacoraEntryForm (Modo A1/A2/B) operativo. Firma digital RSA via WebCrypto implementada y persistida en IndexedDB.",
-      "blockers": [],
-      "notes": "Campos 'signature', 'bpa_respuestas' y 'fotos' creados y verificados en el schema real de PocketBase."
+  "system_name": "Sistema Agrario (ConAgri)",
+  "version": "7.0.0",
+  "audit_type": "Universal B2B Agriculture Platform",
+  "last_audit": "2026-08-14",
+  "modules": [
+    {
+      "code": "core_agricola",
+      "name": "Gestión de Siembras, Zonas y Bitácora BPA",
+      "status": "Production Ready"
     },
-    "programaciones_recurrentes": {
-      "status": "✅",
-      "progress": 100,
-      "audit_status": "VERIFIED CODE. BatchExecutionDialog + batchOperations.js + finalizeProgramacionExecution funcionan correctamente. Lógica de fecha pendiente y cleanup verificada.",
-      "blockers": []
+    {
+      "code": "kardex_bodega",
+      "name": "Kardex de Bodega Conectado",
+      "status": "Production Ready"
     },
-    "ia_assistant": {
-      "status": "✅",
-      "progress": 100,
-      "audit_status": "VERIFIED CODE. All blockers resolved and confirmed in source code.",
-      "blockers": []
+    {
+      "code": "nomina_express",
+      "name": "Nómina Agrícola Express & Destajo",
+      "status": "Production Ready"
     },
-    "gis_avanzado": {
-      "status": "✅",
-      "progress": 90,
-      "audit_status": "VERIFIED CODE. GisMapComponent con Leaflet imperativo funcional. Offline geo cache verificado. Geometría en JSON en colección Haciendas confirmada.",
-      "blockers": []
+    {
+      "code": "tarjas_campo",
+      "name": "Tarjas y Cosechas por Lote",
+      "status": "Production Ready"
     },
-    "asesor_tecnico": {
-      "status": "✅",
-      "progress": 100,
-      "audit_status": "VERIFIED CODE. UI implementada: DirectorioAsesores, RecetasAsesor, HaciendaDetail, Dashboard asesor, EnviarPaqueteWizard, RecetaEditorDialog. Colecciones DB creadas en PB. Mismatches corregidos. Flujo bidireccional paquete<->receta implementado (notas_asesor y paquete_id). Chat enriquecido con carga de fotos (<200kb cliente). Hook backend de seguridad de suscripción implementado (V2 remediado).",
-      "blockers": []
+    {
+      "code": "costo_por_hectarea",
+      "name": "Dashboard Gerencial & Rentabilidad",
+      "status": "Production Ready"
     },
-    "alertas_notificaciones": {
-      "status": "✅",
-      "progress": 100,
-      "audit_status": "VERIFIED CODE. Backend hook /api/alerts/send y cron.alerts.pb.js implementados y funcionales. Campo alertConfig (JSON) creado en colección Haciendas en PocketBase.",
-      "blockers": []
+    {
+      "code": "asesores_bpa",
+      "name": "Marketplace de Asesores & Recetas Digitales",
+      "status": "Production Ready"
     },
-    "finanzas_pro": {
-      "status": "✅",
-      "progress": 75,
-      "audit_status": "VERIFIED CODE. CRUD finanzas funcional. Enlace automático con bitácora completado (FIN-1). Falta integración SRI y exportación legal.",
-      "blockers": []
+    {
+      "code": "tienda_asesores",
+      "name": "Tienda Virtual B2B de Insumos & Matriz Logística ISO-3166",
+      "status": "Production Ready"
     },
-    "auditoria_bpa": {
-      "status": "✅",
-      "progress": 100,
-      "audit_status": "VERIFIED CODE. Firma RSA via digitalSignature.js funcional. BpaChecklist.vue y UniversalSignature.vue operando. Campos 'signature' y 'bpa_respuestas' creados y verificados en la colección bitacora.",
-      "blockers": []
-    },
-    "cuotas_plan_ui": {
-      "status": "✅",
-      "progress": 100,
-      "audit_status": "VERIFIED CODE. useSubscriptionLimits.js implementado correctamente y conectado reactivamente con HaciendaUserManagement.vue para bloquear e indicar límites.",
-      "blockers": []
-    },
-    "bodega_kardex": {
-      "status": "✅",
-      "progress": 100,
-      "audit_status": "VERIFIED CODE. All blockers resolved and confirmed in source code.",
-      "blockers": []
-    },
-    "pdf_bpa_inmutable": {
-      "status": "✅",
-      "progress": 100,
-      "audit_status": "VERIFIED CODE. All blockers resolved and confirmed in source code.",
-      "blockers": []
-    },
-    "nomina_agricola": {
-      "status": "✅",
-      "progress": 100,
-      "audit_status": "VERIFIED CODE. All blockers resolved and confirmed in source code.",
-      "blockers": []
-    },
-    "costo_por_hectarea": {
-      "status": "✅",
-      "progress": 100,
-      "audit_status": "VERIFIED CODE. All blockers resolved and confirmed in source code.",
-      "blockers": []
-    },
-    "tarjas_campo": {
-      "status": "✅",
-      "progress": 100,
-      "audit_status": "VERIFIED CODE. All blockers resolved and confirmed in source code.",
-      "blockers": []
+    {
+      "code": "superadmin_panel",
+      "name": "Panel SuperAdmin & Moderación Global",
+      "status": "Production Ready"
     }
-  },
-  "production_blockers_summary": []
+  ],
+  "stakeholders": [
+    "Administradores de Hacienda (Compradores / Productores)",
+    "Auditores y Técnicos de Campo",
+    "Operadores de Cuadrilla",
+    "Ingenieros Agrónomos Acreditados (Vendedores / Asesores)",
+    "SuperAdmin de Plataforma"
+  ]
 }

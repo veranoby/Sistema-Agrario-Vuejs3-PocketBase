@@ -274,19 +274,14 @@
                         ></v-select>
                       </v-col>
                       <v-col cols="12" class="pb-0">
-                        <v-select
-                          v-model="registerForm.zonas_cobertura"
-                          :items="PROVINCIAS_ECUADOR"
-                          label="Provincias de Cobertura"
-                          multiple
-                          chips
-                          variant="outlined"
-                          required
-                          :error-messages="v$.zonas_cobertura.$errors.map((e) => e.$message)"
-                          color="primary"
+                        <UniversalGeoSelector
+                          v-model:country="registerForm.pais"
+                          v-model:subdivision="registerForm.zonas_cobertura"
+                          :multi-subdivision="true"
+                          country-label="País de Residencia"
+                          subdivision-label="Provincias / Estados de Cobertura"
                           density="compact"
-                          prepend-inner-icon="mdi-map-marker-outline"
-                        ></v-select>
+                        />
                       </v-col>
                       <v-col cols="12" class="pb-0">
                         <v-textarea
@@ -463,6 +458,7 @@ import { useSyncStore } from '@/stores/sync'
 import { debounce } from '@/utils/debounce'
 import { useRouter } from 'vue-router'
 import { calculatePasswordStrength, getPasswordStrengthColor, getPasswordStrengthLabel } from '@/utils/validators/core'
+import UniversalGeoSelector from '@/components/common/UniversalGeoSelector.vue'
 
 const props = defineProps({
   isOpen: Boolean,
@@ -557,6 +553,7 @@ const registerForm = ref({
   passwordConfirm: '',
   hacienda: '',
   numero_colegiatura: '',
+  pais: 'EC',
   especialidades: [],
   zonas_cobertura: [],
   bio_corta: ''

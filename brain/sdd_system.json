@@ -1,110 +1,41 @@
 {
   "stack": {
-    "frontend": "Vue 3, Pinia, Vuetify 3, Tailwind CSS",
-    "backend": "PocketBase (Go + JSVM Hooks v0.22+)",
-    "database": "SQLite (PocketBase internal)",
-    "offline_storage": "IndexedDB (sync store) + LocalStorage",
-    "email": "Resend API (via backend proxy /api/alerts/send)",
-    "maps": "Leaflet.js (imperative, no wrapper)",
-    "signatures": "WebCrypto API (RSASSA-PKCS1-v1_5, 2048 bits)"
+    "frontend": "Vue 3 (Composition API <script setup>) + Vuetify 3 + Pinia + Vite",
+    "backend": "PocketBase (Go SQLite + JSVM hooks)",
+    "offline_pwa": "Workbox Service Worker + localStorage offline sync queue",
+    "internationalization": "ISO 3166-1 (Countries) + ISO 3166-2 (Subdivisions) + vue-i18n"
   },
   "collections_verified": [
-    "users", "Haciendas", "Siembras", "actividades", "tipo_actividades",
-    "tipos_zonas", "zonas", "bitacora", "programaciones", "recordatorios",
-    "finanzas", "modulos", "planes", "subscriptions", "solicitudes_suscripcion",
-    "paquetes_evaluacion", "recetas", "vinculaciones_asesor", "system_config",
-    "bodega_items", "bodega_movimientos", "comunicaciones_asesoria",
-    "nomina_asistencia", "nomina_semanas", "plantilla_nomina", "tarjas"
-  ],
-  "collections_missing_from_schema": [
-    {
-      "collection": "alertConfig (field in Haciendas)",
-      "type": "JSON field",
-      "required_by": ["cron.alerts.pb.js", "NotificationSettings.vue", "emailAlertService.js"],
-      "action": "Owner must add JSON field 'alertConfig' to Haciendas collection",
-      "status": "✅ Creado y verificado en PocketBase"
-    },
-    {
-      "collection": "signature (field in bitacora)",
-      "type": "JSON field",
-      "required_by": ["bitacoraStore.js (crearBitacoraEntry)"],
-      "action": "Owner must add JSON field 'signature' to bitacora collection",
-      "status": "✅ Creado y verificado en PocketBase"
-    },
-    {
-      "collection": "bpa_respuestas (field in bitacora)",
-      "type": "JSON field",
-      "required_by": ["BitacoraEntryForm.vue"],
-      "action": "Owner must add JSON field 'bpa_respuestas' to bitacora collection",
-      "status": "✅ Creado y verificado en PocketBase"
-    }
+    "users",
+    "Haciendas",
+    "Siembras",
+    "zonas",
+    "actividades",
+    "bitacora",
+    "programaciones",
+    "finanzas",
+    "planes",
+    "modulos",
+    "recetas",
+    "vinculaciones_asesor",
+    "paquetes_evaluacion",
+    "comunicaciones_asesoria",
+    "bodega_items",
+    "bodega_movimientos",
+    "nomina_semanas",
+    "nomina_asistencia",
+    "tarjas",
+    "asesor_productos",
+    "asesor_pedidos"
   ],
   "data_flows": {
-    "sync": "Action-based Queue (src/stores/sync/queueProcessor.js) -> IndexedDB -> PocketBase REST. Atomicity per-item.",
-    "rbac": "Backend enforcement for SuperAdmin role on critical hooks (modules). Frontend route guards via authStore.",
-    "gis": "Stores load GeoJSON -> GisMapComponent parses manually (imperative Leaflet) -> DrawnItems",
-    "signatures": "Bitacora data -> digitalSignature.js (WebCrypto RSASSA-PKCS1-v1_5) -> base64 stored in PocketBase 'signature' JSON field. Creado y verificado.",
-    "ia_assistant": "Frontend UI -> Backend Proxy (/api/ai/chat) -> OpenRouter. Structured JSON response allows action execution (Human-in-the-loop).",
-    "bitacora_individual": "UI (BitacoraEntryForm Modo A1/B) -> bitacoraStore.crearBitacoraEntry -> validacion handler -> GPS -> firma RSA -> pb.collection('bitacora').create",
-    "bitacora_batch": "UI (BatchExecutionDialog Modo A2) -> programacionesStore.ejecutarProgramacionesBatch -> batchOperations.js -> crearBitacoraEntry x N fechas -> updateProgramacionAfterBatch",
-    "asesor_receta": "✅ CORREGIDO - RecetaEditorDialog ahora envía campos alineados con el schema real de PocketBase (titulo, blanco_biologico, producto_recomendado, etc.)",
-    "paquete_evaluacion": "✅ CORREGIDO - EnviarPaqueteWizard envía vinculacion_id, hacienda_id, asesor_id, siembra_id, zonas_ids, bitacora_ids, notas_hacienda y estado='enviado' usando FormData."
+    "tienda_b2b_flow": "Asesor publica producto con registro fitosanitario y provincias permitidas ➔ Hacienda explora en Marketplace con semáforo de factibilidad ➔ Checkout con emisión de ORD-YYYY-XXXX ➔ Asesor verifica pago y sube Guía de Despacho ➔ Hacienda firma recepción conforme con UniversalSignature y auto-ingresa a Kardex Bodega",
+    "asesoria_tecnica_flow": "Hacienda envía Paquete de Evaluación con Zonas y Bitácoras ➔ Asesor diagnostica y emite Receta con Firma Digital ➔ Hacienda aprueba y convierte receta a Programación de Trabajo en 1 clic",
+    "offline_sync_flow": "Operador registra en campo sin internet ➔ IndexedDB/localStorage retiene cola de mutaciones ➔ Al recuperar conexión, syncStore procesa cola y resuelve conflictos"
   },
   "security_audit": {
-    "authentication": "PocketBase JWT. Secure.",
-    "authorization": "Verified. Backend hooks enforce roles. Proxy endpoints protect 3P keys.",
-    "vulnerabilities": [
-      {
-        "id": "V1",
-        "issue": "Plan bypass",
-        "risk": "High",
-        "description": "HaciendaUserManagement.vue no conecta con useSubscriptionLimits.js. Botones de agregar usuarios no bloqueados reactivamente.",
-        "status": "✅ Remediado y verificado en HaciendaUserManagement.vue"
-      },
-      {
-        "id": "V2",
-        "issue": "Asesor sin suscripción accede al dashboard",
-        "risk": "Medium",
-        "description": "asesor/Dashboard.vue verifica subscripción en frontend via PB query. Sin hook de backend que fuerce validación server-side en cada request, un usuario manipulado puede saltarlo.",
-        "status": "✅ Remediado y verificado con pb_hooks/security_asesor.pb.js"
-      }
-    ],
-    "remediations": [
-      {
-        "id": "B1",
-        "issue": "Exposed Resend API Key",
-        "fix": "Moved to Backend Proxy /api/alerts/send. Frontend keys removed.",
-        "status": "✅ VERIFIED (100% Cleanup)"
-      },
-      {
-        "id": "B2",
-        "issue": "Exposed OpenRouter/AI Key",
-        "fix": "Backend Proxy /api/ai/chat with BYOK + global rate limit enforced.",
-        "status": "✅ VERIFIED"
-      },
-      {
-        "id": "B3",
-        "issue": "Module Activation Bypass",
-        "fix": "Enforced superadmin role check in pb_hooks/main.js.",
-        "status": "✅ VERIFIED"
-      }
-    ]
-  },
-  "critical_flows_status": {
-    "bitacora_individual": "✅ Listo Producción. BitacoraEntryForm crea correctamente con firma RSA.",
-    "bitacora_batch": "✅ Listo Producción. BatchExecutionDialog + batchOperations.js funcional y atómico.",
-    "sincronizacion_offline": "✅ Listo Producción. Race conditions fixed, atomic persistence, isProcessing lock.",
-    "asistente_ia": "✅ Listo Producción. Proxy seguro, action cards, human-in-the-loop.",
-    "asesor_crear_receta": "✅ Listo Producción. Campos corregidos y alineados con recetas.",
-    "asesor_enviar_paquete": "✅ Listo Producción. Campos de paquetes_evaluacion corregidos y usando FormData.",
-    "asesor_aprobar_receta": "✅ Listo Producción. Estado 'ejecutada' alineado y actividades pasadas como array.",
-    "asesor_flujo_bidireccional": "✅ Listo Producción. Link receta<->paquete, notas_asesor (feedback), y chat con compresión de fotos.",
-    "alertas_email_cron": "✅ Listo Producción. Campo alertConfig creado y cron/NotificationSettings funcionales.",
-    "cuotas_plan_ui": "✅ Listo Producción. Bloqueo reactivo e indicador de cuota integrados en HaciendaUserManagement.",
-    "finanzas": "🟡 Parcial. CRUD. Enlace automático bitácora FIN-1 listo. Sin SRI.",
-    "bitacora_to_finanzas_auto": "✅ Listo Producción. postProcess en AplicacionHandler y FertilizacionHandler auto-registra en finanzas con monto calculado.",
-    "bodega_kardex": "✅ Listo Producción.",
-    "pdf_bpa_inmutable": "✅ Listo Producción.",
-    "nomina_agricola": "✅ Listo Producción."
+    "role_safeguards": "Enforced en router guards + PocketBase API Rules + pb_hooks",
+    "superadmin_endpoints": "Autenticación y cuotas protegidas en /api/admin/*",
+    "asesor_paywall": "Acceso a emisión de recetas y tienda condicionado a suscripción activa"
   }
 }

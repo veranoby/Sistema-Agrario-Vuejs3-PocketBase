@@ -1,6 +1,6 @@
 {
   "api_type": "PocketBase JSVM / REST",
-  "last_audit": "2026-05-20",
+  "last_audit": "2026-08-14",
   "base_collections": [
     "users",
     "Haciendas",
@@ -27,186 +27,60 @@
     "nomina_asistencia",
     "nomina_semanas",
     "plantilla_nomina",
-    "tarjas"
+    "tarjas",
+    "asesor_productos",
+    "asesor_pedidos"
   ],
   "custom_hooks": [
+    {
+      "path": "pb_hooks/asesor_tienda.pb.js",
+      "method": "HOOK (onModelBeforeCreate / onModelBeforeUpdate)",
+      "handler": "pb_hooks/asesor_tienda.pb.js",
+      "audit_status": "✅ 100%",
+      "validation": "Auto-generación de código correlativo único ORD-YYYY-XXXX y registro cronológico en fechas_log.",
+      "security": "Enforce de validación de montos e inmutabilidad de compras."
+    },
+    {
+      "path": "pb_hooks/security_asesor.pb.js",
+      "method": "HOOK",
+      "handler": "pb_hooks/security_asesor.pb.js",
+      "audit_status": "✅ 100%",
+      "validation": "Validación estricta de suscripción activa para asesores técnicos en emisión de recetas y catálogo.",
+      "security": "Bloqueo de acceso no autorizado a módulos de monetización para asesores inactivos."
+    },
+    {
+      "path": "/api/admin/users",
+      "method": "GET / POST",
+      "handler": "pb_hooks/main.pb.js",
+      "audit_status": "✅ 100%",
+      "validation": "Gestión de usuarios con control estricto de cuotas por plan de hacienda.",
+      "security": "Acceso restringido a SuperAdmin."
+    },
+    {
+      "path": "/api/admin/haciendas",
+      "method": "GET / POST",
+      "handler": "pb_hooks/main.pb.js",
+      "audit_status": "✅ 100%",
+      "validation": "Auditoría, suspensión y activación de haciendas agrícolas.",
+      "security": "Acceso restringido a SuperAdmin."
+    },
     {
       "path": "/api/ai/chat",
       "method": "POST",
       "handler": "pb_hooks/main.js",
       "audit_status": "✅ 100%",
-      "validation": "Validates prompt, haciendaId, and caller.",
-      "error_handling": "Returns 429 for rate limit, 500 for proxy fail.",
-      "security": "Proxy logic protects BYOK/Global keys. RequireAuth check."
+      "validation": "Validación de prompt, haciendaId y autenticación.",
+      "error_handling": "Returns 429 para rate limit, 500 para proxy fail.",
+      "security": "Proxy logic protege BYOK / Global keys. RequireAuth check."
     },
     {
       "path": "/api/ext/alerts/send",
       "method": "POST",
       "handler": "pb_hooks/alerts_send.pb.js",
       "audit_status": "✅ 100%",
-      "validation": "Validates type, recipients (non-empty array), hacienda fields.",
-      "error_handling": "Returns 400 for invalid fields, 500 for Resend proxy failure.",
-      "security": "RequireAuth check. Proxy masks Resend API key. VALID_ALERT_TYPES whitelist enforced."
-    },
-    {
-      "path": "OBSOLETE: /api/reports/check-pending",
-      "method": "POST",
-      "handler": "pb_hooks/reports.pb.js",
-      "audit_status": "❌ OBSOLETE",
-      "simulation_result": "Ghost Logs mechanism replaced by UI-driven Work Orders (BatchExecutionDialog). No longer needed."
-    },
-    {
-      "path": "/api/modulos/:id/activate",
-      "method": "POST",
-      "handler": "pb_hooks/main.js",
-      "audit_status": "✅ 100%",
-      "validation": "Validates params and checks existing subscriptions.",
-      "error_handling": "Atomic transaction with rollback on failure.",
-      "security": "SuperAdmin role check enforced."
-    },
-    {
-      "path": "/api/modulos/:id/deactivate",
-      "method": "POST",
-      "handler": "pb_hooks/main.js",
-      "audit_status": "✅ 100%",
-      "validation": "Validates active subscription exists.",
-      "error_handling": "Updates subscription state.",
-      "security": "SuperAdmin role check enforced."
-    },
-    {
-      "path": "/api/admin/users",
-      "method": "GET/POST",
-      "handler": "pb_hooks/main.js",
-      "audit_status": "🟡 80%",
-      "validation": "Basic CRUD. Missing pagination on large datasets.",
-      "error_handling": "Basic 500 catch.",
-      "security": "SuperAdmin role check enforced. Missing deep tenant filter for asesor users."
-    },
-    {
-      "path": "/api/admin/users/:id",
-      "method": "PUT/DELETE",
-      "handler": "pb_hooks/main.js",
-      "audit_status": "✅ 100%",
-      "security": "SuperAdmin role check enforced."
-    },
-    {
-      "path": "/api/admin/users/:id/reset-password",
-      "method": "POST",
-      "handler": "pb_hooks/main.js",
-      "audit_status": "✅ 100%",
-      "security": "SuperAdmin role check enforced."
-    },
-    {
-      "path": "/api/admin/users/:id/haciendas",
-      "method": "POST",
-      "handler": "pb_hooks/main.js",
-      "audit_status": "✅ 100%",
-      "security": "SuperAdmin role check enforced."
-    },
-    {
-      "path": "/api/admin/users/:id/roles",
-      "method": "POST",
-      "handler": "pb_hooks/main.js",
-      "audit_status": "✅ 100%",
-      "security": "SuperAdmin role check enforced."
-    },
-    {
-      "path": "/api/admin/haciendas",
-      "method": "GET/POST",
-      "handler": "pb_hooks/main.js",
-      "audit_status": "🟡 80%",
-      "security": "SuperAdmin role check enforced. Missing alertConfig field on schema (must be added manually)."
-    },
-    {
-      "path": "/api/admin/haciendas/:id",
-      "method": "PUT/DELETE",
-      "handler": "pb_hooks/main.js",
-      "audit_status": "✅ 100%",
-      "security": "SuperAdmin role check enforced."
-    },
-    {
-      "path": "/api/admin/haciendas/:id/owner",
-      "method": "POST",
-      "handler": "pb_hooks/main.js",
-      "audit_status": "✅ 100%",
-      "security": "SuperAdmin role check enforced."
-    },
-    {
-      "path": "/api/admin/haciendas/:id/plan",
-      "method": "POST",
-      "handler": "pb_hooks/main.js",
-      "audit_status": "🟡 80%",
-      "security": "SuperAdmin role check enforced. Missing financial trigger (invoicing/payment confirmation)."
-    },
-    {
-      "path": "/api/admin/haciendas/:id/reactivate",
-      "method": "POST",
-      "handler": "pb_hooks/main.js",
-      "audit_status": "✅ 100%",
-      "security": "SuperAdmin role check enforced."
-    },
-    {
-      "path": "/api/admin/haciendas/:id/metrics",
-      "method": "GET",
-      "handler": "pb_hooks/main.js",
-      "audit_status": "✅ 100%",
-      "security": "SuperAdmin role check enforced."
-    },
-    {
-      "path": "/api/analytics/global",
-      "method": "GET",
-      "handler": "pb_hooks/main.js",
-      "audit_status": "🟡 80%",
-      "security": "SuperAdmin role check enforced."
-    },
-    {
-      "path": "/api/analytics/usage",
-      "method": "GET",
-      "handler": "pb_hooks/main.js",
-      "audit_status": "🟡 80%",
-      "security": "SuperAdmin role check enforced."
-    },
-    {
-      "path": "/api/analytics/patterns",
-      "method": "GET",
-      "handler": "pb_hooks/main.js",
-      "audit_status": "🟡 50%",
-      "security": "SuperAdmin role check enforced. Missing dynamic pattern intelligence."
-    },
-    {
-      "path": "/api/reports/scheduled",
-      "method": "GET/POST",
-      "handler": "pb_hooks/main.js",
-      "audit_status": "🟡 60%",
-      "security": "Auth required. Basic implementation."
-    },
-    {
-      "path": "/api/reports/scheduled/:id",
-      "method": "PUT/DELETE",
-      "handler": "pb_hooks/main.js",
-      "audit_status": "🟡 60%",
-      "security": "Auth required (owner check)."
-    },
-    {
-      "path": "Cron: Mondays 08:00",
-      "method": "CRON",
-      "handler": "pb_hooks/cron.alerts.pb.js",
-      "audit_status": "🟡 60% - PLANNED/Partial",
-      "note": "Needs alertConfig field in Haciendas collection. Cron logic exists but alertConfig JSON field missing from PB schema."
-    },
-    {
-      "path": "pb_hooks/asesores.pb.js",
-      "method": "HOOK",
-      "handler": "JSVM Hooks",
-      "audit_status": "✅ 100% - Verificado",
-      "note": "Hooks para transiciones de estado en recetas y paquetes_evaluacion, notificaciones via email y control de duplicidad en vinculaciones."
-    },
-    {
-      "path": "pb_hooks/security_asesor.pb.js",
-      "method": "HOOK",
-      "handler": "JSVM Hooks",
-      "audit_status": "✅ 100% - Verificado",
-      "note": "Hook de seguridad (OnRecordViewRequest) para bloquear accesos no autorizados al dashboard de asesores si la suscripción no está activa."
+      "validation": "Validación de tipo, destinatarios y pertenencia a hacienda.",
+      "error_handling": "Returns 400 para campos inválidos, 500 para Resend failure.",
+      "security": "RequireAuth check. Proxy masks Resend API key."
     }
   ]
 }

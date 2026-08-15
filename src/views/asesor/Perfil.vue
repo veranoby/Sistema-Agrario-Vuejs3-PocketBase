@@ -86,58 +86,37 @@
                   ></v-select>
                 </v-col>
 
-                <!-- Coverage Areas (Editable) -->
-                <v-col cols="12" sm="6">
-                  <v-select
-                    v-model="selectedProvincias"
-                    :items="PROVINCIAS"
-                    prepend-inner-icon="mdi-map-marker"
-                    label="Provincias de Cobertura"
-                    multiple
-                    chips
-                    variant="outlined"
-                    density="compact"
-                    color="indigo"
-                    :rules="[v => v.length > 0 || 'Debes seleccionar al menos una provincia de cobertura']"
-                    required
-                  ></v-select>
-                </v-col>
-
                 <v-col cols="12" sm="6">
                   <v-text-field
                     v-model="cedula"
-                    label="Cédula o RUC (Opcional)"
+                    label="Identificación / Cédula / DNI / NIF"
                     variant="outlined"
                     density="compact"
                     color="indigo"
-                  ></v-text-field>
+                  />
                 </v-col>
                 <v-col cols="12" sm="6">
                   <v-text-field
                     v-model="direccion"
-                    label="Dirección Física"
+                    label="Dirección Física de Oficina / Despacho"
                     variant="outlined"
                     density="compact"
                     color="indigo"
-                  ></v-text-field>
+                  />
                 </v-col>
-                <v-col cols="12" sm="6">
-                  <v-text-field
-                    v-model="ciudad"
-                    label="Ciudad"
-                    variant="outlined"
+
+                <!-- Selector Geográfico Universal (País, Ciudad y Zonas de Cobertura) -->
+                <v-col cols="12">
+                  <UniversalGeoSelector
+                    v-model:country="pais"
+                    v-model:subdivision="selectedProvincias"
+                    v-model:city="ciudad"
+                    :show-city="true"
+                    :multi-subdivision="true"
+                    country-label="País de Residencia y Ejercicio Profesional"
+                    subdivision-label="Provincias / Estados de Cobertura Técnica"
                     density="compact"
-                    color="indigo"
-                  ></v-text-field>
-                </v-col>
-                <v-col cols="12" sm="6">
-                  <v-text-field
-                    v-model="pais"
-                    label="País"
-                    variant="outlined"
-                    density="compact"
-                    color="indigo"
-                  ></v-text-field>
+                  />
                 </v-col>
 
                 <!-- Professional Bio -->
@@ -463,6 +442,7 @@ import { useUiFeedbackStore } from '@/stores/uiFeedbackStore'
 import { useAvatarStore } from '@/stores/avatarStore'
 import { handleError } from '@/utils/errorHandler'
 import UniversalHeader from '@/components/UniversalHeader.vue'
+import UniversalGeoSelector from '@/components/common/UniversalGeoSelector.vue'
 
 const authStore = useAuthStore()
 const settingsStore = useSettingsStore()

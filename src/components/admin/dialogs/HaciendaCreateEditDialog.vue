@@ -1,167 +1,97 @@
 <template>
-  <v-dialog v-model="isOpen" max-width="800" persistent>
+  <v-dialog v-model="isOpen" max-width="700" persistent>
     <v-card>
-      <v-card-title class="bg-primary text-white">
-        {{ isEdit ? 'Editar Hacienda' : 'Nueva Hacienda' }}
+      <v-card-title class="bg-primary text-white d-flex align-center justify-space-between py-3">
+        <span class="text-h6">Nueva Hacienda</span>
+        <v-btn icon="mdi-close" variant="text" color="white" size="small" @click="closeModal" />
       </v-card-title>
+
       <v-card-text class="pt-4">
         <v-form ref="haciendaForm" v-model="formValid" @submit.prevent="saveHacienda">
-          <h3 class="font-weight-bold mb-2">Información Principal</h3>
-          <v-row>
+          <v-row dense>
             <v-col cols="12" md="6">
               <v-text-field
                 v-model="formData.name"
-                label="Nombre"
-                :rules="[v => !!v || 'Nombre requerido']"
+                label="Nombre de la Hacienda *"
+                :rules="[v => !!v?.trim() || 'El nombre es obligatorio']"
                 required
                 variant="outlined"
                 density="compact"
+                prepend-inner-icon="mdi-domain"
               />
             </v-col>
+
             <v-col cols="12" md="6">
               <v-autocomplete
                 v-model="formData.administrador"
                 :items="usersList"
                 item-title="label"
                 item-value="id"
-                label="Propietario / Administrador"
+                label="Propietario / Administrador Principal"
+                placeholder="Seleccionar usuario"
                 variant="outlined"
                 density="compact"
                 clearable
+                prepend-inner-icon="mdi-account-tie"
               />
             </v-col>
-            <v-col cols="12">
-              <v-textarea
-                v-model="formData.descripcion"
-                label="Información Adicional (Descripción)"
-                rows="2"
-                variant="outlined"
-                density="compact"
-              />
-            </v-col>
+
             <v-col cols="12" md="6">
               <v-text-field
                 v-model="formData.ubicacion"
                 label="Ubicación"
+                placeholder="Ej: Cantón Durán, Guayas, Ecuador"
                 variant="outlined"
                 density="compact"
+                prepend-inner-icon="mdi-map-marker"
               />
             </v-col>
-            <v-col cols="12" md="3">
-              <v-select
-                v-model="formData.ai_config.provider"
-                :items="['custom', 'openrouter']"
-                label="AI Provider"
-                variant="outlined"
-                density="compact"
-              />
-            </v-col>
-            <v-col cols="12" md="3">
-              <v-text-field
-                v-model="formData.ai_config.model"
-                label="AI Model"
-                variant="outlined"
-                density="compact"
-              />
-            </v-col>
-            <v-col cols="12" md="3">
-              <v-text-field
-                v-model="formData.ai_config.base_url"
-                label="AI Base URL"
-                variant="outlined"
-                density="compact"
-              />
-            </v-col>
-            <v-col cols="12" md="3">
-              <v-text-field
-                v-model="formData.ai_config.auth_token"
-                label="AI Auth Token"
-                type="password"
-                variant="outlined"
-                density="compact"
-              />
-            </v-col>
-            <v-col cols="12" md="6" v-if="isEdit && hasAvatar">
-              <v-btn color="error" variant="outlined" size="small" @click="handleDeleteAvatar">
-                Eliminar Avatar
-              </v-btn>
-            </v-col>
-          </v-row>
 
-          <v-divider class="my-4" />
-
-          <h3 class="font-weight-bold mb-2">Configuración y Estado</h3>
-          <v-row>
             <v-col cols="12" md="6">
-              <span class="text-xs">Estado</span>
-              <v-radio-group v-model="formData.status" inline>
-                <v-radio label="Activa" value="active" />
-                <v-radio label="Suspendida" value="suspended" />
-                <v-radio label="Inactiva" value="inactive" />
-              </v-radio-group>
-            </v-col>
-            <v-col cols="12" md="6" v-if="formData.status === 'suspended'">
-              <v-text-field
-                v-model="formData.suspension_reason"
-                label="Razón de suspensión"
+              <v-select
+                v-model="formData.plan"
+                :items="planesOptions"
+                item-title="label"
+                item-value="id"
+                label="Plan Inicial"
                 variant="outlined"
                 density="compact"
+                prepend-inner-icon="mdi-package-variant-closed"
+              />
+            </v-col>
+
+            <v-col cols="12">
+              <v-textarea
+                v-model="formData.descripcion"
+                label="Descripción / Información adicional"
+                rows="3"
+                variant="outlined"
+                density="compact"
+                prepend-inner-icon="mdi-text"
               />
             </v-col>
           </v-row>
 
-          <template v-if="isEdit">
-            <v-divider class="my-4" />
-            <h3 class="font-weight-bold mb-2">Suscripción y Módulos</h3>
-            <v-row>
-              <v-col cols="12" md="6">
-                <span class="text-xs">Plan</span>
-                <v-radio-group v-model="formData.plan" inline>
-                  <v-radio
-                    v-for="plan in planesList"
-                    :key="plan.id"
-                    :label="plan.nombre || plan.name"
-                    :value="plan.id"
-                  />
-                </v-radio-group>
-              </v-col>
-              <v-col cols="12">
-                <span class="text-xs">Módulos Activos</span>
-                <v-row class="mt-1">
-                  <v-col cols="12" sm="6" md="4" v-for="mod in modulosList" :key="mod.id">
-                    <v-checkbox
-                      v-model="formData.active_modules"
-                      :value="mod.id"
-                      hide-details
-                      density="compact"
-                    >
-                      <template v-slot:label>
-                        <span class="text-md">{{ mod.name || mod.nombre }}</span>
-                      </template>
-                    </v-checkbox>
-                  </v-col>
-                </v-row>
-              </v-col>
-            </v-row>
-          </template>
-          <template v-else>
-            <v-alert type="info" class="mt-4" density="compact">
-              Al crear la hacienda se asignará automáticamente el plan gratuito sin módulos extra.
-            </v-alert>
-          </template>
+          <v-alert type="info" variant="tonal" density="compact" class="mt-3">
+            <span class="text-caption">
+              Una vez creada la hacienda, podrás gestionar usuarios, habilitar módulos específicos, vincular asesores técnicos y configurar parámetros de IA desde el panel de gestión detallada.
+            </span>
+          </v-alert>
         </v-form>
       </v-card-text>
+
       <v-card-actions class="pb-4 pr-4">
         <v-spacer />
-        <v-btn color="error" variant="elevated" @click="closeModal">CANCELAR</v-btn>
+        <v-btn color="grey" variant="text" @click="closeModal">Cancelar</v-btn>
         <v-btn
           color="primary"
           variant="elevated"
           :disabled="!formValid"
           :loading="loading"
+          prepend-icon="mdi-plus"
           @click="saveHacienda"
         >
-          GUARDAR
+          Crear Hacienda
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -178,19 +108,11 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
-  haciendaData: {
-    type: Object,
-    default: null
-  },
   usersList: {
     type: Array,
     default: () => []
   },
   planesList: {
-    type: Array,
-    default: () => []
-  },
-  modulosList: {
     type: Array,
     default: () => []
   }
@@ -204,18 +126,13 @@ const uiFeedbackStore = useUiFeedbackStore()
 const haciendaForm = ref(null)
 const formValid = ref(false)
 const loading = ref(false)
-const hasAvatar = ref(false)
 
 const formData = ref({
   name: '',
+  administrador: null,
   descripcion: '',
   ubicacion: '',
-  plan: null,
-  status: 'active',
-  suspension_reason: '',
-  administrador: null,
-  active_modules: [],
-  ai_config: { provider: 'custom', base_url: '', model: '', auth_token: '' }
+  plan: 'free'
 })
 
 const isOpen = computed({
@@ -223,44 +140,36 @@ const isOpen = computed({
   set: (val) => emit('update:modelValue', val)
 })
 
-const isEdit = computed(() => !!props.haciendaData?.id)
+const planesOptions = computed(() => {
+  if (props.planesList && props.planesList.length > 0) {
+    return props.planesList.map(p => ({
+      id: p.id,
+      label: p.nombre || p.name || p.id
+    }))
+  }
+  return [
+    { id: 'free', label: 'Gratuito / Básico' },
+    { id: 'pro', label: 'Profesional (Pro)' },
+    { id: 'enterprise', label: 'Empresarial (Enterprise)' }
+  ]
+})
 
 watch(() => props.modelValue, (val) => {
   if (val) {
-    initForm()
+    resetForm()
   }
 })
 
-function initForm() {
-  const h = props.haciendaData
-  if (h) {
-    hasAvatar.value = !!h.avatar
-    formData.value = {
-      name: h.name || h.nombre || '',
-      descripcion: h.info || h.descripcion || '',
-      ubicacion: h.location || h.ubicacion || '',
-      plan: h.plan?.id || h.plan || null,
-      status: h.status || 'active',
-      suspension_reason: h.suspension_reason || '',
-      administrador: h.owner || h.administrador || null,
-      active_modules: Array.isArray(h.active_modules) ? h.active_modules : (h.active_modules ? [h.active_modules] : []),
-      ai_config: h.ai_config || { provider: 'custom', base_url: '', model: '', auth_token: '' }
-    }
-  } else {
-    hasAvatar.value = false
-    formData.value = {
-      name: '',
-      descripcion: '',
-      ubicacion: '',
-      plan: null,
-      status: 'active',
-      suspension_reason: '',
-      administrador: null,
-      active_modules: [],
-      ai_config: { provider: 'custom', base_url: '', model: '', auth_token: '' }
-    }
-    haciendaForm.value?.reset()
+function resetForm() {
+  formData.value = {
+    name: '',
+    administrador: null,
+    descripcion: '',
+    ubicacion: '',
+    plan: planesOptions.value[0]?.id || 'free'
   }
+  formValid.value = false
+  haciendaForm.value?.resetValidation()
 }
 
 function closeModal() {
@@ -268,51 +177,31 @@ function closeModal() {
 }
 
 async function saveHacienda() {
-  if (!formData.value.name) return
+  if (!formData.value.name?.trim()) return
   loading.value = true
-  const data = {
-    nombre: formData.value.name,
-    name: formData.value.name,
-    info: formData.value.descripcion,
-    location: formData.value.ubicacion,
-    descripcion: formData.value.descripcion,
-    ubicacion: formData.value.ubicacion,
-    status: formData.value.status,
-    suspension_reason: formData.value.status === 'suspended' ? formData.value.suspension_reason : '',
-    owner: formData.value.administrador,
-    ai_config: formData.value.ai_config
-  }
 
-  if (isEdit.value) {
-    data.plan = formData.value.plan
-    data.active_modules = formData.value.active_modules
+  const data = {
+    nombre: formData.value.name.trim(),
+    name: formData.value.name.trim(),
+    info: formData.value.descripcion || '',
+    descripcion: formData.value.descripcion || '',
+    location: formData.value.ubicacion || '',
+    ubicacion: formData.value.ubicacion || '',
+    owner: formData.value.administrador || null,
+    administrador: formData.value.administrador || null,
+    plan: formData.value.plan,
+    status: 'active'
   }
 
   try {
-    if (isEdit.value) {
-      await haciendaManagementStore.updateHacienda(props.haciendaData.id, data)
-      uiFeedbackStore.showSnackbar('Hacienda actualizada exitosamente', 'success')
-    } else {
-      await haciendaManagementStore.createHacienda(data)
-      uiFeedbackStore.showSnackbar('Hacienda creada exitosamente', 'success')
-    }
+    await haciendaManagementStore.createHacienda(data)
+    uiFeedbackStore.showSnackbar('Hacienda creada exitosamente', 'success')
     emit('saved')
     closeModal()
   } catch (err) {
-    uiFeedbackStore.showSnackbar(err.message || 'Error al guardar hacienda', 'error')
+    uiFeedbackStore.showSnackbar(err.message || 'Error al crear hacienda', 'error')
   } finally {
     loading.value = false
-  }
-}
-
-async function handleDeleteAvatar() {
-  if (!props.haciendaData?.id) return
-  try {
-    await haciendaManagementStore.updateHacienda(props.haciendaData.id, { avatar: null })
-    hasAvatar.value = false
-    uiFeedbackStore.showSnackbar('Avatar eliminado exitosamente', 'success')
-  } catch (err) {
-    uiFeedbackStore.showSnackbar(err.message || 'Error al eliminar avatar', 'error')
   }
 }
 </script>

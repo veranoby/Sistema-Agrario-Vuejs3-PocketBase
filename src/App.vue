@@ -136,6 +136,7 @@ const navigationLinks = computed(() => {
       { id: 'sa2', to: '/admin/users', icon: 'mdi-account-group', label: 'Gestión de Usuarios' },
       { id: 'sa3', to: '/admin/haciendas', icon: 'mdi-home-group', label: 'Gestión de Haciendas' },
       { id: 'sa11', to: '/admin/asesores', icon: 'mdi-account-tie-hat', label: 'Gestión de Asesores' },
+      { id: 'sa12', to: '/admin/tienda', icon: 'mdi-storefront', label: 'Supervisión Tienda' },
       { id: 'sa4', to: '/admin/settings', icon: 'mdi-cog', label: 'Configuración del Sistema' },
       { id: 'sa5', to: '/admin/logs', icon: 'mdi-text-box-search', label: 'Visor de Logs' },
       { id: 'sa6', to: '/admin/exports', icon: 'mdi-export', label: 'Exportaciones' },
@@ -148,6 +149,7 @@ const navigationLinks = computed(() => {
     return [
       { id: 'a1', to: '/asesor/dashboard', icon: 'mdi-view-dashboard', label: 'Dashboard' },
       { id: 'a2', to: '/asesor/haciendas', icon: 'mdi-barn', label: 'Mis Haciendas' },
+      { id: 'a4', to: '/asesor/tienda', icon: 'mdi-storefront', label: 'Mi Tienda Virtual' },
       { id: 'a3', to: '/asesor/perfil', icon: 'mdi-account-circle', label: 'Mi Perfil' }
     ]
   }
@@ -158,7 +160,9 @@ const navigationLinks = computed(() => {
     { id: 6, to: '/zonas', icon: 'mdi-map', label: t('sidebar.zones'), group: 'Fase 2: Zonas y Actividades' },
     { id: 3, to: '/actividades', icon: 'mdi-gesture-tap-button', label: t('sidebar.activities'), group: 'Fase 2: Zonas y Actividades' },
     { id: 4, to: '/programaciones', icon: 'mdi-alarm-check', label: t('sidebar.schedules'), group: 'Fase 3: Control' },
-    { id: 5, to: '/bitacora', icon: 'mdi-book-open-variant', label: t('sidebar.bitacora'), group: 'Fase 3: Control' }
+    { id: 5, to: '/bitacora', icon: 'mdi-book-open-variant', label: t('sidebar.bitacora'), group: 'Fase 3: Control' },
+    { id: 16, to: '/hacienda/tienda', icon: 'mdi-cart', label: 'Tienda de Insumos', group: 'Comercial' },
+    { id: 17, to: '/hacienda/mis-pedidos', icon: 'mdi-package-variant-closed', label: 'Mis Compras / Envíos', group: 'Comercial' }
   ]
 
   if (haciendaStore.isModuleActive('tarjas_campo')) {

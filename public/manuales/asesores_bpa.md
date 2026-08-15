@@ -48,6 +48,23 @@ El módulo de **Gestión de Asesores y Marketplace BPA** conecta a los administr
 
 ---
 
-## 🔒 Seguridad e Inmutabilidad BPA
-- Cada receta aprobada queda vinculada al expediente de tu hacienda.
-- La firma digital RSA del asesor valida ante inspectores de **Agrocalidad** que la dosificación de agroquímicos fue prescrita por un profesional acreditado.
+### 4. Tienda Virtual de Insumos y Servicios Técnicos
+1. **Para Asesores (Vendedor):**
+   - Accede a **Menú → Mi Tienda Virtual** (`/asesor/tienda`).
+   - Publica insumos con precio en USD, fotos, ficha técnica en PDF y número de registro oficial (Agrocalidad, ICA, SENASA, SENASICA, SAG, etc.).
+   - Define el **Alcance Logístico**: Nacional, Regional (seleccionando provincias/estados permitidos) o Local.
+   - En el tablero de órdenes, valida los comprobantes de pago de las haciendas y registra el despacho adjuntando la **Guía de Remisión**.
+2. **Para Haciendas (Comprador):**
+   - Accede a **Menú → Tienda de Insumos** (`/hacienda/tienda`).
+   - Visualiza en tiempo real el indicador de **Factibilidad de Entrega** según la provincia de tu hacienda.
+   - Agrega insumos al pedido y finaliza la orden en **Checkout** subiendo el comprobante de transferencia bancaria.
+   - Realiza el seguimiento en **Menú → Mis Compras / Envíos** (`/hacienda/mis-pedidos`).
+   - Cuando el pedido llegue a campo, haz clic en **"Firmar Recepción"** para estampar la firma digital conforme en el acta y opcionalmente ingresar los insumos de forma automática al **Kardex de Bodega**.
+
+---
+
+## 🔒 Seguridad, Universalidad e Inmutabilidad BPA
+- **Universalidad Internacional (ISO-3166):** Soporte de geolocalización en cualquier país con reconocimiento automático de la entidad fitosanitaria correspondiente (Agrocalidad en Ecuador, ICA en Colombia, SENASA en Perú, SENASICA en México, etc.).
+- **Trazabilidad 360°:** Cada insumo adquirido puede vincularse a las recetas emitidas por el agrónomo y reflejarse automáticamente en la bitácora de campo para auditorías de certificación BPA.
+- **Inmutabilidad Criptográfica:** Recetas y actas de recepción quedan firmadas digitalmente con respaldo inmutable.
+
